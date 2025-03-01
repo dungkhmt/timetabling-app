@@ -9,7 +9,8 @@ import {
   TextField,
   Grid,
   CircularProgress,
-  IconButton
+  IconButton,
+  InputAdornment
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -21,18 +22,32 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    startTime: null,
-    endTime: null
+    startTime: null, // Match the field name used in DatePicker
+    endTime: null,   // Match the field name used in DatePicker
+    startWeek: '',   // Add startWeek field with empty string as initial value
   });
 
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    
+    // Special handling for startWeek to ensure it's a positive number
+    if (name === 'startWeek') {
+      // Only allow positive numbers or empty string (for backspace/delete)
+      const regex = /^[1-9]\d*$/;
+      if (value === '' || regex.test(value)) {
+        setFormData({
+          ...formData,
+          [name]: value
+        });
+      }
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
     
     // Clear error when user types
     if (errors[name]) {
@@ -77,19 +92,33 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
       newErrors.endTime = 'Ngày kết thúc phải sau ngày bắt đầu';
     }
     
+    // Validate startWeek
+    if (!formData.startWeek) {
+      newErrors.startWeek = 'Tuần bắt đầu không được để trống';
+    } else if (parseInt(formData.startWeek) <= 0) {
+      newErrors.startWeek = 'Tuần bắt đầu phải là số dương';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSave(formData);
+      // Convert startWeek from string to number before saving
+      const formDataToSubmit = {
+        ...formData,
+        startWeek: parseInt(formData.startWeek)
+      };
+      
+      onSave(formDataToSubmit);
 
       setFormData({
         name: '',
         description: '',
         startTime: null,
-        endTime: null
+        endTime: null,
+        startWeek: ''
       });
       setErrors({});
     }
@@ -100,7 +129,8 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
       name: '',
       description: '',
       startTime: null,
-      endTime: null
+      endTime: null,
+      startWeek: ''
     });
     setErrors({});
     onClose();
@@ -158,6 +188,28 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
                 />
               </Grid>
               
+              {/* Start Week Field */}
+              <Grid item xs={12}>
+                <TextField
+                  name="startWeek"
+                  label="Tuần bắt đầu"
+                  type="text"
+                  fullWidth
+                  value={formData.startWeek}
+                  onChange={handleChange}
+                  error={!!errors.startWeek}
+                  helperText={errors.startWeek}
+                  required
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">tuần</InputAdornment>,
+                  }}
+                  inputProps={{
+                    inputMode: 'numeric',
+                    pattern: '[1-9][0-9]*'
+                  }}
+                />
+              </Grid>
+              
               <Grid item xs={12}>
                 <TextField
                   name="description"
@@ -176,14 +228,14 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
                   <Grid item xs={6}>
                     <DatePicker
                       label="Ngày bắt đầu"
-                      value={formData.startDate}
-                      onChange={(date) => handleDateChange('startDate', date)}
+                      value={formData.startTime}
+                      onChange={(date) => handleDateChange('startTime', date)}
                       slotProps={{
                         textField: {
                           fullWidth: true,
                           required: true,
-                          error: !!errors.startDate,
-                          helperText: errors.startDate,
+                          error: !!errors.startTime,
+                          helperText: errors.startTime,
                           size: "small"
                         }
                       }}
@@ -192,14 +244,14 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
                   <Grid item xs={6}>
                     <DatePicker
                       label="Ngày kết thúc"
-                      value={formData.endDate}
-                      onChange={(date) => handleDateChange('endDate', date)}
+                      value={formData.endTime}
+                      onChange={(date) => handleDateChange('endTime', date)}
                       slotProps={{
                         textField: {
                           fullWidth: true,
                           required: true,
-                          error: !!errors.endDate,
-                          helperText: errors.endDate,
+                          error: !!errors.endTime,
+                          helperText: errors.endTime,
                           size: "small"
                         }
                       }}
