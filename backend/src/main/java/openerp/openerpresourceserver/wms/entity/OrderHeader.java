@@ -9,10 +9,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Entity
+@Builder
 @Table(name = "wms2_order_header")
 public class OrderHeader extends BaseEntity {
     @Id
@@ -33,6 +35,11 @@ public class OrderHeader extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "created_by_user_id")
     private UserLogin createdByUser;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id")
+    private Facility facility;
+
 
 
 }
