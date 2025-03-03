@@ -30,7 +30,7 @@ export const useGroupData = (groupId) => {
     }
   );
 
-  const createMutation = useMutation(groupRepository.createPiority, {
+  const createMutation = useMutation(groupRepository.createPriority, {
     onSuccess: () => {
       queryClient.refetchQueries(allGroupsKey);
       toast.success("Tạo nhóm mới thành công!");

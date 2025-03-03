@@ -36,9 +36,7 @@ const handleRequestError = (error, errorHandlers) => {
     if (status === 401) return handleUnauthorized();
     if (status === 403) return handleForbidden(errorHandlers, error);
 
-    // For 410 errors, use the custom handler if provided
-    if (status === 410) {
-      // Always throw the error to ensure it propagates
+    if (status === 410 || status === 500) {
       throw error;
     }
 
