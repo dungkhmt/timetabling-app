@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState, useMemo, useCallback } from 'react';
+import { forwardRef, useImperativeHandle, useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Box,
   CircularProgress,
@@ -14,20 +14,17 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon
+  ListItemIcon,
+  IconButton
 } from '@mui/material';
 import {
-  CheckCircle,
-  Error,
-  HourglassEmpty,
   Search,
   FilterList,
   ViewColumn
 } from '@mui/icons-material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
-import { checkForConflicts } from '../utils/ConflictValidation';
+// Conflict validation is now handled via API
 
-// Custom toolbar component with column visibility control
 function CustomToolbar(props) {
   const { visibleColumns, setVisibleColumns, allColumns } = props;
   const [anchorEl, setAnchorEl] = useState(null);
@@ -105,94 +102,220 @@ const ClassesTable = forwardRef(({
   slots
 }, ref) => {
   const [searchText, setSearchText] = useState('');
+  const [activeSearchText, setActiveSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [descriptionFilter, setDescriptionFilter] = useState('all');
+  const [activeFilters, setActiveFilters] = useState(false);
+  const [uniqueDescriptions, setUniqueDescriptions] = useState([]);
   const [assignmentChanges, setAssignmentChanges] = useState({});
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
-  
-  // Control which columns are visible
   const [visibleColumns, setVisibleColumns] = useState([
-    'roomId', 'weekId', 'dateId', 'slotId', 'examClassId', 
-    'className', 'numberOfStudents', 'status'
+    'roomId', 'weekNumber', 'date', 'sessionId', 'examClassId', 'classId', "courseId",
+     'numberOfStudents', 'description',
   ]);
+
+  useEffect(() => {
+    if (classesData && classesData.length > 0) {
+      const descSet = new Set();
+      const descCountMap = {};
+      
+      // Count occurrences of each description and add to set
+      for (let i = 0; i < classesData.length; i++) {
+        const desc = classesData[i].description;
+        if (desc !== null && desc !== undefined && desc !== '') {
+          descSet.add(desc);
+          descCountMap[desc] = (descCountMap[desc] || 0) + 1;
+        }
+      }
+      
+      // Get only the most frequent descriptions (top 10)
+      const topDescriptions = Array.from(descSet)
+        .sort((a, b) => descCountMap[b] - descCountMap[a])
+        .slice(0, 10);
+      
+      setUniqueDescriptions(topDescriptions);
+    }
+  }, [classesData]);
 
   const handleSearchChange = (event) => {
     setSearchText(event.target.value);
+  };
+
+  const handleSearchSubmit = () => {
+    setActiveSearchText(searchText);
     setPage(0); // Reset to first page on search
+    setActiveFilters(!!searchText || statusFilter !== 'all' || descriptionFilter !== 'all');
+  };
+
+  const handleSearchKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      handleSearchSubmit();
+    }
   };
   
   const handleStatusFilterChange = (event) => {
     setStatusFilter(event.target.value);
     setPage(0); // Reset to first page on filter change
+    setActiveFilters(!!activeSearchText || event.target.value !== 'all' || descriptionFilter !== 'all');
+  };
+
+  const handleDescriptionFilterChange = (event) => {
+    setDescriptionFilter(event.target.value);
+    setPage(0); // Reset to first page on filter change
+    setActiveFilters(!!activeSearchText || statusFilter !== 'all' || event.target.value !== 'all');
   };
   
-  const handleRoomChange = useCallback((classId, roomId) => {
-    setAssignmentChanges(prev => ({
-      ...prev,
-      [classId]: {
-        ...prev[classId],
-        roomId
-      }
-    }));
-  }, []);
+  const handleClearFilters = () => {
+    setSearchText('');
+    setActiveSearchText('');
+    setStatusFilter('all');
+    setDescriptionFilter('all');
+    setPage(0);
+    setActiveFilters(false);
+  };
   
-  const handleWeekChange = useCallback((classId, weekId) => {
-    // When week changes, clear date and slot since they depend on week
-    setAssignmentChanges(prev => ({
-      ...prev,
-      [classId]: {
-        ...prev[classId],
-        weekId,
-        dateId: '',  // Reset date when week changes
-        slotId: ''   // Reset slot when week changes
-      }
-    }));
-  }, []);
+  const lowerSearchText = activeSearchText ? activeSearchText.toLowerCase() : '';
   
-  const handleDateChange = useCallback((classId, dateId) => {
-    setAssignmentChanges(prev => ({
-      ...prev,
-      [classId]: {
-        ...prev[classId],
-        dateId,
-        slotId: ''  // Reset slot when date changes
-      }
-    }));
-  }, []);
-  
-  const handleSlotChange = useCallback((classId, slotId) => {
-    setAssignmentChanges(prev => ({
-      ...prev,
-      [classId]: {
-        ...prev[classId],
-        slotId
-      }
-    }));
-  }, []);
-  
-  // Memoize filtered classes to prevent unnecessary re-filtering
   const filteredClasses = useMemo(() => {
-    return classesData.filter(classItem => {
-      // Apply search filter
-      const matchesSearch = !searchText || 
-        classItem.className?.toLowerCase().includes(searchText.toLowerCase()) || 
-        classItem.examClassId?.toLowerCase().includes(searchText.toLowerCase()) ||
-        classItem.courseId?.toLowerCase().includes(searchText.toLowerCase());
+    let results = classesData;
+    
+    // Apply description filter
+    if (descriptionFilter !== 'all' && descriptionFilter !== 'other') {
+      results = results.filter(item => item.description === descriptionFilter);
+    } else if (descriptionFilter === 'other' && activeSearchText) {
+      // When "other" is selected, filter descriptions based on search text
+      results = results.filter(item => 
+        item.description && item.description.toLowerCase().includes(lowerSearchText)
+      );
+    }
+    
+    // Apply search text filter (only if not using search for descriptions)
+    if (activeSearchText && descriptionFilter !== 'other') {
+      results = results.filter(item => 
+        (item.courseName && item.courseName.toLowerCase().includes(lowerSearchText)) ||
+        (item.examClassIdentifier && item.examClassIdentifier.toLowerCase().includes(lowerSearchText)) ||
+        (item.courseId && item.courseId.toLowerCase().includes(lowerSearchText))
+      );
+    }
+    
+    // Apply status filter - check if assignment is fully scheduled or not
+    if (statusFilter !== 'all') {
+      results = results.filter(item => {
+        // Get the current state of the assignment (including any changes)
+        const id = item.id;
+        const assignmentChange = assignmentChanges[id];
+        
+        // Check if all required fields have values
+        const roomId = assignmentChange?.roomId !== undefined ? assignmentChange.roomId : item.roomId;
+        const weekNumber = assignmentChange?.weekNumber !== undefined ? assignmentChange.weekNumber : item.weekNumber;
+        const date = assignmentChange?.date !== undefined ? assignmentChange.date : item.date;
+        const sessionId = assignmentChange?.sessionId !== undefined ? assignmentChange.sessionId : item.sessionId;
+        
+        // Check if the assignment is fully scheduled (all fields have values)
+        const isScheduled = roomId && weekNumber && date && sessionId;
+        
+        // Return items based on the filter selection
+        return statusFilter === 'scheduled' ? isScheduled : !isScheduled;
+      });
+    }
+    
+    return results;
+  }, [classesData, activeSearchText, lowerSearchText, statusFilter, descriptionFilter, assignmentChanges]);
+
+  // Updated handler functions to preserve all fields
+  const handleRoomChange = useCallback((classId, roomId) => {
+    setAssignmentChanges(prev => {
+      // Get existing values from the current assignment state or from the original row data
+      const currentAssignment = prev[classId] || {};
+      const originalRow = classesData.find(row => row.id === classId);
       
-      // Apply status filter
-      const matchesStatus = statusFilter === 'all' || classItem.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
+      return {
+        ...prev,
+        [classId]: {
+          // Include the new value
+          roomId,
+          // Preserve other fields from either current changes or original data
+          weekNumber: currentAssignment.weekNumber !== undefined ? 
+            currentAssignment.weekNumber : originalRow.weekNumber,
+          date: currentAssignment.date !== undefined ? 
+            currentAssignment.date : originalRow.date,
+          sessionId: currentAssignment.sessionId !== undefined ? 
+            currentAssignment.sessionId : originalRow.sessionId
+        }
+      };
     });
-  }, [classesData, searchText, statusFilter]);
+  }, [classesData]);
+  
+  const handleWeekChange = useCallback((classId, weekNumber) => {
+    // When week changes, clear date and slot since they depend on week
+    setAssignmentChanges(prev => {
+      const currentAssignment = prev[classId] || {};
+      const originalRow = classesData.find(row => row.id === classId);
+      
+      return {
+        ...prev,
+        [classId]: {
+          weekNumber,
+          // Reset dependent fields
+          date: '',
+          sessionId: '',
+          // Preserve room field
+          roomId: currentAssignment.roomId !== undefined ? 
+            currentAssignment.roomId : originalRow.roomId
+        }
+      };
+    });
+  }, [classesData]);
+  
+  const handleDateChange = useCallback((classId, date) => {
+    setAssignmentChanges(prev => {
+      const currentAssignment = prev[classId] || {};
+      const originalRow = classesData.find(row => row.id === classId);
+      
+      return {
+        ...prev,
+        [classId]: {
+          date,
+          // Reset slot since it depends on date
+          sessionId: '',
+          // Preserve other fields
+          roomId: currentAssignment.roomId !== undefined ? 
+            currentAssignment.roomId : originalRow.roomId,
+          weekNumber: currentAssignment.weekNumber !== undefined ? 
+            currentAssignment.weekNumber : originalRow.weekNumber
+        }
+      };
+    });
+  }, [classesData]);
+  
+  const handleSlotChange = useCallback((classId, sessionId) => {
+    setAssignmentChanges(prev => {
+      const currentAssignment = prev[classId] || {};
+      const originalRow = classesData.find(row => row.id === classId);
+      
+      return {
+        ...prev,
+        [classId]: {
+          sessionId,
+          // Preserve other fields
+          roomId: currentAssignment.roomId !== undefined ? 
+            currentAssignment.roomId : originalRow.roomId,
+          weekNumber: currentAssignment.weekNumber !== undefined ? 
+            currentAssignment.weekNumber : originalRow.weekNumber,
+          date: currentAssignment.date !== undefined ? 
+            currentAssignment.date : originalRow.date
+        }
+      };
+    });
+  }, [classesData]);
   
   // Use memoization to optimize cell renderers and prevent unnecessary re-renders
   const renderRoomCell = useCallback((params) => {
     const classId = params.row.id;
-    const currentValue = assignmentChanges[classId]?.roomId !== undefined 
-      ? assignmentChanges[classId]?.roomId 
+    const currentValue = assignmentChanges[classId]?.roomId !== undefined
+      ? assignmentChanges[classId]?.roomId
       : params.value;
-    
+      
     return (
       <FormControl fullWidth size="small">
         <Select
@@ -213,12 +336,13 @@ const ClassesTable = forwardRef(({
       </FormControl>
     );
   }, [rooms, assignmentChanges, handleRoomChange]);
-
+  
   const renderWeekCell = useCallback((params) => {
     const classId = params.row.id;
-    const currentValue = assignmentChanges[classId]?.weekId !== undefined 
-      ? assignmentChanges[classId]?.weekId 
-      : '';
+    
+    const currentValue = assignmentChanges[classId]?.weekNumber !== undefined
+      ? assignmentChanges[classId]?.weekNumber
+      : params.row.weekNumber;  // Use params.row.weekNumber instead of params.value
       
     return (
       <FormControl fullWidth size="small">
@@ -232,29 +356,33 @@ const ClassesTable = forwardRef(({
             <em>Tuần</em>
           </MenuItem>
           {weeks.map((week) => (
-            <MenuItem key={week.id} value={week.id}>
-              {week.name}
+            <MenuItem key={week} value={week}>
+              {`W${week}`}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
     );
   }, [weeks, assignmentChanges, handleWeekChange]);
-
+  
   const renderDateCell = useCallback((params) => {
     const classId = params.row.id;
-    const currentWeekId = assignmentChanges[classId]?.weekId || '';
-    const currentValue = assignmentChanges[classId]?.dateId !== undefined 
-      ? assignmentChanges[classId]?.dateId 
-      : '';
     
-    // Filter dates based on selected week
-    const availableDates = currentWeekId 
-      ? dates.filter(date => date.weekId === currentWeekId)
+    const currentWeekNumber = assignmentChanges[classId]?.weekNumber !== undefined
+      ? assignmentChanges[classId]?.weekNumber
+      : params.row.weekNumber;
+    
+    const currentValue = assignmentChanges[classId]?.date !== undefined
+      ? assignmentChanges[classId]?.date
+      : params.row.date;
+
+    const weekNum = Number(currentWeekNumber);
+    const availableDates = !isNaN(weekNum) && weekNum
+      ? dates.filter(date => date.weekNumber === weekNum)
       : [];
       
     return (
-      <FormControl fullWidth size="small" disabled={!currentWeekId}>
+      <FormControl fullWidth size="small" disabled={!currentWeekNumber}>
         <Select
           value={currentValue || ''}
           onChange={(e) => handleDateChange(classId, e.target.value)}
@@ -265,7 +393,7 @@ const ClassesTable = forwardRef(({
             <em>Ngày</em>
           </MenuItem>
           {availableDates.map((date) => (
-            <MenuItem key={date.id} value={date.id}>
+            <MenuItem key={date.date} value={date.date}>
               {date.name}
             </MenuItem>
           ))}
@@ -273,16 +401,16 @@ const ClassesTable = forwardRef(({
       </FormControl>
     );
   }, [dates, assignmentChanges, handleDateChange]);
-
+  
   const renderSlotCell = useCallback((params) => {
     const classId = params.row.id;
-    const currentDateId = assignmentChanges[classId]?.dateId || '';
-    const currentValue = assignmentChanges[classId]?.slotId !== undefined 
-      ? assignmentChanges[classId]?.slotId 
-      : '';
+    const currentDateSelected = assignmentChanges[classId]?.date !== undefined || params.row.date !== undefined;
+    const currentValue = assignmentChanges[classId]?.sessionId !== undefined
+      ? assignmentChanges[classId]?.sessionId
+      : params.value;
       
     return (
-      <FormControl fullWidth size="small" disabled={!currentDateId}>
+      <FormControl fullWidth size="small" disabled={!currentDateSelected}>
         <Select
           value={currentValue || ''}
           onChange={(e) => handleSlotChange(classId, e.target.value)}
@@ -301,50 +429,7 @@ const ClassesTable = forwardRef(({
       </FormControl>
     );
   }, [slots, assignmentChanges, handleSlotChange]);
-
-  const renderStatusCell = useCallback((params) => {
-    const status = params.value;
-    
-    let icon;
-    let color;
-    let label;
-    
-    switch (status) {
-      case 'assigned':
-        icon = <CheckCircle fontSize="small" sx={{ color: 'success.main' }} />;
-        color = 'success.main';
-        label = 'Đã xếp';
-        break;
-      case 'unassigned':
-        icon = <HourglassEmpty fontSize="small" sx={{ color: 'text.secondary' }} />;
-        color = 'text.secondary';
-        label = 'Chưa xếp';
-        break;
-      case 'conflict':
-        icon = <Error fontSize="small" sx={{ color: 'error.main' }} />;
-        color = 'error.main';
-        label = 'Xung đột';
-        break;
-      default:
-        icon = <HourglassEmpty fontSize="small" sx={{ color: 'text.secondary' }} />;
-        color = 'text.secondary';
-        label = 'Chưa xếp';
-    }
-    
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        {icon}
-        <Typography 
-          variant="body2" 
-          sx={{ ml: 1, color }}
-        >
-          {label}
-        </Typography>
-      </Box>
-    );
-  }, []);
   
-  // Generate columns for DataGrid with memoized cell renderers
   const columns = useMemo(() => [
     { 
       field: 'roomId', 
@@ -353,32 +438,37 @@ const ClassesTable = forwardRef(({
       renderCell: renderRoomCell
     },
     { 
-      field: 'weekId', 
+      field: 'weekNumber', 
       headerName: 'Tuần', 
       width: 100,
       renderCell: renderWeekCell
     },
     { 
-      field: 'dateId', 
+      field: 'date', 
       headerName: 'Ngày', 
       width: 180,
       renderCell: renderDateCell
     },
     { 
-      field: 'slotId', 
+      field: 'sessionId', 
       headerName: 'Ca thi', 
-      width: 120,
+      width: 110,
       renderCell: renderSlotCell
     },
     { 
       field: 'examClassId', 
       headerName: 'Mã lớp thi', 
-      width: 80, 
+      width: 100, 
     },
     { 
-      field: 'className', 
-      headerName: 'Tên lớp thi', 
-      width: 120,
+      field: 'courseId', 
+      headerName: 'Mã HP', 
+      width: 80 
+    },
+    {
+      field: "classId",
+      headerName: "Mã lớp học",
+      width: 100,
     },
     { 
       field: 'numberOfStudents', 
@@ -387,19 +477,19 @@ const ClassesTable = forwardRef(({
       type: 'number'
     },
     { 
-      field: 'courseId', 
-      headerName: 'Mã học phần', 
-      width: 120 
+      field: 'courseName', 
+      headerName: 'Tên lớp thi', 
+      width: 200,
     },
-    {
-      field: "classId",
-      headerName: "Mã lớp học",
-      width: 100,
+    { 
+      field: 'description', 
+      headerName: 'Ghi chú', 
+      width: 250 
     },
     { 
       field: 'school', 
       headerName: 'Khoa', 
-      width: 180 
+      width: 250 
     },
     {
       field: "groupId",
@@ -416,64 +506,118 @@ const ClassesTable = forwardRef(({
       headerName: "Mã quản lý",
       width: 100,
     },
-    { 
-      field: 'status', 
-      headerName: 'Trạng thái', 
-      width: 150,
-      renderCell: renderStatusCell
-    },
-  ], [renderRoomCell, renderWeekCell, renderDateCell, renderSlotCell, renderStatusCell]);
+  ], [renderRoomCell, renderWeekCell, renderDateCell, renderSlotCell]);
 
-  // Expose methods to the parent component
+  // Update the imperative handle to include validation of assignment changes
   useImperativeHandle(ref, () => ({
-    getAssignmentChanges: () => assignmentChanges,
-    checkForAssignmentConflicts: () => checkForConflicts(classesData, assignmentChanges)
+    getAssignmentChanges: () => {
+      // Convert to array format with assignmentId included
+      return Object.entries(assignmentChanges).map(([key, value]) => ({
+        assignmentId: key,
+        ...value
+      }));
+    },
+    getRawAssignmentChanges: () => assignmentChanges
   }));
-
-  // We'll no longer need the manual pagination function as DataGrid will handle it
 
   return (
     <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Search and Filter Bar */}
       <Box sx={{ 
         p: 2, 
         display: 'flex', 
         justifyContent: 'space-between', 
         borderBottom: '1px solid #eee'
       }}>
-        <TextField
-          placeholder="Tìm kiếm lớp thi..."
-          value={searchText}
-          onChange={handleSearchChange}
-          sx={{ width: 300 }}
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <FilterList sx={{ mr: 1, color: 'text.secondary' }} />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <Select
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              displayEmpty
+          <TextField
+            placeholder="Tìm kiếm lớp thi..."
+            value={searchText}
+            onChange={handleSearchChange}
+            onKeyPress={handleSearchKeyPress}
+            sx={{ width: 300 }}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <IconButton 
+                    size="small" 
+                    onClick={handleSearchSubmit}
+                    sx={{ mr: -0.5 }}
+                  >
+                    <Search fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <FilterList sx={{ mr: 1, color: 'text.secondary' }} />
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <Select
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                displayEmpty
+              >
+                <MenuItem value="all">Tất cả trạng thái</MenuItem>
+                <MenuItem value="scheduled">Đã xếp lịch</MenuItem>
+                <MenuItem value="unscheduled">Chưa xếp lịch</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <FilterList sx={{ mr: 1, color: 'text.secondary' }} />
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <Select
+                value={descriptionFilter}
+                onChange={handleDescriptionFilterChange}
+                displayEmpty
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300
+                    }
+                  }
+                }}
+              >
+                <MenuItem value="all">Tất cả mô tả</MenuItem>
+                {uniqueDescriptions.map(desc => (
+                  <MenuItem key={desc} value={desc}>
+                    {desc} 
+                  </MenuItem>
+                ))}
+                {uniqueDescriptions.length > 0 && <MenuItem disabled divider sx={{ my: 1 }}></MenuItem>}
+                <MenuItem value="other">
+                  <em>Hiển thị theo ô tìm kiếm</em>
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          
+          {activeFilters && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleClearFilters}
+              sx={{ 
+                ml: 1, 
+                border: '1px solid #ccc',
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                  borderColor: '#aaa'
+                }
+              }}
             >
-              <MenuItem value="all">Tất cả trạng thái</MenuItem>
-              <MenuItem value="assigned">Đã xếp</MenuItem>
-              <MenuItem value="unassigned">Chưa xếp</MenuItem>
-              <MenuItem value="conflict">Xung đột</MenuItem>
-            </Select>
-          </FormControl>
+              Xóa bộ lọc
+            </Button>
+          )}
         </Box>
       </Box>
       
-      {/* Data Grid */}
       <Box sx={{ flex: 1, height: 500 }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -491,7 +635,7 @@ const ClassesTable = forwardRef(({
             rowHeight={52}
             getRowId={(row) => row.id}
             getRowClassName={() => 'datagrid-row'}
-            columnBuffer={8}
+            columnBuffer={12}
             rowBuffer={100}
             density="standard"
             disableColumnFilter
@@ -538,10 +682,10 @@ const ClassesTable = forwardRef(({
                 cursor: 'pointer',
               },
               '& .MuiDataGrid-virtualScroller': {
-                overflowX: 'hidden',
                 scrollbarWidth: 'thin',
                 '&::-webkit-scrollbar': {
                   width: '8px',
+                  height: '8px',
                 },
                 '&::-webkit-scrollbar-track': {
                   background: '#f1f1f1',

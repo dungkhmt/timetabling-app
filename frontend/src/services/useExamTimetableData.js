@@ -45,6 +45,26 @@ export const useExamTimetableData = (examPlanId = null, examTimetableId = null) 
     }
   });
 
+  const updateAssignmentMutation = useMutation(examTimetableService.updateExamTimetableAssignment, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('examTimetables');
+      // toast.success('Cập nhật lịch thi thành công!');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật lịch thi');
+    }
+  });
+
+  const getAssignmentConflictsMutation = useMutation(examTimetableService.checkExamTimetableAssignmentConflict, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('examTimetables');
+      // toast.success('Cập nhật lịch thi thành công!');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật lịch thi');
+    }
+  });
+
   const deleteMutation = useMutation(examTimetableService.deleteExamTimetable, {
     onSuccess: () => {
       queryClient.invalidateQueries('examTimetables');
@@ -62,6 +82,10 @@ export const useExamTimetableData = (examPlanId = null, examTimetableId = null) 
     createExamTimetable: createMutation.mutateAsync,
     updateExamTimetable: updateMutation.mutateAsync,
     deleteExamTimetable: deleteMutation.mutateAsync,
+    updateExamTimetableAssignments: updateAssignmentMutation.mutateAsync,
+    getAssignmentConflicts: getAssignmentConflictsMutation.mutateAsync,
+    isLoadingConflicts: getAssignmentConflictsMutation.isLoading,
+    isLoadingUpdatingAssignment: updateAssignmentMutation.isLoading,
     isCreating: createMutation.isLoading,
     isUpdating: updateMutation.isLoading,
     isDeleting: deleteMutation.isLoading,

@@ -1,5 +1,7 @@
 package openerp.openerpresourceserver.examtimetabling.controller;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,9 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
+import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableAssignmentService;
 import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableService;
 
 @RestController
@@ -27,6 +33,7 @@ import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableServic
 @RequiredArgsConstructor
 public class ExamTimetableController {
     private final ExamTimetableService examTimetableService;
+    private final ExamTimetableAssignmentService examTimetableAssignmentService;
     
     @GetMapping("/plan/{examPlanId}")
     public ResponseEntity<List<ExamTimetableDTO>> getAllTimetablesByExamPlanId(@PathVariable UUID examPlanId) {
@@ -96,6 +103,40 @@ public class ExamTimetableController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/assignment/check-conflict")
+    public ResponseEntity<List<ConflictDTO>> checkConflicts(@RequestBody List<AssignmentUpdateDTO> assignmentChanges) {
+        try {
+            List<ConflictDTO> conflicts = examTimetableAssignmentService.checkForConflicts(assignmentChanges);
+            return ResponseEntity.ok(conflicts);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+    
+    @PostMapping("/assignment/update-batch")
+    public ResponseEntity<Object> updateAssignments(@RequestBody List<AssignmentUpdateDTO> assignmentChanges) {
+        try {
+            examTimetableAssignmentService.updateAssignments(assignmentChanges);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Assignments updated successfully"));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Failed to update assignments"));
+        }
+    }
+
+
+    @GetMapping("/assignment/{timetableId}")
+    public ResponseEntity<List<ExamAssignmentDTO>> getAssignments(@PathVariable UUID timetableId) {
+        try {
+            List<ExamAssignmentDTO> assignments = examTimetableAssignmentService.getAssignmentsByTimetableId(timetableId);
+            return ResponseEntity.ok(assignments);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
     }
 }

@@ -6,18 +6,20 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Typography
+  Typography,
+  Chip,
+  Divider
 } from '@mui/material';
-import { Error } from '@mui/icons-material';
+import { Error, AccessTime, Room, Group } from '@mui/icons-material';
 
 /**
  * Dialog component for showing timetable assignment conflicts
+ * With compact layout - one line for room/time info and one line per exam ID
  */
 const ConflictDialog = ({ 
   open, 
   conflicts, 
-  onClose,
-  onContinue
+  onClose
 }) => {
   return (
     <Dialog
@@ -37,7 +39,7 @@ const ConflictDialog = ({
       <DialogContent sx={{ py: 2 }}>
         <Typography variant="body1" sx={{ mb: 2 }}>
           Các lớp học sau đây có xung đột lịch thi (cùng phòng, cùng thời gian):
-          {conflicts.length > 10 && (
+          {conflicts.length > 1 && (
             <Typography component="span" color="error.main" fontWeight={500}>
               {` (${conflicts.length} xung đột)`}
             </Typography>
@@ -55,86 +57,95 @@ const ConflictDialog = ({
             <Box 
               key={index} 
               sx={{ 
-                mb: 2, 
-                p: 2, 
+                mb: 1.5, 
+                p: 1.5, 
                 border: '1px solid #ffccbc', 
                 borderRadius: 1,
                 backgroundColor: '#fff8e1'
               }}
             >
-              <Typography variant="subtitle2" sx={{ 
-                fontWeight: 600,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                mb: 1
               }}>
-                <span>Xung đột {index + 1} / {conflicts.length}</span>
-                <span style={{ fontSize: '0.9em', fontWeight: 400 }}>
-                  {conflict.class1.examClassId} & {conflict.class2.examClassId}
-                </span>
-              </Typography>
-              <Box sx={{ ml: 2, mt: 1 }}>
-                <Typography variant="body2">
-                  • Lớp 1: {conflict.class1.examClassId} - {conflict.class1.className}
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Xung đột {index + 1} / {conflicts.length}
                 </Typography>
-                <Typography variant="body2">
-                  • Lớp 2: {conflict.class2.examClassId} - {conflict.class2.className}
+                <Chip 
+                  size="small" 
+                  color="error" 
+                  label="Trùng lịch" 
+                  sx={{ fontSize: '0.75rem' }}
+                />
+              </Box>
+              
+              {/* One line for room and time information */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 1,
+                pb: 1,
+                borderBottom: '1px dashed #ffccbc'
+              }}>
+                <Room fontSize="small" sx={{ color: 'primary.main', mr: 0.5 }} />
+                <Typography variant="body2" sx={{ mr: 2 }}>
+                  {conflict.roomName || '?'}
                 </Typography>
-                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                  Phòng thi: {getDisplayName(conflict.class1.roomId, 'room')} | 
-                  Thời gian: {formatTime(conflict.class1)}
+                
+                <AccessTime fontSize="small" sx={{ color: 'primary.main', mr: 0.5 }} />
+                <Typography variant="body2">
+                  {conflict.weekName || '?'}, {conflict.sessionName || '?'}
                 </Typography>
               </Box>
+              
+              {/* Compact list of class IDs */}
+              <Typography variant="body2" fontWeight={500} sx={{ mb: 0.5 }}>
+                Các lớp bị trùng:
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {conflict.examClassIds && conflict.examClassIds.map((classId, idx) => (
+                  <Chip 
+                    key={idx}
+                    size="small"
+                    icon={<Group fontSize="small" />}
+                    label={classId}
+                    variant="outlined"
+                    sx={{ fontSize: '0.75rem' }}
+                  />
+                ))}
+              </Box>
+              
+              <Typography variant="body2" color="error" sx={{ mt: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
+                Vui lòng cập nhật lại lịch thi cho một hoặc nhiều lớp để giải quyết xung đột.
+              </Typography>
             </Box>
           ))}
         </Box>
         
-        {conflicts.length > 10 && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
+        {conflicts.length > 8 && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic', fontSize: '0.75rem' }}>
             * Hiển thị {conflicts.length} xung đột. Cuộn để xem thêm.
           </Typography>
         )}
         
-        <Typography variant="body1" sx={{ mt: 2, fontWeight: 500 }}>
-          Bạn có muốn tiếp tục lưu dù có xung đột?
+        <Typography variant="body1" sx={{ mt: 1.5, fontWeight: 500, color: 'error.main' }}>
+          Không thể lưu khi còn xung đột. Vui lòng giải quyết các xung đột trước khi lưu.
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button 
           onClick={onClose} 
-          variant="outlined"
-          color="inherit"
-        >
-          Hủy
-        </Button>
-        <Button 
-          onClick={onContinue} 
-          color="error" 
           variant="contained"
+          color="primary"
         >
-          Lưu dù có xung đột
+          Đóng và giải quyết xung đột
         </Button>
       </DialogActions>
     </Dialog>
   );
-};
-
-// Helper function to format time information
-const formatTime = (classItem) => {
-  // This would typically get the display names from your options data
-  // Here's a simple placeholder implementation
-  const weekName = classItem.weekId || '?';
-  const dateName = classItem.dateId || '?';
-  const slotName = classItem.slotId || '?';
-  
-  return `${weekName}, ${dateName}, ${slotName}`;
-};
-
-// Helper function to get display names for rooms, etc.
-const getDisplayName = (id, type) => {
-  // This would typically look up names from your options
-  // Here's a placeholder implementation
-  return id || '?';
 };
 
 export default ConflictDialog;

@@ -17,28 +17,18 @@ import {
   Visibility,
   AssignmentTurnedIn,
   School,
-  CheckCircle,
   Error
 } from '@mui/icons-material';
 import ClassesTable from './components/ClassAssignTable';
 import { format } from 'date-fns';
-import DeleteConfirmModal from './components/DeleteExamTimetableModal'
-import UpdateTimetableModal from './components/UpdateTimeTableModal'
-import ConflictDialog from './components/ConflictSaveDialog'
-import { useExamTimetableData } from 'services/useExamTimetableData'
-import { time } from 'echarts'
-
-const useOptionsData = () => {
-  return {
-    rooms: [
-      { id: "R101", name: "P.101" },
-      { id: "R102", name: "P.102" },
-      { id: "R103", name: "P.103" },
-      { id: "R104", name: "P.104" }
-    ],
-  };
-};
-
+import DeleteConfirmModal from './components/DeleteExamTimetableModal';
+import UpdateTimetableModal from './components/UpdateTimeTableModal';
+import ConflictDialog from './components/ConflictSaveDialog';
+import InvalidAssignmentDialog from './components/InvalidAssignmentDialog';
+import { validateAssignmentChanges } from './utils/AssignmentValidation';
+import { useExamTimetableData } from 'services/useExamTimetableData';
+import { useExamRoomData } from 'services/useExamRoomData';
+import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
 
 const TimetableDetailPage = () => {
   const { id } = useParams();
@@ -46,32 +36,53 @@ const TimetableDetailPage = () => {
   const {
     timetable,
     isLoadingDetail,
-    errorDetail,
     deleteExamTimetable,
     updateExamTimetable,
+    updateExamTimetableAssignments,
+    getAssignmentConflicts,
   } = useExamTimetableData(null, id);
 
-  const optionsData = useOptionsData();
-  
+  const {
+    examRooms,
+  } = useExamRoomData();
+
+  const {
+    examTimetableAssignments,
+    isLoading,
+    error,
+  } = useExamTimetableAssignmentData(id);
+
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [isInvalidModalOpen, setIsInvalidModalOpen] = useState(false);
   const [conflicts, setConflicts] = useState([]);
+  const [invalidAssignments, setInvalidAssignments] = useState([]);
 
-  // Use ref to access ClassesTable methods
   const classesTableRef = useRef();
 
-  const handleSaveAndCheck = () => {
-    // Get the current assignments and check for conflicts
+  const handleSaveAndCheck = async () => {
     const assignmentChanges = classesTableRef.current.getAssignmentChanges();
-    const foundConflicts = classesTableRef.current.checkForAssignmentConflicts();
+    
+    const validationResult = validateAssignmentChanges(
+      classesTableRef.current.getRawAssignmentChanges(), 
+      examTimetableAssignments
+    );
+    
+    if (!validationResult.isValid) {
+      setInvalidAssignments(validationResult.invalidAssignments);
+      setIsInvalidModalOpen(true);
+      return;
+    }
+    
+    const {
+      data: foundConflicts,
+    } = await getAssignmentConflicts(assignmentChanges);
 
     if (foundConflicts.length > 0) {
-      // We have conflicts, show the dialog
       setConflicts(foundConflicts);
       setIsConflictModalOpen(true);
     } else {
-      // No conflicts, save directly
       saveAssignments(assignmentChanges);
     }
   };
@@ -84,12 +95,8 @@ const TimetableDetailPage = () => {
 
   const saveAssignments = async (assignments, conflictsToLog = []) => {
     try {
-      // Call your API to save assignments
-     
-      
-      // Handle success
+      await updateExamTimetableAssignments(assignments, conflictsToLog);
     } catch (error) {
-      // Handle error
       console.error('Error saving assignments:', error);
     }
   };
@@ -141,6 +148,10 @@ const TimetableDetailPage = () => {
 
   const handleViewTimetable = () => {
     history.push(`/exam-timetable/${id}/view`);
+  };
+
+  const handleCloseInvalidModal = () => {
+    setIsInvalidModalOpen(false);
   };
 
   return (
@@ -238,7 +249,7 @@ const TimetableDetailPage = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <School sx={{ color: 'primary.main', mr: 1 }} />
                     <Typography variant="h6" fontWeight={600} color="primary.main">
-                      {timetable.completedAssignments}/{timetable.assignments.length}
+                      {timetable.completedAssignments}/{examTimetableAssignments.length || 100}
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
@@ -257,7 +268,7 @@ const TimetableDetailPage = () => {
         sx={{ 
           borderRadius: 2, 
           overflow: 'hidden',
-          height: 'calc(100vh - 100px)', // Adjustable based on your layout
+          height: 'calc(100vh - 100px)',
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -291,20 +302,28 @@ const TimetableDetailPage = () => {
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
           <ClassesTable 
             ref={classesTableRef}
-            classesData={timetable.assignments} 
-            isLoading={isLoadingDetail}
-            rooms={optionsData.rooms}
+            classesData={examTimetableAssignments} 
+            isLoading={isLoading}
+            rooms={examRooms}
             weeks={timetable.weeks}
             dates={timetable.dates}
             slots={timetable.slots}
           />
 
+          {/* Conflict Dialog */}
           <ConflictDialog
             open={isConflictModalOpen}
             conflicts={conflicts}
             onClose={() => setIsConflictModalOpen(false)}
             onContinue={handleContinueSaveWithConflicts}
-          />  
+          />
+          
+          {/* Invalid Assignment Dialog */}
+          <InvalidAssignmentDialog
+            open={isInvalidModalOpen}
+            invalidAssignments={invalidAssignments}
+            onClose={handleCloseInvalidModal}
+          />
         </Box>
       </Paper>
 
@@ -314,7 +333,7 @@ const TimetableDetailPage = () => {
         onConfirm={() => handleConfirmDelete(id, timetable.examPlanId)}
         timetableName={timetable.name}
         isDeleting={false}
-      ></DeleteConfirmModal>
+      />
 
       <UpdateTimetableModal
         open={isRenameDialogOpen}
@@ -323,7 +342,7 @@ const TimetableDetailPage = () => {
         onUpdateTimetable={handleRenameTimetable}
         timetableName={timetable.name}
         timetableId={timetable.id}
-      ></UpdateTimetableModal>
+      />
     </Container>
   );
 };

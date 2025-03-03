@@ -36,6 +36,22 @@ class ExamTimetableService {
   async getExamTimetableById(id) {
     return await request("get", `${API_ENDPOINTS.GET_BY_ID}/${id}`);
   }
+
+  async updateExamTimetableAssignment(data) {
+    return await request("post", "/exam-timetable/assignment/update-batch", null, null, data, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
+  async checkExamTimetableAssignmentConflict(data) {
+    return await request("post", "/exam-timetable/assignment/check-conflict", null, null, data, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+  }
 }
 
 export const examTimetableService = new ExamTimetableService();

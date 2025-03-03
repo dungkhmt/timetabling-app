@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.examtimetabling.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,10 +14,30 @@ import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignm
 public interface ExamTimetableAssignmentRepository extends JpaRepository<ExamTimetableAssignment, UUID> {
     long countByExamTimetableIdAndRoomIdIsNotNullAndExamSessionIdIsNotNull(UUID examTimetableId);
 
-    @Query("SELECT a.id, c.id, c.examClassId, c.classId, c.courseId, c.groupId, c.courseName, " +
-           "c.description, c.numberOfStudents, c.period, c.managementCode, c.school, " +
-           "a.roomId, a.examSessionId, a.weekNumber, a.date " +
-           "FROM ExamTimetableAssignment a JOIN ExamClass c ON a.examTimetablingClassId = c.id " +
-           "WHERE a.examTimetableId = :timetableId")
-    List<Object[]> findAssignmentsWithDetailsByTimetableId(UUID timetableId);
+    @Query(value = "SELECT " +
+    "a.id as assignment_id, " +
+    "c.id as class_id, " +
+    "c.exam_class_id as exam_class_identifier, " +
+    "c.class_id as orig_class_id, " +
+    "c.course_id, " +
+    "c.group_id, " +
+    "c.course_name, " +
+    "c.description, " +
+    "c.number_students, " +
+    "c.period, " +
+    "c.management_code, " +
+    "c.school, " +
+    "CAST(a.room_id AS VARCHAR) as room_id, " +
+    "CAST(a.exam_session_id AS VARCHAR) as session_id, " +
+    "a.week_number, " +
+    "a.date " +
+    "FROM exam_timetable_assignment a " +
+    "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+    "WHERE a.exam_timetable_id = :timetableId AND a.deleted_at IS NULL", 
+    nativeQuery = true)
+    List<Map<String, Object>> findAssignmentsWithDetailsByTimetableId(UUID timetableId);
+
+    List<ExamTimetableAssignment> findByExamTimetableIdAndDeletedAtIsNull(UUID timetableId);
+
+    long countByExamTimetableIdAndDeletedAtIsNull(UUID timetableId);
 }

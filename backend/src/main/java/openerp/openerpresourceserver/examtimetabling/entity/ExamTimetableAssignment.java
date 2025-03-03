@@ -36,10 +36,10 @@ public class ExamTimetableAssignment {
     private ExamClass examClass;
     
     @Column(name = "room_id")
-    private String roomId;
+    private UUID roomId;
     
     @Column(name = "exam_session_id")
-    private String examSessionId;
+    private UUID examSessionId;
 
     @Column(name = "week_number", nullable = true)
     private Integer weekNumber;
