@@ -1,5 +1,8 @@
 package openerp.openerpresourceserver.examtimetabling.service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,6 +16,15 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -306,5 +318,155 @@ public class ExamTimetableAssignmentService {
             
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    public ByteArrayInputStream exportAssignmentsToExcel(List<String> assignmentIds) {
+        if (assignmentIds == null || assignmentIds.isEmpty()) {
+            return createEmptyExcel();
+        }
+        
+        // Build query to get assignment details
+        String sql = 
+            "SELECT " +
+            "c.class_id, c.class_id as class_lt, c.course_id, c.course_name, " +
+            "c.description, c.group_id, '' as nhom, '' as sessionid, " +
+            "c.number_students, c.period, '' as managerid, c.management_code, " +
+            "'' as teachunitid, c.school, c.exam_class_id, " +
+            "a.date, a.week_number, s.name as session_name, " +
+            "r.name as room_name " +
+            "FROM exam_timetable_assignment a " +
+            "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+            "LEFT JOIN exam_room r ON CAST(a.room_id AS VARCHAR) = CAST(r.id AS VARCHAR) " +
+            "LEFT JOIN exam_timetable_session s ON CAST(a.exam_session_id AS VARCHAR) = CAST(s.id AS VARCHAR) " +
+            "WHERE CAST(a.id AS VARCHAR) IN :assignmentIds " +
+            "AND a.deleted_at IS NULL";
+        
+        // Execute query
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("assignmentIds", assignmentIds);
+        
+        List<Object[]> results = query.getResultList();
+        
+        if (results.isEmpty()) {
+            return createEmptyExcel();
+        }
+        
+        // Create Excel file
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Exam Assignments");
+            
+            // Create header row with styles
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            headerStyle.setFillPattern((short) 1); // SOLID_FOREGROUND
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                "Mã lớp QT", "Mã lớp LT", "Mã học phần", "Tên học phần", 
+                "Ghi chú", "studyGroupID", "Nhóm", "sessionid", 
+                "SL", "Đợt mở", "ManagerID", "Mã_QL", 
+                "TeachUnitID", "Tên trường/khoa", "Mã lớp thi",
+                "Ngày", "Tuần", "Kíp", "Phòng"
+            };
+            
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // Populate data rows
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            
+            int rowNum = 1;
+            for (Object[] result : results) {
+                Row row = sheet.createRow(rowNum++);
+                
+                // First 15 columns directly from the original format
+                for (int i = 0; i < 15; i++) {
+                    Cell cell = row.createCell(i);
+                    if (result[i] != null) {
+                        if (i == 8) { // Number of students (SL)
+                            cell.setCellValue(getInteger(result[i]));
+                        } else {
+                            cell.setCellValue(getString(result[i]));
+                        }
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+                
+                // Date
+                Object dateObj = result[15];
+                String dateStr = "";
+                if (dateObj != null) {
+                    if (dateObj instanceof java.sql.Date) {
+                        dateStr = ((java.sql.Date) dateObj).toLocalDate().format(dateFormatter);
+                    } else if (dateObj instanceof java.sql.Timestamp) {
+                        dateStr = ((java.sql.Timestamp) dateObj).toLocalDateTime().toLocalDate().format(dateFormatter);
+                    } else if (dateObj instanceof LocalDate) {
+                        dateStr = ((LocalDate) dateObj).format(dateFormatter);
+                    }
+                }
+                row.createCell(15).setCellValue(dateStr);
+                
+                // Week
+                Integer weekNumber = getInteger(result[16]);
+                row.createCell(16).setCellValue(weekNumber != null ? "W" + weekNumber : "");
+                
+                // Session
+                row.createCell(17).setCellValue(getString(result[17]) != null ? getString(result[17]) : "");
+                
+                // Room
+                row.createCell(18).setCellValue(getString(result[18]) != null ? getString(result[18]) : "");
+            }
+            
+            // Auto size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            // Write to output stream
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return new ByteArrayInputStream(outputStream.toByteArray());
+            
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate Excel file", e);
+        }
+    }
+    
+    private ByteArrayInputStream createEmptyExcel() {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("No Data");
+            Row row = sheet.createRow(0);
+            Cell cell = row.createCell(0);
+            cell.setCellValue("No data to export based on selected assignments");
+            
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return new ByteArrayInputStream(outputStream.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate empty Excel file", e);
+        }
+    }
+    
+    private String getString(Object obj) {
+        return obj != null ? obj.toString() : null;
+    }
+    
+    private Integer getInteger(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        }
+        try {
+            return Integer.parseInt(obj.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

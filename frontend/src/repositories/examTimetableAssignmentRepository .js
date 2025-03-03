@@ -20,6 +20,17 @@ class ExamTimetableAssignmentService {
       }
     });
   }
+
+  async exportTimetable(data) {
+    return await request("post", "/exam-timetable/assignment/export", null, null, data, {
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // Add this for Excel files
+      }
+    });
+  }
+
 }
 
 export const examTimetableAssignmentService = new ExamTimetableAssignmentService();

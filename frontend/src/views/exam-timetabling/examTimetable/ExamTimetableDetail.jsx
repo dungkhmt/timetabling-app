@@ -10,6 +10,7 @@ import {
   Grid,
   Paper,
   Typography,
+  Tooltip
 } from '@mui/material';
 import {
   Edit,
@@ -17,7 +18,8 @@ import {
   Visibility,
   AssignmentTurnedIn,
   School,
-  Error
+  Error,
+  FileDownload
 } from '@mui/icons-material';
 import ClassesTable from './components/ClassAssignTable';
 import { format } from 'date-fns';
@@ -49,6 +51,7 @@ const TimetableDetailPage = () => {
   const {
     examTimetableAssignments,
     isLoading,
+    exportTimetable,
     error,
   } = useExamTimetableAssignmentData(id);
 
@@ -58,8 +61,29 @@ const TimetableDetailPage = () => {
   const [isInvalidModalOpen, setIsInvalidModalOpen] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [invalidAssignments, setInvalidAssignments] = useState([]);
+  const [selectedAssignments, setSelectedAssignments] = useState([]); // Track selected assignments
+  const [isExporting, setIsExporting] = useState(false); // Track export status
 
   const classesTableRef = useRef();
+
+  const handleSelectionChange = (selectedIds) => {
+    setSelectedAssignments(selectedIds);
+  };
+
+  const handleExport = async () => {
+    if (selectedAssignments.length === 0) {
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      await exportTimetable( selectedAssignments);
+      setIsExporting(false);
+    } catch (error) {
+      console.error('Error exporting assignments:', error);
+      setIsExporting(false);
+    }
+  };
 
   const handleSaveAndCheck = async () => {
     const assignmentChanges = classesTableRef.current.getAssignmentChanges();
@@ -125,6 +149,10 @@ const TimetableDetailPage = () => {
     );
   }
 
+  const handleViewTimetable = () => {
+    history.push(`/exam-timetable/${id}/view`);
+  };
+
   const handleRenameTimetable = async (name) => {
     const payload = {
       name,
@@ -144,10 +172,6 @@ const TimetableDetailPage = () => {
     setIsDeleteDialogOpen(false);
     history.push(`/exam-time-tabling/exam-plan/${examPlanId}`);
     window.location.reload();
-  };
-
-  const handleViewTimetable = () => {
-    history.push(`/exam-timetable/${id}/view`);
   };
 
   const handleCloseInvalidModal = () => {
@@ -213,6 +237,7 @@ const TimetableDetailPage = () => {
               startIcon={<Delete />} 
               size="small"
               sx={{ 
+                mr: 1,
                 backgroundColor: 'error.main', 
                 '&:hover': { backgroundColor: '#E57373' }
               }}
@@ -285,18 +310,38 @@ const TimetableDetailPage = () => {
             Danh sách lớp thi
           </Typography>
           
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<AssignmentTurnedIn />}
-            onClick={handleSaveAndCheck}
-            sx={{ 
-              bgcolor: 'success.main',
-              '&:hover': { bgcolor: '#2E7D32' }
-            }}
-          >
-            Lưu và kiểm tra xung đột
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để xuất" : "Xuất danh sách đã chọn"}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<FileDownload />}
+                  onClick={handleExport}
+                  disabled={selectedAssignments.length === 0 || isExporting}
+                  sx={{ 
+                    bgcolor: 'success.light',
+                    '&:hover': { bgcolor: '#66BB6A' }
+                  }}
+                >
+                  {isExporting ? 'Đang xuất...' : `Xuất Excel (${selectedAssignments.length})`}
+                </Button>
+              </span>
+            </Tooltip>
+            
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<AssignmentTurnedIn />}
+              onClick={handleSaveAndCheck}
+              sx={{ 
+                bgcolor: 'success.main',
+                '&:hover': { bgcolor: '#2E7D32' }
+              }}
+            >
+              Lưu và kiểm tra xung đột
+            </Button>
+          </Box>
         </Box>
 
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
@@ -308,6 +353,7 @@ const TimetableDetailPage = () => {
             weeks={timetable.weeks}
             dates={timetable.dates}
             slots={timetable.slots}
+            onSelectionChange={handleSelectionChange}
           />
 
           {/* Conflict Dialog */}

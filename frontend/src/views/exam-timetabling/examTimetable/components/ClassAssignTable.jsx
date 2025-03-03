@@ -99,7 +99,8 @@ const ClassesTable = forwardRef(({
   rooms,
   weeks,
   dates,
-  slots
+  slots,
+  onSelectionChange // Add this prop to handle selection changes
 }, ref) => {
   const [searchText, setSearchText] = useState('');
   const [activeSearchText, setActiveSearchText] = useState('');
@@ -109,6 +110,7 @@ const ClassesTable = forwardRef(({
   const [uniqueDescriptions, setUniqueDescriptions] = useState([]);
   const [assignmentChanges, setAssignmentChanges] = useState({});
   const [page, setPage] = useState(0);
+  const [selectedRows, setSelectedRows] = useState([]); // Add state for selected rows
   const [visibleColumns, setVisibleColumns] = useState([
     'roomId', 'weekNumber', 'date', 'sessionId', 'examClassId', 'classId', "courseId",
      'numberOfStudents', 'description',
@@ -136,6 +138,15 @@ const ClassesTable = forwardRef(({
       setUniqueDescriptions(topDescriptions);
     }
   }, [classesData]);
+
+  // Handle row selection change
+  const handleSelectionModelChange = (newSelectionModel) => {
+    setSelectedRows(newSelectionModel);
+    // Call the parent component's handler if provided
+    if (onSelectionChange) {
+      onSelectionChange(newSelectionModel);
+    }
+  };
 
   const handleSearchChange = (event) => {
     setSearchText(event.target.value);
@@ -508,7 +519,7 @@ const ClassesTable = forwardRef(({
     },
   ], [renderRoomCell, renderWeekCell, renderDateCell, renderSlotCell]);
 
-  // Update the imperative handle to include validation of assignment changes
+  // Update the imperative handle to include validation of assignment changes and selected rows
   useImperativeHandle(ref, () => ({
     getAssignmentChanges: () => {
       // Convert to array format with assignmentId included
@@ -517,7 +528,8 @@ const ClassesTable = forwardRef(({
         ...value
       }));
     },
-    getRawAssignmentChanges: () => assignmentChanges
+    getRawAssignmentChanges: () => assignmentChanges,
+    getSelectedRows: () => selectedRows
   }));
 
   return (
@@ -640,7 +652,10 @@ const ClassesTable = forwardRef(({
             density="standard"
             disableColumnFilter
             disableColumnMenu
-            disableSelectionOnClick
+            checkboxSelection // Enable checkbox selection
+            onRowSelectionModelChange={handleSelectionModelChange} // Add selection change handler
+            rowSelectionModel={selectedRows} // Controlled selection model
+            disableSelectionOnClick={false} // Allow selection on click
             columnVisibilityModel={
               Object.fromEntries(columns.map(col => [col.field, visibleColumns.includes(col.field)]))
             }

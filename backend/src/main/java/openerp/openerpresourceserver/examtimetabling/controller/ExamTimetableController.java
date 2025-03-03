@@ -1,18 +1,20 @@
 package openerp.openerpresourceserver.examtimetabling.controller;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -137,6 +139,23 @@ public class ExamTimetableController {
             return ResponseEntity.ok(assignments);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ArrayList<>());
+        }
+    }
+
+    @PostMapping("/assignment/export")
+    public ResponseEntity<Resource> exportAssignmentsToExcel(@RequestBody List<String> assignmentIds) {
+        try {
+            ByteArrayInputStream excelFile = examTimetableAssignmentService.exportAssignmentsToExcel(assignmentIds);
+            
+            String filename = "exam_assignments_export.xlsx";
+            
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(new InputStreamResource(excelFile));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 }

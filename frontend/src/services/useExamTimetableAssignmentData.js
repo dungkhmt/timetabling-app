@@ -33,6 +33,24 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     }
   });
 
+  const exportTimetableMutation = useMutation(examTimetableAssignmentService.exportTimetable, {
+    onSuccess: (response) => {
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = "Lịch_thi.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+    onError: (error) => {
+      console.log(error);
+      toast.error('Có lỗi xảy ra khi tải xuống danh sách lớp');
+    }
+  });
+
   return {
     examTimetableAssignments: examTimetableAssignments?.data || [],
     isLoading,
@@ -41,5 +59,6 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     getAssignmentConflicts: getAssignmentConflictsMutation.mutateAsync,
     isLoadingConflicts: getAssignmentConflictsMutation.isLoading,
     isLoadingUpdatingAssignment: updateAssignmentMutation.isLoading,
+    exportTimetable: exportTimetableMutation.mutateAsync,
   };
 };
