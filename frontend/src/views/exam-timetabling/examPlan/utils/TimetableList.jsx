@@ -82,7 +82,7 @@ const TimetableList = ({
         <Box sx={{ width: '100%', mr: 1 }}>
           <LinearProgress 
             variant="determinate" 
-            value={params.value} 
+            value={params.value * 100} 
             sx={{ 
               height: 8, 
               borderRadius: 5,
@@ -91,7 +91,7 @@ const TimetableList = ({
           />
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
             <Typography variant="body2" color="text.secondary">
-              {`${Math.round(params.value)}%`}
+              {`${Math.round(params.value * 100)}%`}
             </Typography>
           </Box>
         </Box>
@@ -103,15 +103,15 @@ const TimetableList = ({
       flex: 2,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton size="small" color="success">
+          {/* <IconButton size="small" color="success">
             <GetApp fontSize="small" />
-          </IconButton>
+          </IconButton> */}
           <IconButton 
-            size="small" 
+            size="large" 
             color="primary" 
             onClick={() => history.push(`/exam-time-tabling/exam-timetable/${params.row.id}`)}
           >
-            <Visibility fontSize="small" />
+            <Visibility fontSize="medium" />
           </IconButton>
         </Box>
       )

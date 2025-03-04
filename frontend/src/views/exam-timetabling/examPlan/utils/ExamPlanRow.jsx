@@ -37,7 +37,7 @@ const ExamPlanRow = ({ plan, index, onClick, isLast }) => {
                 {plan.name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                🗓️ Tạo ngày: {new Date(plan.createdAt).toLocaleDateString()}
+                🗓️ Tạo ngày: {new Date(plan.createdAt).toLocaleDateString('en-GB')}
               </Typography>
             </Box>
           </Grid>
@@ -46,10 +46,10 @@ const ExamPlanRow = ({ plan, index, onClick, isLast }) => {
           <Grid item xs={12} md={5}>
             <Box>
               <Typography variant="body1" fontWeight={500}>
-                📅 Bắt đầu: {new Date(plan.startTime).toLocaleDateString()} - Kết thúc: {new Date(plan.endTime).toLocaleDateString()}
+                📅 Bắt đầu: {new Date(plan.startTime).toLocaleDateString('en-GB')} - Kết thúc: {new Date(plan.endTime).toLocaleDateString('en-GB')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                🔄 Cập nhật: {new Date(plan.updatedAt).toLocaleDateString()}
+                🔄 Cập nhật: {new Date(plan.updatedAt).toLocaleDateString('en-GB')}
               </Typography>
             </Box>
           </Grid>

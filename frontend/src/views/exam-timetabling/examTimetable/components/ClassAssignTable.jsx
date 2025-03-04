@@ -7,7 +7,6 @@ import {
   MenuItem,
   Select,
   TextField,
-  Typography,
   Checkbox,
   Button,
   Popover,
@@ -15,12 +14,15 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  IconButton
+  IconButton,
+  Autocomplete,
+  Paper
 } from '@mui/material';
 import {
   Search,
   FilterList,
-  ViewColumn
+  ViewColumn,
+  Clear
 } from '@mui/icons-material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
 // Conflict validation is now handled via API
@@ -102,12 +104,10 @@ const ClassesTable = forwardRef(({
   slots,
   onSelectionChange // Add this prop to handle selection changes
 }, ref) => {
-  const [searchText, setSearchText] = useState('');
-  const [activeSearchText, setActiveSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [descriptionFilter, setDescriptionFilter] = useState('all');
+  const [searchValue, setSearchValue] = useState('');
+  const [activeSearchValue, setActiveSearchValue] = useState('');
   const [activeFilters, setActiveFilters] = useState(false);
-  const [uniqueDescriptions, setUniqueDescriptions] = useState([]);
   const [assignmentChanges, setAssignmentChanges] = useState({});
   const [page, setPage] = useState(0);
   const [selectedRows, setSelectedRows] = useState([]); // Add state for selected rows
@@ -115,28 +115,24 @@ const ClassesTable = forwardRef(({
     'roomId', 'weekNumber', 'date', 'sessionId', 'examClassId', 'classId', "courseId",
      'numberOfStudents', 'description',
   ]);
-
-  useEffect(() => {
-    if (classesData && classesData.length > 0) {
-      const descSet = new Set();
-      const descCountMap = {};
-      
-      // Count occurrences of each description and add to set
-      for (let i = 0; i < classesData.length; i++) {
-        const desc = classesData[i].description;
-        if (desc !== null && desc !== undefined && desc !== '') {
-          descSet.add(desc);
-          descCountMap[desc] = (descCountMap[desc] || 0) + 1;
-        }
+  
+  // Optimize uniqueDescriptions extraction with useMemo to run only when classesData changes
+  const uniqueDescriptions = useMemo(() => {
+    if (!classesData || classesData.length === 0) return [];
+    
+    // Use a Set for faster lookup and to ensure uniqueness
+    const descSet = new Set();
+    
+    // First pass: collect all non-empty descriptions
+    for (let i = 0; i < classesData.length; i++) {
+      const desc = classesData[i].description;
+      if (desc !== null && desc !== undefined && desc !== '') {
+        descSet.add(desc);
       }
-      
-      // Get only the most frequent descriptions (top 10)
-      const topDescriptions = Array.from(descSet)
-        .sort((a, b) => descCountMap[b] - descCountMap[a])
-        .slice(0, 10);
-      
-      setUniqueDescriptions(topDescriptions);
     }
+    
+    // Convert to array and sort alphabetically for better user experience
+    return Array.from(descSet).sort();
   }, [classesData]);
 
   // Handle row selection change
@@ -148,65 +144,67 @@ const ClassesTable = forwardRef(({
     }
   };
 
-  const handleSearchChange = (event) => {
-    setSearchText(event.target.value);
+  const handleSearchChange = (event, newValue) => {
+    setSearchValue(newValue);
+  };
+
+  const handleSearchInputChange = (event, newInputValue) => {
+    // Only update the input value, not the selected value
+    // This allows the user to type and see suggestions without committing
   };
 
   const handleSearchSubmit = () => {
-    setActiveSearchText(searchText);
+    setActiveSearchValue(searchValue || '');
     setPage(0); // Reset to first page on search
-    setActiveFilters(!!searchText || statusFilter !== 'all' || descriptionFilter !== 'all');
-  };
-
-  const handleSearchKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      handleSearchSubmit();
-    }
+    setActiveFilters(!!(searchValue || statusFilter !== 'all'));
   };
   
   const handleStatusFilterChange = (event) => {
     setStatusFilter(event.target.value);
     setPage(0); // Reset to first page on filter change
-    setActiveFilters(!!activeSearchText || event.target.value !== 'all' || descriptionFilter !== 'all');
-  };
-
-  const handleDescriptionFilterChange = (event) => {
-    setDescriptionFilter(event.target.value);
-    setPage(0); // Reset to first page on filter change
-    setActiveFilters(!!activeSearchText || statusFilter !== 'all' || event.target.value !== 'all');
+    setActiveFilters(!!(activeSearchValue || event.target.value !== 'all'));
   };
   
   const handleClearFilters = () => {
-    setSearchText('');
-    setActiveSearchText('');
+    setSearchValue('');
+    setActiveSearchValue('');
     setStatusFilter('all');
-    setDescriptionFilter('all');
     setPage(0);
     setActiveFilters(false);
   };
   
-  const lowerSearchText = activeSearchText ? activeSearchText.toLowerCase() : '';
-  
+  // Create a memoized filtering function that only recalculates when necessary
   const filteredClasses = useMemo(() => {
+    // Start with all data
     let results = classesData;
     
-    // Apply description filter
-    if (descriptionFilter !== 'all' && descriptionFilter !== 'other') {
-      results = results.filter(item => item.description === descriptionFilter);
-    } else if (descriptionFilter === 'other' && activeSearchText) {
-      // When "other" is selected, filter descriptions based on search text
-      results = results.filter(item => 
-        item.description && item.description.toLowerCase().includes(lowerSearchText)
+    // Apply search filter if active
+    if (activeSearchValue) {
+      const lowerSearchText = activeSearchValue.toLowerCase();
+      
+      // Check if the search text exactly matches one of our descriptions
+      const isExactDescription = uniqueDescriptions.some(
+        desc => desc.toLowerCase() === lowerSearchText
       );
-    }
-    
-    // Apply search text filter (only if not using search for descriptions)
-    if (activeSearchText && descriptionFilter !== 'other') {
-      results = results.filter(item => 
-        (item.courseName && item.courseName.toLowerCase().includes(lowerSearchText)) ||
-        (item.examClassIdentifier && item.examClassIdentifier.toLowerCase().includes(lowerSearchText)) ||
-        (item.courseId && item.courseId.toLowerCase().includes(lowerSearchText))
-      );
+      
+      if (isExactDescription) {
+        // If it's an exact description match, only filter by description
+        results = results.filter(item => 
+          item.description && item.description.toLowerCase() === lowerSearchText
+        );
+      } else {
+        // Otherwise, search across multiple fields
+        results = results.filter(item => 
+          (item.description && item.description.toLowerCase().includes(lowerSearchText)) ||
+          (item.courseName && item.courseName.toLowerCase().includes(lowerSearchText)) ||
+          (item.examClassIdentifier && item.examClassIdentifier.toLowerCase().includes(lowerSearchText)) ||
+          (item.courseId && item.courseId.toLowerCase().includes(lowerSearchText)) ||
+          (item.classId && item.classId.toLowerCase().includes(lowerSearchText)) ||
+          (item.examClassId && item.examClassId.toLowerCase().includes(lowerSearchText)) ||
+          (item.school && item.school.toLowerCase().includes(lowerSearchText)) ||
+          (item.managementCode && item.managementCode.toLowerCase().includes(lowerSearchText))
+        );
+      }
     }
     
     // Apply status filter - check if assignment is fully scheduled or not
@@ -231,7 +229,7 @@ const ClassesTable = forwardRef(({
     }
     
     return results;
-  }, [classesData, activeSearchText, lowerSearchText, statusFilter, descriptionFilter, assignmentChanges]);
+  }, [classesData, activeSearchValue, statusFilter, assignmentChanges, uniqueDescriptions]);
 
   // Updated handler functions to preserve all fields
   const handleRoomChange = useCallback((classId, roomId) => {
@@ -532,6 +530,30 @@ const ClassesTable = forwardRef(({
     getSelectedRows: () => selectedRows
   }));
 
+  // Function to filter options shown in the autocomplete
+  const filterOptions = (options, { inputValue }) => {
+    if (!inputValue) return [];
+    
+    const lowerInput = inputValue.toLowerCase();
+    
+    // First, find exact matches at the beginning
+    const startsWithMatches = options.filter(option => 
+      option.toLowerCase().startsWith(lowerInput)
+    );
+    
+    // Then find contains matches, but exclude those already in startsWithMatches
+    const containsMatches = options.filter(option => 
+      option.toLowerCase().includes(lowerInput) && 
+      !startsWithMatches.includes(option)
+    );
+    
+    // Combine the results, prioritizing exact matches
+    const filteredOptions = [...startsWithMatches, ...containsMatches];
+    
+    // Limit to 10 options for performance
+    return filteredOptions.slice(0, 10);
+  };
+
   return (
     <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ 
@@ -540,27 +562,71 @@ const ClassesTable = forwardRef(({
         justifyContent: 'space-between', 
         borderBottom: '1px solid #eee'
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <TextField
-            placeholder="Tìm kiếm lớp thi..."
-            value={searchText}
+        <Box sx={{ display: 'flex', alignItems: 'center', width: '50%' }}>
+          <Autocomplete
+            freeSolo
+            disableClearable
+            value={searchValue}
             onChange={handleSearchChange}
-            onKeyPress={handleSearchKeyPress}
-            sx={{ width: 300 }}
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <IconButton 
-                    size="small" 
-                    onClick={handleSearchSubmit}
-                    sx={{ mr: -0.5 }}
-                  >
-                    <Search fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
+            onInputChange={handleSearchInputChange}
+            options={uniqueDescriptions}
+            filterOptions={filterOptions}
+            ListboxComponent={List}
+            ListboxProps={{ 
+              dense: true,
+              sx: { maxHeight: 300 }
             }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Tìm kiếm lớp thi, ghi chú..."
+                variant="outlined"
+                size="small"
+                fullWidth
+                onKeyPress={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconButton 
+                        size="small" 
+                        onClick={handleSearchSubmit}
+                        sx={{ mr: -0.5 }}
+                      >
+                        <Search fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {searchValue && (
+                        <IconButton
+                          size="small"
+                          aria-label="clear search"
+                          onClick={() => {
+                            setSearchValue('');
+                            if (activeSearchValue) {
+                              setActiveSearchValue('');
+                              setActiveFilters(statusFilter !== 'all');
+                            }
+                          }}
+                          sx={{ mr: -0.5 }}
+                        >
+                          <Clear fontSize="small" />
+                        </IconButton>
+                      )}
+                      {params.InputProps.endAdornment}
+                    </InputAdornment>
+                  )
+                }}
+              />
+            )}
+            PaperComponent={({ children, ...props }) => (
+              <Paper elevation={8} {...props}>
+                {children}
+              </Paper>
+            )}
+            sx={{ width: '100%' }}
           />
         </Box>
         
@@ -576,35 +642,6 @@ const ClassesTable = forwardRef(({
                 <MenuItem value="all">Tất cả trạng thái</MenuItem>
                 <MenuItem value="scheduled">Đã xếp lịch</MenuItem>
                 <MenuItem value="unscheduled">Chưa xếp lịch</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <FilterList sx={{ mr: 1, color: 'text.secondary' }} />
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <Select
-                value={descriptionFilter}
-                onChange={handleDescriptionFilterChange}
-                displayEmpty
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxHeight: 300
-                    }
-                  }
-                }}
-              >
-                <MenuItem value="all">Tất cả mô tả</MenuItem>
-                {uniqueDescriptions.map(desc => (
-                  <MenuItem key={desc} value={desc}>
-                    {desc} 
-                  </MenuItem>
-                ))}
-                {uniqueDescriptions.length > 0 && <MenuItem disabled divider sx={{ my: 1 }}></MenuItem>}
-                <MenuItem value="other">
-                  <em>Hiển thị theo ô tìm kiếm</em>
-                </MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -640,7 +677,7 @@ const ClassesTable = forwardRef(({
             rows={filteredClasses}
             columns={columns}
             pagination
-            pageSizeOptions={[10, 25, 50]}
+            pageSizeOptions={[10, 25, 50, 100]}
             initialState={{
               pagination: { paginationModel: { pageSize: 25 } },
             }}

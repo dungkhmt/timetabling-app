@@ -154,7 +154,7 @@ const ExamPlanDetailPage = () => {
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Typography variant="body1" fontWeight={600} color="#1976D2">
-                  📅 {format(new Date(examPlan.startTime), 'dd MMM yyyy')} (Tuần {examPlan.startWeek}) → {format(new Date(examPlan.endTime), 'dd MMM yyyy')}
+                  📅 {new Date(examPlan.startTime).toLocaleDateString('en-GB')} (Tuần {examPlan.startWeek}) → {new Date(examPlan.endTime).toLocaleDateString('en-GB')}
                 </Typography>
               </Box>
               <Typography variant="body1" color="text.secondary">
