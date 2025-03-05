@@ -60,7 +60,6 @@ const ExamPlanRow = ({ plan, index, onClick, isLast }) => {
               endIcon={<ArrowForwardIos />}
               color="primary"
               size="small"
-              variant="outlined"
               onClick={(e) => {
                 e.stopPropagation();
                 onClick(plan.id);
