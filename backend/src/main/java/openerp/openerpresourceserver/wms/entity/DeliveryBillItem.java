@@ -19,7 +19,7 @@ public class DeliveryBillItem {
     @MapsId("deliveryBillId")
     @ManyToOne
     @JoinColumn(name = "delivery_bill_id")
-    private DeliveryBill deliveryBill;
+    private DeliveryBill deliveryBillz;
 
     @ManyToOne
     @JoinColumn(name = "product_id")

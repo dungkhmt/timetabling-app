@@ -17,7 +17,7 @@ export default function WMSRouter() {
 
         
         <Route
-          component={OrderDetail}
+          component={CreateSaleOrder}
           exact
           path={`${path}/sales/orders`}
         >

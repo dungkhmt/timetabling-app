@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 public class OrderItemReq {
     private String productId;
-    private String quantity;
+    private Integer quantity;
     private String price;
     private String unit;
 }

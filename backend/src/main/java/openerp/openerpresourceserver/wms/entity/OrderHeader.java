@@ -9,13 +9,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Builder
 @Table(name = "wms2_order_header")
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderHeader extends BaseEntity {
     @Id
     @Column(name = "id", length = 40)
@@ -23,6 +26,10 @@ public class OrderHeader extends BaseEntity {
 
     @Column(name = "order_type_id", length = 40)
     private String orderTypeId;
+
+    private LocalDateTime orderDate;
+
+    private String status;
 
     @ManyToOne
     @JoinColumn(name = "from_supplier_id")

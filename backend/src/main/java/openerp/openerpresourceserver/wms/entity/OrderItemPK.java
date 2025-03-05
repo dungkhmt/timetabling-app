@@ -5,9 +5,13 @@ import java.io.Serializable;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Embeddable
 public class OrderItemPK implements Serializable {
     private static final long serialVersionUID = 1L;

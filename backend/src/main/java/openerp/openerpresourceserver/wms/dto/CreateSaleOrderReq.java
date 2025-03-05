@@ -16,12 +16,14 @@ import java.util.List;
 @NoArgsConstructor
 @Setter
 @Getter
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreateSaleOrderReq {
+    private String id;
     @NotBlank
     private String facilityId;
     @NotBlank
     private String customerId;
+    @NotBlank
+    private String userCreatedId;
     private String saleOrderName;
     private Integer numberOfInvoice;
     private LocalDateTime deliveryBeforeDate;

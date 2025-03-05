@@ -1,0 +1,123 @@
+import React from 'react';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, Typography } from "@mui/material";
+import RequireField from "../../common-components/RequireField";
+import { useOrderForm } from "../context/OrderFormContext";
+import FacilityField from "./FacilityField";
+import CustomerField from "./CustomerField";
+
+const BasicInfoForm = () => {
+  const { salesOrder, setSalesOrder } = useOrderForm();
+  const [discountTypes] = React.useState(["PERCENT", "FIXED"]);
+  const [orderPurposes] = React.useState(["SALES", "SAMPLE", "GIFT", "REPLACEMENT"]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setSalesOrder(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Grid container spacing={2}>
+        <FacilityField />
+
+        <CustomerField />
+
+        <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Giao sau ngày: <RequireField />
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+          <TextField
+            fullWidth
+            type="date"
+            name="deliveryDate"
+            value={salesOrder.deliveryDate}
+            onChange={handleInputChange}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+
+        <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Số hóa đơn (TC):
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+          <TextField 
+            fullWidth 
+            size="small"
+            name="invoiceNumber"
+            value={salesOrder.invoiceNumber}
+            onChange={handleInputChange}
+          />
+        </Grid>
+
+        <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Loại chiết khấu:
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+          <FormControl fullWidth size="small">
+            <Select
+              name="discountType"
+              value={salesOrder.discountType}
+              onChange={handleInputChange}
+            >
+              <MenuItem value="">Không có</MenuItem>
+              {discountTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type === "PERCENT" ? "Phần trăm" : "Số tiền cố định"}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Giá trị chiết khấu:
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+          <TextField
+            fullWidth
+            size="small"
+            name="discountValue"
+            value={salesOrder.discountValue}
+            onChange={handleInputChange}
+            type="number"
+            disabled={!salesOrder.discountType}
+          />
+        </Grid>
+
+        <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Mục đích đơn hàng:
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+          <FormControl fullWidth size="small">
+            <Select
+              name="orderPurpose"
+              value={salesOrder.orderPurpose}
+              onChange={handleInputChange}
+            >
+              {orderPurposes.map((purpose) => (
+                <MenuItem key={purpose} value={purpose}>
+                  {purpose === "SALES" ? "Bán hàng" : 
+                   purpose === "SAMPLE" ? "Mẫu" : 
+                   purpose === "GIFT" ? "Quà tặng" : "Thay thế"}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
+
+export default BasicInfoForm;
