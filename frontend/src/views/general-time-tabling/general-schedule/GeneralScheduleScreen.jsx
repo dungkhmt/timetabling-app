@@ -72,7 +72,7 @@ const GeneralScheduleScreen = () => {
               >
                 {states.algorithms.map((algorithm, index) => (
                   <MenuItem key={index} value={algorithm}>
-                    {`${index + 1}: ${algorithm}`}
+                    {algorithm}
                   </MenuItem>
                 ))}
               </Select>
