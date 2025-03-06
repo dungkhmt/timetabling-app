@@ -11,7 +11,6 @@ const ClassOpenPlanTable = ({
   setClasses
 }) => {
 
-
   const [selectedRow, setSelectedRow] = useState(null);
 
   const handleRowDoubleClick = (rowModel) => {
@@ -19,7 +18,6 @@ const ClassOpenPlanTable = ({
       console.log(rowModel.row);
       setSelectedRow(rowModel.row);
       setOpenDialog(true);
-      console.log(isOpenDialog);
     }
   };
 

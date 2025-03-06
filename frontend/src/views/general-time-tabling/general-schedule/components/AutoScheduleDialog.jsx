@@ -1,4 +1,5 @@
 import { Autocomplete, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 const AutoScheduleDialog = ({
   title,
@@ -7,6 +8,7 @@ const AutoScheduleDialog = ({
   setTimeLimit,
   open,
   closeDialog,
+  selectedAlgorithm, 
 }) => {
   return (
     <Dialog open={open} onClose={closeDialog}>
@@ -27,7 +29,14 @@ const AutoScheduleDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={()=> closeDialog()}>Hủy</Button>
-        <Button onClick={() => submit()}>Xác nhận</Button>
+        <Button 
+          onClick={() => submit()} 
+          color="primary" 
+          variant="contained"
+          disabled={!selectedAlgorithm} 
+        >
+          Xác nhận
+        </Button>
       </DialogActions>
     </Dialog>
   );

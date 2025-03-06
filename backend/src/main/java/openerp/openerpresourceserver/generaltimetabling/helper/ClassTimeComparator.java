@@ -21,7 +21,10 @@ public class ClassTimeComparator {
         // Kiểm tra xung đột với các ca học trong lớp hiện tại
         for (RoomReservation cTimeSlot : gClass.getTimeSlots()) {
             if (!Objects.equals(cTimeSlot.getId(), rr.getId())) {  // Loại bỏ trường hợp so sánh với chính nó
-                if (cTimeSlot.getRoom().equals(rr.getRoom()) && Objects.equals(cTimeSlot.getWeekday(), rr.getWeekday())) {
+                String cRoom = cTimeSlot.getRoom();
+                String rRoom = rr.getRoom();
+                
+                if (cRoom != null && rRoom != null && cRoom.equals(rRoom) && Objects.equals(cTimeSlot.getWeekday(), rr.getWeekday())) {
                     // Kiểm tra thời gian học có xung đột
                     if (timeSlotsOverlap(rr, cTimeSlot)) {
                         throw new ConflictScheduleException("Trùng lịch với ca " + cTimeSlot.getStartTime() + " của lớp " + gClass.getClassCode() + "/" + gClass.getModuleName());
@@ -37,10 +40,13 @@ public class ClassTimeComparator {
 
             for (RoomReservation cTimeSlot : cClass.getTimeSlots()) {
                 if (cTimeSlot.isScheduleNotNull()) {
+                    String cRoom = cTimeSlot.getRoom();
+                    String rRoom = rr.getRoom();
+                    
                     // Kiểm tra xung đột về phòng học, ngày học, tuần học và đội ngũ giảng viên
                     if (isWeeksConflict(cWeekIndexs, gWeekIndexs) &&
                             cClass.getCrew().equals(gClass.getCrew()) &&
-                            rr.getRoom().equals(cTimeSlot.getRoom()) &&
+                            rRoom != null && cRoom != null && rRoom.equals(cRoom) &&
                             Objects.equals(rr.getWeekday(), cTimeSlot.getWeekday())) {
                         // Kiểm tra thời gian học có xung đột
                         if (timeSlotsOverlap(rr, cTimeSlot)) {
@@ -48,7 +54,7 @@ public class ClassTimeComparator {
                         }
                     }
                     // Kiểm tra xung đột nếu lớp học khác có cùng phòng học và ngày học nhưng khác thời gian
-                    else if (cTimeSlot.getRoom().equals(rr.getRoom()) && Objects.equals(cTimeSlot.getWeekday(), rr.getWeekday())) {
+                    else if (rRoom != null && cRoom != null && cRoom.equals(rRoom) && Objects.equals(cTimeSlot.getWeekday(), rr.getWeekday())) {
                         throw new ConflictScheduleException("Lớp học đã trùng phòng và ngày học: " + cClass.getClassCode() + "/" + cClass.getModuleName());
                     }
                 }

@@ -11,6 +11,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.helper.ClassTimeComparator;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.mapper.RoomOccupationMapper;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * GeneralClassOpenedServiceImp
@@ -79,9 +81,56 @@ public class GeneralClassServiceImp implements GeneralClassService {
     }
 
     @Override
-    public List<GeneralClass> getGeneralClasses(String semester, String groupName) {
-        if (groupName == null || groupName.isEmpty()) return gcoRepo.findAllBySemester(semester);
-        return gcoRepo.findAllBySemesterAndGroupName(semester, groupName);
+    public List<GeneralClassDto> getGeneralClassDtos(String semester, String groupName) {
+        List<GeneralClass> generalClasses = (groupName == null || groupName.isEmpty())
+                ? gcoRepo.findAllBySemester(semester)
+                : gcoRepo.findAllBySemesterAndGroupName(semester, groupName);
+
+        List<Long> classIds = generalClasses.stream().map(GeneralClass::getId).toList();
+
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
+
+        List<Long> groupIds = classGroups.stream()
+                .map(ClassGroup::getGroupId)
+                .distinct()
+                .toList();
+
+        Map<Long, String> groupNameMap = groupRepo.findAllById(groupIds)
+                .stream()
+                .collect(Collectors.toMap(Group::getId, Group::getGroupName));
+
+        Map<Long, List<String>> classGroupMap = classGroups.stream()
+                .collect(Collectors.groupingBy(
+                        ClassGroup::getClassId,
+                        Collectors.mapping(cg -> groupNameMap.getOrDefault(cg.getGroupId(), "Unknown"), Collectors.toList())
+                ));
+
+        return generalClasses.stream()
+                .map(gc -> GeneralClassDto.builder()
+                        .id(gc.getId())
+                        .quantity(gc.getQuantity())
+                        .quantityMax(gc.getQuantityMax())
+                        .moduleCode(gc.getModuleCode())
+                        .moduleName(gc.getModuleName())
+                        .classType(gc.getClassType())
+                        .classCode(gc.getClassCode())
+                        .semester(gc.getSemester())
+                        .studyClass(gc.getStudyClass())
+                        .mass(gc.getMass())
+                        .state(gc.getState())
+                        .crew(gc.getCrew())
+                        .openBatch(gc.getOpenBatch())
+                        .course(gc.getCourse())
+                        .refClassId(gc.getRefClassId())
+                        .parentClassId(gc.getParentClassId())
+                        .duration(gc.getDuration())
+                        .groupName(gc.getGroupName())
+                        .listGroupName(classGroupMap.getOrDefault(gc.getId(), List.of()))
+                        .timeSlots(gc.getTimeSlots())
+                        .learningWeeks(gc.getLearningWeeks())
+                        .foreignLecturer(gc.getForeignLecturer())
+                        .build()
+                ).toList();
     }
 
     @Override
@@ -296,13 +345,23 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
                         if (timeSlot.isScheduleNotNull()) {
                             log.info("resetSchedule, delete roomOccupation with classCode = " + gClass.getClassCode() + " startTime = " + timeSlot.getStartTime() + " endTime = " + timeSlot.getEndTime() + " weekDay = " + timeSlot.getWeekday() + " room = " + timeSlot.getRoom());
-                            roomOccupationRepo.deleteAllByClassCodeAndStartPeriodAndEndPeriodAndDayIndexAndClassRoom(gClass.getClassCode(), timeSlot.getStartTime(), timeSlot.getEndTime(), timeSlot.getWeekday(), timeSlot.getRoom());
+                            roomOccupationRepo.deleteAllByClassCodeAndStartPeriodAndEndPeriodAndDayIndexAndClassRoom(
+                                    gClass.getClassCode(),
+                                    timeSlot.getStartTime(),
+                                    timeSlot.getEndTime(),
+                                    timeSlot.getWeekday(),
+                                    timeSlot.getRoom()
+                            );
                         }
+
+                        // Đặt lại các giá trị về null
                         timeSlot.setWeekday(null);
                         timeSlot.setStartTime(null);
                         timeSlot.setEndTime(null);
                         timeSlot.setRoom(null);
                         log.info("resetSchedule, class-segment " + timeSlot.getId() + " -> set NULL");
+
+                        // Thêm lớp vào danh sách để lưu lại
                         if (!filteredGeneralClassList.contains(gClass)) {
                             filteredGeneralClassList.add(gClass);
                         }
@@ -310,12 +369,16 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 }
             }
             log.info("resetSchedule, filterGeneralClassList = " + filteredGeneralClassList.size());
+
             gcoRepo.saveAll(filteredGeneralClassList);
+
             ids.forEach(System.out::println);
             filteredGeneralClassList.forEach(System.out::println);
+
             return filteredGeneralClassList;
         }
     }
+
 
     @Transactional
     @Override
@@ -472,7 +535,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 List<RoomOccupation> roomOccupationList = new ArrayList<>();
                 for (Integer week : weeks) {
                     roomOccupationList.add(new RoomOccupation(
-                            updateRoomReservation.getRoom(),
+                            updateRequest.getRoom(),
                             updateRoomReservation.getGeneralClass().getClassCode(),
                             updateRoomReservation.getStartTime(),
                             updateRoomReservation.getEndTime(),
@@ -481,6 +544,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
                             week,
                             "study",
                             semester));
+                    System.out.print(roomOccupationList);
                 }
                 roomOccupations.addAll(roomOccupationList);
             } else if (
@@ -496,8 +560,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
                     roomOccupation.setDayIndex(updateRequest.getWeekday());
                 });
             } else {
-                /*After the schedule is not complete*/
-                /*Do nothing */
+
             }
             roomOccupations.addAll(foundRoomOccupations);
         });
@@ -541,6 +604,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         foundGeneralClass.addTimeSlot(newRoomReservation);
         newRoomReservation.setGeneralClass(foundGeneralClass);
         newRoomReservation.setParentId(parentId);
+        newRoomReservation.setCrew(foundGeneralClass.getCrew());
         gcoRepo.save(foundGeneralClass);
         return foundGeneralClass;
     }
