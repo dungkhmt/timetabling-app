@@ -41,10 +41,12 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
     if (!periods) return cells;
     
     periods.forEach(({ start, duration, classCode }) => {
-      if (start < 1) return;
+      if (start < 0 || start >= 42) return;
       cells[start] = { colSpan: duration, classCode };
       for (let i = 1; i < duration; i++) {
-        cells[start + i] = { hidden: true };
+        if (start + i < 42) {
+          cells[start + i] = { hidden: true };
+        }
       }
     });
     return cells;
