@@ -51,21 +51,21 @@ export const generalScheduleRepository = {
     );
   },
 
-  autoScheduleTime: async (semester, groupName, timeLimit) => {
+  autoScheduleTime: async (semester, groupName, timeLimit, algorithm) => {
     return await request(
       "post",
-      `/general-classes/auto-schedule-time?semester=${semester}&groupName=${groupName}&timeLimit=${timeLimit}`
+      `/general-classes/auto-schedule-time?semester=${semester}&groupName=${groupName}&timeLimit=${timeLimit}&algorithm=${algorithm || ''}`
     );
   },
 
-  autoScheduleRoom: async (semester, groupName, timeLimit) => {
+  autoScheduleRoom: async (semester, groupName, timeLimit, algorithm) => {
     return await request(
       "post",
-      `/general-classes/auto-schedule-room?semester=${semester}&groupName=${groupName}&timeLimit=${timeLimit}`
+      `/general-classes/auto-schedule-room?semester=${semester}&groupName=${groupName}&timeLimit=${timeLimit}&algorithm=${algorithm || ''}`
     );
   },
 
-  autoScheduleSelected: async (classIds, timeLimit, semester) => {
+  autoScheduleSelected: async (classIds, timeLimit, semester, algorithm) => {
     return await request(
       "post",
       "/general-classes/auto-schedule-timeslot-room",
@@ -75,6 +75,7 @@ export const generalScheduleRepository = {
         classIds,
         timeLimit,
         semester,
+        algorithm
       }
     );
   },

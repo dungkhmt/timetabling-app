@@ -195,6 +195,7 @@ export const useGeneralSchedule = () => {
       setSelectedRows([]);
       toast.success("Reset thời khóa biểu thành công!");
     } catch (error) {
+      await fetchClasses();
       toast.error(error.response?.data || "Có lỗi khi reset thời khóa biểu!");
     } finally {
       setIsResetLoading(false);
@@ -227,6 +228,7 @@ export const useGeneralSchedule = () => {
       if (error.response?.status === 410 || error.response?.status === 420) {
         toast.error(error.response.data);
       } else {
+        await fetchClasses();
         console.log("Auto schedule error:", error);
         toast.error("Có lỗi khi tự động thời khóa biểu!");
       }
@@ -234,10 +236,9 @@ export const useGeneralSchedule = () => {
     } finally {
       setIsAutoScheduleLoading(false);
       setLoading(false);
-    }
+      setSelectedRows([]);}
   }, [selectedSemester, selectedGroup, timeSlotTimeLimit, fetchClasses, selectedAlgorithm]);
 
-  // Auto schedule room with algorithm
   const handleAutoScheduleClassroomTimeTabling = useCallback(async () => {
     if (!selectedSemester?.semester) {
       toast.error("Vui lòng chọn học kỳ!");
@@ -259,6 +260,7 @@ export const useGeneralSchedule = () => {
       setOpenClassroomDialog(false);
       toast.success("Tự động xếp phòng thành công!");
     } catch (error) {
+      await fetchClasses();
       const message =
         error.response?.status === 410
           ? error.response.data
@@ -267,10 +269,10 @@ export const useGeneralSchedule = () => {
     } finally {
       setIsAutoScheduleLoading(false);
       setLoading(false);
+      setSelectedRows([]);
     }
   }, [selectedSemester, selectedGroup, classroomTimeLimit, fetchClasses, selectedAlgorithm]);
 
-  // Save time slot
   const handleSaveTimeSlot = useCallback(
     async (semester, data) => {
       if (!semester) {
@@ -307,7 +309,6 @@ export const useGeneralSchedule = () => {
     [fetchClasses]
   );
 
-  // Add time slot
   const handleAddTimeSlot = useCallback(
     async (params) => {
       setIsAddingTimeSlot(true);
@@ -333,7 +334,6 @@ export const useGeneralSchedule = () => {
     [fetchClasses]
   );
 
-  // Remove time slot
   const handleRemoveTimeSlot = useCallback(
     async (params) => {
       setIsRemovingTimeSlot(true);
@@ -485,10 +485,11 @@ export const useGeneralSchedule = () => {
         selectedAlgorithm
       );
       await fetchClasses();
-      setSelectedRows([]);
       setOpenSelectedDialog(false);
       toast.success("Tự động xếp lịch các lớp đã chọn thành công!");
     } catch (error) {
+      await fetchClasses();
+      
       const message =
         error.response?.status === 410
           ? error.response.data
@@ -496,6 +497,7 @@ export const useGeneralSchedule = () => {
       toast.error(message);
     } finally {
       setLoading(false);
+      setSelectedRows([]);
     }
   }, [selectedRows, selectedTimeLimit, selectedSemester, fetchClasses, selectedAlgorithm]);
 
