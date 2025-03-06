@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ClassGroupSummary;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomReservationDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ResetScheduleRequest;
@@ -66,14 +67,10 @@ public class GeneralClassController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<GeneralClass>> requestGetClasses(@RequestParam("semester") String semester, @RequestParam("groupName") String groupName) {
-        try {
-            List<GeneralClass> generalClassList = gService.getGeneralClasses(semester, groupName);
-            return ResponseEntity.ok(generalClassList);
-        } catch(Exception e) {
-            System.err.println(e);
-            return ResponseEntity.badRequest().body(new ArrayList<>());
-        }
+    public List<GeneralClassDto> requestGetClasses(
+            @RequestParam("semester") String semester,
+            @RequestParam(value = "groupName", required = false) String groupName) {
+        return gService.getGeneralClassDtos(semester, groupName);
     }
     
     @PostMapping("/update-class")

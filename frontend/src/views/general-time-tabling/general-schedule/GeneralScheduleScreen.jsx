@@ -5,10 +5,11 @@ import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoCompl
 import { Button, Tabs, Tab } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
-// Replace with RoomOccupationScreen instead of RoomScheduleScreen:
 import RoomOccupationScreen from "../room-occupation/RoomOccupationScreen"; 
 import { useState } from "react";
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+// Import FormControl components
+import { FormControl, InputLabel, Select, MenuItem, Box } from "@mui/material";
 
 const GeneralScheduleScreen = () => {
   const { states, setters, handlers } = useGeneralSchedule();
@@ -20,7 +21,6 @@ const GeneralScheduleScreen = () => {
     setOpenResetConfirm(false);
   };
 
-  // Add a loading state check for scheduling operations
   const isSchedulingInProgress = states.isAutoSaveLoading || 
     states.isTimeScheduleLoading || 
     states.loading;
@@ -46,7 +46,7 @@ const GeneralScheduleScreen = () => {
       {viewTab === 0 ? (
         // View By Class tab content with auto complete controls
         <div>
-          <div className="flex flex-row gap-4">
+          <div className="flex flex-row gap-4 items-center">
             <GeneralSemesterAutoComplete
               selectedSemester={states.selectedSemester}
               setSelectedSemester={setters.setSelectedSemester}
@@ -55,10 +55,34 @@ const GeneralScheduleScreen = () => {
               selectedGroup={states.selectedGroup}
               setSelectedGroup={setters.setSelectedGroup}
             />
+            
+            {/* Algorithm Selection Dropdown */}
+            <FormControl 
+              sx={{ minWidth: 250 }} 
+              size="small"
+              disabled={states.isAlgorithmsLoading}
+            >
+              <InputLabel id="algorithm-select-label">Chọn thuật toán</InputLabel>
+              <Select
+                labelId="algorithm-select-label"
+                id="algorithm-select"
+                value={states.selectedAlgorithm}
+                onChange={(e) => setters.setSelectedAlgorithm(e.target.value)}
+                label="Chọn thuật toán"
+              >
+                {states.algorithms.map((algorithm, index) => (
+                  <MenuItem key={index} value={algorithm}>
+                    {`${index + 1}: ${algorithm}`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </div>
+          
           {/* Group action buttons and dialogs in one segment */}
           <div className="mt-4 flex flex-col gap-4">
             <div className="flex flex-wrap justify-end gap-3">
+              {/* Display selected algorithm info */}
               <Button
                 disabled={states.selectedSemester === null || states.isExportExcelLoading}
                 startIcon={states.isExportExcelLoading ? <FacebookCircularProgress size={20} /> : null}
@@ -155,6 +179,7 @@ const GeneralScheduleScreen = () => {
                 timeLimit={states.timeSlotTimeLimit}
                 setTimeLimit={setters.setTimeSlotTimeLimit}
                 submit={handlers.handleAutoScheduleTimeSlotTimeTabling}
+                selectedAlgorithm={states.selectedAlgorithm} // Pass selected algorithm
               />
               <AutoScheduleDialog
                 title={"Tự động xếp phòng học"}
@@ -163,6 +188,7 @@ const GeneralScheduleScreen = () => {
                 setTimeLimit={setters.setClassroomTimeLimit}
                 timeLimit={states.classroomTimeLimit}
                 submit={handlers.handleAutoScheduleClassroomTimeTabling}
+                selectedAlgorithm={states.selectedAlgorithm} // Pass selected algorithm
               />
               <AutoScheduleDialog
                 title={"Tự động xếp lịch các lớp đã chọn"}
@@ -171,6 +197,7 @@ const GeneralScheduleScreen = () => {
                 timeLimit={states.selectedTimeLimit}
                 setTimeLimit={setters.setSelectedTimeLimit}
                 submit={handlers.handleAutoScheduleSelected}
+                selectedAlgorithm={states.selectedAlgorithm} // Pass selected algorithm
               />
             </div>
             

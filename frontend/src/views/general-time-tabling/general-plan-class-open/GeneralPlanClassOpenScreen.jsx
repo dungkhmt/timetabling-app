@@ -15,7 +15,6 @@ const GeneralPlanClassOpenScreen = () => {
 
 
   function getPlanClass(){
-    //setImportLoading(true);
     request(
       "get",
       `/plan-general-classes/?semester=${selectedSemester.semester}`,
