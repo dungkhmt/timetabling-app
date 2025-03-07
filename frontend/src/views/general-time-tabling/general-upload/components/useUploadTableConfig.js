@@ -23,12 +23,9 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       width: 100,
     },
     {
-      headerName: "Lớp học",
-      field: "studyClass",
+      headerName: "lớp liên quan tới",
+      field: "listGroupName",
       width: 200,
-      renderCell: (params) => (
-        <TextField variant='standard' value={params.row.studyClass} onChange={(e) => handleOnChangeCell(e,params)}/>
-      ),
     },
     {
       headerName: "Tuần học",
@@ -40,7 +37,11 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "moduleCode",
       width: 80,
       renderCell: (params) => (
-        <TextField variant='standard' value={params.row.moduleCode} onChange={(e) => handleOnChangeCell(e,params)}/>
+        <TextField
+          variant="standard"
+          value={params.row.moduleCode}
+          onChange={(e) => handleOnChangeCell(e, params)}
+        />
       ),
     },
     {
@@ -48,7 +49,11 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "moduleName",
       width: 200,
       renderCell: (params) => (
-        <TextField variant='standard' value={params.row.moduleName} onChange={(e) => handleOnChangeCell(e,params)}/>
+        <TextField
+          variant="standard"
+          value={params.row.moduleName}
+          onChange={(e) => handleOnChangeCell(e, params)}
+        />
       ),
     },
     {
@@ -67,7 +72,11 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "mass",
       width: 100,
       renderCell: (params) => (
-        <TextField variant='standard' value={params.row.mass} onChange={(e) => handleOnChangeCell(e,params)}/>
+        <TextField
+          variant="standard"
+          value={params.row.mass}
+          onChange={(e) => handleOnChangeCell(e, params)}
+        />
       ),
     },
     {
@@ -109,7 +118,11 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "course",
       width: 40,
       renderCell: (params) => (
-        <TextField variant='standard' value={params.row.course} onChange={(e) => handleOnChangeCell(e,params)}/>
+        <TextField
+          variant="standard"
+          value={params.row.course}
+          onChange={(e) => handleOnChangeCell(e, params)}
+        />
       ),
     },
     {
@@ -117,7 +130,9 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "saveBtn",
       width: 100,
       renderCell: (params) => (
-        <Button onClick={(e) => handleSaveClass(params.row)}><SaveAlt/></Button>
+        <Button onClick={(e) => handleSaveClass(params.row)}>
+          <SaveAlt />
+        </Button>
       ),
     },
   ];
