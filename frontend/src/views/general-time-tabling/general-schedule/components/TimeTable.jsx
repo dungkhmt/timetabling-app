@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Checkbox } from "@mui/material";
 import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
-import { Autocomplete, Box, Button, CircularProgress, FormControl, Modal, TablePagination, TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Tooltip } from "@mui/material";
-import { Add, Remove, Settings } from "@mui/icons-material";
+import { Autocomplete, Box, Button, CircularProgress, FormControl, Modal, TablePagination, TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Tooltip, InputAdornment } from "@mui/material";
+import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import {toast} from "react-toastify";
 
 const TimeTable = ({
@@ -16,6 +16,8 @@ const TimeTable = ({
   onSelectedRowsChange,
 }) => {
   const [classDetails, setClassDetails] = useState([]);
+  const [filteredClassDetails, setFilteredClassDetails] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [page, setPage] = useState(0);
@@ -93,8 +95,33 @@ const TimeTable = ({
           return parseInt(a.code, 10) - parseInt(b.code, 10);
         });
       setClassDetails(transformedClassDetails);
+      setFilteredClassDetails(transformedClassDetails);
     }
   }, [classes]);
+
+  // Add effect to filter classes based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredClassDetails(classDetails);
+      setPage(0); // Reset to first page when search term changes
+    } else {
+      const lowercasedTerm = searchTerm.toLowerCase();
+      const filtered = classDetails.filter(cls => {
+        // Search in multiple fields
+        return (
+          (cls.code && cls.code.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.moduleCode && cls.moduleCode.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.moduleName && cls.moduleName.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.room && cls.room.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.classType && cls.classType.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.studyClass && cls.studyClass.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.crew && cls.crew.toString().includes(lowercasedTerm))
+        );
+      });
+      setFilteredClassDetails(filtered);
+      setPage(0); // Reset to first page when search term changes
+    }
+  }, [searchTerm, classDetails]);
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const periods = [1, 2, 3, 4, 5, 6];
@@ -269,7 +296,7 @@ const TimeTable = ({
 
   const handleSelectAll = (event) => {
     if (event.target.checked) {
-      const newSelected = classDetails.map(row => row.generalClassId);
+      const newSelected = filteredClassDetails.map(row => row.generalClassId);
       onSelectedRowsChange(newSelected);
     } else {
       onSelectedRowsChange([]);
@@ -340,13 +367,43 @@ const TimeTable = ({
 
   return (
     <div className="h-full w-full flex flex-col justify-start">
-      <div className="flex justify-end mb-2">
+      <div className="flex justify-end mb-2 items-center gap-2">
+        <TextField
+          placeholder="Tìm kiếm (mã lớp, phòng, tên học phần...)"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ 
+            width: '300px',
+            '& .MuiInputBase-root': {
+              height: '36px'
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm ? (
+              <InputAdornment position="end">
+                <Button size="small" onClick={() => setSearchTerm("")}>
+                  Xóa
+                </Button>
+              </InputAdornment>
+            ) : null,
+          }}
+        />
         <Button
           variant="outlined"
           startIcon={<Settings />}
           onClick={handleSettingsOpen}
           size="small"
-          sx={{ marginLeft: 'auto' }}
+          sx={{ 
+            height: '36px',
+            textTransform: 'none'
+          }}
         >
           Cài đặt hiển thị
         </Button>
@@ -484,7 +541,7 @@ const TimeTable = ({
             </thead>
             <tbody>
               {classes && classes.length > 0 ? (
-                classDetails
+                filteredClassDetails
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((classDetail, index) => {
                     const isItemSelected = isSelected(
@@ -641,7 +698,7 @@ const TimeTable = ({
       <TablePagination
         className="border-y-[1px] border-solid border-gray-300"
         component="div"
-        count={classDetails.length}
+        count={filteredClassDetails.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
