@@ -2,9 +2,12 @@ import { request } from "api";
 
 const API_ENDPOINTS = {
   GET_ALL: "/exam-session",
-  CREATE: "/exam-session/create",
-  UPDATE: "/exam-session/update",
-  DELETE: "/exam-session/delete",
+  CREATE_SESSION: "/exam-session/session/create",
+  UPDATE_SESSION: "/exam-session/session/update",
+  DELETE_SESSION: "/exam-session/session/delete",
+  CREATE_SESSION_COLLECTION: "/exam-session/collection/create",
+  UPDATE_SESSION_COLLECTION: "/exam-session/collection/update",
+  DELETE_SESSION_COLLECTION: "/exam-session/collection/delete",
 };
 
 class ExamSessionService {
@@ -13,7 +16,7 @@ class ExamSessionService {
   }
 
   async createExamSession(data) {
-    return await request("post", API_ENDPOINTS.CREATE, null, null, data, {
+    return await request("post", API_ENDPOINTS.CREATE_SESSION, null, null, data, {
       headers: {
         "Content-Type": "application/json"
       } 
@@ -21,7 +24,7 @@ class ExamSessionService {
   }
 
   async updateExamSession(data) {
-    return await request("post", API_ENDPOINTS.UPDATE, null, null, data, {
+    return await request("post", `${API_ENDPOINTS.UPDATE_SESSION}/${data.id}`, null, null, data, {
       headers: {
         "Content-Type": "application/json"
       }
@@ -29,7 +32,27 @@ class ExamSessionService {
   }
 
   async deleteExamSession(id) {
-    return await request("post", `${API_ENDPOINTS.DELETE}/${id}`);
+    return await request("post", `${API_ENDPOINTS.DELETE_SESSION}/${id}`);
+  }
+
+  async createExamSessionCollection(data) {
+    return await request("post", API_ENDPOINTS.CREATE_SESSION_COLLECTION, null, null, data, {
+      headers: {
+        "Content-Type": "application/json"
+      } 
+    });
+  }
+
+  async updateExamSessionCollection(data) {
+    return await request("post", `${API_ENDPOINTS.UPDATE_SESSION_COLLECTION}/${data.id}`, null, null, data, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
+  async deleteExamSessionCollection(id) {
+    return await request("post", `${API_ENDPOINTS.DELETE_SESSION_COLLECTION}/${id}`);
   }
 }
 

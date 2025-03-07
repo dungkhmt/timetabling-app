@@ -3,9 +3,9 @@ import { toast } from 'react-toastify';
 import { examSessionService } from "repositories/examSessionRepository";
 import { queryClient } from 'queryClient';
 
-export const useExamSessionData = () => {
+export const useExamSessionData = (collectionId = null) => {
   
-  const { data: examSessions, isLoading, error } = useQuery(
+  const { data: examSessions, isLoading, error, refetch } = useQuery(
     'examSessions',
     examSessionService.getAllExamSessions,
     {
@@ -14,45 +14,89 @@ export const useExamSessionData = () => {
     }
   );
 
-  const createMutation = useMutation(examSessionService.createExamSession, {
+  const createSessionMutation = useMutation(examSessionService.createExamSession, {
     onSuccess: () => {
       queryClient.invalidateQueries('examSessions');
-      toast.success('Tạo kế hoạc thi mới thành công!');
+      refetch();
+      toast.success('Tạo kíp thi mới thành công!');
+      window.location.reload();
     },
     onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kế hoạch thi');
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kíp thi');
     }
   });
 
-  const updateMutation = useMutation(examSessionService.updateExamSession, {
+  const updateSessionMutation = useMutation(examSessionService.updateExamSession, {
     onSuccess: () => {
       queryClient.invalidateQueries('examSessions');
-      toast.success('Cập nhật kế hoạc thi thành công!');
+      toast.success('Cập nhật kíp thi thành công!');
+      window.location.reload();
     },
     onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kế hoạc thi');
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kíp thi');
     }
   });
 
-  const deleteMutation = useMutation(examSessionService.deleteExamSession, {
+  const deleteSessionMutation = useMutation(examSessionService.deleteExamSession, {
     onSuccess: () => {
       queryClient.invalidateQueries('examSessions');
-      toast.success('Xóa kế hoạc thi thành công!');
+      toast.success('Xóa kíp thi thành công!');
+      window.location.reload();
     },
     onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kế hoạc thi');
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kíp thi');
+    }
+  });
+
+  const createCollectionMutation = useMutation(examSessionService.createExamSessionCollection, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('examSessions');
+      toast.success('Tạo kíp thi mới thành công!');
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kíp thi');
+    }
+  });
+
+  const updateCollectionMutation = useMutation(examSessionService.updateExamSessionCollection, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('examSessions');
+      toast.success('Cập nhật kíp thi thành công!');
+      window.location.reload();
+
+    },
+    onError: (error) => {
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kíp thi');
+    }
+  });
+
+  const deleteCollectionMutation = useMutation(examSessionService.deleteExamSessionCollection, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('examSessions');
+      toast.success('Xóa kíp thi thành công!');
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kíp thi');
     }
   });
 
   return {
-    examSessions: examSessions?.data || [],
+    sessionCollections: examSessions?.data || [],
     isLoading,
     error,
-    createExamSession: createMutation.mutateAsync,
-    updateExamSession: updateMutation.mutateAsync,
-    deleteExamSession: deleteMutation.mutateAsync,
-    isCreating: createMutation.isLoading,
-    isUpdating: updateMutation.isLoading,
-    isDeleting: deleteMutation.isLoading,
+    createExamSession: createSessionMutation.mutateAsync,
+    updateExamSession: updateSessionMutation.mutateAsync,
+    deleteExamSession: deleteSessionMutation.mutateAsync,
+    isCreating: createSessionMutation.isLoading,
+    isUpdating: updateSessionMutation.isLoading,
+    isDeleting: deleteSessionMutation.isLoading,
+    createCollectionSession: createCollectionMutation.mutateAsync,
+    updateCollectionSession: updateCollectionMutation.mutateAsync,
+    deleteCollectionSession: deleteCollectionMutation.mutateAsync,
+    isCreatingCollection: createCollectionMutation.isLoading,
+    isUpdatingCollection: updateCollectionMutation.isLoading,
+    isDeletingCollection: deleteCollectionMutation.isLoading,
   };
 };

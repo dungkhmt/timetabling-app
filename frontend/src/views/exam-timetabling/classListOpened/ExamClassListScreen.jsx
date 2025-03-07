@@ -15,15 +15,14 @@ import {
   Tooltip,
   Typography
 } from "@mui/material"
-import { HelpOutline } from "@mui/icons-material"
+import { Add, Delete, Download, HelpOutline, Upload, UploadFile } from "@mui/icons-material"
 import { DataGrid } from "@mui/x-data-grid"
 import { useExamClassData } from "services/useExamClassData"
 import EditExamClassModal from './utils/EditExamClassModal'
 import AddExamClassModal from "./utils/AddExamClassModal"
 import localText from "./utils/LocalText"
 
-export default function TimePerformanceScreen() {
-  // const [ examClasses, setExamClasses ] = useState([]);
+export default function ExamClassListPage() {
   const [selectedExamPlan, setSelectedExamPlan] = useState(null)
   const [successDialogOpen, setSuccessDialogOpen] = useState(false)
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false)
@@ -247,34 +246,42 @@ export default function TimePerformanceScreen() {
         {/* Buttons aligned to the right */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
           <Button
-            variant="outlined"
-            color="primary"
+            variant="contained"
+            color="error"
             onClick={handleDeleteClick}
+            size="small"
+            startIcon={<Delete />} 
             disabled={selectedRows.length === 0 || isClearing || isImporting || isExportingClasses || isExportingConflicts || !selectedExamPlan}
           >
             Xóa lớp
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             color="primary"
             onClick={handleAddClick}
             disabled={isClearing || isImporting || isExportingClasses || isExportingConflicts || !selectedExamPlan}
+            startIcon={<Add />}
+            size="small"
           >
             Thêm lớp
           </Button>
 
           <Button
             onClick={handleExportExamClasses}
-            color="primary"
-            variant="outlined"
+            color="success"
+            variant="contained"
+            startIcon={<Download />}
+            size="small"
             disabled={selectedRows.length === 0 || isClearing || isImporting || isExportingClasses || isExportingConflicts || !selectedExamPlan}
           >
             Tải xuống DS lớp
           </Button>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Button
-              variant="outlined"
-              color="primary"
+              color="success"
+              variant="contained"
+              startIcon={<Upload />}
+              size="small"
               onClick={handleImportExcel}
               disabled={!selectedExamPlan || isClearing || isImporting || isExportingClasses || isExportingConflicts}
             >

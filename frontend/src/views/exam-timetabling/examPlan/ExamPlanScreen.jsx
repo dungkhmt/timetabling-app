@@ -83,21 +83,44 @@ const ExamPlanListPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ textAlign: 'center', mb: 3 }}>
+      <Box sx={{ textAlign: 'center', mb: 5 }}>
         <Typography variant="h4" fontWeight={700} color="primary">
           Kế Hoạch Thi
         </Typography>
       </Box>
 
-      <Paper elevation={1} sx={{ mb: 4, p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Paper elevation={1} sx={{ mb: 4 }}>
+        <Box
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            background: 'linear-gradient(90deg, #1976D2, #2196F3)',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}
+        >
           <TextField
             placeholder="Tìm kiếm theo tên..."
             value={search}
             onChange={handleSearchChange}
             variant="outlined"
             size="small"
-            sx={{ width: 500 }}
+            sx={{ 
+              width: '50%',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#bdbdbd',
+                },
+              },
+              backgroundColor: 'white',
+              borderRadius: '4px'
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -109,7 +132,15 @@ const ExamPlanListPage = () => {
 
           <Button
             variant="contained"
-            color="primary"
+            sx={{ 
+              backgroundColor: '#9c27b0', // Purple color
+              '&:hover': {
+                backgroundColor: '#7b1fa2' // Darker purple on hover
+              },
+              textTransform: 'uppercase',
+              borderRadius: '4px',
+              px: 2
+            }}
             startIcon={<Add />}
             onClick={handleCreatePlan}
           >
