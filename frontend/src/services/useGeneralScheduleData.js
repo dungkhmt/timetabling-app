@@ -504,11 +504,6 @@ export const useGeneralSchedule = () => {
   // Update classes group
   const updateClassesGroup = useCallback(
     async (params) => {
-      if (!selectedSemester?.semester) {
-        toast.error("Vui lòng chọn học kỳ!");
-        return;
-      }
-
       setIsUpdatingClassesGroup(true);
       setLoading(true);
 
@@ -558,6 +553,7 @@ export const useGeneralSchedule = () => {
           groupId
         );
         await fetchClasses();
+        await fetchClassesNoSchedule();
         return result;
       } catch (error) {
         toast.error("Không thể cập nhật nhóm lớp!");

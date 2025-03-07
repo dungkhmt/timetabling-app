@@ -1,20 +1,18 @@
 import { useState } from "react";
-import { useClassesNoSchedule } from "../hooks/useClassesNoSchedule";
 import AddNewGroupDialogue from "./components/AddNewGroupDialogue";
 import AddCreatedGroupDialogue from "./components/AddCreatedGroupDialogue";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import { Button } from "@mui/material";
 import GeneralGroupTable from "./components/GeneralGroupTable";
+import { useGeneralSchedule } from "services/useGeneralScheduleData";
 
 const GeneralGroupScreen = () => {
-  const [selectedSemester, setSelectedSemester] = useState(null);
-  const { loading, classes, setClasses } = useClassesNoSchedule(
-    null,
-    selectedSemester
-  );
+  const { states, setters, handlers } = useGeneralSchedule();
+  const { classesNoSchedule, isClassesNoScheduleLoading, selectedSemester } = states;
+  const { setSelectedSemester } = setters;
+  
   const [selectedClasses, setSelectedClasses] = useState([]);
-  const [openCreatedGroupDialouge, setOpenCreatedGroupDialouge] =
-    useState(false);
+  const [openCreatedGroupDialouge, setOpenCreatedGroupDialouge] = useState(false);
   const [openNewGroupDialouge, setOpenNewGroupDialouge] = useState(false);
 
   const handleSelectionModelChange = (selectionModel) => {
@@ -27,10 +25,10 @@ const GeneralGroupScreen = () => {
         open={openNewGroupDialouge}
         selectedClasses={selectedClasses}
         setOpen={setOpenNewGroupDialouge}
-        setClasses={setClasses}
+        setClasses={setters.setClassesNoSchedule}
       />
       <AddCreatedGroupDialogue
-        setClasses={setClasses}
+        setClasses={setters.setClassesNoSchedule}
         selectedClasses={selectedClasses}
         open={openCreatedGroupDialouge}
         setOpen={setOpenCreatedGroupDialouge}
@@ -66,8 +64,8 @@ const GeneralGroupScreen = () => {
       </div>
       <GeneralGroupTable
         handleSelectionModelChange={handleSelectionModelChange}
-        classes={classes}
-        dataLoading={loading}
+        classes={classesNoSchedule}
+        dataLoading={isClassesNoScheduleLoading}
       />
     </div>
   );

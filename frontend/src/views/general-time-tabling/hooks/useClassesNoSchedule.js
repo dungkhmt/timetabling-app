@@ -3,7 +3,7 @@ import { request } from "api";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-export const useClassesNoSchedule = (group, semester) => {
+export const useClassesNoSchedule = (group, semester, refresh) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -45,5 +45,5 @@ export const useClassesNoSchedule = (group, semester) => {
     );
   }, [semester, group]);
 
-  return { loading, error, classes, setClasses, setLoading };
+  return { loading, error, classes, setClasses, setLoading, refresh };
 };
