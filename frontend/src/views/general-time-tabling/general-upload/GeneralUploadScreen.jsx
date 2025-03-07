@@ -23,7 +23,7 @@ const GeneralUploadScreen = () => {
     setters: { 
       setSelectedSemester,
       setClassesNoSchedule,
-      setSelectedRows // Add this
+      setSelectedRows 
     },
     handlers: {
       handleDeleteBySemester,
@@ -34,7 +34,7 @@ const GeneralUploadScreen = () => {
 
   const handleSelectionChange = (newSelection) => {
     setSelectedIds(newSelection);
-    setSelectedRows(newSelection); // Add this line to sync with useGeneralSchedule
+    setSelectedRows(newSelection);
   };
 
   const handleSubmitFile = async () => {
@@ -90,8 +90,8 @@ const GeneralUploadScreen = () => {
           setClasses={setClassesNoSchedule}
           classes={classesNoSchedule} 
           dataLoading={isClassesNoScheduleLoading}
-          onSelectionChange={handleSelectionChange} // Update to use new handler
-          selectedIds={selectedIds} // Add this prop
+          onSelectionChange={handleSelectionChange} 
+          selectedIds={selectedIds}
         />
       </div>
     </LoadingProvider>
