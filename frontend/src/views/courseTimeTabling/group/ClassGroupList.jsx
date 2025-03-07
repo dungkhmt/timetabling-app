@@ -131,7 +131,7 @@ export default function ClassGroupList() {
           setManageDialogOpen(false);
           setSelectedGroup(null);
         }}
-        initialGroup={selectedGroup} // Pass selected group data
+        initialGroup={selectedGroup} 
       />
 
       <GroupDetailsDialog

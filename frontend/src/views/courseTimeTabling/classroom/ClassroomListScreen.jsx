@@ -1,8 +1,10 @@
-import { Button } from '@mui/material';
+import { Button, TextField, InputAdornment, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import AddIcon from '@mui/icons-material/Add';
 import { useClassroomData } from 'services/useClassroomData';
-import { ClassroomToolbar } from './components/ClassroomToolbar';
 import CreateNewClassroomScreen from './CreateNewClassroomScreen';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
 
@@ -13,8 +15,21 @@ export default function ClassroomListScreen() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteClassroomCode, setDeleteClassroomCode] = useState(null);
   const [openLoading, setOpenLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
-  console.log(classrooms);
+  // Filter classrooms based on search text
+  const filteredClassrooms = useMemo(() => {
+    if (!searchText.trim()) return classrooms;
+    
+    const searchLower = searchText.toLowerCase();
+    return classrooms.filter(room => 
+      (room.classroom && room.classroom.toLowerCase().includes(searchLower)) ||
+      (room.building?.name && room.building.name.toLowerCase().includes(searchLower)) ||
+      (room.description && room.description.toLowerCase().includes(searchLower)) ||
+      (room.quantityMax && room.quantityMax.toString().includes(searchLower))
+    );
+  }, [classrooms, searchText]);
+
   const columns = [
     {
       headerName: "STT",
@@ -74,7 +89,7 @@ export default function ClassroomListScreen() {
 
   const handleConfirmDelete = async () => {
     if (deleteClassroomCode) {
-      await deleteClassroom(deleteClassroomCode.toString());  // Ensure string type
+      await deleteClassroom(deleteClassroomCode.toString());  
       await refetchClassrooms();
     }
     setConfirmDeleteOpen(false);
@@ -87,7 +102,7 @@ export default function ClassroomListScreen() {
   };
 
   const handleDelete = (classroom) => {
-    setDeleteClassroomCode(classroom.toString());  // Convert to string explicitly
+    setDeleteClassroomCode(classroom.toString());  
     setConfirmDeleteOpen(true);
   };
 
@@ -117,26 +132,87 @@ export default function ClassroomListScreen() {
   };
 
   return (
-    <div style={{ height: 500, width: '100%' }}>
+    <div className='h-[500px] w-full'>
+      <div
+        className="flex justify-center items-center w-full mb-[16px]"
+      >
+        <Typography variant="h5">Danh sách kỳ học</Typography>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "16px",
+          gap: "8px",
+        }}
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => setDialogOpen(true)}
+        >
+          Thêm mới
+        </Button>
+
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<CloudUploadIcon />}
+          onClick={handleImportExcel}
+        >
+          Tải lên danh sách phòng
+        </Button>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "16px",
+        }}
+      >
+        <TextField
+          placeholder="Tìm kiếm phòng học..."
+          variant="outlined"
+          size="small"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          sx={{
+            width: "300px",
+            "& .MuiInputBase-root": {
+              height: "36px",
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+            endAdornment: searchText ? (
+              <InputAdornment position="end">
+                <Button size="small" onClick={() => setSearchText("")}>
+                  Xóa
+                </Button>
+              </InputAdornment>
+            ) : null,
+          }}
+        />
+      </div>
+
       <DataGrid
         loading={isLoading || isImporting || openLoading}
         getRowId={(row) => row.id}
-        getRowSpacing={params => ({
+        getRowSpacing={(params) => ({
           top: params.isFirstVisible ? 0 : 5,
           bottom: params.isLastVisible ? 0 : 5,
         })}
-        rows={classrooms.map((row, index) => ({
+        rows={filteredClassrooms.map((row, index) => ({
           ...row,
-          id: index + 1
+          id: index + 1,
         }))}
-        components={{
-          Toolbar: () => (
-            <ClassroomToolbar
-              onCreateNew={() => setDialogOpen(true)}
-              onImportExcel={handleImportExcel}
-            />
-          ),
-        }}
         columns={columns}
         pageSize={10}
       />
