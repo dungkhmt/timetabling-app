@@ -27,7 +27,6 @@ const TimeTable = ({
   const [selectedClassForSlot, setSelectedClassForSlot] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState(() => {
-    // Load from localStorage or use defaults
     const savedSettings = localStorage.getItem('timetable-column-visibility');
     return savedSettings ? JSON.parse(savedSettings) : {
       classCode: true,
@@ -48,7 +47,6 @@ const TimeTable = ({
   const { classrooms } = useClassrooms(selectedGroup?.groupName || "", null);
   const { handlers, states } = useGeneralSchedule();
 
-  console.log(classes);
   useEffect(() => {
     if (classes && classes.length > 0) {
       const transformedClassDetails = classes
@@ -99,15 +97,13 @@ const TimeTable = ({
     }
   }, [classes]);
 
-  // Add effect to filter classes based on search term
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredClassDetails(classDetails);
-      setPage(0); // Reset to first page when search term changes
+      setPage(0); 
     } else {
       const lowercasedTerm = searchTerm.toLowerCase();
       const filtered = classDetails.filter(cls => {
-        // Search in multiple fields
         return (
           (cls.code && cls.code.toLowerCase().includes(lowercasedTerm)) ||
           (cls.moduleCode && cls.moduleCode.toLowerCase().includes(lowercasedTerm)) ||
@@ -119,7 +115,7 @@ const TimeTable = ({
         );
       });
       setFilteredClassDetails(filtered);
-      setPage(0); // Reset to first page when search term changes
+      setPage(0);
     }
   }, [searchTerm, classDetails]);
 
