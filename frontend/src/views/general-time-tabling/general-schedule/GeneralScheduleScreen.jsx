@@ -5,9 +5,15 @@ import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoCompl
 import { Button, Tabs, Tab } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
-import RoomOccupationScreen from "../room-occupation/RoomOccupationScreen"; 
+import RoomOccupationScreen from "../room-occupation/RoomOccupationScreen";
 import { useState, useMemo } from "react";
-import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from "@mui/material";
 import { FormControl, InputLabel, Select, MenuItem, Box } from "@mui/material";
 
 const GeneralScheduleScreen = () => {
@@ -20,18 +26,17 @@ const GeneralScheduleScreen = () => {
     setOpenResetConfirm(false);
   };
 
-  const isSchedulingInProgress = states.isAutoSaveLoading || 
-    states.isTimeScheduleLoading || 
-    states.loading;
+  const isSchedulingInProgress =
+    states.isAutoSaveLoading || states.isTimeScheduleLoading || states.loading;
 
   // Filter unscheduled classes (where room is null)
   const unscheduledClasses = useMemo(() => {
     if (!states.classes || states.classes.length === 0) return [];
-    return states.classes.filter(cls => cls.room === null);
+    return states.classes.filter((cls) => cls.room === null);
   }, [states.classes]);
 
   return (
-    <div className="flex flex-col gap-4 h-[700px]">
+    <div className="flex flex-col gap-2 h-[800px]">
       <Tabs
         value={viewTab}
         onChange={(e, newVal) => setViewTab(newVal)}
@@ -50,22 +55,37 @@ const GeneralScheduleScreen = () => {
         <Tab label="View By Room" />
       </Tabs>
 
-      {/* Shared controls for tabs 0 and 2 */}
+      {/* Shared controls for tabs 0 and 1 */}
       {(viewTab === 0 || viewTab === 1) && (
         <div>
           <div className="flex flex-row gap-4 items-center">
             <GeneralSemesterAutoComplete
               selectedSemester={states.selectedSemester}
               setSelectedSemester={setters.setSelectedSemester}
+              sx={{
+                "& .MuiInputBase-root": {
+                  height: "40px",
+                },
+              }}
             />
             <GeneralGroupAutoComplete
               selectedGroup={states.selectedGroup}
               setSelectedGroup={setters.setSelectedGroup}
+              width={350}
+              sx={{
+                "& .MuiInputBase-root": {
+                  height: "40px",
+                },
+              }}
             />
 
-            {/* Algorithm Selection Dropdown */}
             <FormControl
-              sx={{ minWidth: 250 }}
+              sx={{
+                minWidth: 250,
+                "& .MuiInputBase-root": {
+                  height: "40px",
+                },
+              }}
               size="small"
               disabled={states.isAlgorithmsLoading}
             >
@@ -88,7 +108,7 @@ const GeneralScheduleScreen = () => {
             </FormControl>
           </div>
 
-          <div className="mt-4 flex flex-col gap-4">
+          <div className="mt-2 flex flex-col gap-2">
             <div className="flex flex-wrap justify-end gap-3">
               <Button
                 disabled={
@@ -104,7 +124,8 @@ const GeneralScheduleScreen = () => {
                 color="success"
                 onClick={() =>
                   handlers.handleExportTimeTabling(
-                    states.selectedSemester?.semester
+                    states.selectedSemester?.semester,
+                    true // includeBorders parameter
                   )
                 }
                 sx={{
@@ -208,7 +229,6 @@ const GeneralScheduleScreen = () => {
               </Button>
             </div>
 
-            {/* Dialog components */}
             <div>
               <AutoScheduleDialog
                 title={"Tự động xếp lịch học của kì học"}
@@ -239,7 +259,6 @@ const GeneralScheduleScreen = () => {
               />
             </div>
 
-            {/* Confirmation dialog */}
             <Dialog
               open={openResetConfirm}
               onClose={() => setOpenResetConfirm(false)}
@@ -274,36 +293,39 @@ const GeneralScheduleScreen = () => {
         </div>
       )}
 
-      <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[550px] border-[1px] border-[#ccc] rounded-[8px]">
-        {viewTab === 0 && (
-          <TimeTable
-            selectedSemester={states.selectedSemester}
-            classes={states.classes}
-            selectedGroup={states.selectedGroup}
-            onSaveSuccess={handlers.handleRefreshClasses}
-            loading={states.loading || isSchedulingInProgress}
-            selectedRows={states.selectedRows}
-            onSelectedRowsChange={setters.setSelectedRows}
-          />
-        )}
-        {viewTab === 1 && (
-          <TimeTable
-            selectedSemester={states.selectedSemester}
-            classes={unscheduledClasses} 
-            selectedGroup={states.selectedGroup}
-            onSaveSuccess={handlers.handleRefreshClasses}
-            loading={states.loading || isSchedulingInProgress}
-            selectedRows={states.selectedRows}
-            onSelectedRowsChange={setters.setSelectedRows}
-          />
-        )}
-        {viewTab === 2 && (
+      {viewTab === 2 ? (
+        <div className="flex-grow overflow-y-hidden">
           <RoomOccupationScreen
             selectedSemester={states.selectedSemester}
             setSelectedSemester={setters.setSelectedSemester}
           />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
+          {viewTab === 0 && (
+            <TimeTable
+              selectedSemester={states.selectedSemester}
+              classes={states.classes}
+              selectedGroup={states.selectedGroup}
+              onSaveSuccess={handlers.handleRefreshClasses}
+              loading={states.loading || isSchedulingInProgress}
+              selectedRows={states.selectedRows}
+              onSelectedRowsChange={setters.setSelectedRows}
+            />
+          )}
+          {viewTab === 1 && (
+            <TimeTable
+              selectedSemester={states.selectedSemester}
+              classes={unscheduledClasses}
+              selectedGroup={states.selectedGroup}
+              onSaveSuccess={handlers.handleRefreshClasses}
+              loading={states.loading || isSchedulingInProgress}
+              selectedRows={states.selectedRows}
+              onSelectedRowsChange={setters.setSelectedRows}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };

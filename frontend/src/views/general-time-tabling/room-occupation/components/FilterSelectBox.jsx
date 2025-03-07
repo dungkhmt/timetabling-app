@@ -3,7 +3,7 @@ import { request } from "api";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-const FilterSelectBox = ({ selectedWeek, setSelectedWeek, selectedSemester }) => {
+const FilterSelectBox = ({ selectedWeek, setSelectedWeek, selectedSemester, sx={} }) => {
   const [weeks, setWeeks] = useState([]);
 
   useEffect(() => {
@@ -35,11 +35,26 @@ const FilterSelectBox = ({ selectedWeek, setSelectedWeek, selectedSemester }) =>
         loadingText="Loading..."
         getOptionLabel={(option) => "Tuần " + option?.weekIndex?.toString()}
         onChange={(e, week) => setSelectedWeek(week)}
-        // Use the entire week object as the value
         value={selectedWeek}
         options={weeks}
-        sx={{ width: 200 }}
-        renderInput={(params) => <TextField {...params} label="Lọc theo tuần" />}
+        size="small"
+        sx={{ width: 200, ...sx }}
+        renderInput={(params) => (
+          <TextField {...params} label="Lọc theo tuần" />
+        )}
+        PopperProps={{
+          popperOptions: {
+            modifiers: [
+              {
+                name: "preventOverflow",
+                enabled: true,
+                options: {
+                  altAxis: true,
+                },
+              },
+            ],
+          },
+        }}
       />
     </div>
   );

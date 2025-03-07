@@ -13,7 +13,7 @@ public class ModelInputCreateSubClass {
     private Long fromParentClassId;
     private String classType;
     private int numberStudents;
-    private int duration; // so tiet
+    private int duration;
     private int numberClasses;
 }
 

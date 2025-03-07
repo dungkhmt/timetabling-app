@@ -46,23 +46,21 @@ const AddCreatedGroupDialogue = ({ open, setOpen, setClasses, selectedClasses })
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
+      width={400}
       sx={{
         '& .MuiDialog-paper': {
-          minHeight: '300px', 
+          minHeight: '200px', 
           maxHeight: '400px'    
         }
       }}
     >
-      <DialogTitle>Thêm vào nhóm đã tạo</DialogTitle>
-      <DialogContent>
-        <div className="py-8">  {/* Increased padding */}
+      <DialogTitle className="text-center">Thêm vào nhóm đã tạo</DialogTitle>
+      <DialogContent className="w-full">
+        <div className="py-0 w-full">  
           <GeneralGroupAutoComplete
             selectedGroup={selectedGroup}
             setSelectedGroup={setSelectedGroup}
-            fullWidth
-            style={{ width: "100%" }}
+            width={400}
           />
         </div>
       </DialogContent>

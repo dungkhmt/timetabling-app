@@ -6,6 +6,7 @@ import {
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { request } from "api";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
+import { toast } from "react-toastify";
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -27,7 +28,7 @@ function TabPanel(props) {
   );
 }
 
-const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
+const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent }) => {
   const [subClasses, setSubClasses] = useState([]);
   const [openNewDialog, setOpenNewDialog] = useState(false);
   const [tabValue, setTabValue] = useState(0);
@@ -40,8 +41,9 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
     page: 0,
     pageSize: 10,
   });
+  const [isAddingSubClass, setIsAddingSubClass] = useState(false);
 
-  const { handlers } = useGeneralSchedule();
+  const { states, handlers } = useGeneralSchedule();
 
   const [newSubClass, setNewSubClass] = useState({
     studentCount: "",
@@ -86,6 +88,7 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
   };
 
   const handleAddSubClass = async () => {
+    setIsAddingSubClass(true);
     const payload = {
       fromParentClassId: classData?.id,
       classType: newSubClass.classType,
@@ -93,19 +96,38 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
       duration: classData?.duration,
       numberClasses: parseInt(newSubClass.classCount, 10)
     };
+    
     try {
+      // First, make the API call to add the subclass
       await request(
         "post",
         "/plan-general-classes/make-subclass",
-        (res) => setSubClasses([...subClasses, res.data]),
+        (res) => {
+          // Update local state with the new subclass
+          const newSubClassData = res.data;
+          setSubClasses(prevSubClasses => [...prevSubClasses, newSubClassData]);
+        },
         (err) => { throw err; },
         payload
       );
+
+      setOpenNewDialog(false);
+      setNewSubClass({ studentCount: "", classType: "", classCount: "" });
+
+      await states.refetchNoSchedule();
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (onRefreshParent && typeof onRefreshParent === 'function') {
+        await onRefreshParent();
+      }
+      
+      toast.success("Thêm lớp con thành công");
     } catch (error) {
       console.error("Failed to add subclass", error);
+      toast.error("Thêm lớp con thất bại");
+    } finally {
+      setIsAddingSubClass(false);
     }
-    setOpenNewDialog(false);
-    setNewSubClass({ studentCount: "", classType: "", classCount: "" });
   };
 
   const handleGroupSelectionChange = async (id) => {
@@ -132,19 +154,6 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
   };
 
   const areAllGroupsSelected = groups.length > 0 && groups.every(group => group.assigned);
-
-  const handleUpdateGroups = () => {
-    if (!groupName.trim()) return;
-    
-    const newGroup = {
-      id: Math.max(...groups.map(g => g.id || 0), 0) + 1,
-      groupName: groupName,
-      assigned: false
-    };
-    
-    setGroups([...groups, newGroup]);
-    setGroupName("");
-  };
 
   const groupColumns = [
     {
@@ -174,63 +183,72 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
 
   return (
     <>
-      <Dialog 
-        open={isOpen} 
-        onClose={closeDialog} 
-        maxWidth="md" 
-        fullWidth
-      >
-        <DialogTitle 
-          sx={{ 
-            pb: 0, 
-            pt: 1, 
-            fontSize: '1rem',
-            minHeight: '40px',
-            display: 'flex',
-            alignItems: 'center' 
+      <Dialog open={isOpen} onClose={closeDialog} maxWidth="md" fullWidth>
+        <DialogTitle
+          sx={{
+            pb: 0,
+            pt: 1,
+            fontSize: "1rem",
+            minHeight: "40px",
+            display: "flex",
+            alignItems: "center",
           }}
         >
           Thông tin của lớp: {classData?.id}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1, mt: 0 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="class details tabs">
+          <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1, mt: 0 }}>
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              aria-label="class details tabs"
+            >
               <Tab label="Thông tin lớp con" />
               <Tab label="Nhóm" />
             </Tabs>
           </Box>
-          
+
           <TabPanel value={tabValue} index={0}>
             <div style={{ margin: "8px 0" }}>
-              <Button variant="contained" onClick={() => setOpenNewDialog(true)}>Thêm mới</Button>
+              <Button
+                variant="contained"
+                onClick={() => setOpenNewDialog(true)}
+              >
+                Thêm mới
+              </Button>
             </div>
             <div style={{ height: 250, width: "100%" }}>
               <DataGrid
                 rows={subClasses}
                 columns={[
                   { field: "id", headerName: "ID", width: 70 },
-                  { field: "studentCount", headerName: "Số lượng sinh viên", width: 200 },
+                  {
+                    field: "studentCount",
+                    headerName: "Số lượng sinh viên",
+                    width: 200,
+                  },
                   { field: "classType", headerName: "Loại lớp", width: 150 },
                   { field: "classCount", headerName: "SL lớp", width: 100 },
                 ]}
+                getRowId={(row) => row.id || `row-${Math.random().toString(36).substring(2, 9)}`}
                 initialState={{
                   pagination: {
-                    paginationModel: { pageSize: 5 }
-                  }
+                    paginationModel: { pageSize: 5 },
+                  },
                 }}
                 pageSizeOptions={[5]}
               />
             </div>
           </TabPanel>
-          
+
           <TabPanel value={tabValue} index={1}>
             <div className="flex flex-row gap-1 mb-1 items-center justify-end">
-              <TextField 
-                label="Tìm kiếm theo tên nhóm" 
+              <TextField
+                label="Tìm kiếm theo tên nhóm"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 size="small"
-                sx={{ width: '250px' }}
+                sx={{ width: "250px" }}
                 placeholder="Nhập tên nhóm để tìm kiếm..."
               />
             </div>
@@ -280,6 +298,7 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
               <MenuItem value="NT">NT</MenuItem>
               <MenuItem value="TH">TH</MenuItem>
               <MenuItem value="TN">TN</MenuItem>
+              <MenuItem value="TN">BT</MenuItem>
             </TextField>
             <TextField
               label="SL lớp"
@@ -290,8 +309,14 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
               }
               fullWidth
             />
-            <Button onClick={handleAddSubClass} variant="contained" color="primary">
-              Xác nhận
+            <Button
+              onClick={handleAddSubClass}
+              variant="contained"
+              color="primary"
+              disabled={isAddingSubClass}
+              startIcon={isAddingSubClass ? <CircularProgress size={20} color="inherit" /> : null}
+            >
+              {isAddingSubClass ? "Đang xử lý..." : "Xác nhận"}
             </Button>
           </div>
         </DialogContent>

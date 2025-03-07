@@ -4,6 +4,7 @@ import { useSemesters } from "../hooks/useSemester";
 const GeneralSemesterAutoComplete = ({
   selectedSemester,
   setSelectedSemester,
+  sx = {},
 }) => {
   const {
     semesters,
@@ -19,7 +20,11 @@ const GeneralSemesterAutoComplete = ({
         }}
         value={selectedSemester}
         options={semesters}
-        sx={{ width: 200 }}
+        size="small"
+        sx={{ 
+          width: 130,
+          ...sx
+        }}
         renderInput={(params) => <TextField {...params} label="Chọn kỳ" />}
       />
     </div>
