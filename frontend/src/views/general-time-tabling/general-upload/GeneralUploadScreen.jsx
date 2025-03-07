@@ -32,7 +32,6 @@ const GeneralUploadScreen = () => {
     }
   } = useGeneralSchedule();
 
-  // Update this function to sync both local and global state
   const handleSelectionChange = (newSelection) => {
     setSelectedIds(newSelection);
     setSelectedRows(newSelection); // Add this line to sync with useGeneralSchedule

@@ -36,7 +36,7 @@ export const useRoomOccupations = (semester, selectedWeek) => {
     const periodsMap = {};
 
     schedule.forEach((item) => {
-      const { classRoom, classCode, startPeriod, endPeriod, dayIndex, crew } = item;
+      const { classRoom, classCode, startPeriod, endPeriod, dayIndex, crew, assigned } = item;
       const dayOffset = (dayIndex - 2) * 6;
       const start = dayOffset + startPeriod - 1;
       const duration = endPeriod - startPeriod + 1;
@@ -44,11 +44,15 @@ export const useRoomOccupations = (semester, selectedWeek) => {
       if (!periodsMap[classRoom]) {
         periodsMap[classRoom] = {
           S: [],
-          C: []
+          C: [],
+          assigned: assigned || false 
         };
       }
 
-      // Add period to the corresponding crew array (S or C)
+      if (assigned) {
+        periodsMap[classRoom].assigned = true;
+      }
+
       periodsMap[classRoom][crew].push({ 
         start, 
         duration, 
@@ -57,11 +61,21 @@ export const useRoomOccupations = (semester, selectedWeek) => {
       });
     });
 
-    return Object.entries(periodsMap).map(([room, crews]) => ({
-      room,
-      morningPeriods: mergePeriods(crews.S),
-      afternoonPeriods: mergePeriods(crews.C)
-    }));
+    // Convert to array and sort by assigned status (true first)
+    return Object.entries(periodsMap)
+      .map(([room, data]) => ({
+        room,
+        morningPeriods: mergePeriods(data.S),
+        afternoonPeriods: mergePeriods(data.C),
+        assigned: data.assigned
+      }))
+      .sort((a, b) => {
+        // Sort assigned=true rooms first
+        if (a.assigned && !b.assigned) return -1;
+        if (!a.assigned && b.assigned) return 1;
+        // If both have the same assigned status, maintain original order
+        return 0;
+      });
   };
 
   const fetchRoomOccupations = useCallback(() => {

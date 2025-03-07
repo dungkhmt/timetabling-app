@@ -36,6 +36,10 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredGroups, setFilteredGroups] = useState([]);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
 
   const { handlers } = useGeneralSchedule();
 
@@ -68,12 +72,12 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
 
   useEffect(() => {
     if (searchText.trim() === "") {
-      setFilteredGroups(groups);
+      setFilteredGroups([...groups].sort((a, b) => (b.assigned === true) - (a.assigned === true)));
     } else {
       const filtered = groups.filter(group => 
         group.groupName.toLowerCase().includes(searchText.toLowerCase())
       );
-      setFilteredGroups(filtered);
+      setFilteredGroups([...filtered].sort((a, b) => (b.assigned === true) - (a.assigned === true)));
     }
   }, [groups, searchText]);
 
@@ -139,7 +143,7 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
     };
     
     setGroups([...groups, newGroup]);
-    setGroupName(""); // Clear input after adding
+    setGroupName("");
   };
 
   const groupColumns = [
@@ -240,7 +244,8 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog }) => {
                   rows={filteredGroups}
                   columns={groupColumns}
                   disableRowSelectionOnClick
-                  paginationModel={{ page: 0, pageSize: 10 }}
+                  paginationModel={paginationModel}
+                  onPaginationModelChange={setPaginationModel}
                   pageSizeOptions={[10, 25, 100]}
                 />
               )}
