@@ -1,7 +1,12 @@
 import { Autocomplete, TextField } from "@mui/material";
 import { useGroupData } from "services/useGroupData";
 
-const GeneralGroupAutoComplete = ({ selectedGroup, setSelectedGroup }) => {
+const GeneralGroupAutoComplete = ({
+  selectedGroup,
+  setSelectedGroup,
+  width = 200,
+  sx = {},
+}) => {
   const { isLoading, error, allGroups } = useGroupData();
 
   return (
@@ -10,12 +15,15 @@ const GeneralGroupAutoComplete = ({ selectedGroup, setSelectedGroup }) => {
       loadingText="Loading..."
       getOptionLabel={(option) => option && option.groupName}
       onChange={(e, group) => {
-        console.log(group);
         setSelectedGroup(group);
       }}
       value={selectedGroup}
       options={allGroups}
-      sx={{ width: 200 }}  
+      size="small"
+      sx={{ 
+        width: width,
+        ...sx  
+      }}
       renderInput={(params) => <TextField {...params} label="Chọn nhóm" />}
       PopperProps={{
         popperOptions: {

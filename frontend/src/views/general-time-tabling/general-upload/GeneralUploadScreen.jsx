@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import InputFileUpload from "./components/InputFileUpload";
@@ -12,6 +12,7 @@ const GeneralUploadScreen = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   
   const { 
+    states,
     states: { 
       selectedSemester,
       classesNoSchedule,
@@ -43,6 +44,16 @@ const GeneralUploadScreen = () => {
       setSelectedFile(null);
     }
   };
+
+  const handleRefreshData = useCallback(async () => {
+    // Force a complete refresh of the data
+    try {
+      await states.refetchNoSchedule();
+      console.log("Data refreshed in GeneralUploadScreen");
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    }
+  }, [states]);
 
   console.log(classesNoSchedule);
 
@@ -92,6 +103,7 @@ const GeneralUploadScreen = () => {
           dataLoading={isClassesNoScheduleLoading}
           onSelectionChange={handleSelectionChange} 
           selectedIds={selectedIds}
+          onRefreshNeeded={handleRefreshData}
         />
       </div>
     </LoadingProvider>

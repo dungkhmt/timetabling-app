@@ -14,7 +14,7 @@ export const useGeneralSchedule = () => {
   const [loading, setLoading] = useState(false);
   const [isOpenSelectedDialog, setOpenSelectedDialog] = useState(false);
   const [selectedTimeLimit, setSelectedTimeLimit] = useState(5);
-  
+
   // Algorithm states
   const [algorithms, setAlgorithms] = useState([]);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("");
@@ -236,8 +236,15 @@ export const useGeneralSchedule = () => {
     } finally {
       setIsAutoScheduleLoading(false);
       setLoading(false);
-      setSelectedRows([]);}
-  }, [selectedSemester, selectedGroup, timeSlotTimeLimit, fetchClasses, selectedAlgorithm]);
+      setSelectedRows([]);
+    }
+  }, [
+    selectedSemester,
+    selectedGroup,
+    timeSlotTimeLimit,
+    fetchClasses,
+    selectedAlgorithm,
+  ]);
 
   const handleAutoScheduleClassroomTimeTabling = useCallback(async () => {
     if (!selectedSemester?.semester) {
@@ -271,7 +278,13 @@ export const useGeneralSchedule = () => {
       setLoading(false);
       setSelectedRows([]);
     }
-  }, [selectedSemester, selectedGroup, classroomTimeLimit, fetchClasses, selectedAlgorithm]);
+  }, [
+    selectedSemester,
+    selectedGroup,
+    classroomTimeLimit,
+    fetchClasses,
+    selectedAlgorithm,
+  ]);
 
   const handleSaveTimeSlot = useCallback(
     async (semester, data) => {
@@ -489,7 +502,7 @@ export const useGeneralSchedule = () => {
       toast.success("Tự động xếp lịch các lớp đã chọn thành công!");
     } catch (error) {
       await fetchClasses();
-      
+
       const message =
         error.response?.status === 410
           ? error.response.data
@@ -499,7 +512,13 @@ export const useGeneralSchedule = () => {
       setLoading(false);
       setSelectedRows([]);
     }
-  }, [selectedRows, selectedTimeLimit, selectedSemester, fetchClasses, selectedAlgorithm]);
+  }, [
+    selectedRows,
+    selectedTimeLimit,
+    selectedSemester,
+    fetchClasses,
+    selectedAlgorithm,
+  ]);
 
   // Update classes group
   const updateClassesGroup = useCallback(
@@ -638,6 +657,7 @@ export const useGeneralSchedule = () => {
       isLoading: isClassesLoading,
       isResetLoading,
       refetchSchedule: fetchClasses,
+      refetchNoSchedule: fetchClassesNoSchedule,
       isAutoSaveLoading: isAutoScheduleLoading,
       loading: loading || isClassesLoading,
       isSavingTimeSlot,

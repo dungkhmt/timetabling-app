@@ -5,7 +5,7 @@ import { useUploadTableConfig } from "./useUploadTableConfig";
 import { useLoadingContext } from "../contexts/LoadingContext";
 import ViewClassDetailDialog from "./ViewClassDetailDialog";
 
-const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChange, selectedIds }) => {
+const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChange, selectedIds, onRefreshNeeded }) => {
   const { loading: uploadLoading } = useLoadingContext();
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
@@ -78,6 +78,7 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
         isOpen={openDetailDialog}
         classData={selectedClass}
         closeDialog={() => setOpenDetailDialog(false)}
+        onRefreshParent={onRefreshNeeded}
       />
     </Box>
   );

@@ -20,7 +20,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
   const handleExportExcel = () => {
     request(
       "post",
-      `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}`,
+      `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}&includeBorders=true`,
       (res) => {
         const blob = new Blob([res.data], { type: res.headers["content-type"] });
         const link = document.createElement("a");
@@ -56,7 +56,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
     if (cell === null) return (
       <td 
         key={index} 
-        className="cell border-x border-slate-300"
+        className="cell border border-slate-200"
         style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}
       />
     );
@@ -81,7 +81,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
           minWidth: `${width}px`,
           maxWidth: `${width}px`
         }}
-        className="cell bg-yellow-300 text-center overflow-hidden text-xs border-x border-slate-300"
+        className="cell bg-yellow-300 text-center overflow-hidden text-xs border border-slate-200"
       >
         {cell.classCode}
       </td>
@@ -98,7 +98,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
   };
 
   return (
-    <div className="flex flex-col gap-2 h-[700px]">
+    <div className="flex flex-col gap-2 h-full mt-2">
       <div className="flex flex-row justify-between">
         <div className="flex flex-row gap-2">
           <Autocomplete
@@ -106,20 +106,38 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
             value={selectedSemester}
             options={[selectedSemester].filter(Boolean)}
             getOptionLabel={(option) => option && option.semester}
-            sx={{ width: 200 }}
+            size="small"
+            sx={{
+              "& .MuiInputBase-root": {
+                width: "130px",
+              },
+            }}
             renderInput={(params) => <TextField {...params} label="Chọn kỳ" />}
           />
           <FilterSelectBox
             selectedSemester={selectedSemester}
             selectedWeek={selectedWeek}
             setSelectedWeek={setSelectedWeek}
+            sx={{
+              "& .MuiInputBase-root": {
+                height: "40px",
+              },
+            }}
           />
         </div>
         <div className="flex flex-row gap-2">
-          <Button disabled={!selectedSemester} variant="contained" onClick={handleExportExcel}>
+          <Button
+            disabled={!selectedSemester}
+            variant="contained"
+            onClick={handleExportExcel}
+          >
             Xuất File Excel
           </Button>
-          <Button disabled={!selectedSemester || selectedWeek == null} variant="contained" onClick={refresh}>
+          <Button
+            disabled={!selectedSemester || selectedWeek == null}
+            variant="contained"
+            onClick={refresh}
+          >
             <Refresh />
           </Button>
         </div>
@@ -128,18 +146,20 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
         <table className="border-collapse border border-slate-300">
           <thead className="sticky top-0 bg-white z-10">
             <tr>
-              <th className="border border-slate-300 bg-gray-50" 
-                  rowSpan="2" 
-                  colSpan="2"
-                  style={{ minWidth: '150px' }}>
+              <th
+                className="border border-slate-300 bg-gray-50"
+                rowSpan="2"
+                colSpan="2"
+                style={{ minWidth: "150px" }}
+              >
                 Phòng học/ Thời gian
               </th>
               {Array.from({ length: 7 }).map((_, index) => (
-                <th 
-                  key={index} 
-                  colSpan="6" 
+                <th
+                  key={index}
+                  colSpan="6"
                   className="cell text-center border border-slate-300 bg-gray-50"
-                  style={{ width: '240px', minWidth: '240px' }} // 6 periods × 40px
+                  style={{ width: "240px", minWidth: "240px" }} // 6 periods × 40px
                 >
                   {index + 2 === 8 ? "CN" : `Thứ ${index + 2}`}
                 </th>
@@ -147,10 +167,10 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
             </tr>
             <tr>
               {Array.from({ length: 42 }).map((_, index) => (
-                <th 
-                  key={index} 
+                <th
+                  key={index}
                   className="cell border border-slate-300 text-center bg-gray-50"
-                  style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}
+                  style={{ width: "40px", minWidth: "40px", maxWidth: "40px" }}
                 >
                   {(index % 6) + 1}
                 </th>
@@ -162,27 +182,31 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((roomData, index) => (
                 <tr key={roomData.room}>
-                  <th className="border-x border-slate-300" rowSpan="1">
+                  <th className="border border-slate-300" rowSpan="1">
                     {roomData.room}
                   </th>
-                  <th className="border-x border-slate-300">
+                  <th className="border border-slate-300">
                     <div className="flex flex-col">
                       <div className="border-b border-slate-300 p-1">S</div>
                       <div className="p-1">C</div>
                     </div>
                   </th>
-                  <td colSpan="42" className="p-0 border-b border-slate-300">
+                  <td colSpan="42" className="p-0 border border-slate-300">
                     <div className="flex flex-col">
                       <div className="border-b border-slate-300 flex">
-                        {createSessionCells(roomData.morningPeriods).map((cell, index) => renderCell(cell, index))}
+                        {createSessionCells(roomData.morningPeriods).map(
+                          (cell, index) => renderCell(cell, index)
+                        )}
                       </div>
                       <div className="flex">
-                        {createSessionCells(roomData.afternoonPeriods).map((cell, index) => renderCell(cell, index))}
+                        {createSessionCells(roomData.afternoonPeriods).map(
+                          (cell, index) => renderCell(cell, index)
+                        )}
                       </div>
                     </div>
                   </td>
                 </tr>
-            ))}
+              ))}
           </tbody>
         </table>
       </div>

@@ -23,7 +23,7 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       width: 100,
     },
     {
-      headerName: "lớp liên quan tới",
+      headerName: "Lớp liên quan tới",
       field: "listGroupName",
       width: 200,
     },

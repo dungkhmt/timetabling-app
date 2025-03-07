@@ -9,16 +9,19 @@ import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValid
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.repo.AcademicWeekRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.ClassGroupRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.GeneralClassRepository;
 import openerp.openerpresourceserver.generaltimetabling.repo.PlanGeneralClassRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +31,7 @@ public class PlanGeneralClassService {
     private GeneralClassRepository generalClassRepository;
     private PlanGeneralClassRepository planGeneralClassRepository;
     private AcademicWeekRepo academicWeekRepo;
+    private ClassGroupRepo classGroupRepo;
 
     @Transactional
     public int clearPlanClass(String semesterId){
@@ -84,40 +88,55 @@ public class PlanGeneralClassService {
 
         return generalClassRepository.save(newClass);
     }
-    public GeneralClass makeSubClass(ModelInputCreateSubClass request) {
+
+    @Transactional
+    public List<GeneralClass> makeSubClass(ModelInputCreateSubClass request) {
         GeneralClass parentClass = generalClassRepository.findById(request.getFromParentClassId()).orElse(null);
-        if(parentClass == null) return null;
+        if (parentClass == null) return Collections.emptyList();
+        List<ClassGroup> classGroup = classGroupRepo.findByClassId(request.getFromParentClassId());
 
-        GeneralClass newClass = new GeneralClass();
+        List<GeneralClass> newClasses = new ArrayList<>();
 
-        newClass.setRefClassId(parentClass.getRefClassId());
-        newClass.setSemester(parentClass.getSemester());
-        newClass.setModuleCode(parentClass.getModuleCode());
-        newClass.setModuleName(parentClass.getModuleName());
-        newClass.setMass(parentClass.getMass());
-        newClass.setCrew(parentClass.getCrew());
-        newClass.setQuantityMax(request.getNumberStudents());
-        newClass.setLearningWeeks(parentClass.getLearningWeeks());
-        newClass.setDuration(request.getDuration());
-        if (request.getClassType() != null && !request.getClassType().isEmpty()) {
-            newClass.setClassType(request.getClassType());
-        } else {
-            newClass.setClassType("LT+BT");
+        for (int i = 0; i < request.getNumberClasses(); i++) {
+            GeneralClass newClass = new GeneralClass();
+
+            newClass.setRefClassId(parentClass.getRefClassId());
+            newClass.setSemester(parentClass.getSemester());
+            newClass.setModuleCode(parentClass.getModuleCode());
+            newClass.setClassCode(parentClass.getClassCode());
+            newClass.setModuleName(parentClass.getModuleName());
+            newClass.setMass(parentClass.getMass());
+            newClass.setCrew(parentClass.getCrew());
+            newClass.setQuantityMax(request.getNumberStudents());
+            newClass.setLearningWeeks(parentClass.getLearningWeeks());
+            newClass.setDuration(request.getDuration());
+            newClass.setGroupName(parentClass.getGroupName());
+
+            if (request.getClassType() != null && !request.getClassType().isEmpty()) {
+                newClass.setClassType(request.getClassType());
+            } else {
+                newClass.setClassType("LT+BT");
+            }
+
+            Long nextId = planGeneralClassRepository.getNextReferenceValue();
+            List<RoomReservation> roomReservations = new ArrayList<>();
+            RoomReservation roomReservation = new RoomReservation();
+            roomReservation.setGeneralClass(newClass);
+            roomReservations.add(roomReservation);
+            newClass.setTimeSlots(roomReservations);
+
+            generalClassRepository.save(newClass);
+
+            for (ClassGroup group : classGroup) {
+                ClassGroup newClassGroup = new ClassGroup(newClass.getId(), group.getGroupId());
+                classGroupRepo.save(newClassGroup);
+            }
+            newClasses.add(newClass);
         }
 
-        Long nextId = planGeneralClassRepository.getNextReferenceValue();
-        //newClass.setParentClassId(nextId);
-        //newClass.setClassCode(nextId.toString());
-
-        List<RoomReservation> roomReservations = new ArrayList<>();
-        RoomReservation roomReservation =  new RoomReservation();
-        roomReservation.setGeneralClass(newClass);
-        roomReservations.add(roomReservation);
-
-        newClass.setTimeSlots(roomReservations);
-
-        return generalClassRepository.save(newClass);
+        return newClasses;
     }
+
 
     public List<PlanGeneralClass> getAllClasses(String semester) {
         return planGeneralClassRepository.findAllBySemester(semester);

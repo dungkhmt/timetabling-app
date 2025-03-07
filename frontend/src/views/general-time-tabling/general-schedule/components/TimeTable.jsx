@@ -218,7 +218,7 @@ const TimeTable = ({
         <td
           key={`${classIndex}-${day}-${period}`}
           style={{ width: "40px" }}
-          className="border border-gray-300 text-center cursor-pointer px-1 "
+          className="border border-gray-400 text-center cursor-pointer px-1"
           onClick={() => handleRowClick(classIndex, day, period)}
         ></td>
       );
@@ -231,7 +231,7 @@ const TimeTable = ({
         <td
           key={`${classIndex}-${day}-${period}`}
           colSpan={colSpan}
-          className="border border-gray-300 bg-yellow-400 text-center cursor-pointer px-1"
+          className="border border-gray-400 bg-yellow-400 text-center cursor-pointer px-1"
           style={{ width: `${40 * colSpan}px` }}
           onClick={() => handleRowClick(classIndex, day, period)}
         >
@@ -248,7 +248,7 @@ const TimeTable = ({
       <td
         key={`${classIndex}-${day}-${period}`}
         style={{ width: "40px" }}
-        className="border border-gray-300 text-center cursor-pointer px-1"
+        className="border border-gray-400 text-center cursor-pointer px-1"
         onClick={() => handleRowClick(classIndex, day, period)}
       ></td>
     );
@@ -363,7 +363,7 @@ const TimeTable = ({
 
   return (
     <div className="h-full w-full flex flex-col justify-start">
-      <div className="flex justify-end mb-2 items-center gap-2">
+      <div className="flex justify-end items-center gap-2 mb-1 pt-1 z-20 overflow-visible">
         <TextField
           placeholder="Tìm kiếm (mã lớp, phòng, tên học phần...)"
           variant="outlined"
@@ -412,7 +412,7 @@ const TimeTable = ({
         >
           <thead>
             <tr>
-              <th className="border border-gray-300 p-1" style={{ width: "30px", minWidth: "30px" }}>
+              <th className="border border-gray-400 p-1" style={{ width: "30px", minWidth: "30px" }}>
                 <Checkbox
                   indeterminate={
                     selectedRows.length > 0 &&
@@ -426,28 +426,28 @@ const TimeTable = ({
                   size="small"
                 />
               </th>
-              {columnVisibility.classCode && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Mã lớp</th>}
-              {columnVisibility.studyClass && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Nhóm</th>}
-              {columnVisibility.learningWeeks && <th className="border border-gray-300 p-1" style={{ width: "45px", minWidth: "45px" }}>Tuần học</th>}
-              {columnVisibility.moduleCode && <th className="border border-gray-300 p-1" style={{ width: "70px", minWidth: "70px" }}>Mã học phần</th>}
-              {columnVisibility.moduleName && <th className="border border-gray-300 p-1" style={{ width: "100px", minWidth: "100px" }}>Tên học phần</th>}
-              {columnVisibility.crew && <th className="border border-gray-300 p-1" style={{ width: "40px", minWidth: "40px" }}>Kíp</th>}
-              {columnVisibility.quantityMax && <th className="border border-gray-300 p-1" style={{ width: "50px", minWidth: "50px" }}>SL MAX</th>}
-              {columnVisibility.classType && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Loại lớp</th>}
-              {columnVisibility.mass && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Thời lượng</th>}
-              {columnVisibility.duration && <th className="border border-gray-300 p-1" style={{ width: "50px", minWidth: "50px" }}>Số tiết</th>}
-              {columnVisibility.batch && <th className="border border-gray-300 p-1" style={{ width: "50px", minWidth: "50px" }}>Khóa</th>}
+              {columnVisibility.classCode && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Mã lớp</th>}
+              {columnVisibility.studyClass && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Nhóm</th>}
+              {columnVisibility.learningWeeks && <th className="border border-gray-400 p-1" style={{ width: "45px", minWidth: "45px" }}>Tuần học</th>}
+              {columnVisibility.moduleCode && <th className="border border-gray-400 p-1" style={{ width: "70px", minWidth: "70px" }}>Mã học phần</th>}
+              {columnVisibility.moduleName && <th className="border border-gray-400 p-1" style={{ width: "100px", minWidth: "100px" }}>Tên học phần</th>}
+              {columnVisibility.crew && <th className="border border-gray-400 p-1" style={{ width: "40px", minWidth: "40px" }}>Kíp</th>}
+              {columnVisibility.quantityMax && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>SL MAX</th>}
+              {columnVisibility.classType && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Loại lớp</th>}
+              {columnVisibility.mass && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Thời lượng</th>}
+              {columnVisibility.duration && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Số tiết</th>}
+              {columnVisibility.batch && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Khóa</th>}
               {columnVisibility.actions && (
                 <>
-                  <th className="border border-gray-300 p-1" style={{ width: "35px", minWidth: "35px" }}>Thêm</th>
-                  <th className="border border-gray-300 p-1" style={{ width: "35px", minWidth: "35px" }}>Xóa</th>
+                  <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Thêm</th>
+                  <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Xóa</th>
                 </>
               )}
               {days.map((day) => (
                 <th
                   key={day}
                   colSpan={6}
-                  className="border border-gray-300 p-2 text-center min-w-32"
+                  className="border border-gray-400 p-2 text-center min-w-32"
                 >
                   {day}
                 </th>
@@ -460,7 +460,7 @@ const TimeTable = ({
                 periods.map((period) => (
                   <td
                     key={`${day}-${period}`}
-                    className="border border-gray-300 text-center"
+                    className="border border-gray-400 text-center"
                   >
                     {period}
                   </td>
@@ -477,7 +477,7 @@ const TimeTable = ({
           <table className="min-w-full border-collapse" style={{ tableLayout: "auto" }}>
             <thead>
               <tr>
-                <th className="border border-gray-300 p-1" style={{ width: "30px", minWidth: "30px" }}>
+                <th className="border border-gray-400 p-1" style={{ width: "30px", minWidth: "30px" }}>
                   <Checkbox
                     indeterminate={
                       selectedRows.length > 0 &&
@@ -491,28 +491,28 @@ const TimeTable = ({
                     size="small"
                   />
                 </th>
-                {columnVisibility.classCode && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Mã lớp</th>}
-                {columnVisibility.studyClass && <th className="border border-gray-300 p-1" style={{ width: "80px", minWidth: "80px" }}>Nhóm</th>}
-                {columnVisibility.learningWeeks && <th className="border border-gray-300 p-1" style={{ width: "45px", minWidth: "45px" }}>Tuần học</th>}
-                {columnVisibility.moduleCode && <th className="border border-gray-300 p-1" style={{ width: "70px", minWidth: "70px" }}>Mã học phần</th>}
-                {columnVisibility.moduleName && <th className="border border-gray-300 p-1" style={{ width: "100px", minWidth: "100px" }}>Tên học phần</th>}
-                {columnVisibility.crew && <th className="border border-gray-300 p-1" style={{ width: "40px", minWidth: "40px" }}>Kíp</th>}
-                {columnVisibility.quantityMax && <th className="border border-gray-300 p-1" style={{ width: "50px", minWidth: "50px" }}>SL MAX</th>}
-                {columnVisibility.classType && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Loại lớp</th>}
-                {columnVisibility.mass && <th className="border border-gray-300 p-1" style={{ width: "60px", minWidth: "60px" }}>Thời lượng</th>}
-                {columnVisibility.duration && <th className="border border-gray-300 p-1" style={{ width: "50px", minWidth: "50px" }}>Số tiết</th>}
-                {columnVisibility.batch && <th className="border border-gray-300 p-1" style={{ width: "50px", minWidth: "50px" }}>Khóa</th>}
+                {columnVisibility.classCode && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Mã lớp</th>}
+                {columnVisibility.studyClass && <th className="border border-gray-400 p-1" style={{ width: "80px", minWidth: "80px" }}>Nhóm</th>}
+                {columnVisibility.learningWeeks && <th className="border border-gray-400 p-1" style={{ width: "45px", minWidth: "45px" }}>Tuần học</th>}
+                {columnVisibility.moduleCode && <th className="border border-gray-400 p-1" style={{ width: "70px", minWidth: "70px" }}>Mã học phần</th>}
+                {columnVisibility.moduleName && <th className="border border-gray-400 p-1" style={{ width: "100px", minWidth: "100px" }}>Tên học phần</th>}
+                {columnVisibility.crew && <th className="border border-gray-400 p-1" style={{ width: "40px", minWidth: "40px" }}>Kíp</th>}
+                {columnVisibility.quantityMax && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>SL MAX</th>}
+                {columnVisibility.classType && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Loại lớp</th>}
+                {columnVisibility.mass && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Thời lượng</th>}
+                {columnVisibility.duration && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Số tiết</th>}
+                {columnVisibility.batch && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Khóa</th>}
                 {columnVisibility.actions && (
                   <>
-                    <th className="border border-gray-300 p-1" style={{ width: "35px", minWidth: "35px" }}>Thêm</th>
-                    <th className="border border-gray-300 p-1" style={{ width: "35px", minWidth: "35px" }}>Xóa</th>
+                    <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Thêm</th>
+                    <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Xóa</th>
                   </>
                 )}
                 {days.map((day) => (
                   <th
                     key={day}
                     colSpan={6}
-                    className="border border-gray-300 p-2 text-center min-w-32"
+                    className="border border-gray-400 p-2 text-center min-w-32"
                     style={{ padding: "8px 0" }}
                   >
                     {day}
@@ -520,13 +520,13 @@ const TimeTable = ({
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-300"></td> 
-                <td colSpan={Object.values(columnVisibility).filter(Boolean).length + (columnVisibility.actions ? 1 : 0)} className="border border-gray-300"></td>
+                <td className="border border-gray-400"></td> 
+                <td colSpan={Object.values(columnVisibility).filter(Boolean).length + (columnVisibility.actions ? 1 : 0)} className="border border-gray-400"></td>
                 {days.flatMap((day) =>
                   periods.map((period) => (
                     <td
                       key={`${day}-${period}`}
-                      className="border border-gray-300 text-center"
+                      className="border border-gray-400 text-center"
                       style={{ width: "40px", padding: "4px" }}
                     >
                       {period}
@@ -591,7 +591,7 @@ const TimeTable = ({
                         style={{ height: "40px" }} // Reduced row height from 52px
                         className={isItemSelected ? "bg-blue-50" : ""}
                       >
-                        <td className="border border-gray-300 text-center px-1">
+                        <td className="border border-gray-400 text-center px-1">
                           <Checkbox
                             checked={isItemSelected}
                             onChange={(event) =>
@@ -600,9 +600,9 @@ const TimeTable = ({
                             size="small"
                           />
                         </td>
-                        {columnVisibility.classCode && <td className="border border-gray-300 text-center px-1">{classDetail.code}</td>}
+                        {columnVisibility.classCode && <td className="border border-gray-400 text-center px-1">{classDetail.code}</td>}
                         {columnVisibility.studyClass && (
-                          <td className="border border-gray-300 text-center px-1 w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
+                          <td className="border border-gray-400 text-center px-1 w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
                             {showTooltip ? (
                               <Tooltip title={tooltipContent} arrow placement="top">
                                 <span>{groupDisplay}</span>
@@ -612,18 +612,18 @@ const TimeTable = ({
                             )}
                           </td>
                         )}
-                        {columnVisibility.learningWeeks && <td className="border border-gray-300 text-center px-1">{classDetail.learningWeeks}</td>}
-                        {columnVisibility.moduleCode && <td className="border border-gray-300 text-center px-1">{classDetail.moduleCode}</td>}
-                        {columnVisibility.moduleName && <td className="border border-gray-300 text-center px-1">{classDetail.moduleName}</td>}
-                        {columnVisibility.crew && <td className="border border-gray-300 text-center px-1">{classDetail.crew}</td>}
-                        {columnVisibility.quantityMax && <td className="border border-gray-300 text-center px-1">{classDetail.quantityMax}</td>}
-                        {columnVisibility.classType && <td className="border border-gray-300 text-center px-1">{classDetail.classType}</td>}
-                        {columnVisibility.mass && <td className="border border-gray-300 text-center px-1">{classDetail.mass}</td>}
-                        {columnVisibility.duration && <td className="border border-gray-300 text-center px-1">{classDetail.duration}</td>}
-                        {columnVisibility.batch && <td className="border border-gray-300 text-center px-1">{classDetail.batch}</td>}
+                        {columnVisibility.learningWeeks && <td className="border border-gray-400 text-center px-1">{classDetail.learningWeeks}</td>}
+                        {columnVisibility.moduleCode && <td className="border border-gray-400 text-center px-1">{classDetail.moduleCode}</td>}
+                        {columnVisibility.moduleName && <td className="border border-gray-400 text-center px-1">{classDetail.moduleName}</td>}
+                        {columnVisibility.crew && <td className="border border-gray-400 text-center px-1">{classDetail.crew}</td>}
+                        {columnVisibility.quantityMax && <td className="border border-gray-400 text-center px-1">{classDetail.quantityMax}</td>}
+                        {columnVisibility.classType && <td className="border border-gray-400 text-center px-1">{classDetail.classType}</td>}
+                        {columnVisibility.mass && <td className="border border-gray-400 text-center px-1">{classDetail.mass}</td>}
+                        {columnVisibility.duration && <td className="border border-gray-400 text-center px-1">{classDetail.duration}</td>}
+                        {columnVisibility.batch && <td className="border border-gray-400 text-center px-1">{classDetail.batch}</td>}
                         {columnVisibility.actions && (
                           <>
-                            <td className="border border-gray-300 text-center px-1">
+                            <td className="border border-gray-400 text-center px-1">
                               {!classDetail.timeSlots && (
                                 <Button
                                   onClick={() => handleOpenAddSlotDialog(classDetail)}
@@ -642,7 +642,7 @@ const TimeTable = ({
                                 </Button>
                               )}
                             </td>
-                            <td className="border border-gray-300 text-center px-1">
+                            <td className="border border-gray-400 text-center px-1">
                               {classDetail.roomReservationId && (
                                 <Button
                                   onClick={() =>
@@ -677,10 +677,10 @@ const TimeTable = ({
                   })
               ) : (
                 <tr>
-                  <td className="border border-gray-300"></td> 
+                  <td className="border border-gray-400"></td> 
                   <td
                     colSpan={Object.values(columnVisibility).filter(Boolean).length + days.length * periods.length + (columnVisibility.actions ? 1 : 0)}
-                    className="border border-gray-300 text-center py-4"
+                    className="border border-gray-400 text-center py-4"
                   >
                     <div className="h-full ">Không có dữ liệu</div>
                   </td>
