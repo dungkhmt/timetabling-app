@@ -231,6 +231,19 @@ export const generalScheduleRepository = {
     return response.data;
   },
 
+  getSubClasses: async (parentClassId) => {
+    try {
+      const response = await request(
+        "get",
+        `/general-classes/get-by-parent-class?parentClassId=${parentClassId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Fetch subclasses error:", error);
+      throw error;
+    }
+  },
+
   updateClassesGroup: async (params) => {
     const { ids, groupName } = params;
     try {
