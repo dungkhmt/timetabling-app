@@ -25,7 +25,6 @@ import {
   Clear
 } from '@mui/icons-material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
-// Conflict validation is now handled via API
 
 function CustomToolbar(props) {
   const { visibleColumns, setVisibleColumns, allColumns } = props;
@@ -115,6 +114,7 @@ const ClassesTable = forwardRef(({
     'roomId', 'weekNumber', 'date', 'sessionId', 'examClassId', 'classId', "courseId",
      'numberOfStudents', 'description',
   ]);
+  const [frozenFilteredClasses, setFrozenFilteredClasses] = useState(null);
   
   // Optimize uniqueDescriptions extraction with useMemo to run only when classesData changes
   const uniqueDescriptions = useMemo(() => {
@@ -157,12 +157,14 @@ const ClassesTable = forwardRef(({
     setActiveSearchValue(searchValue || '');
     setPage(0); // Reset to first page on search
     setActiveFilters(!!(searchValue || statusFilter !== 'all'));
+    setFrozenFilteredClasses(null); // Reset frozen results when search changes
   };
   
   const handleStatusFilterChange = (event) => {
     setStatusFilter(event.target.value);
-    setPage(0); // Reset to first page on filter change
+    setPage(0);
     setActiveFilters(!!(activeSearchValue || event.target.value !== 'all'));
+    setFrozenFilteredClasses(null);
   };
   
   const handleClearFilters = () => {
@@ -171,11 +173,15 @@ const ClassesTable = forwardRef(({
     setStatusFilter('all');
     setPage(0);
     setActiveFilters(false);
+    setFrozenFilteredClasses(null); // Reset frozen results when filters are cleared
   };
   
   // Create a memoized filtering function that only recalculates when necessary
   const filteredClasses = useMemo(() => {
-    // Start with all data
+    if (frozenFilteredClasses !== null) {
+      return frozenFilteredClasses;
+    }
+
     let results = classesData;
     
     // Apply search filter if active
@@ -227,9 +233,13 @@ const ClassesTable = forwardRef(({
         return statusFilter === 'scheduled' ? isScheduled : !isScheduled;
       });
     }
+
+    if (activeFilters) {
+      setFrozenFilteredClasses(results);
+    }
     
     return results;
-  }, [classesData, activeSearchValue, statusFilter, assignmentChanges, uniqueDescriptions]);
+  }, [classesData, activeSearchValue, statusFilter, assignmentChanges, uniqueDescriptions, activeFilters, frozenFilteredClasses]);
 
   // Updated handler functions to preserve all fields
   const handleRoomChange = useCallback((classId, roomId) => {
@@ -662,6 +672,17 @@ const ClassesTable = forwardRef(({
               }}
             >
               Xóa bộ lọc
+            </Button>
+          )}
+
+          {activeFilters && frozenFilteredClasses !== null && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setFrozenFilteredClasses(null)}
+              sx={{ ml: 1 }}
+            >
+              Làm mới bộ lọc
             </Button>
           )}
         </Box>

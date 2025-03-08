@@ -23,7 +23,7 @@ import { Close, AccessTime } from '@mui/icons-material';
 import { useExamSessionData } from 'services/useExamSessionData';
 
 const AddTimetableModal = ({ open, onClose, planId, onCreateTimetable }) => {
-  const { examSessions, isLoading } = useExamSessionData();
+  const { sessionCollections: examSessions, isLoading } = useExamSessionData();
   const [name, setName] = useState('');
   const [selectedCollection, setSelectedCollection] = useState('');
   const [error, setError] = useState('');
