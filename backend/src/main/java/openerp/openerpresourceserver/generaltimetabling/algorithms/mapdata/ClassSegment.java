@@ -23,4 +23,23 @@ public class ClassSegment {
     public int nbStudents;
     public List<Integer> domainTimeSlots;
     public List<Integer> domainRooms;
+
+    public String hashCourseGroup(){
+        String s = courseIndex + "-";
+        for(int j = 0; j < groupIds.size(); j++){
+            s = s + groupIds.get(j);
+            if(j < groupIds.size()-1) s = s + ",";
+        }
+        return s;
+    }
+    public String toString(){
+        String s = "ClassSegment[" + id + "], classId = " + classId;
+        s = s + " domain timeslot = ";
+        for(int v: domainTimeSlots) s = s + v + ", ";
+        s = s + " domain room = ";
+        for(int v: domainRooms) s = s + v + ", ";
+        s = s + " conflict class-segments indices = ";
+        for(int j: conflictClassSegmentIds) s = s + j + ", ";
+        return s;
+    }
 }

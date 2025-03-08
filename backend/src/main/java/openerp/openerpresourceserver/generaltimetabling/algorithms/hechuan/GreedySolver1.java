@@ -1,14 +1,12 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan;
 
 import lombok.extern.log4j.Log4j2;
-import lombok.val;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity.CourseNotOverlapBackTrackingSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
-import openerp.openerpresourceserver.labtimetabling.entity.Class;
+
 
 import java.util.*;
 
@@ -99,8 +97,9 @@ public class GreedySolver1 implements Solver {
             List<Integer> domainTimeSlots = I.getDomains()[i];
             List<Integer> domainRooms = I.getRooms()[i];
             classSegments[i] = new ClassSegment(id, classId,parentClassId,groupIds,conflictClassSegmentIds,duration,courseIndex,nbStudents,domainTimeSlots,domainRooms);
+            log.info("Constructor, class-segment[" + i + "] = " + classSegments[i]);
         }
-
+        relatedCourseGroups = new HashSet[classSegments.length];
         for(int i = 0; i < classSegments.length; i++){
             ClassSegment cs = classSegments[i];
             //String courseGroupId = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
@@ -138,7 +137,7 @@ public class GreedySolver1 implements Solver {
         String code = courseIndex + "-";
         for(int j = 0; j < groupIndex.size(); j++){
             int gIndex = groupIndex.get(j);
-            code = code + j;
+            code = code + gIndex;
             if(j < groupIndex.size()-1) code = code + ",";
         }
         return code;
@@ -151,17 +150,20 @@ public class GreedySolver1 implements Solver {
         Map<String, List<Integer>> mCourseGroup2Domain = new HashMap<>();
         Map<String, Integer> mCourseGroup2Duration = new HashMap<>();
         Map<String, List<String>> mCourseGroup2ConflictCourseGroups = new HashMap<>();
-        for(int i = 0; i < I.getNbClassSegments(); i++){
-            String id = hashCourseGroup(I.getCourseIndex()[i],I.getRelatedGroupId()[i]);
-            courseGroupId.add(id);
-        }
+        //for(int i = 0; i < I.getNbClassSegments(); i++){
+        //    String id = hashCourseGroup(I.getCourseIndex()[i],I.getRelatedGroupId()[i]);
+        //    courseGroupId.add(id);
+        //}
         for(int i = 0; i < classSegments.length; i++){
             ClassSegment cs = classSegments[i];
-            String id = hashCourseGroup(cs.id,cs.getGroupIds());
+            //String id = hashCourseGroup(cs.courseIndex,cs.getGroupIds());
+            String id = cs.hashCourseGroup();
             if(mCourseGroup2ClassSegments.get(id)==null){
                 mCourseGroup2ClassSegments.put(id, new ArrayList<>());
             }
+            courseGroupId.add(id);
             mCourseGroup2ClassSegments.get(id).add(cs);
+            log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id);
         }
         for(String id: courseGroupId){
             int duration = 0;
@@ -189,29 +191,33 @@ public class GreedySolver1 implements Solver {
         }
         CourseNotOverlapBackTrackingSolver CNOBS = new CourseNotOverlapBackTrackingSolver(courseGroupId,mCourseGroup2Domain,mCourseGroup2Duration, mCourseGroup2ConflictCourseGroups);
         CNOBS.solve();
-        if(CNOBS.hasSolution()){
+        if(!CNOBS.hasSolution()){
+            log.info("solve, CNOBS cannot find any solution!!!");
             return;
         }
         Map<String, Integer> mCourseGroup2TimeSlot = CNOBS.getSolutionMap();
-
-        // sort classSegments based on ins
-        for(int i = 0; i < I.getNbClassSegments(); i++) {
-            for(int j = i+1; j < I.getNbClassSegments(); j++) {
-                if (ins[i] > ins[j]){
-                    int tmp = ins[i]; ins[i] = ins[j]; ins[j] = tmp;
-                    ClassSegment cs = classSegments[i];
-                    classSegments[i] = classSegments[j];
-                    classSegments[j] = cs;
-                }
-            }
+        for(String cg: mCourseGroup2TimeSlot.keySet()){
+            log.info("solve, CNOBS returnd course-group " + cg + " scheduled to time-slot " + mCourseGroup2TimeSlot.get(cg));
         }
-
+        solutionRoom = new int[classSegments.length];
+        solutionSlot = new int[classSegments.length];
         for(int i = 0; i < classSegments.length; i++){
             solutionRoom[i] = -1; solutionSlot[i] = -1;
         }
         List<ClassSegment> sortedClassSegments = new ArrayList<>();
         Map<String, Integer> mCourseGroup2Pointer = new HashMap<>();
         for(String c: courseGroupId) mCourseGroup2Pointer.put(c,0);
+        boolean[] scheduled = new boolean[classSegments.length];
+        for(int i = 0; i < classSegments.length; i++){
+            scheduled[i] = false;
+        }
+        for(int i = 0; i < classSegments.length; i++){
+            ClassSegment cs = classSegments[i];
+            if(cs.getDomainRooms().size() == 1 && cs.getDomainTimeSlots().size() == 1){
+                scheduled[cs.getId()] = true;
+                sortedClassSegments.add(cs);
+            }
+        }
         while(true){
             boolean finished = true;
             for(String c: courseGroupId){
@@ -219,19 +225,28 @@ public class GreedySolver1 implements Solver {
                 if(idx < mCourseGroup2ClassSegments.get(c).size()){
                     ClassSegment cs = mCourseGroup2ClassSegments.get(c).get(idx);
                     mCourseGroup2Pointer.put(c,idx+1);
-                    sortedClassSegments.add(cs);
+                    if(!scheduled[cs.getId()]) {
+                        sortedClassSegments.add(cs);
+                        scheduled[cs.getId()] = true;
+                    }
                     finished = false; break;
                 }
             }
             if(finished) break;
         }
+        log.info("solve, after sorting, sortedClassSegments: ");
+        for(int i = 0; i < sortedClassSegments.size(); i++)
+            log.info("sortedClassSegments[" + i + "] = " + sortedClassSegments.get(i));
+
         for(int i = 0;i < sortedClassSegments.size(); i++){
             ClassSegment cs = sortedClassSegments.get(i);
             // find a time slot and room for the class-segment cs
-            String courseGroup = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
+            //String courseGroup = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
+            String courseGroup = cs.hashCourseGroup();
             int maxTeacher = I.getMaxTeacherOfCourses()[cs.getCourseIndex()];// get max number of teacher in charge of the course courseIndex
             // try first the time-slot for the courseGroup
             int selectTimeSlot = mCourseGroup2TimeSlot.get(courseGroup);
+            log.info("solve, scan sorted class-segments, consider " + cs.getId() + ", courseGroup = " + courseGroup + " selectedTimeSlot = " + selectTimeSlot);
             int selectedRoom = -1;
 
             if(checkTimeSlot(i,selectTimeSlot,sortedClassSegments)){
@@ -243,10 +258,10 @@ public class GreedySolver1 implements Solver {
             }
 
             if(selectedRoom != -1) {
-                solutionSlot[cs.getId()] = selectTimeSlot;
-                solutionRoom[cs.getId()] = selectedRoom;
-                log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
-
+                //solutionSlot[cs.getId()] = selectTimeSlot;
+                //solutionRoom[cs.getId()] = selectedRoom;
+                //log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
+                assignTimeSlotRoom(cs.getId(),selectTimeSlot,selectedRoom);
             }else{
                 // try to find another time-slot and room for class-segment i
                 int maxScore = -1;
@@ -261,15 +276,21 @@ public class GreedySolver1 implements Solver {
                     }
                 }
                 if(maxScore > -1){
-                    solutionSlot[cs.getId()] = selectTimeSlot;
-                    solutionRoom[cs.getId()] = selectedRoom;
-                    log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
-
+                    //solutionSlot[cs.getId()] = selectTimeSlot;
+                    //solutionRoom[cs.getId()] = selectedRoom;
+                    //log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
+                    assignTimeSlotRoom(cs.getId(),selectTimeSlot,selectedRoom);
                 }else{
                     log.info("solve CANNOT find solution for class-segment " + i);
                 }
             }
         }
+    }
+    private void assignTimeSlotRoom(int csi, int timeSlot, int room){
+        solutionSlot[csi] = timeSlot;
+        solutionRoom[csi] = room;
+        log.info("assignTimeSlotRoom[" + csi + "], time-slot = " + timeSlot + ", room = " + room);
+        foundSolution = true;
     }
     private int computeScoreTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments) {
         ClassSegment csi = sortedClassSegments.get(i);
@@ -360,7 +381,7 @@ public class GreedySolver1 implements Solver {
 
     @Override
     public boolean hasSolution() {
-        return false;
+        return foundSolution;
     }
 
     @Override

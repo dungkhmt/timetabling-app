@@ -165,10 +165,11 @@ public class GeneralClassController {
     @GetMapping("/get-list-algorithm-names")
     public ResponseEntity<?> getListAlgorithms(){
         List<String> res = new ArrayList<>();
+        res.add(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_FIRST_FIT);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_2);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_3);
-        res.add(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1);
+
         return ResponseEntity.ok().body(res);
     }
     @PostMapping("/auto-schedule-timeslot-room")

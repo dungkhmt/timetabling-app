@@ -1,7 +1,10 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.util.*;
 
+@Log4j2
 public class CourseNotOverlapBackTrackingSolver {
     Set<String> courses;
     Map<String, List<Integer>> mCourse2Domain;
@@ -24,7 +27,7 @@ public class CourseNotOverlapBackTrackingSolver {
         nbCourses= courses.size();
         domain = new List[nbCourses];
         duration = new int[nbCourses];
-
+        this.mCourseGroup2ConflictCourseGroups = mCourseGroup2ConflictCourseGroups;
     }
     public void solve(){
         arrCourses = new String[nbCourses];
@@ -72,13 +75,16 @@ public class CourseNotOverlapBackTrackingSolver {
         return true;
     }
     private void solution(){
+        if(found) return;
         found = true;
         for(int i = 0; i < nbCourses; i++) sol[i] = x[i];
     }
     private void tryValue(int k){
         if(found) return;
+        //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " start");
         // try value for x[k]: start time-slot for course k
         for(int v: domain[k]){
+            //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " consider v = " + v);
             if(check(v,k)){
                 x[k] = v;
                 if(k == nbCourses-1) solution();
