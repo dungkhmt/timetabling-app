@@ -150,7 +150,7 @@ const TimetableDetailPage = () => {
   }
 
   const handleViewTimetable = () => {
-    history.push(`/exam-timetable/${id}/view`);
+    history.push(`/exam-time-tabling/exam-timetable/view/${id}`);
   };
 
   const handleRenameTimetable = async (name) => {
