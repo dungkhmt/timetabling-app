@@ -6,6 +6,10 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity.CourseNotOverlapBackTrackingSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.GreedySolver;
 
+import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.GreedySolver2;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.GreedySolver3;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.GreedySolver1;
+import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidClassStudentQuantityException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
@@ -105,10 +109,10 @@ public class V2ClassScheduler {
             Long[] parentClassId = new Long[n];
             int[] vol = new int[n];
             int[] groupId = new int[n];
-        List<Integer>[] roomPriority = new ArrayList[n];
+            List<Integer>[] roomPriority = new ArrayList[n];
             //boolean[][] conflict = new boolean[n][n];
-        List<Integer[]> conflict = new ArrayList();
-        List<Integer>[] D = new List[n];
+            List<Integer[]> conflict = new ArrayList();
+            List<Integer>[] D = new List[n];
             for (int i = 0; i < n; i++) D[i] = new ArrayList<Integer>();
             int idx = -1;
             //int[] days = {0, 2, 4, 1, 3};
@@ -121,6 +125,27 @@ public class V2ClassScheduler {
             for(TimeTablingCourse course: ttcourses){
                 mId2Course.put(course.getId(),course);
             }
+            Set<String> courseCodes = new HashSet<>();
+            for(GeneralClass gc: classes){
+                courseCodes.add(gc.getCourse());
+            }
+            int idxCourse = -1;
+            Map<String, Integer> mCourseCode2Index = new HashMap<>();
+            for(String cc: courseCodes){
+                idxCourse++; mCourseCode2Index.put(cc,idxCourse);
+            }
+
+            int[] maxTeacherOfCourse = new int[courseCodes.size()];
+            for(int i = 0; i < maxTeacherOfCourse.length; i++) maxTeacherOfCourse[i] = Integer.MAX_VALUE;
+            for(TimeTablingCourse ttc: ttcourses){
+                if(mCourseCode2Index.get(ttc.getId())!=null){
+                    int idxC = mCourseCode2Index.get(ttc.getId());
+                    maxTeacherOfCourse[idxC] = ttc.getMaxTeacherInCharge();
+                }
+            }
+            int[] courseIndex = new int[n];
+
+
             for (int i = 0; i < classes.size(); i++) {
                 GeneralClass gc = classes.get(i);
                 Group gr = mName2Group.get(gc.getGroupName());
@@ -133,14 +158,14 @@ public class V2ClassScheduler {
                         mClassSegment2Class.put(idx, gc);
                         indexOfClass[idx] = i;
                         relatedGroups[idx] = mClassId2GroupIndex.get(gc.getId());
-
+                        courseIndex[idx] = mCourseCode2Index.get(gc.getClassCode());
                         d[idx] = rr.getDuration();//gc.getDuration();//gc.getQuantityMax();
                         c[idx] = gc.getCourse();
                         cls[idx] = gc.getId();//gc.getClassCode();
                         vol[idx] = 0;
                         if(gc.getQuantityMax() != null) vol[idx] = gc.getQuantityMax();
                         groupId[idx] = 0;// not used, use relatedGroups instead //mGroupName2Index.get(gc.getGroupName());
-                        if(relatedGroups[idx].size() > 0) groupId[idx] = relatedGroups[idx].get(0);
+                        if(relatedGroups[idx] != null && relatedGroups[idx].size() > 0) groupId[idx] = relatedGroups[idx].get(0);
                         parentClassId[idx] = gc.getParentClassId();
                         int start = -1;
                         int end = -1;
@@ -225,13 +250,15 @@ public class V2ClassScheduler {
                 roomPriority[i].add(r);
         }
         //MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,c,cls,groupId,parentClassId,vol,conflict,D,roomPriority,mClassSegment2Class);
-        MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,c,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority);
+        //MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,c,courseIndex,maxTeacherOfCourse,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority);
+        MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,courseIndex,maxTeacherOfCourse,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority);
+
         MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class);
 
         //data.print();
         return DW;
     }
-    public List<GeneralClass> autoScheduleTimeSlotRoom(List<GeneralClass> classes, List<Classroom> rooms, List<TimeTablingCourse> ttcourses, List<Group> groups, List<ClassGroup> classGroups, int timeLimit) {
+    public List<GeneralClass> autoScheduleTimeSlotRoom(List<GeneralClass> classes, List<Classroom> rooms, List<TimeTablingCourse> ttcourses, List<Group> groups, List<ClassGroup> classGroups, int timeLimit, String algorithm) {
         log.info("autoScheduleTimeSlotRoom, START....");
         //for(int i = 0; i < rooms.size(); i++){
         //    log.info("autoScheduleTimeSlotRoom, room[" + i + "] = " + rooms.get(i).getClassroom());
@@ -253,6 +280,7 @@ public class V2ClassScheduler {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        /*
         HashSet<String> courses = new HashSet();
         Map<Integer, String> mClassSegment2Course = new HashMap();
         Map<String, List<Integer>> mCourse2Domain = new HashMap();
@@ -264,8 +292,19 @@ public class V2ClassScheduler {
             mCourse2Domain.put(courseCode, data.getDomains()[i]);
             mCourse2Duration.put(courseCode, data.nbSlots[i]);
         }
+        */
         //CourseNotOverlapBackTrackingSolver solver = new CourseNotOverlapBackTrackingSolver(courses,mCourse2Domain,mCourse2Duration);
-        GreedySolver solver = new GreedySolver(data);
+        //GreedySolver solver = new GreedySolver(data);
+        Solver solver = null;
+        if(algorithm.equals(Constants.ONE_CLASS_PER_COURSE_GREEDY_FIRST_FIT))
+            solver = new GreedySolver(data);
+        else if(algorithm.equals(Constants.ONE_CLASS_PER_COURSE_GREEDY_2))
+            solver = new GreedySolver2(data);
+        else if(algorithm.equals(Constants.ONE_CLASS_PER_COURSE_GREEDY_3))
+            solver = new GreedySolver3(data);
+        else if(algorithm.equals(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1))
+            solver = new GreedySolver1(data);
+
         solver.solve();
         if (!solver.hasSolution()) {
             log.info("autoScheduleTimeSlotRoom, no solution!!!");

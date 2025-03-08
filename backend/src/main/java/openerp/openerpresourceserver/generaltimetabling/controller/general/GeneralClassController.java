@@ -162,11 +162,12 @@ public class GeneralClassController {
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_FIRST_FIT);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_2);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_3);
+        res.add(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1);
         return ResponseEntity.ok().body(res);
     }
     @PostMapping("/auto-schedule-timeslot-room")
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
-        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getClassIds(),I.getTimeLimit()));
+        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getClassIds(),I.getTimeLimit(),I.getAlgorithm()));
     }
     @PostMapping("/auto-schedule-time")
     public ResponseEntity<List<GeneralClass>> requestAutoScheduleTime(

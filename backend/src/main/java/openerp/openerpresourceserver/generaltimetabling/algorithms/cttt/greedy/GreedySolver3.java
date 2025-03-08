@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Scanner;
 
 @Log4j2
-public class GreedySolver implements Solver {
+public class GreedySolver3 implements Solver {
     MapDataScheduleTimeSlotRoom I;
     int[] solutionSlot;// solutionSlot[i] is the start time-slot assigned to class-segment i
     int[] solutionRoom; // solutionRoom[i] is the room assigned to class-segment i
     HashSet<Integer>[] conflictClassSegment;// conflictClassSegment[i] is the list of class-segment conflict with class segment i
     List<Integer> unScheduledClassSegment;
     boolean foundSolution;
-    public GreedySolver(MapDataScheduleTimeSlotRoom I){
+    public GreedySolver3(MapDataScheduleTimeSlotRoom I){
 
         this.I = I;
         conflictClassSegment = new HashSet[I.getNbClassSegments()];
@@ -62,6 +62,7 @@ public class GreedySolver implements Solver {
     public int[] getSolutionRoom(){ return solutionRoom;}
 
     public void greedy3() {
+        log.info("greedy3 START....");
         unScheduledClassSegment = new ArrayList<>();
         for (int i = 0; i < I.getNbClassSegments(); i++) {
             boolean foundSlotRoom = false;
@@ -139,7 +140,6 @@ public class GreedySolver implements Solver {
         foundSolution = unScheduledClassSegment.isEmpty();
     }
     public void simpleGreedy(){
-        log.info("simpleGreedy START....");
         unScheduledClassSegment = new ArrayList<>();
         for(int i = 0; i < I.getNbClassSegments(); i++){
             // try to find a first-fit time-slot and room for class segment i
@@ -182,9 +182,9 @@ public class GreedySolver implements Solver {
         for(int i = 0; i < I.getNbClassSegments(); i++){
             solutionRoom[i] = -1; solutionSlot[i] = -1; // NOT ASSIGNED/SCHEDULED
         }
-        simpleGreedy();
-        //greedy2();
-        //greedy3();
+//        simpleGreedy();
+//        greedy2();
+        greedy3();
         printSolution();
     }
     public void printSolution(){

@@ -15,5 +15,6 @@ public class ModelInputAutoScheduleTimeSlotRoom {
     List<Long> classIds;
     private String semester;
     private int timeLimit;
+    private String algorithm;
 }
 

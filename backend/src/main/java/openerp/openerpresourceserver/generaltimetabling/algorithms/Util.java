@@ -6,6 +6,11 @@ import openerp.openerpresourceserver.generaltimetabling.model.Constant;
 import java.util.*;
 @Log4j2
 public class Util {
+
+    public static boolean overLap(int startSlot1, int duration1, int startSlot2, int duration2){
+        if(startSlot1 + duration1 <= startSlot2 || startSlot2 + duration2 <= startSlot1) return false;
+        return true;
+    }
     public static List<Integer> generateSLotSequence(String crew, int duration){
         int startCrew = 0; int endCrew = 1;
         if(crew != null){

@@ -34,7 +34,7 @@ public interface GeneralClassService {
 
     List<GeneralClass> autoScheduleGroup(String semester, String groupName, int timeLimit);
 
-    List<GeneralClass> autoScheduleTimeSlotRoom(List<Long> classIds, int timeLimit);
+    List<GeneralClass> autoScheduleTimeSlotRoom(List<Long> classIds, int timeLimit, String algorithm);
     List<GeneralClass> autoSchedule(String semester, int timeLimit);
 
 

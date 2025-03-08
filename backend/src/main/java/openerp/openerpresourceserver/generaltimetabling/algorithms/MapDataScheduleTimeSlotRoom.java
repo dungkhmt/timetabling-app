@@ -15,7 +15,9 @@ public class MapDataScheduleTimeSlotRoom {
     int[] roomCapacity;
     int nbClassSegments;// number of class-segments
     int[] nbSlots; // nbSlots[i] - duration of i-th segment
-    String[] courseCode; // courseCode[i] - course code of i-th segment
+    //String[] courseCode; // courseCode[i] - course code of i-th segment
+    int[] courseIndex;// courseIndex[i] is the index of course of the class-segment i
+    int[] maxTeacherOfCourses; // maxTeacherOfCourse[i] is the maximum number of teachers can teach course index i
     Long[] classId; // classId[i] - class code of i-th segment
     int[] groupId; // groupId[i] - group id of i-th segment
     List<Integer>[] relatedGroupId; // list of group the class-segment involves

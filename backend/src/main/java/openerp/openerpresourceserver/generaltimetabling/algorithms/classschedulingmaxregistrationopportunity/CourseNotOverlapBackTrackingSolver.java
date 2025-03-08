@@ -1,38 +1,52 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class CourseNotOverlapBackTrackingSolver {
     Set<String> courses;
     Map<String, List<Integer>> mCourse2Domain;
     Map<String, Integer> mCourse2Duration;
-
+    Map<String, List<String>> mCourseGroup2ConflictCourseGroups;
+    String[] arrCourses;
+    Map<String, Integer> mCourseId2Index;
     int nbCourses;
     List<Integer>[] domain;
+    Set<Integer>[] conflict;
     int[] duration;
     int[] x;
     int[] sol;
     Map<String, Integer> solutionMap;
     boolean found;
-    public CourseNotOverlapBackTrackingSolver(Set<String> courses, Map<String, List<Integer>> mCourse2Domain, Map<String, Integer> mCourse2Duration){
+    public CourseNotOverlapBackTrackingSolver(Set<String> courses, Map<String, List<Integer>> mCourse2Domain, Map<String, Integer> mCourse2Duration,Map<String, List<String>> mCourseGroup2ConflictCourseGroups){
         this.courses = courses;
         this.mCourse2Domain = mCourse2Domain;
         this.mCourse2Duration = mCourse2Duration;
         nbCourses= courses.size();
         domain = new List[nbCourses];
         duration = new int[nbCourses];
-        String[] arrCourses = new String[nbCourses];
+
+    }
+    public void solve(){
+        arrCourses = new String[nbCourses];
+        mCourseId2Index = new HashMap<>();
+        conflict = new Set[nbCourses];
+
         int idx = -1;
         for(String c: courses){
             System.out.println("Solver: course " + c);
             idx++;
             arrCourses[idx] = c;
+            mCourseId2Index.put(c,idx);
             domain[idx] = mCourse2Domain.get(c);
             duration[idx] = mCourse2Duration.get(c);
             System.out.println("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
+            conflict[idx] = new HashSet();
+        }
+        for(int i = 0; i < nbCourses; i++){
+            for(String ci: mCourseGroup2ConflictCourseGroups.get(arrCourses[i])){
+                int j = mCourseId2Index.get(ci);
+                conflict[i].add(j);
+            }
         }
         x = new int[nbCourses];
         sol = new int[nbCourses];
@@ -50,8 +64,10 @@ public class CourseNotOverlapBackTrackingSolver {
     public int[] getSolution(){ return sol; }
     private boolean check(int v, int k){
         for(int i = 0; i <= k-1; i++){
-            boolean notOverLap = (v >= x[i] + duration[i] || x[i] >= v + duration[k]);
-            if(!notOverLap) return false;
+            if(conflict[k].contains(i)) {
+                boolean notOverLap = (v >= x[i] + duration[i] || x[i] >= v + duration[k]);
+                if (!notOverLap) return false;
+            }
         }
         return true;
     }
