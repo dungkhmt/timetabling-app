@@ -10,7 +10,6 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   
-  console.log(classes);
   const handleOnCellChange = (e, params) => {
     setClasses((prevClasses) => {
       return prevClasses?.map((prevClass) =>

@@ -134,6 +134,42 @@ public class GeneralClassServiceImp implements GeneralClassService {
     }
 
     @Override
+    public List<GeneralClassDto> getSubClasses(Long parentClassId){
+        String parentId = String.valueOf(parentClassId);
+        List<GeneralClass> subClasses = gcoRepo.findSubClassesByParentClassId(parentId);
+
+        if (subClasses.isEmpty()) {
+            System.out.println("Không tìm thấy subclass nào với parentClassId = " + parentClassId);
+        }
+
+        return subClasses.stream()
+                .map(gc -> GeneralClassDto.builder()
+                        .id(gc.getId())
+                        .quantity(gc.getQuantity())
+                        .quantityMax(gc.getQuantityMax())
+                        .moduleCode(gc.getModuleCode())
+                        .moduleName(gc.getModuleName())
+                        .classType(gc.getClassType())
+                        .classCode(gc.getClassCode())
+                        .semester(gc.getSemester())
+                        .studyClass(gc.getStudyClass())
+                        .mass(gc.getMass())
+                        .state(gc.getState())
+                        .crew(gc.getCrew())
+                        .openBatch(gc.getOpenBatch())
+                        .course(gc.getCourse())
+                        .refClassId(gc.getRefClassId())
+                        .parentClassId(gc.getParentClassId())
+                        .duration(gc.getDuration())
+                        .groupName(gc.getGroupName())
+                        .timeSlots(gc.getTimeSlots())
+                        .learningWeeks(gc.getLearningWeeks())
+                        .foreignLecturer(gc.getForeignLecturer())
+                        .build()
+                ).toList();
+    }
+
+    @Override
     public void deleteAllGeneralClasses() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'deleteAllGeneralClasses'");
@@ -304,20 +340,37 @@ public class GeneralClassServiceImp implements GeneralClassService {
         roomOccupationRepo.deleteBySemester(semester);
     }
 
-
     @Override
     @Transactional
     public void deleteClassesByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new IllegalArgumentException("Danh sách ID không được rỗng.");
         }
+
         List<GeneralClass> classesToDelete = gcoRepo.findAllById(ids);
+
         if (classesToDelete.isEmpty()) {
             throw new RuntimeException("Không tìm thấy lớp học nào để xóa với danh sách ID đã cung cấp.");
         }
-        roomReservationRepo.deleteByGeneralClassIds(ids);
-        gcoRepo.deleteByIds(ids);
+
+        List<Long> allIdsToDelete = new ArrayList<>(ids);
+
+        List<String> parentClassIds = classesToDelete.stream()
+                .filter(generalClass -> generalClass.getParentClassId() != null)
+                .map(GeneralClass::getClassCode)
+                .collect(Collectors.toList());
+
+        if (!parentClassIds.isEmpty()) {
+            List<GeneralClass> subClasses = gcoRepo.findSubClassesByParentClassIds(parentClassIds);
+            allIdsToDelete.addAll(subClasses.stream()
+                    .map(GeneralClass::getId)
+                    .collect(Collectors.toList()));
+        }
+
+        roomReservationRepo.deleteByGeneralClassIds(allIdsToDelete);
+        gcoRepo.deleteByIds(allIdsToDelete);
     }
+
 
     @Transactional
     @Override

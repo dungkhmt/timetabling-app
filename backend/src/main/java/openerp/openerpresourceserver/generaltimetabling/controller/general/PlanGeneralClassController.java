@@ -88,6 +88,4 @@ public class PlanGeneralClassController {
     public ResponseEntity<PlanGeneralClass> requestDeletePlanClass(@RequestParam("planClassId") Long planClassId) {
         return ResponseEntity.ok(planClassService.deleteClassById(planClassId));
     }
-
-
 }
