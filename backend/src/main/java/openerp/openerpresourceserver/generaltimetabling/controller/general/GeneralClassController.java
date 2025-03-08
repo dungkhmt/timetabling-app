@@ -72,6 +72,12 @@ public class GeneralClassController {
             @RequestParam(value = "groupName", required = false) String groupName) {
         return gService.getGeneralClassDtos(semester, groupName);
     }
+
+
+    @GetMapping("/get-by-parent-class")
+    public List<GeneralClassDto> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
+        return gService.getSubClasses(parentClassId);
+    }
     
     @PostMapping("/update-class")
     public ResponseEntity<GeneralClass> requestUpdateClass(@RequestBody UpdateGeneralClassRequest request) {

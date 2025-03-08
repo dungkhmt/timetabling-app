@@ -24,6 +24,8 @@ public interface GeneralClassService {
 
     List<GeneralClass> addClassesToGroup(List<Long> ids, String groupName) throws Exception;
 
+    List<GeneralClassDto> getSubClasses(Long parentClassId);
+
     List<GeneralClassDto> getGeneralClassDtos(String semester, String groupName);
 
     public void deleteClassesBySemester(String semester);

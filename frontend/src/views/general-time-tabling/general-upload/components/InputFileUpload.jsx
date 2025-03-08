@@ -26,7 +26,6 @@ export default function InputFileUpload({
   console.log(selectedSemester);
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
-    console.log(event.target.files[0]);
   };
   
 

@@ -46,7 +46,6 @@ const GeneralUploadScreen = () => {
   };
 
   const handleRefreshData = useCallback(async () => {
-    // Force a complete refresh of the data
     try {
       await states.refetchNoSchedule();
       console.log("Data refreshed in GeneralUploadScreen");
@@ -54,8 +53,6 @@ const GeneralUploadScreen = () => {
       console.error("Error refreshing data:", error);
     }
   }, [states]);
-
-  console.log(classesNoSchedule);
 
   return (
     <LoadingProvider>

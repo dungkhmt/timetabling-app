@@ -1,8 +1,20 @@
 import { useState, useEffect } from "react";
-import { 
-  Dialog, DialogTitle, DialogContent, Button, TextField, MenuItem,
-  Tabs, Tab, Box, Checkbox, CircularProgress
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Button,
+  TextField,
+  MenuItem,
+  Tabs,
+  Tab,
+  Box,
+  Checkbox,
+  CircularProgress,
+  DialogActions,
+  IconButton, // Thêm IconButton vào imports
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close"; // Thêm import này
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { request } from "api";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
@@ -19,20 +31,20 @@ function TabPanel(props) {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ pt: 1 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ pt: 1 }}>{children}</Box>}
     </div>
   );
 }
 
-const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent }) => {
+const ViewClassDetailDialog = ({
+  classData,
+  isOpen,
+  closeDialog,
+  onRefreshParent,
+}) => {
   const [subClasses, setSubClasses] = useState([]);
   const [openNewDialog, setOpenNewDialog] = useState(false);
   const [tabValue, setTabValue] = useState(0);
-  const [groupName, setGroupName] = useState("");
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -42,13 +54,18 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
     pageSize: 10,
   });
   const [isAddingSubClass, setIsAddingSubClass] = useState(false);
+  const [isLoadingSubClasses, setIsLoadingSubClasses] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedSubClass, setSelectedSubClass] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]); // Add this
 
-  const { states, handlers } = useGeneralSchedule();
+  const { states, handlers, setters } = useGeneralSchedule();
 
   const [newSubClass, setNewSubClass] = useState({
     studentCount: "",
     classType: "",
-    classCount: ""
+    classCount: "",
   });
 
   useEffect(() => {
@@ -57,9 +74,30 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
     }
   }, [isOpen, classData?.id, tabValue]);
 
+  useEffect(() => {
+    if (isOpen && classData?.classCode && tabValue === 0) {
+      fetchSubClasses();
+    }
+  }, [isOpen, classData?.classCode, tabValue]);
+
+  const fetchSubClasses = async () => {
+    if (!classData?.classCode) return;
+
+    setIsLoadingSubClasses(true);
+    try {
+      const data = await handlers.getSubClasses(classData.classCode);
+      setSubClasses(data || []);
+    } catch (error) {
+      console.error("Failed to fetch subclasses", error);
+      toast.error("Không thể tải danh sách lớp con");
+    } finally {
+      setIsLoadingSubClasses(false);
+    }
+  };
+
   const fetchClassGroups = async () => {
     if (!classData?.id) return;
-    
+
     setLoading(true);
     try {
       const data = await handlers.getClassGroups(classData.id);
@@ -74,12 +112,20 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
 
   useEffect(() => {
     if (searchText.trim() === "") {
-      setFilteredGroups([...groups].sort((a, b) => (b.assigned === true) - (a.assigned === true)));
+      setFilteredGroups(
+        [...groups].sort(
+          (a, b) => (b.assigned === true) - (a.assigned === true)
+        )
+      );
     } else {
-      const filtered = groups.filter(group => 
+      const filtered = groups.filter((group) =>
         group.groupName.toLowerCase().includes(searchText.toLowerCase())
       );
-      setFilteredGroups([...filtered].sort((a, b) => (b.assigned === true) - (a.assigned === true)));
+      setFilteredGroups(
+        [...filtered].sort(
+          (a, b) => (b.assigned === true) - (a.assigned === true)
+        )
+      );
     }
   }, [groups, searchText]);
 
@@ -94,34 +140,28 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
       classType: newSubClass.classType,
       numberStudents: parseInt(newSubClass.studentCount, 10),
       duration: classData?.duration,
-      numberClasses: parseInt(newSubClass.classCount, 10)
+      numberClasses: parseInt(newSubClass.classCount, 10),
     };
-    
+
     try {
-      // First, make the API call to add the subclass
       await request(
         "post",
         "/plan-general-classes/make-subclass",
-        (res) => {
-          // Update local state with the new subclass
-          const newSubClassData = res.data;
-          setSubClasses(prevSubClasses => [...prevSubClasses, newSubClassData]);
+        async (res) => {
+          await fetchSubClasses(); // Fetch updated list after successful POST
+          setOpenNewDialog(false);
+          setNewSubClass({ studentCount: "", classType: "", classCount: "" });
+          await states.refetchNoSchedule();
+          if (onRefreshParent) {
+            await onRefreshParent();
+          }
+          toast.success("Thêm lớp con thành công");
         },
-        (err) => { throw err; },
+        (err) => {
+          throw err;
+        },
         payload
       );
-
-      setOpenNewDialog(false);
-      setNewSubClass({ studentCount: "", classType: "", classCount: "" });
-
-      await states.refetchNoSchedule();
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      if (onRefreshParent && typeof onRefreshParent === 'function') {
-        await onRefreshParent();
-      }
-      
-      toast.success("Thêm lớp con thành công");
     } catch (error) {
       console.error("Failed to add subclass", error);
       toast.error("Thêm lớp con thất bại");
@@ -131,7 +171,7 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
   };
 
   const handleGroupSelectionChange = async (id) => {
-    const group = groups.find(g => g.id === id);
+    const group = groups.find((g) => g.id === id);
     if (!group) return;
     try {
       if (!group.assigned) {
@@ -139,7 +179,9 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
       } else {
         await handlers.deleteClassGroup(classData?.id, id);
       }
-      setGroups(groups.map(g => g.id === id ? { ...g, assigned: !g.assigned } : g));
+      setGroups(
+        groups.map((g) => (g.id === id ? { ...g, assigned: !g.assigned } : g))
+      );
     } catch (error) {
       console.error("Failed to update group", error);
     }
@@ -147,28 +189,62 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
 
   const handleSelectAllGroups = (event) => {
     const checked = event.target.checked;
-    setGroups(groups.map(group => ({
-      ...group,
-      assigned: checked
-    })));
+    setGroups(
+      groups.map((group) => ({
+        ...group,
+        assigned: checked,
+      }))
+    );
   };
 
-  const areAllGroupsSelected = groups.length > 0 && groups.every(group => group.assigned);
+  const areAllGroupsSelected =
+    groups.length > 0 && groups.every((group) => group.assigned);
+
+  const handleDeleteSubClass = async () => {
+    if (!selectedSubClass?.id) return;
+    setIsDeleting(true);
+
+    const id = parseInt(selectedSubClass.id.toString().split("-")[0]);
+    await handlers.handleDeleteByIds([id]);
+    await fetchSubClasses();
+    setDeleteDialogOpen(false);
+    if (onRefreshParent) {
+      await onRefreshParent();
+    }
+  };
+
+  useEffect(() => {
+    setters.setSelectedRows(selectedIds);
+  }, [selectedIds]);
+
+  const handleSelectionChange = (newSelection) => {
+    setSelectedIds(newSelection);
+  };
+
+  const handleClose = () => {
+    setSelectedIds([]);
+    setters.setSelectedRows([]);
+    closeDialog();
+  };
 
   const groupColumns = [
     {
-      field: 'assigned',
-      headerName: 'Đã chọn',
-      width: 130, 
+      field: "assigned",
+      headerName: "Đã chọn",
+      width: 130,
       renderHeader: () => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Checkbox 
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <Checkbox
             checked={areAllGroupsSelected}
             onChange={handleSelectAllGroups}
-            indeterminate={groups.some(g => g.assigned) && !areAllGroupsSelected}
+            indeterminate={
+              groups.some((g) => g.assigned) && !areAllGroupsSelected
+            }
             size="small"
           />
-          <span className="MuiDataGrid-columnHeaderTitle font-medium">Đã chọn</span>
+          <span className="MuiDataGrid-columnHeaderTitle font-medium">
+            Đã chọn
+          </span>
         </div>
       ),
       renderCell: (params) => (
@@ -178,12 +254,28 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
         />
       ),
     },
-    { field: 'groupName', headerName: 'Nhóm', width: 300 },
+    { field: "groupName", headerName: "Nhóm", width: 300 },
+  ];
+
+  const classDetailsColumns = [
+    { field: "classCode", headerName: "Mã lớp", width: 120 },
+    { field: "classType", headerName: "Loại lớp", width: 80 },
+    {
+      field: "duration",
+      headerName: "Thời lượng",
+      width: 130,
+      valueGetter: (params) => {
+        return params.row.duration ? `${params.row.duration} tiết` : "";
+      },
+    },
+    { field: "semester", headerName: "Kỳ học", width: 90 },
+    { field: "learningWeeks", headerName: "Tuần học", width: 150 },
+    { field: "quantityMax", headerName: "SL MAX", width: 110 },
   ];
 
   return (
     <>
-      <Dialog open={isOpen} onClose={closeDialog} maxWidth="md" fullWidth>
+      <Dialog open={isOpen} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle
           sx={{
             pb: 0,
@@ -192,9 +284,28 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
             minHeight: "40px",
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between", 
           }}
         >
-          Thông tin của lớp: {classData?.id}
+          <div className="flex items-center">
+            Thông tin của lớp: {classData?.moduleCode} - {classData?.moduleName} -{" "}
+            {classData?.id}/{classData?.classCode}
+            {!classData?.parentClassId && (
+              <span className="ml-2 text-sm text-red-500">(Lớp con)</span>
+            )}
+          </div>
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 1, mt: 0 }}>
@@ -213,31 +324,54 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
               <Button
                 variant="contained"
                 onClick={() => setOpenNewDialog(true)}
+                disabled={!classData?.parentClassId}
               >
                 Thêm mới
               </Button>
+              <Button
+                sx={{ ml: 2 }}
+                variant="contained"
+                color="error"
+                onClick={() => {
+                  if (selectedIds.length > 0) {
+                    setSelectedSubClass({ id: selectedIds[0] });
+                    setDeleteDialogOpen(true);
+                  }
+                }}
+                disabled={selectedIds.length === 0}
+              >
+                Xóa các lớp đã chọn ({selectedIds.length})
+              </Button>
+              {!classData?.parentClassId && (
+                <span className="ml-2 text-sm text-gray-500">
+                  (Chỉ có thể thêm lớp con cho lớp cha)
+                </span>
+              )}
             </div>
             <div style={{ height: 250, width: "100%" }}>
-              <DataGrid
-                rows={subClasses}
-                columns={[
-                  { field: "id", headerName: "ID", width: 70 },
-                  {
-                    field: "studentCount",
-                    headerName: "Số lượng sinh viên",
-                    width: 200,
-                  },
-                  { field: "classType", headerName: "Loại lớp", width: 150 },
-                  { field: "classCount", headerName: "SL lớp", width: 100 },
-                ]}
-                getRowId={(row) => row.id || `row-${Math.random().toString(36).substring(2, 9)}`}
-                initialState={{
-                  pagination: {
-                    paginationModel: { pageSize: 5 },
-                  },
-                }}
-                pageSizeOptions={[5]}
-              />
+              {isLoadingSubClasses ? (
+                <div className="flex justify-center items-center h-full">
+                  <CircularProgress />
+                </div>
+              ) : (
+                <DataGrid
+                  rows={subClasses}
+                  columns={classDetailsColumns}
+                  getRowId={(row) =>
+                    row.id ||
+                    `row-${Math.random().toString(36).substring(2, 9)}`
+                  }
+                  checkboxSelection
+                  onRowSelectionModelChange={handleSelectionChange}
+                  rowSelectionModel={selectedIds}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { pageSize: 5 },
+                    },
+                  }}
+                  pageSizeOptions={[5]}
+                />
+              )}
             </div>
           </TabPanel>
 
@@ -298,7 +432,7 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
               <MenuItem value="NT">NT</MenuItem>
               <MenuItem value="TH">TH</MenuItem>
               <MenuItem value="TN">TN</MenuItem>
-              <MenuItem value="TN">BT</MenuItem>
+              <MenuItem value="BT">BT</MenuItem>
             </TextField>
             <TextField
               label="SL lớp"
@@ -314,12 +448,37 @@ const ViewClassDetailDialog = ({ classData, isOpen, closeDialog, onRefreshParent
               variant="contained"
               color="primary"
               disabled={isAddingSubClass}
-              startIcon={isAddingSubClass ? <CircularProgress size={20} color="inherit" /> : null}
+              startIcon={
+                isAddingSubClass ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : null
+              }
             >
               {isAddingSubClass ? "Đang xử lý..." : "Xác nhận"}
             </Button>
           </div>
         </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Xác nhận xóa</DialogTitle>
+        <DialogContent>
+          Bạn có chắc chắn muốn xóa lớp {selectedSubClass?.classCode} không?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+          <Button
+            onClick={handleDeleteSubClass}
+            color="error"
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} /> : null}
+          >
+            {isDeleting ? "Đang xóa..." : "Xóa"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

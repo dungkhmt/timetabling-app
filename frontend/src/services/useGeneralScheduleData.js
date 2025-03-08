@@ -643,6 +643,23 @@ export const useGeneralSchedule = () => {
     }
   }, [selectedRows, fetchClasses, fetchClassesNoSchedule]);
 
+  // Get subclasses by parent class ID
+  const getSubClasses = useCallback(async (parentClassId) => {
+    if (!parentClassId) {
+      toast.error("Không có ID lớp cha!");
+      return [];
+    }
+
+    try {
+      const data = await generalScheduleRepository.getSubClasses(parentClassId);
+      return data;
+    } catch (error) {
+      toast.error("Không thể tải danh sách lớp con!");
+      console.error("Failed to fetch subclasses", error);
+      return [];
+    }
+  }, []);
+
   // Maintain the same return interface for compatibility
   return {
     states: {
@@ -709,6 +726,7 @@ export const useGeneralSchedule = () => {
       updateClassGroup,
       deleteClassGroup,
       updateClassesGroup,
+      getSubClasses,
       handleDeleteByIds,
       uploadFile,
       deleteBySemester,
