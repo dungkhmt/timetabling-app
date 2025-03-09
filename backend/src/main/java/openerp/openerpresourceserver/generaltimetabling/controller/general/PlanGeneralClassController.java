@@ -53,8 +53,7 @@ public class PlanGeneralClassController {
 
     @PostMapping("/make-multiple-classes")
     public ResponseEntity<List<GeneralClass>> requestMakeMultipleClasses(@RequestBody BulkMakeGeneralClassRequest request) {
-        //return ResponseEntity.ok(planClassService.makeMultipleClasses(request));
-        return null;
+        return ResponseEntity.ok(planClassService.makeMultipleClasses(request));
     }
 
     @GetMapping("/")
