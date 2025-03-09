@@ -57,7 +57,7 @@ const SaleOrderTable = ({
   const history = useHistory();
   const location = useLocation();
   const handleViewDetails = (orderId) => {
-    history.push(location.pathname + "/" + orderId);
+    history.push(location.pathname + "/details/" + orderId);
   };
 
   return (

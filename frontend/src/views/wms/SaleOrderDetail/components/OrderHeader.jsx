@@ -8,7 +8,7 @@ import { useOrderDetail } from "../context/OrderDetailContext";
 const OrderHeader = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { orderData, loading, approveOrder, cancelOrder, editOrder, applyDiscount } = useOrderDetail();
+  const { orderData, loading, approveOrderApi, cancelOrder, editOrder, applyDiscount } = useOrderDetail();
 
   if (!orderData) return null;
 
@@ -40,8 +40,8 @@ const OrderHeader = () => {
             color="primary"
             fullWidth={isMobile}
             startIcon={loading ? <CircularProgress size={20} /> : <CheckOutlined />}
-            onClick={approveOrder}
-            disabled={loading || !canApprove}
+            onClick={approveOrderApi}
+            // disabled={loading || !canApprove}
           >
             Duyệt
           </Button>

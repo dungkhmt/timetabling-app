@@ -1,13 +1,14 @@
 import React from 'react';
 import { Typography, Button, Stack } from '@mui/material';
 import { Add, Refresh } from '@mui/icons-material';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 
 const SaleOrderHeader = ({ onRefresh }) => {
   const history = useHistory();
+  const location = useLocation();
 
   const handleCreateOrder = () => {
-    history.push('/wms/create-sale-order');
+    history.push(location.pathname + '/create');
   };
 
   return (

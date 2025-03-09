@@ -24,7 +24,12 @@ export default function WMSRouter() {
 
         <Route
           component={SaleOrderDetail}
-          path={`${path}/sales/orders/:id`}
+          path={`${path}/sales/orders/details/:id`}
+        ></Route>
+
+        <Route
+          component={CreateSaleOrder}
+          path={`${path}/sales/orders/create`}
         ></Route>
       </Switch>
     </div>

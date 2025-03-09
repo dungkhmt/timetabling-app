@@ -19,16 +19,33 @@ const ProductSearch = () => {
   } = useOrderForm();
   
   const [productSearchText, setProductSearchText] = useState("");
-  const [searchLoading, setSearchLoading] = useState(false);
   const { searchProducts } = useWms2Data();
+  
+  // Đảm bảo rằng products và results luôn là mảng
+  useEffect(() => {
+    if (!Array.isArray(entities.products)) {
+      setEntities(prev => ({ ...prev, products: [] }));
+    }
+    
+    if (!productSearchState || !Array.isArray(productSearchState.results)) {
+      setProductSearchState(prev => ({ 
+        ...prev, 
+        results: [],
+        query: '',
+        page: 0,
+        hasMore: true,
+        loading: false
+      }));
+    }
+  }, []);
   
   // Use the custom hook for product data (for initial loading)
   const { loading, handleScroll: handleScrollForAll, handleDropdownOpen } = useEntityData('products', (newData) => {
     // Process new data
     setEntities(prev => {
-      const existingData = prev.products || [];
+      const existingData = Array.isArray(prev.products) ? prev.products : [];
       const existingIds = new Set(existingData.map(item => item.id));
-      const uniqueNewItems = newData.filter(item => !existingIds.has(item.id));
+      const uniqueNewItems = Array.isArray(newData) ? newData.filter(item => !existingIds.has(item.id)) : [];
       
       return {
         ...prev,
@@ -56,7 +73,7 @@ const ProductSearch = () => {
           const result = await searchProducts(searchText, 0, PAGE_SIZE);
           
           // Process search results
-          const products = result?.data || [];
+          const products = Array.isArray(result?.data) ? result.data : [];
           
           // Update search state
           setProductSearchState(prev => ({
@@ -72,7 +89,8 @@ const ProductSearch = () => {
           
           setProductSearchState(prev => ({
             ...prev,
-            loading: false
+            loading: false,
+            results: []
           }));
         }
       } else {
@@ -92,8 +110,8 @@ const ProductSearch = () => {
 
   // Handle loading more search results when scrolling
   const handleLoadMoreSearchResults = useCallback(async () => {
-    // Skip if already loading or no more results
-    if (productSearchState.loading || !productSearchState.hasMore) return;
+    // Kiểm tra xem productSearchState có hợp lệ không
+    if (!productSearchState || productSearchState.loading || !productSearchState.hasMore) return;
     
     // Set loading state
     setProductSearchState(prev => ({
@@ -110,17 +128,19 @@ const ProductSearch = () => {
       );
       
       // Process results
-      const newProducts = result?.data || [];
+      const newProducts = Array.isArray(result?.data) ? result.data : [];
       
       // Update search state
       setProductSearchState(prev => {
+        const prevResults = Array.isArray(prev.results) ? prev.results : [];
+        
         // Avoid duplicates
-        const existingIds = new Set(prev.results.map(item => item.id));
+        const existingIds = new Set(prevResults.map(item => item.id));
         const uniqueNewItems = newProducts.filter(item => !existingIds.has(item.id));
         
         return {
           ...prev,
-          results: [...prev.results, ...uniqueNewItems],
+          results: [...prevResults, ...uniqueNewItems],
           page: prev.page + 1,
           hasMore: newProducts.length >= PAGE_SIZE,
           loading: false
@@ -138,18 +158,20 @@ const ProductSearch = () => {
 
   // Handle scroll in search results
   const handleSearchScroll = useCallback((event) => {
+    if (!event || !event.currentTarget) return;
+    
     const { currentTarget } = event;
     const isNearBottom = 
       currentTarget.scrollHeight - currentTarget.scrollTop <= currentTarget.clientHeight * 1.5;
     
-    if (isNearBottom && productSearchState.hasMore && !productSearchState.loading) {
+    if (isNearBottom && productSearchState?.hasMore && !productSearchState?.loading) {
       handleLoadMoreSearchResults();
     }
   }, [productSearchState, handleLoadMoreSearchResults]);
 
   // Handle input change for search text
   const handleProductSearch = (e, value) => {
-    setProductSearchText(value);
+    setProductSearchText(value || "");
     
     // Only call the search API if we have at least 2 characters
     if (value && value.length >= 2) {
@@ -192,10 +214,11 @@ const ProductSearch = () => {
       }));
 
       // If product is not in our entities yet, add it
-      if (!entities.products.find(p => p.id === product.id)) {
+      const productsArray = Array.isArray(entities.products) ? entities.products : [];
+      if (!productsArray.find(p => p.id === product.id)) {
         setEntities(prev => ({
           ...prev,
-          products: [...prev.products, product]
+          products: [...productsArray, product]
         }));
       }
     }
@@ -213,16 +236,20 @@ const ProductSearch = () => {
     }));
   };
 
+  // Đảm bảo options luôn là mảng
+  const safeProductsArray = Array.isArray(entities.products) ? entities.products : [];
+  const safeResultsArray = Array.isArray(productSearchState?.results) ? productSearchState.results : [];
+  
   // Determine which options to display (search results or all products)
-  const displayOptions = productSearchState.query 
-    ? productSearchState.results 
-    : entities.products.slice(0, 50); // Limit options if not searching
+  const displayOptions = productSearchState?.query 
+    ? safeResultsArray 
+    : safeProductsArray.slice(0, 50); // Limit options if not searching
     
   // Check if loading
-  const isLoading = productSearchState.loading || loading;
+  const isLoading = productSearchState?.loading || loading;
 
   // Select correct scroll handler based on context
-  const handleScrollForResults = productSearchState.query 
+  const handleScrollForResults = productSearchState?.query 
     ? handleSearchScroll 
     : handleScrollForAll;
 
@@ -230,11 +257,15 @@ const ProductSearch = () => {
     <Box mb={2}>
       <Autocomplete
         options={displayOptions}
-        getOptionLabel={(option) => `${option.id} - ${option.name || ''}`}
+        getOptionLabel={(option) => {
+          if (typeof option !== 'object' || option === null) return '';
+          return `${option.id || ''} - ${option.name || ''}`;
+        }}
         inputValue={productSearchText}
         onInputChange={handleProductSearch}
         onChange={(_, value) => addProductToOrder(value)}
         onOpen={handleDropdownOpen}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
         ListboxProps={{
           onScroll: handleScrollForResults,
           style: { maxHeight: '200px', overflow: 'auto' }

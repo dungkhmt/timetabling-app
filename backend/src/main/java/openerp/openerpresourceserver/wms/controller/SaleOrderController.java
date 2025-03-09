@@ -29,8 +29,8 @@ public class SaleOrderController {
     }
 
     @PutMapping("/approve/{id}")
-    public ApiResponse<Void> approveSaleOrder(@PathVariable String id) {
-        return saleOrderService.approveSaleOrder(id);
+    public ApiResponse<Void> approveSaleOrder(@PathVariable String id, Principal principal) {
+        return saleOrderService.approveSaleOrder(id, principal.getName());
     }
 
     @PostMapping("/get-all")

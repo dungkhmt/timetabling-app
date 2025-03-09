@@ -13,7 +13,7 @@ public interface SaleOrderService {
 
     ApiResponse<SalesOrderDetailRes> getSaleOrderDetails(String id);
 
-    ApiResponse<Void> approveSaleOrder(String id);
+    ApiResponse<Void> approveSaleOrder(String id, String name);
 
     ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, Map<String, Object> filters);
 }

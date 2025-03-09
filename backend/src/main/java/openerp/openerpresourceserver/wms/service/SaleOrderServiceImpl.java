@@ -123,11 +123,14 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     }
 
     @Override
-    public ApiResponse<Void> approveSaleOrder(String id) {
+    public ApiResponse<Void> approveSaleOrder(String id, String name) {
         var orderHeader = orderHeaderRepo.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
-
         orderHeader.setStatus(SaleOrderStatus.APPROVED.name());
+
+        var userApproved = userLoginRepo.findById(name)
+                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name));
+        orderHeader.setUserApproved(userApproved);
 
         orderHeaderRepo.save(orderHeader);
         return ApiResponse.<Void>builder()

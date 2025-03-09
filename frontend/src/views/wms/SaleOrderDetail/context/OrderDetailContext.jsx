@@ -9,7 +9,7 @@ const OrderDetailContext = createContext();
 export const OrderDetailProvider = ({ children }) => {
   const { id } = useParams();
   const navigate = useHistory();
-  const { getOrderDetails, updateStatusOrder } = useWms2Data();
+  const { getOrderDetails, updateStatusOrder, approveOrder } = useWms2Data();
   
   const [orderData, setOrderData] = useState(null);
   // const [loading, setLoading] = useState(true);
@@ -44,14 +44,13 @@ export const OrderDetailProvider = ({ children }) => {
   }, [id]);
 
   // Duyệt đơn hàng
-  const approveOrder = async () => {
-    if (!orderData || !orderData.id) return;
+  const approveOrderApi = async () => {
     
     try {
       // setLoading(true);
-      const result = await updateStatusOrder(orderData.id, "APPROVED");
+      const res = await approveOrder(id);
       
-      if (result && result.success) {
+      if (res && res.code == 200) {
         toast.success("Đơn hàng đã được duyệt thành công!");
         // Cập nhật dữ liệu local sau khi duyệt thành công
         setOrderData(prev => ({
@@ -59,7 +58,7 @@ export const OrderDetailProvider = ({ children }) => {
           status: "Đã duyệt"
         }));
       } else {
-        const errorMsg = result?.message || "Không thể duyệt đơn hàng";
+        const errorMsg = res?.message || "Không thể duyệt đơn hàng";
         toast.error(errorMsg);
       }
     } catch (error) {
@@ -112,7 +111,7 @@ export const OrderDetailProvider = ({ children }) => {
   const value = {
     orderData,
     // loading,
-    approveOrder,
+    approveOrderApi,
     cancelOrder,
     editOrder,
     applyDiscount
