@@ -27,6 +27,7 @@ import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
+import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
 import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableAssignmentService;
 import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableService;
 
@@ -156,6 +157,23 @@ public class ExamTimetableController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/assignment/auto-assign")
+    public ResponseEntity<?> autoAssignSchedule(@RequestBody List<UUID> assignmentIds) {
+        try {
+            List<ExamTimetableAssignment> updatedAssignments = examTimetableAssignmentService.autoAssignSchedule(assignmentIds);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Successfully assigned schedule to " + updatedAssignments.size() + " assignments",
+                "assignments", updatedAssignments
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
         }
     }
 }

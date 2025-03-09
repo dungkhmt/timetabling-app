@@ -8,9 +8,9 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     'examTimetableAssignments',
     () => examTimetableAssignmentService.getAllExamTimetableAssignments(examTimetableId),
     {
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-      cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
-      enabled: !!examTimetableId,
+      // staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+      // cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
+      // enabled: !!examTimetableId,
     }
   );
 
@@ -51,6 +51,17 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     }
   });
 
+  const autoAssignMutation = useMutation(examTimetableAssignmentService.autoAssign, {
+    onSuccess: (response) => {
+      queryClient.invalidateQueries('examTimetableAssignments');
+      toast.success('Tự động xếp lịch thi thành công!');
+    },
+    onError: (error) => {
+      console.log(error);
+      toast.error('Có lỗi xảy ra');
+    }
+  });
+
   return {
     examTimetableAssignments: examTimetableAssignments?.data || [],
     isLoading,
@@ -60,5 +71,6 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     isLoadingConflicts: getAssignmentConflictsMutation.isLoading,
     isLoadingUpdatingAssignment: updateAssignmentMutation.isLoading,
     exportTimetable: exportTimetableMutation.mutateAsync,
+    autoAssign: autoAssignMutation.mutateAsync,
   };
 };

@@ -31,6 +31,13 @@ class ExamTimetableAssignmentService {
     });
   }
 
+  async autoAssign(data) {
+    return await request("post", "/exam-timetable/assignment/auto-assign", null, null, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  }
 }
 
 export const examTimetableAssignmentService = new ExamTimetableAssignmentService();

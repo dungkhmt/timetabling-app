@@ -4,15 +4,20 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,21 +39,27 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentResultDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.BusyCombinationDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ScheduleSlotDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamClass;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamRoom;
+import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableSession;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamRoomRepository;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableAssignmentRepository;
+import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableRepository;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableSessionRepository;
 
 @Service
 @RequiredArgsConstructor
 public class ExamTimetableAssignmentService {
     private final ExamTimetableAssignmentRepository assignmentRepository;
+    private final ExamTimetableRepository examTimetableRepository;
     private final ExamRoomRepository roomRepository;
     private final ExamTimetableSessionRepository sessionRepository;
     private final EntityManager entityManager;
@@ -468,5 +479,217 @@ public class ExamTimetableAssignmentService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+        @Transactional
+    public List<ExamTimetableAssignment> autoAssignSchedule(List<UUID> assignmentIds) {
+        // Step 1: Gather all necessary data
+        
+        // Validate and get assignments
+        List<ExamTimetableAssignment> assignments = assignmentRepository.findAllById(assignmentIds);
+        if (assignments.isEmpty()) {
+            throw new RuntimeException("No assignments found");
+        }
+        
+        // Make sure all assignments belong to the same timetable
+        Set<UUID> timetableIds = assignments.stream()
+            .map(ExamTimetableAssignment::getExamTimetableId)
+            .collect(Collectors.toSet());
+            
+        if (timetableIds.size() != 1) {
+            throw new RuntimeException("All assignments must belong to the same timetable");
+        }
+        
+        // Get the timetable details
+        UUID timetableId = timetableIds.iterator().next();
+        ExamTimetable timetable = examTimetableRepository.findById(timetableId)
+            .orElseThrow(() -> new RuntimeException("Timetable not found"));
+        
+        // Get available rooms
+        List<ExamRoom> availableRooms = roomRepository.findAll();
+        if (availableRooms.isEmpty()) {
+            throw new RuntimeException("No rooms available for assignment");
+        }
+        
+        // Get available sessions from the timetable's session collection
+        List<ExamTimetableSession> availableSessions = sessionRepository
+            .findByExamTimetableSessionCollectionId(timetable.getExamTimetableSessionCollectionId());
+            
+        if (availableSessions.isEmpty()) {
+            throw new RuntimeException("No sessions available for this timetable's session collection");
+        }
+        
+        // Get timetable date and week constraints
+        LocalDate startDate = timetable.getExamPlan().getStartTime().toLocalDate();
+        LocalDate endDate = timetable.getExamPlan().getEndTime().toLocalDate();
+        int startWeek = timetable.getExamPlan().getStartWeek();
+        
+        // Generate available slots (session + date combinations)
+        List<ScheduleSlotDTO> availableSlots = generateAvailableSlots(
+            availableSessions, startDate, endDate, startWeek);
+        
+        // Get busy combinations (room + slot that are already used)
+        List<BusyCombinationDTO> busyCombinations = getBusyCombinations();
+        
+        // Step 2: Call the algorithm
+        List<AssignmentResultDTO> assignmentResults = runAssignmentAlgorithm(
+            availableRooms, 
+            availableSlots, 
+            assignments,
+            busyCombinations
+        );
+        
+        // Step 3: Update assignments with the results
+        for (AssignmentResultDTO result : assignmentResults) {
+            ExamTimetableAssignment assignment = assignments.stream()
+                .filter(a -> a.getId().equals(result.getAssignmentId()))
+                .findFirst()
+                .orElseThrow();
+            
+            assignment.setRoomId(result.getRoomId());
+            assignment.setExamSessionId(result.getSessionId());
+            assignment.setDate(result.getDate());
+            assignment.setWeekNumber(result.getWeekNumber());
+        }
+        
+        // Save and return
+        return assignmentRepository.saveAll(assignments);
+    }
+
+    /**
+     * Generate available slots (session + date combinations)
+     */
+    private List<ScheduleSlotDTO> generateAvailableSlots(
+            List<ExamTimetableSession> sessions,
+            LocalDate startDate,
+            LocalDate endDate,
+            int startWeek) {
+        List<ScheduleSlotDTO> slots = new ArrayList<>();
+        
+        // Ensure startDate is at beginning of week (Monday)
+        LocalDate weekStart = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        
+        // Generate slots for each day between start and end dates
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            // Skip weekends
+            if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY && 
+                currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                
+                // Calculate week number based on startWeek
+                int weeksDifference = (int)ChronoUnit.WEEKS.between(weekStart, currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)));
+                int weekNumber = startWeek + weeksDifference;
+                
+                // For each date, create a slot with each session
+                for (ExamTimetableSession session : sessions) {
+                    slots.add(new ScheduleSlotDTO(session.getId(), currentDate, weekNumber));
+                }
+            }
+            
+            // Move to next day
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        return slots;
+    }
+    
+    /**
+     * Get busy combinations (room + slot that are already used)
+     */
+    private List<BusyCombinationDTO> getBusyCombinations() {
+        String sql = "SELECT room_id, exam_session_id, date " +
+                     "FROM exam_timetable_assignment " +
+                     "WHERE room_id IS NOT NULL " +
+                     "AND exam_session_id IS NOT NULL " +
+                     "AND date IS NOT NULL " +
+                     "AND deleted_at IS NULL";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        List<Object[]> results = query.getResultList();
+        
+        return results.stream()
+            .map(row -> {
+                UUID roomId = toUUID(row[0]);
+                UUID sessionId = toUUID(row[1]);
+                LocalDate date = toLocalDate(row[2]);
+                return new BusyCombinationDTO(roomId, sessionId, date);
+            })
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * The algorithm function that assigns rooms and slots to assignments
+     */
+    private List<AssignmentResultDTO> runAssignmentAlgorithm(
+            List<ExamRoom> availableRooms,
+            List<ScheduleSlotDTO> availableSlots,
+            List<ExamTimetableAssignment> assignments,
+            List<BusyCombinationDTO> busyCombinations) {
+        
+        // This is the mock algorithm that will be replaced later
+        List<AssignmentResultDTO> results = new ArrayList<>();
+        Random random = new Random();
+        
+        // Create a set of busy combinations for faster lookup
+        Set<String> busySet = busyCombinations.stream()
+            .map(combo -> combo.getRoomId() + ":" + combo.getSessionId() + ":" + combo.getDate())
+            .collect(Collectors.toSet());
+        
+        for (ExamTimetableAssignment assignment : assignments) {
+            // Mock logic: Randomly assign until we find a non-busy combination
+            boolean assigned = false;
+            int attempts = 0;
+            
+            while (!assigned && attempts < 50) { // Limit attempts to avoid infinite loop
+                ExamRoom room = availableRooms.get(random.nextInt(availableRooms.size()));
+                ScheduleSlotDTO slot = availableSlots.get(random.nextInt(availableSlots.size()));
+                
+                String combination = room.getId() + ":" + slot.getSessionId() + ":" + slot.getDate();
+                
+                // For mock, we'll allow conflicts by not checking busySet
+                // In the real algorithm, you'd check: if (!busySet.contains(combination))
+                
+                results.add(new AssignmentResultDTO(
+                    assignment.getId(),
+                    room.getId(),
+                    slot.getSessionId(),
+                    slot.getDate(),
+                    slot.getWeekNumber()
+                ));
+                
+                assigned = true;
+                attempts++;
+            }
+            
+            // If couldn't assign after max attempts, just pick something
+            if (!assigned) {
+                ExamRoom room = availableRooms.get(random.nextInt(availableRooms.size()));
+                ScheduleSlotDTO slot = availableSlots.get(random.nextInt(availableSlots.size()));
+                
+                results.add(new AssignmentResultDTO(
+                    assignment.getId(),
+                    room.getId(),
+                    slot.getSessionId(),
+                    slot.getDate(),
+                    slot.getWeekNumber()
+                ));
+            }
+        }
+        
+        return results;
+    }
+    
+    // Helper methods for type conversion
+    private UUID toUUID(Object obj) {
+        if (obj == null) return null;
+        return UUID.fromString(obj.toString());
+    }
+    
+    private LocalDate toLocalDate(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.sql.Date) return ((java.sql.Date) obj).toLocalDate();
+        if (obj instanceof java.sql.Timestamp) return ((java.sql.Timestamp) obj).toLocalDateTime().toLocalDate();
+        if (obj instanceof LocalDate) return (LocalDate) obj;
+        return LocalDate.parse(obj.toString());
     }
 }

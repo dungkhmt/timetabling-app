@@ -19,7 +19,8 @@ import {
   AssignmentTurnedIn,
   School,
   Error,
-  FileDownload
+  FileDownload,
+  AutoFixHigh // Added for auto-assign icon
 } from '@mui/icons-material';
 import ClassesTable from './components/ClassAssignTable';
 import { format } from 'date-fns';
@@ -27,6 +28,7 @@ import DeleteConfirmModal from './components/DeleteExamTimetableModal';
 import UpdateTimetableModal from './components/UpdateTimeTableModal';
 import ConflictDialog from './components/ConflictSaveDialog';
 import InvalidAssignmentDialog from './components/InvalidAssignmentDialog';
+import AutoAssignConfirmDialog from './components/AutoAssignConfirmDialog'; // Added import
 import { validateAssignmentChanges } from './utils/AssignmentValidation';
 import { useExamTimetableData } from 'services/useExamTimetableData';
 import { useExamRoomData } from 'services/useExamRoomData';
@@ -53,6 +55,7 @@ const TimetableDetailPage = () => {
     isLoading,
     exportTimetable,
     error,
+    autoAssign,
   } = useExamTimetableAssignmentData(id);
 
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -63,6 +66,11 @@ const TimetableDetailPage = () => {
   const [invalidAssignments, setInvalidAssignments] = useState([]);
   const [selectedAssignments, setSelectedAssignments] = useState([]); // Track selected assignments
   const [isExporting, setIsExporting] = useState(false); // Track export status
+  
+  // Added state variables for auto-assign functionality
+  const [isAutoAssignDialogOpen, setIsAutoAssignDialogOpen] = useState(false);
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+  const [alreadyAssignedClasses, setAlreadyAssignedClasses] = useState([]);
 
   const classesTableRef = useRef();
 
@@ -77,11 +85,47 @@ const TimetableDetailPage = () => {
 
     try {
       setIsExporting(true);
-      await exportTimetable( selectedAssignments);
+      await exportTimetable(selectedAssignments);
       setIsExporting(false);
     } catch (error) {
       console.error('Error exporting assignments:', error);
       setIsExporting(false);
+    }
+  };
+
+  // Added function to handle auto-assign button click
+  const handleAutoAssign = () => {
+    if (selectedAssignments.length === 0) {
+      return;
+    }
+
+    // Check if any selected assignments are already assigned
+    const assignedClasses = examTimetableAssignments.filter(assignment => 
+      selectedAssignments.includes(assignment.id) && 
+      (assignment.room || assignment.week || assignment.date || assignment.slot)
+    );
+
+    if (assignedClasses.length > 0) {
+      setAlreadyAssignedClasses(assignedClasses);
+      setIsAutoAssignDialogOpen(true);
+    } else {
+      // If no assignments are already assigned, proceed directly
+      performAutoAssign();
+    }
+  };
+
+  // Added function to perform auto-assign after confirmation
+  const performAutoAssign = async () => {
+    try {
+      setIsAutoAssigning(true);
+      const a = await autoAssign(selectedAssignments);
+      console.log(a);
+      setIsAutoAssigning(false);
+      setIsAutoAssignDialogOpen(false);
+    } catch (error) {
+      console.error('Error auto-assigning:', error);
+      setIsAutoAssigning(false);
+      setIsAutoAssignDialogOpen(false);
     }
   };
 
@@ -311,6 +355,25 @@ const TimetableDetailPage = () => {
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
+            {/* Auto Assign Button - Added */}
+            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để phân công tự động" : "Phân công tự động cho lớp đã chọn"}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  startIcon={<AutoFixHigh />}
+                  onClick={handleAutoAssign}
+                  disabled={selectedAssignments.length === 0 || isAutoAssigning}
+                  sx={{ 
+                    bgcolor: 'warning.light',
+                    '&:hover': { bgcolor: '#FFA726' }
+                  }}
+                >
+                  {isAutoAssigning ? 'Đang xử lý...' : `Phân công tự động (${selectedAssignments.length})`}
+                </Button>
+              </span>
+            </Tooltip>
+
             <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để xuất" : "Xuất danh sách đã chọn"}>
               <span>
                 <Button
@@ -369,6 +432,15 @@ const TimetableDetailPage = () => {
             open={isInvalidModalOpen}
             invalidAssignments={invalidAssignments}
             onClose={handleCloseInvalidModal}
+          />
+          
+          {/* Auto Assign Confirm Dialog - Added */}
+          <AutoAssignConfirmDialog
+            open={isAutoAssignDialogOpen}
+            onClose={() => setIsAutoAssignDialogOpen(false)}
+            onConfirm={performAutoAssign}
+            assignedClasses={alreadyAssignedClasses}
+            isProcessing={isAutoAssigning}
           />
         </Box>
       </Paper>
