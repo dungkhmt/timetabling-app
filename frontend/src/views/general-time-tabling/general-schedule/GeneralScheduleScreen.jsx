@@ -129,7 +129,7 @@ const GeneralScheduleScreen = () => {
                   )
                 }
                 sx={{
-                  minWidth: "180px",
+                  minWidth: "100px",
                   height: "40px",
                   padding: "8px 16px",
                   fontWeight: 500,
@@ -137,7 +137,7 @@ const GeneralScheduleScreen = () => {
                   boxShadow: 1,
                 }}
               >
-                Tải xuống File Excel
+                Xuất File Excel
               </Button>
               <Button
                 disabled={
