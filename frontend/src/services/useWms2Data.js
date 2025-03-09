@@ -64,6 +64,60 @@ export const useWms2Data = () => {
       }
     }
 
+    const getOrderDetails = async (orderId) => {
+      try {
+        const response = await wms2Service.getOrderDetails(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+        toast.error("Không thể tải chi tiết đơn hàng");
+        return { data: {} };
+      }
+    }
+
+    const updateStatusOrder = async (orderId, status) => {
+      try {
+        const response = await wms2Service.updateStatusOrder(orderId, status);
+        return response.data;
+      } catch (error) {
+        console.error("Error updating order status:", error);
+        toast.error("Không thể cập nhật trạng thái đơn hàng");
+        return { data: {} };
+      }
+    }
+
+    const approveOrder = async (orderId) => {
+      try {
+        const response = await wms2Service.approveOrder(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error approving order:", error);
+        toast.error("Không thể duyệt đơn hàng");
+        return { data: {} };
+      }
+    }
+
+    const rejectOrder = async (orderId) => {
+      try {
+        const response = await wms2Service.rejectOrder(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error rejecting order:", error);
+        toast.error("Không thể từ chối đơn hàng");
+        return { data: {} };
+      }
+    }
+
+    const getSalesOrders = async (page, limit, filters) => {
+      try {
+        const response = await wms2Service.getSalesOrders(page, limit, filters);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching sales orders:", error);
+        toast.error("Không thể tải danh sách đơn hàng");
+        return { data: {} };
+      }
+    }
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -71,5 +125,10 @@ export const useWms2Data = () => {
      getMoreProducts,
      getMoreCustomers,
       searchProducts,
+      getOrderDetails,
+      updateStatusOrder,
+      approveOrder,
+      rejectOrder,
+      getSalesOrders
    };
 };

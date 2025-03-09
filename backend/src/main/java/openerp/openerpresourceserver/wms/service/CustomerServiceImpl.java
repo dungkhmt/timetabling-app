@@ -26,7 +26,7 @@ public class CustomerServiceImpl implements CustomerService {
                         .data(customers.getContent())
                         .page(customers.getNumber())
                         .size(customers.getSize())
-                        .total(customers.getTotalElements())
+                        .totalElements(customers.getTotalElements())
                         .totalPages(customers.getTotalPages())
                         .build())
                 .build();

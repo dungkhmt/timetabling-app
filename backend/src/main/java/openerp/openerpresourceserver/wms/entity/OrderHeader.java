@@ -2,13 +2,9 @@ package openerp.openerpresourceserver.wms.entity;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
 
@@ -39,7 +35,7 @@ public class OrderHeader extends BaseEntity {
     @JoinColumn(name = "to_customer_id")
     private Customer toCustomer;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id")
     private UserLogin createdByUser;
 
@@ -47,6 +43,16 @@ public class OrderHeader extends BaseEntity {
     @JoinColumn(name = "facility_id")
     private Facility facility;
 
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> orderItems;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="user_approved_id")
+    private UserLogin userApproved;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_cancelled_id")
+    private UserLogin userCancelled;
 
 
 }

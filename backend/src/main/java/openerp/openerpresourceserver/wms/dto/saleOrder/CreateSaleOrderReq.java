@@ -1,7 +1,5 @@
-package openerp.openerpresourceserver.wms.dto;
+package openerp.openerpresourceserver.wms.dto.saleOrder;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

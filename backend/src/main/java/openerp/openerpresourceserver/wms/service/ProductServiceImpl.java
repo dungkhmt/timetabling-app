@@ -23,7 +23,7 @@ public class ProductServiceImpl implements ProductService {
                         .data(pages.getContent())
                         .page(pages.getNumber())
                         .size(pages.getSize())
-                        .total(pages.getTotalElements())
+                        .totalElements(pages.getTotalElements())
                         .totalPages(pages.getTotalPages())
                         .build())
                 .build();
@@ -40,7 +40,7 @@ public class ProductServiceImpl implements ProductService {
                         .data(pages.getContent())
                         .page(pages.getNumber())
                         .size(pages.getSize())
-                        .total(pages.getTotalElements())
+                        .totalElements(pages.getTotalElements())
                         .totalPages(pages.getTotalPages())
                         .build())
                 .build();

@@ -24,7 +24,7 @@ public class FacilityServiceImpl implements FacilityService{
                         .data(facilities.getContent())
                         .page(facilities.getNumber())
                         .size(facilities.getSize())
-                        .total(facilities.getTotalElements())
+                        .totalElements(facilities.getTotalElements())
                         .totalPages(facilities.getTotalPages())
                         .build())
                 .build();

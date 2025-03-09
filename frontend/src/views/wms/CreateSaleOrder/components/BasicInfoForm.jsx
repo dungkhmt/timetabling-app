@@ -1,9 +1,10 @@
 import React from 'react';
 import { Box, Grid, TextField, Select, MenuItem, FormControl, Typography } from "@mui/material";
-import RequireField from "../../common-components/RequireField";
+
 import { useOrderForm } from "../context/OrderFormContext";
 import FacilityField from "./FacilityField";
 import CustomerField from "./CustomerField";
+import RequireField from 'views/wms/common/components/RequireField';
 
 const BasicInfoForm = () => {
   const { salesOrder, setSalesOrder } = useOrderForm();

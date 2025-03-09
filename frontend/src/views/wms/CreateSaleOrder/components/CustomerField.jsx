@@ -1,6 +1,6 @@
 import React from 'react';
 import { Grid, Typography } from "@mui/material";
-import RequireField from "../../common-components/RequireField";
+import RequireField from "../../common/components/RequireField";
 import EntityAutocomplete from "./EntityAutocomplete";
 import { useEntityData } from "../hooks/useEntityData";
 import { useOrderForm } from "../context/OrderFormContext";

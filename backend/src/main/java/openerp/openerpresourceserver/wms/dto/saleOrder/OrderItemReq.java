@@ -1,4 +1,4 @@
-package openerp.openerpresourceserver.wms.dto;
+package openerp.openerpresourceserver.wms.dto.saleOrder;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,6 +1,7 @@
 import { Route, Switch, useRouteMatch } from "react-router";
 import CreateSaleOrder from "views/wms/CreateSaleOrder/CreateSaleOrder";
 import PurchaseOrder from "views/wms/purchaseorder";
+import SaleOrderDetail from "views/wms/SaleOrderDetail/SaleOrderDetail";
 import OrderDetail from "views/wms/SaleOrderDetail/SaleOrderDetail";
 
 export default function WMSRouter() {
@@ -17,9 +18,9 @@ export default function WMSRouter() {
 
         
         <Route
-          component={CreateSaleOrder}
+          component={OrderDetail}
           exact
-          path={`${path}/sales/orders`}
+          path={`${path}/sales/orders/:id`}
         >
         </Route>
         

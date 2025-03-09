@@ -4,16 +4,22 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
-import openerp.openerpresourceserver.wms.dto.CreateSaleOrderReq;
+import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.saleOrder.CreateSaleOrderReq;
+import openerp.openerpresourceserver.wms.dto.saleOrder.OrderListRes;
+import openerp.openerpresourceserver.wms.dto.saleOrder.OrderProductRes;
+import openerp.openerpresourceserver.wms.dto.saleOrder.SalesOrderDetailRes;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.OrderItem;
 import openerp.openerpresourceserver.wms.entity.OrderItemPK;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -78,5 +84,88 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .message("Order created successfully")
                 .build();
 
+    }
+
+    @Override
+    public ApiResponse<SalesOrderDetailRes> getSaleOrderDetails(String id) {
+        var orderHeader = orderHeaderRepo.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
+
+        var orderItems = orderHeader.getOrderItems();
+        var orderItemResponses = orderItems
+                .stream()
+                .map(orderItem -> {
+                    var orderItemRes = OrderProductRes.builder()
+                            .id(orderItem.getId().getOrderId())
+                        .productId(orderItem.getProduct().getId())
+                        .quantity(orderItem.getQuantity())
+                        .amount(orderItem.getAmount())
+                        .build();
+                    orderItemRes.setUnit(orderItem.getUnit());
+                    orderItemRes.setPrice(orderItem.getPrice());
+                    orderItemRes.setDiscount(orderItem.getDiscount());
+                    orderItemRes.setTax(orderItem.getTax());
+                    return orderItemRes;
+                })
+                .toList();
+        return ApiResponse.<SalesOrderDetailRes>builder()
+                .code(200)
+                .message("Success")
+                .data(SalesOrderDetailRes.builder()
+                        .id(orderHeader.getId())
+                        .customer(orderHeader.getToCustomer().getName())
+                        .facility(orderHeader.getFacility().getName())
+                        .createdByUser(orderHeader.getCreatedByUser().getFullName())
+                        .createdStamp(orderHeader.getCreatedStamp())
+                        .orderItems(orderItemResponses)
+                        .build())
+                .build();
+    }
+
+    @Override
+    public ApiResponse<Void> approveSaleOrder(String id) {
+        var orderHeader = orderHeaderRepo.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
+
+        orderHeader.setStatus(SaleOrderStatus.APPROVED.name());
+
+        orderHeaderRepo.save(orderHeader);
+        return ApiResponse.<Void>builder()
+                .code(200)
+                .message("Order approved successfully")
+                .build();
+    }
+
+    @Override
+    public ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, Map<String, Object> filters) {
+        var pageable = PageRequest.of(page, size);
+        var orderHeaders = orderHeaderRepo.findAll(pageable);
+
+        var orderListRes = orderHeaders
+                .stream()
+                .map(orderHeader -> OrderListRes.builder()
+                        .id(orderHeader.getId())
+                        .customerName(orderHeader.getToCustomer().getName())
+                        .facilityName(orderHeader.getFacility().getName())
+                        .createdStamp(orderHeader.getCreatedStamp())
+                        .status(orderHeader.getStatus())
+                        .totalAmount(orderHeader.getOrderItems()
+                                .stream()
+                                .map(OrderItem::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add))
+                        .build())
+                .toList();
+
+        return ApiResponse.<Pagination<OrderListRes>>builder()
+                .code(200)
+                .message("Success")
+                .data(Pagination.<OrderListRes>builder()
+                        .page(page)
+                        .size(size)
+                        .data(orderListRes)
+                        .totalElements(orderHeaders.getTotalElements())
+                        .totalPages(orderHeaders.getTotalPages())
+                        .build())
+                .build();
     }
 }

@@ -38,4 +38,8 @@ public class UserLogin {
     @LastModifiedDate
     @Column(name = "last_updated_stamp")
     private Date lastModifiedDate;
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
 }

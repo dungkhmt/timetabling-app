@@ -11,6 +11,6 @@ public class Pagination<T> {
     private List<T> data;
     private int page;
     private int size;
-    private long total;
+    private long totalElements;
     private int totalPages;
 }
