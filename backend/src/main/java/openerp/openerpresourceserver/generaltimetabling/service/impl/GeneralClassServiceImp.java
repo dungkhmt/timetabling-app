@@ -508,7 +508,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         //roomOccupationRepo.saveAll(newRoomOccupations);
         for(RoomOccupation ro: newRoomOccupations){
             ro = roomOccupationRepo.save(ro);
-            log.info("autoScheduleTimeSlotRoom, saved a new room occupation id = " + ro.getId());
+            //log.info("autoScheduleTimeSlotRoom, saved a new room occupation id = " + ro.getId());
         }
         //gcoRepo.saveAll(updatedClasses);
 
