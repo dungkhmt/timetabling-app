@@ -492,16 +492,24 @@ public class GeneralClassServiceImp implements GeneralClassService {
         gcoRepo.saveAll(autoScheduleClasses);
         roomOccupationRepo.deleteAllByClassCodeIn(foundClasses.stream().map(GeneralClass::getClassCode).toList());
 
-        List<String> classCodes = autoScheduleClasses.stream().map(GeneralClass::getClassCode).toList();
+        //List<String> classCodes = autoScheduleClasses.stream().map(GeneralClass::getClassCode).toList();
+        //List<String> classCodes = autoScheduleClasses.stream().map(GeneralClass::getClassCode).toList();
         //List<RoomOccupation> newRoomOccupations = autoScheduleClasses.stream().map(RoomOccupationMapper::mapFromGeneralClass).flatMap(Collection::stream).toList();
         //List<RoomOccupation> newRoomOccupations = autoScheduleClasses.stream().map(RoomOccupationMapper::mapFromGeneralClassV2).flatMap(Collection::stream).toList();
+        log.info("autoScheduleTimeSlotRoom, resulting schedule classes size = " + autoScheduleClasses.size());
         List<RoomOccupation> newRoomOccupations = new ArrayList<>();
         for(GeneralClass gc: autoScheduleClasses){
             List<RoomOccupation> RO = RoomOccupationMapper.mapFromGeneralClassV2(gc);
             for(RoomOccupation ro: RO) newRoomOccupations.add(ro);
         }
+        log.info("autoScheduleTimeSlotRoom, collect room occupations size = " + newRoomOccupations.size());
         //roomOccupationRepo.deleteAllByClassCodeIn(classCodes);
-        roomOccupationRepo.saveAll(newRoomOccupations);
+
+        //roomOccupationRepo.saveAll(newRoomOccupations);
+        for(RoomOccupation ro: newRoomOccupations){
+            ro = roomOccupationRepo.save(ro);
+            log.info("autoScheduleTimeSlotRoom, saved a new room occupation id = " + ro.getId());
+        }
         //gcoRepo.saveAll(updatedClasses);
 
         return autoScheduleClasses;
