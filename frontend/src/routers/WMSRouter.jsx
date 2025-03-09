@@ -3,6 +3,7 @@ import CreateSaleOrder from "views/wms/CreateSaleOrder/CreateSaleOrder";
 import PurchaseOrder from "views/wms/purchaseorder";
 import SaleOrderDetail from "views/wms/SaleOrderDetail/SaleOrderDetail";
 import OrderDetail from "views/wms/SaleOrderDetail/SaleOrderDetail";
+import SaleOrderListPage from "views/wms/SaleOrderListPage/SaleOrderListPage";
 
 export default function WMSRouter() {
   let { path } = useRouteMatch();
@@ -13,17 +14,18 @@ export default function WMSRouter() {
           component={PurchaseOrder}
           exact
           path={`${path}/purchase/orders`}
-        >
-        </Route>
+        ></Route>
 
-        
         <Route
-          component={OrderDetail}
+          component={SaleOrderListPage}
           exact
+          path={`${path}/sales/orders`}
+        ></Route>
+
+        <Route
+          component={SaleOrderDetail}
           path={`${path}/sales/orders/:id`}
-        >
-        </Route>
-        
+        ></Route>
       </Switch>
     </div>
   );
