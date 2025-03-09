@@ -293,7 +293,7 @@ const ViewClassDetailDialog = ({
           <div className="flex items-center">
             Thông tin của lớp: {classData?.moduleCode} - {classData?.moduleName} -{" "}
             {classData?.id}/{classData?.classCode}
-            {!classData?.parentClassId && (
+            {!!classData?.parentClassId && (
               <span className="ml-2 text-sm text-red-500">(Lớp con)</span>
             )}
           </div>
@@ -327,7 +327,7 @@ const ViewClassDetailDialog = ({
               <Button
                 variant="contained"
                 onClick={() => setOpenNewDialog(true)}
-                //disabled={!classData?.parentClassId}
+                //disabled={!!classData?.parentClassId}
               >
                 Thêm mới
               </Button>
@@ -345,7 +345,7 @@ const ViewClassDetailDialog = ({
               >
                 Xóa các lớp đã chọn ({selectedIds.length})
               </Button>
-              {!classData?.parentClassId && (
+              {!!classData?.parentClassId && (
                 <span className="ml-2 text-sm text-gray-500">
                   (Chỉ có thể thêm lớp con cho lớp cha)
                 </span>
