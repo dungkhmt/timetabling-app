@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { request } from "api";
 import { useRoomOccupations } from "./hooks/useRoomOccupations";
-import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import FilterSelectBox from "./components/FilterSelectBox";
-import { Button, TablePagination, Autocomplete, TextField } from "@mui/material";
+import { Button, TablePagination, Autocomplete, TextField, CircularProgress } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
 
 const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
@@ -11,8 +10,19 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
-  const { data, refresh } = useRoomOccupations(selectedSemester?.semester, selectedWeek);
+  const { data, loading, error, refresh } = useRoomOccupations(selectedSemester?.semester, selectedWeek);
 
+  useEffect(() => {
+    console.log("Current state:", {
+      selectedSemester,
+      selectedWeek,
+      dataLength: data?.length,
+      loading,
+      error
+    });
+  }, [selectedSemester, selectedWeek, data, loading, error]);
+
+  console.log(data, selectedSemester, selectedWeek);
   useEffect(() => {
     if (selectedSemester && selectedWeek) refresh();
   }, [selectedSemester, selectedWeek, refresh]);
@@ -143,72 +153,88 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
         </div>
       </div>
       <div className="overflow-auto flex-grow border rounded-lg">
-        <table className="border-collapse border border-slate-300">
-          <thead className="sticky top-0 bg-white z-10">
-            <tr>
-              <th
-                className="border border-slate-300 bg-gray-50"
-                rowSpan="2"
-                colSpan="2"
-                style={{ minWidth: "150px" }}
-              >
-                Phòng học/ Thời gian
-              </th>
-              {Array.from({ length: 7 }).map((_, index) => (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <CircularProgress />
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full text-red-500">
+            Có lỗi xảy ra khi tải dữ liệu
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            {selectedSemester && selectedWeek 
+              ? "Không có dữ liệu cho tuần này"
+              : "Vui lòng chọn kỳ học và tuần"}
+          </div>
+        ) : (
+          <table className="border-collapse border border-slate-300">
+            <thead className="sticky top-0 bg-white z-10">
+              <tr>
                 <th
-                  key={index}
-                  colSpan="6"
-                  className="cell text-center border border-slate-300 bg-gray-50"
-                  style={{ width: "240px", minWidth: "240px" }} // 6 periods × 40px
+                  className="border border-slate-300 bg-gray-50"
+                  rowSpan="2"
+                  colSpan="2"
+                  style={{ minWidth: "150px" }}
                 >
-                  {index + 2 === 8 ? "CN" : `Thứ ${index + 2}`}
+                  Phòng học/ Thời gian
                 </th>
-              ))}
-            </tr>
-            <tr>
-              {Array.from({ length: 42 }).map((_, index) => (
-                <th
-                  key={index}
-                  className="cell border border-slate-300 text-center bg-gray-50"
-                  style={{ width: "40px", minWidth: "40px", maxWidth: "40px" }}
-                >
-                  {(index % 6) + 1}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((roomData, index) => (
-                <tr key={roomData.room}>
-                  <th className="border border-slate-300" rowSpan="1">
-                    {roomData.room}
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <th
+                    key={index}
+                    colSpan="6"
+                    className="cell text-center border border-slate-300 bg-gray-50"
+                    style={{ width: "240px", minWidth: "240px" }} // 6 periods × 40px
+                  >
+                    {index + 2 === 8 ? "CN" : `Thứ ${index + 2}`}
                   </th>
-                  <th className="border border-slate-300">
-                    <div className="flex flex-col">
-                      <div className="border-b border-slate-300 p-1">S</div>
-                      <div className="p-1">C</div>
-                    </div>
+                ))}
+              </tr>
+              <tr>
+                {Array.from({ length: 42 }).map((_, index) => (
+                  <th
+                    key={index}
+                    className="cell border border-slate-300 text-center bg-gray-50"
+                    style={{ width: "40px", minWidth: "40px", maxWidth: "40px" }}
+                  >
+                    {(index % 6) + 1}
                   </th>
-                  <td colSpan="42" className="p-0 border border-slate-300">
-                    <div className="flex flex-col">
-                      <div className="border-b border-slate-300 flex">
-                        {createSessionCells(roomData.morningPeriods).map(
-                          (cell, index) => renderCell(cell, index)
-                        )}
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((roomData, index) => (
+                  <tr key={roomData.room}>
+                    <th className="border border-slate-300" rowSpan="1">
+                      {roomData.room}
+                    </th>
+                    <th className="border border-slate-300">
+                      <div className="flex flex-col">
+                        <div className="border-b border-slate-300 p-1">S</div>
+                        <div className="p-1">C</div>
                       </div>
-                      <div className="flex">
-                        {createSessionCells(roomData.afternoonPeriods).map(
-                          (cell, index) => renderCell(cell, index)
-                        )}
+                    </th>
+                    <td colSpan="42" className="p-0 border border-slate-300">
+                      <div className="flex flex-col">
+                        <div className="border-b border-slate-300 flex">
+                          {createSessionCells(roomData.morningPeriods).map(
+                            (cell, index) => renderCell(cell, index)
+                          )}
+                        </div>
+                        <div className="flex">
+                          {createSessionCells(roomData.afternoonPeriods).map(
+                            (cell, index) => renderCell(cell, index)
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <TablePagination

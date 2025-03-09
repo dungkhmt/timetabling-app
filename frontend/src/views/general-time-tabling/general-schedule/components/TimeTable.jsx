@@ -2,9 +2,25 @@ import { useEffect, useState } from "react";
 import { Checkbox } from "@mui/material";
 import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
-import { Autocomplete, Box, Button, CircularProgress, FormControl, Modal, TablePagination, TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Tooltip, InputAdornment } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  Button,
+  CircularProgress,
+  FormControl,
+  Modal,
+  TablePagination,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Tooltip,
+  InputAdornment,
+} from "@mui/material";
 import { Add, Remove, Settings, Search } from "@mui/icons-material";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 
 const TimeTable = ({
   classes,
@@ -27,21 +43,23 @@ const TimeTable = ({
   const [selectedClassForSlot, setSelectedClassForSlot] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState(() => {
-    const savedSettings = localStorage.getItem('timetable-column-visibility');
-    return savedSettings ? JSON.parse(savedSettings) : {
-      classCode: true,
-      studyClass: true,
-      learningWeeks: true,
-      moduleCode: true,
-      moduleName: true,
-      crew: true,
-      quantityMax: true,
-      classType: true,
-      mass: true,
-      duration: true,
-      batch: true,
-      actions: true
-    };
+    const savedSettings = localStorage.getItem("timetable-column-visibility");
+    return savedSettings
+      ? JSON.parse(savedSettings)
+      : {
+          classCode: true,
+          studyClass: true,
+          learningWeeks: true,
+          moduleCode: true,
+          moduleName: true,
+          crew: true,
+          quantityMax: true,
+          classType: true,
+          mass: true,
+          duration: true,
+          batch: true,
+          actions: true,
+        };
   });
 
   const { classrooms } = useClassrooms(selectedGroup?.groupName || "", null);
@@ -100,17 +118,21 @@ const TimeTable = ({
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredClassDetails(classDetails);
-      setPage(0); 
+      setPage(0);
     } else {
       const lowercasedTerm = searchTerm.toLowerCase();
-      const filtered = classDetails.filter(cls => {
+      const filtered = classDetails.filter((cls) => {
         return (
           (cls.code && cls.code.toLowerCase().includes(lowercasedTerm)) ||
-          (cls.moduleCode && cls.moduleCode.toLowerCase().includes(lowercasedTerm)) ||
-          (cls.moduleName && cls.moduleName.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.moduleCode &&
+            cls.moduleCode.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.moduleName &&
+            cls.moduleName.toLowerCase().includes(lowercasedTerm)) ||
           (cls.room && cls.room.toLowerCase().includes(lowercasedTerm)) ||
-          (cls.classType && cls.classType.toLowerCase().includes(lowercasedTerm)) ||
-          (cls.studyClass && cls.studyClass.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.classType &&
+            cls.classType.toLowerCase().includes(lowercasedTerm)) ||
+          (cls.studyClass &&
+            cls.studyClass.toLowerCase().includes(lowercasedTerm)) ||
           (cls.crew && cls.crew.toString().includes(lowercasedTerm))
         );
       });
@@ -151,7 +173,10 @@ const TimeTable = ({
       endTime: calculatedEndTime,
     };
 
-    await handlers.handleSaveTimeSlot(selectedSemester.semester, selectedClassData);
+    await handlers.handleSaveTimeSlot(
+      selectedSemester.semester,
+      selectedClassData
+    );
     onSaveSuccess();
     setOpen(false);
   };
@@ -166,14 +191,14 @@ const TimeTable = ({
         return;
       }
 
-      console.log('Selected class:', selectedClassForSlot); 
+      console.log("Selected class:", selectedClassForSlot);
 
       await handlers.handleAddTimeSlot({
         generalClassId: selectedClassForSlot.generalClassId,
         parentId: selectedClassForSlot.roomReservationId,
         duration: periodsToAdd,
       });
-      
+
       handleCloseAddSlotDialog();
       onSaveSuccess();
     } catch (error) {
@@ -185,11 +210,11 @@ const TimeTable = ({
   const handleRemoveTimeSlot = async (generalClassId, roomReservationId) => {
     try {
       if (!generalClassId || !roomReservationId) {
-        throw new Error('Missing required parameters');
+        throw new Error("Missing required parameters");
       }
       await handlers.handleRemoveTimeSlot({
         generalClassId: generalClassId.toString(),
-        roomReservationId: roomReservationId
+        roomReservationId: roomReservationId,
       });
       onSaveSuccess();
     } catch (error) {
@@ -293,7 +318,7 @@ const TimeTable = ({
 
   const handleSelectAll = (event) => {
     if (event.target.checked) {
-      const newSelected = filteredClassDetails.map(row => row.generalClassId);
+      const newSelected = filteredClassDetails.map((row) => row.generalClassId);
       onSelectedRowsChange(newSelected);
     } else {
       onSelectedRowsChange([]);
@@ -307,13 +332,14 @@ const TimeTable = ({
     if (selectedIndex === -1) {
       newSelected = [...selectedRows, generalClassId];
     } else {
-      newSelected = selectedRows.filter(id => id !== generalClassId);
+      newSelected = selectedRows.filter((id) => id !== generalClassId);
     }
 
     onSelectedRowsChange(newSelected);
   };
 
-  const isSelected = (generalClassId) => selectedRows.indexOf(generalClassId) !== -1;
+  const isSelected = (generalClassId) =>
+    selectedRows.indexOf(generalClassId) !== -1;
 
   const handleOpenAddSlotDialog = (classDetail) => {
     setSelectedClassForSlot(classDetail);
@@ -337,10 +363,13 @@ const TimeTable = ({
   const handleColumnVisibilityChange = (column) => {
     const newVisibility = {
       ...columnVisibility,
-      [column]: !columnVisibility[column]
+      [column]: !columnVisibility[column],
     };
     setColumnVisibility(newVisibility);
-    localStorage.setItem('timetable-column-visibility', JSON.stringify(newVisibility));
+    localStorage.setItem(
+      "timetable-column-visibility",
+      JSON.stringify(newVisibility)
+    );
   };
 
   const handleSaveSettings = () => {
@@ -348,18 +377,18 @@ const TimeTable = ({
   };
 
   const columnDefinitions = [
-    { id: 'classCode', label: 'Mã lớp' },
-    { id: 'studyClass', label: 'Nhóm' },
-    { id: 'learningWeeks', label: 'Tuần học' },
-    { id: 'moduleCode', label: 'Mã học phần' },
-    { id: 'moduleName', label: 'Tên học phần' },
-    { id: 'crew', label: 'Kíp' },
-    { id: 'quantityMax', label: 'SL MAX' },
-    { id: 'classType', label: 'Loại lớp' },
-    { id: 'mass', label: 'Thời lượng' },
-    { id: 'duration', label: 'Số tiết' },
-    { id: 'batch', label: 'Khóa' },
-    { id: 'actions', label: 'Thêm/Xóa' }
+    { id: "classCode", label: "Mã lớp" },
+    { id: "studyClass", label: "Nhóm" },
+    { id: "learningWeeks", label: "Tuần học" },
+    { id: "moduleCode", label: "Mã học phần" },
+    { id: "moduleName", label: "Tên học phần" },
+    { id: "crew", label: "Kíp" },
+    { id: "quantityMax", label: "SL MAX" },
+    { id: "classType", label: "Loại lớp" },
+    { id: "mass", label: "Thời lượng" },
+    { id: "duration", label: "Số tiết" },
+    { id: "batch", label: "Khóa" },
+    { id: "actions", label: "Thêm/Xóa" },
   ];
 
   return (
@@ -371,11 +400,11 @@ const TimeTable = ({
           size="small"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ 
-            width: '300px',
-            '& .MuiInputBase-root': {
-              height: '36px'
-            }
+          sx={{
+            width: "300px",
+            "& .MuiInputBase-root": {
+              height: "36px",
+            },
           }}
           InputProps={{
             startAdornment: (
@@ -397,9 +426,9 @@ const TimeTable = ({
           startIcon={<Settings />}
           onClick={handleSettingsOpen}
           size="small"
-          sx={{ 
-            height: '36px',
-            textTransform: 'none'
+          sx={{
+            height: "36px",
+            textTransform: "none",
           }}
         >
           Cài đặt hiển thị
@@ -413,7 +442,10 @@ const TimeTable = ({
         >
           <thead>
             <tr>
-              <th className="border border-gray-400 p-1" style={{ width: "30px", minWidth: "30px" }}>
+              <th
+                className="border border-gray-400 p-1"
+                style={{ width: "30px", minWidth: "30px" }}
+              >
                 <Checkbox
                   indeterminate={
                     selectedRows.length > 0 &&
@@ -427,21 +459,108 @@ const TimeTable = ({
                   size="small"
                 />
               </th>
-              {columnVisibility.classCode && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Mã lớp</th>}
-              {columnVisibility.studyClass && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Nhóm</th>}
-              {columnVisibility.learningWeeks && <th className="border border-gray-400 p-1" style={{ width: "45px", minWidth: "45px" }}>Tuần học</th>}
-              {columnVisibility.moduleCode && <th className="border border-gray-400 p-1" style={{ width: "70px", minWidth: "70px" }}>Mã học phần</th>}
-              {columnVisibility.moduleName && <th className="border border-gray-400 p-1" style={{ width: "100px", minWidth: "100px" }}>Tên học phần</th>}
-              {columnVisibility.crew && <th className="border border-gray-400 p-1" style={{ width: "40px", minWidth: "40px" }}>Kíp</th>}
-              {columnVisibility.quantityMax && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>SL MAX</th>}
-              {columnVisibility.classType && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Loại lớp</th>}
-              {columnVisibility.mass && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Thời lượng</th>}
-              {columnVisibility.duration && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Số tiết</th>}
-              {columnVisibility.batch && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Khóa</th>}
+              {columnVisibility.classCode && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Mã lớp
+                </th>
+              )}
+              {columnVisibility.studyClass && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Nhóm
+                </th>
+              )}
+              {columnVisibility.learningWeeks && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "45px", minWidth: "45px" }}
+                >
+                  Tuần học
+                </th>
+              )}
+              {columnVisibility.moduleCode && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "70px", minWidth: "70px" }}
+                >
+                  Mã học phần
+                </th>
+              )}
+              {columnVisibility.moduleName && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "100px", minWidth: "100px" }}
+                >
+                  Tên học phần
+                </th>
+              )}
+              {columnVisibility.crew && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "40px", minWidth: "40px" }}
+                >
+                  Kíp
+                </th>
+              )}
+              {columnVisibility.quantityMax && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "50px", minWidth: "50px" }}
+                >
+                  SL MAX
+                </th>
+              )}
+              {columnVisibility.classType && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Loại lớp
+                </th>
+              )}
+              {columnVisibility.mass && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Thời lượng
+                </th>
+              )}
+              {columnVisibility.duration && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "50px", minWidth: "50px" }}
+                >
+                  Số tiết
+                </th>
+              )}
+              {columnVisibility.batch && (
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "50px", minWidth: "50px" }}
+                >
+                  Khóa
+                </th>
+              )}
               {columnVisibility.actions && (
                 <>
-                  <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Thêm</th>
-                  <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Xóa</th>
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "35px", minWidth: "35px" }}
+                  >
+                    Thêm
+                  </th>
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "35px", minWidth: "35px" }}
+                  >
+                    Xóa
+                  </th>
                 </>
               )}
               {days.map((day) => (
@@ -456,7 +575,13 @@ const TimeTable = ({
             </tr>
             <tr>
               <td></td> {/* Empty cell for checkbox column */}
-              <td colSpan={Object.values(columnVisibility).filter(Boolean).length + (columnVisibility.actions ? 1 : 0)} className="border"></td>
+              <td
+                colSpan={
+                  Object.values(columnVisibility).filter(Boolean).length +
+                  (columnVisibility.actions ? 1 : 0)
+                }
+                className="border"
+              ></td>
               {days.flatMap((day) =>
                 periods.map((period) => (
                   <td
@@ -475,10 +600,16 @@ const TimeTable = ({
         </table>
       ) : (
         <div className="overflow-x-auto" style={{ flex: "1" }}>
-          <table className="min-w-full border-collapse" style={{ tableLayout: "auto" }}>
+          <table
+            className="min-w-full border-collapse"
+            style={{ tableLayout: "auto" }}
+          >
             <thead>
               <tr>
-                <th className="border border-gray-400 p-1" style={{ width: "30px", minWidth: "30px" }}>
+                <th
+                  className="border border-gray-400 p-1"
+                  style={{ width: "30px", minWidth: "30px" }}
+                >
                   <Checkbox
                     indeterminate={
                       selectedRows.length > 0 &&
@@ -492,21 +623,108 @@ const TimeTable = ({
                     size="small"
                   />
                 </th>
-                {columnVisibility.classCode && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Mã lớp</th>}
-                {columnVisibility.studyClass && <th className="border border-gray-400 p-1" style={{ width: "80px", minWidth: "80px" }}>Nhóm</th>}
-                {columnVisibility.learningWeeks && <th className="border border-gray-400 p-1" style={{ width: "45px", minWidth: "45px" }}>Tuần học</th>}
-                {columnVisibility.moduleCode && <th className="border border-gray-400 p-1" style={{ width: "70px", minWidth: "70px" }}>Mã học phần</th>}
-                {columnVisibility.moduleName && <th className="border border-gray-400 p-1" style={{ width: "100px", minWidth: "100px" }}>Tên học phần</th>}
-                {columnVisibility.crew && <th className="border border-gray-400 p-1" style={{ width: "40px", minWidth: "40px" }}>Kíp</th>}
-                {columnVisibility.quantityMax && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>SL MAX</th>}
-                {columnVisibility.classType && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Loại lớp</th>}
-                {columnVisibility.mass && <th className="border border-gray-400 p-1" style={{ width: "60px", minWidth: "60px" }}>Thời lượng</th>}
-                {columnVisibility.duration && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Số tiết</th>}
-                {columnVisibility.batch && <th className="border border-gray-400 p-1" style={{ width: "50px", minWidth: "50px" }}>Khóa</th>}
+                {columnVisibility.classCode && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Mã lớp
+                  </th>
+                )}
+                {columnVisibility.studyClass && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "80px", minWidth: "80px" }}
+                  >
+                    Nhóm
+                  </th>
+                )}
+                {columnVisibility.learningWeeks && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "45px", minWidth: "45px" }}
+                  >
+                    Tuần học
+                  </th>
+                )}
+                {columnVisibility.moduleCode && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "70px", minWidth: "70px" }}
+                  >
+                    Mã học phần
+                  </th>
+                )}
+                {columnVisibility.moduleName && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "100px", minWidth: "100px" }}
+                  >
+                    Tên học phần
+                  </th>
+                )}
+                {columnVisibility.crew && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "40px", minWidth: "40px" }}
+                  >
+                    Kíp
+                  </th>
+                )}
+                {columnVisibility.quantityMax && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "50px", minWidth: "50px" }}
+                  >
+                    SL MAX
+                  </th>
+                )}
+                {columnVisibility.classType && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Loại lớp
+                  </th>
+                )}
+                {columnVisibility.mass && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Thời lượng
+                  </th>
+                )}
+                {columnVisibility.duration && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "50px", minWidth: "50px" }}
+                  >
+                    Số tiết
+                  </th>
+                )}
+                {columnVisibility.batch && (
+                  <th
+                    className="border border-gray-400 p-1"
+                    style={{ width: "50px", minWidth: "50px" }}
+                  >
+                    Khóa
+                  </th>
+                )}
                 {columnVisibility.actions && (
                   <>
-                    <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Thêm</th>
-                    <th className="border border-gray-400 p-1" style={{ width: "35px", minWidth: "35px" }}>Xóa</th>
+                    <th
+                      className="border border-gray-400 p-1"
+                      style={{ width: "35px", minWidth: "35px" }}
+                    >
+                      Thêm
+                    </th>
+                    <th
+                      className="border border-gray-400 p-1"
+                      style={{ width: "35px", minWidth: "35px" }}
+                    >
+                      Xóa
+                    </th>
                   </>
                 )}
                 {days.map((day) => (
@@ -521,8 +739,14 @@ const TimeTable = ({
                 ))}
               </tr>
               <tr>
-                <td className="border border-gray-400"></td> 
-                <td colSpan={Object.values(columnVisibility).filter(Boolean).length + (columnVisibility.actions ? 1 : 0)} className="border border-gray-400"></td>
+                <td className="border border-gray-400"></td>
+                <td
+                  colSpan={
+                    Object.values(columnVisibility).filter(Boolean).length +
+                    (columnVisibility.actions ? 1 : 0)
+                  }
+                  className="border border-gray-400"
+                ></td>
                 {days.flatMap((day) =>
                   periods.map((period) => (
                     <td
@@ -544,32 +768,36 @@ const TimeTable = ({
                     const isItemSelected = isSelected(
                       classDetail.generalClassId
                     );
-                    
-                    let groupDisplay = '';
+
+                    let groupDisplay = "";
                     let showTooltip = false;
-                    let tooltipContent = '';
-                    
+                    let tooltipContent = "";
+
                     if (classDetail.listGroupName) {
                       // If it's already an array
                       if (Array.isArray(classDetail.listGroupName)) {
-                        const fullGroupText = classDetail.listGroupName.join(', ');
+                        const fullGroupText =
+                          classDetail.listGroupName.join(", ");
                         tooltipContent = fullGroupText;
-                        groupDisplay = fullGroupText.length > 30 
-                          ? fullGroupText.substring(0, 30) + '...' 
-                          : fullGroupText;
+                        groupDisplay =
+                          fullGroupText.length > 30
+                            ? fullGroupText.substring(0, 30) + "..."
+                            : fullGroupText;
                         showTooltip = fullGroupText.length > 30;
-                      }
-                      else if (typeof classDetail.listGroupName === 'string' && 
-                              classDetail.listGroupName.includes('[') && 
-                              classDetail.listGroupName.includes(']')) {
+                      } else if (
+                        typeof classDetail.listGroupName === "string" &&
+                        classDetail.listGroupName.includes("[") &&
+                        classDetail.listGroupName.includes("]")
+                      ) {
                         try {
                           const groups = JSON.parse(classDetail.listGroupName);
                           if (Array.isArray(groups)) {
-                            const fullGroupText = groups.join(', ');
+                            const fullGroupText = groups.join(", ");
                             tooltipContent = fullGroupText;
-                            groupDisplay = fullGroupText.length > 30 
-                              ? fullGroupText.substring(0, 30) + '...' 
-                              : fullGroupText;
+                            groupDisplay =
+                              fullGroupText.length > 30
+                                ? fullGroupText.substring(0, 30) + "..."
+                                : fullGroupText;
                             showTooltip = fullGroupText.length > 30;
                           } else {
                             groupDisplay = String(classDetail.listGroupName);
@@ -585,7 +813,7 @@ const TimeTable = ({
                         groupDisplay = String(classDetail.listGroupName);
                       }
                     }
-                    
+
                     return (
                       <tr
                         key={`${classDetail.code}-${index}`}
@@ -601,11 +829,19 @@ const TimeTable = ({
                             size="small"
                           />
                         </td>
-                        {columnVisibility.classCode && <td className="border border-gray-400 text-center px-1">{classDetail.code}</td>}
+                        {columnVisibility.classCode && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.code}
+                          </td>
+                        )}
                         {columnVisibility.studyClass && (
                           <td className="border border-gray-400 text-center px-1 w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
                             {showTooltip ? (
-                              <Tooltip title={tooltipContent} arrow placement="top">
+                              <Tooltip
+                                title={tooltipContent}
+                                arrow
+                                placement="top"
+                              >
                                 <span>{groupDisplay}</span>
                               </Tooltip>
                             ) : (
@@ -613,28 +849,66 @@ const TimeTable = ({
                             )}
                           </td>
                         )}
-                        {columnVisibility.learningWeeks && <td className="border border-gray-400 text-center px-1">{classDetail.learningWeeks}</td>}
-                        {columnVisibility.moduleCode && <td className="border border-gray-400 text-center px-1">{classDetail.moduleCode}</td>}
-                        {columnVisibility.moduleName && <td className="border border-gray-400 text-center px-1">{classDetail.moduleName}</td>}
-                        {columnVisibility.crew && <td className="border border-gray-400 text-center px-1">{classDetail.crew}</td>}
-                        {columnVisibility.quantityMax && <td className="border border-gray-400 text-center px-1">{classDetail.quantityMax}</td>}
-                        {columnVisibility.classType && <td className="border border-gray-400 text-center px-1">{classDetail.classType}</td>}
-                        {columnVisibility.mass && <td className="border border-gray-400 text-center px-1">{classDetail.mass}</td>}
-                        {columnVisibility.duration && <td className="border border-gray-400 text-center px-1">{classDetail.duration}</td>}
-                        {columnVisibility.batch && <td className="border border-gray-400 text-center px-1">{classDetail.batch}</td>}
+                        {columnVisibility.learningWeeks && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.learningWeeks}
+                          </td>
+                        )}
+                        {columnVisibility.moduleCode && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.moduleCode}
+                          </td>
+                        )}
+                        {columnVisibility.moduleName && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.moduleName}
+                          </td>
+                        )}
+                        {columnVisibility.crew && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.crew}
+                          </td>
+                        )}
+                        {columnVisibility.quantityMax && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.quantityMax}
+                          </td>
+                        )}
+                        {columnVisibility.classType && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.classType}
+                          </td>
+                        )}
+                        {columnVisibility.mass && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.mass}
+                          </td>
+                        )}
+                        {columnVisibility.duration && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.duration}
+                          </td>
+                        )}
+                        {columnVisibility.batch && (
+                          <td className="border border-gray-400 text-center px-1">
+                            {classDetail.batch}
+                          </td>
+                        )}
                         {columnVisibility.actions && (
                           <>
                             <td className="border border-gray-400 text-center px-1">
                               {!classDetail.timeSlots && (
                                 <Button
-                                  onClick={() => handleOpenAddSlotDialog(classDetail)}
+                                  onClick={() =>
+                                    handleOpenAddSlotDialog(classDetail)
+                                  }
                                   disabled={classDetail.duration <= 0}
-                                  sx={{ 
-                                    minWidth: '28px', 
-                                    width: '28px', 
-                                    height: '28px', 
-                                    padding: '2px',
-                                    borderRadius: '4px'
+                                  sx={{
+                                    minWidth: "28px",
+                                    width: "28px",
+                                    height: "28px",
+                                    padding: "2px",
+                                    borderRadius: "4px",
                                   }}
                                   color="primary"
                                   size="small"
@@ -652,12 +926,12 @@ const TimeTable = ({
                                       classDetail.roomReservationId
                                     )
                                   }
-                                  sx={{ 
-                                    minWidth: '28px', 
-                                    width: '28px', 
-                                    height: '28px', 
-                                    padding: '2px',
-                                    borderRadius: '4px'
+                                  sx={{
+                                    minWidth: "28px",
+                                    width: "28px",
+                                    height: "28px",
+                                    padding: "2px",
+                                    borderRadius: "4px",
                                   }}
                                   color="error"
                                   size="small"
@@ -678,9 +952,13 @@ const TimeTable = ({
                   })
               ) : (
                 <tr>
-                  <td className="border border-gray-400"></td> 
+                  <td className="border border-gray-400"></td>
                   <td
-                    colSpan={Object.values(columnVisibility).filter(Boolean).length + days.length * periods.length + (columnVisibility.actions ? 1 : 0)}
+                    colSpan={
+                      Object.values(columnVisibility).filter(Boolean).length +
+                      days.length * periods.length +
+                      (columnVisibility.actions ? 1 : 0)
+                    }
                     className="border border-gray-400 text-center py-4"
                   >
                     <div className="h-full ">Không có dữ liệu</div>
@@ -719,7 +997,10 @@ const TimeTable = ({
                   onChange={() => handleColumnVisibilityChange(column.id)}
                   id={`column-${column.id}`}
                 />
-                <label htmlFor={`column-${column.id}`} className="ml-2 cursor-pointer">
+                <label
+                  htmlFor={`column-${column.id}`}
+                  className="ml-2 cursor-pointer"
+                >
                   {column.label}
                 </label>
               </div>
@@ -730,7 +1011,11 @@ const TimeTable = ({
           <Button onClick={handleSettingsClose} color="secondary">
             Đóng
           </Button>
-          <Button onClick={handleSaveSettings} color="primary" variant="contained">
+          <Button
+            onClick={handleSaveSettings}
+            color="primary"
+            variant="contained"
+          >
             Áp dụng
           </Button>
         </DialogActions>
@@ -835,7 +1120,7 @@ const TimeTable = ({
               variant="outlined"
               color="secondary"
               disabled={states.isSavingTimeSlot}
-              sx={{ minWidth: '100px', padding: '8px 16px' }}
+              sx={{ minWidth: "100px", padding: "8px 16px" }}
             >
               Đóng
             </Button>
@@ -844,7 +1129,7 @@ const TimeTable = ({
               variant="contained"
               color="primary"
               disabled={states.isSavingTimeSlot}
-              sx={{ minWidth: '100px', padding: '8px 16px' }}
+              sx={{ minWidth: "100px", padding: "8px 16px" }}
             >
               {states.isSavingTimeSlot ? "Đang lưu..." : "Lưu"}
             </Button>
@@ -852,14 +1137,12 @@ const TimeTable = ({
         </Box>
       </Modal>
 
-      <Dialog 
-        open={isAddSlotDialogOpen} 
-        onClose={handleCloseAddSlotDialog}
-      >
+      <Dialog open={isAddSlotDialogOpen} onClose={handleCloseAddSlotDialog}>
         <DialogTitle>Thêm ca học</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Nhập số tiết cho ca học mới (Số tiết còn lại: {selectedClassForSlot?.duration || 0})
+            Nhập số tiết cho ca học mới (Số tiết còn lại:{" "}
+            {selectedClassForSlot?.duration || 0})
           </DialogContentText>
           <TextField
             autoFocus
@@ -869,25 +1152,25 @@ const TimeTable = ({
             fullWidth
             value={selectedPeriods}
             onChange={(e) => setSelectedPeriods(e.target.value)}
-            inputProps={{ 
+            inputProps={{
               min: 1,
-              max: selectedClassForSlot?.duration || 1
+              max: selectedClassForSlot?.duration || 1,
             }}
           />
         </DialogContent>
-        <DialogActions sx={{ padding: '16px', gap: '8px' }}>
-          <Button 
+        <DialogActions sx={{ padding: "16px", gap: "8px" }}>
+          <Button
             onClick={handleCloseAddSlotDialog}
-            variant="outlined" 
-            sx={{ minWidth: '80px', padding: '6px 16px' }}
+            variant="outlined"
+            sx={{ minWidth: "80px", padding: "6px 16px" }}
           >
             Hủy
           </Button>
-          <Button 
-            onClick={handleAddTimeSlot} 
-            variant="contained" 
+          <Button
+            onClick={handleAddTimeSlot}
+            variant="contained"
             color="primary"
-            sx={{ minWidth: '80px', padding: '6px 16px' }}
+            sx={{ minWidth: "80px", padding: "6px 16px" }}
           >
             Thêm
           </Button>

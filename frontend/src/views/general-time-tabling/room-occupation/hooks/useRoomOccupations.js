@@ -32,72 +32,102 @@ export const useRoomOccupations = (semester, selectedWeek) => {
     return mergedPeriods;
   };
 
-  const convertSchedule = (schedule) => {
-    const periodsMap = {};
+const convertSchedule = (schedule) => {
+  if (!Array.isArray(schedule) || schedule.length === 0) {
+    return [];
+  }
 
-    schedule.forEach((item) => {
-      const { classRoom, classCode, startPeriod, endPeriod, dayIndex, crew, assigned } = item;
-      const dayOffset = (dayIndex - 2) * 6;
-      const start = dayOffset + startPeriod - 1;
-      const duration = endPeriod - startPeriod + 1;
+  const periodsMap = {};
 
-      if (!periodsMap[classRoom]) {
-        periodsMap[classRoom] = {
-          S: [],
-          C: [],
-          assigned: assigned || false 
-        };
-      }
+  schedule.forEach((item) => {
+    if (!item || !item.classRoom) return;
 
-      if (assigned) {
-        periodsMap[classRoom].assigned = true;
-      }
+    const {
+      classRoom,
+      classCode,
+      startPeriod,
+      endPeriod,
+      dayIndex,
+      crew,
+      assigned,
+    } = item;
 
-      periodsMap[classRoom][crew].push({ 
-        start, 
-        duration, 
+    // Skip invalid data
+    if (!classCode || !startPeriod || !endPeriod || !dayIndex || !crew) {
+      return;
+    }
+
+    const dayOffset = (dayIndex - 2) * 6;
+    const start = dayOffset + startPeriod - 1;
+    const duration = endPeriod - startPeriod + 1;
+
+    if (!periodsMap[classRoom]) {
+      periodsMap[classRoom] = {
+        S: [],
+        C: [],
+        assigned: false
+      };
+    }
+
+    if (assigned) {
+      periodsMap[classRoom].assigned = true;
+    }
+
+    // Ensure crew is either 'S' or 'C'
+    if (crew === 'S' || crew === 'C') {
+      periodsMap[classRoom][crew].push({
+        start,
+        duration,
         classCode,
-        crew 
+        crew,
       });
-    });
+    }
+  });
 
-    // Convert to array and sort by assigned status (true first)
-    return Object.entries(periodsMap)
-      .map(([room, data]) => ({
-        room,
-        morningPeriods: mergePeriods(data.S),
-        afternoonPeriods: mergePeriods(data.C),
-        assigned: data.assigned
-      }))
-      .sort((a, b) => {
-        // Sort assigned=true rooms first
-        if (a.assigned && !b.assigned) return -1;
-        if (!a.assigned && b.assigned) return 1;
-        // If both have the same assigned status, maintain original order
-        return 0;
-      });
-  };
+  return Object.entries(periodsMap)
+    .map(([room, data]) => ({
+      room,
+      morningPeriods: mergePeriods(data.S),
+      afternoonPeriods: mergePeriods(data.C),
+      assigned: data.assigned,
+    }))
+    .sort((a, b) => {
+      if (a.assigned && !b.assigned) return -1;
+      if (!a.assigned && b.assigned) return 1;
+      return 0;
+    });
+};
 
   const fetchRoomOccupations = useCallback(() => {
-    setLoading(true);
-    try {
-      request(
-        "get",
-        `/room-occupation/?semester=${semester}&weekIndex=${selectedWeek.weekIndex}`,
-        (res) => {
-          setData(convertSchedule(res.data));
-          console.log(res.data);
-        },
-        (error) => {
-          console.log(error);
-          toast.error("Có lỗi khi tải dữ liệu sử dụng phòng");
-        }
-      );
-    } catch (error) {
-      setError(error);
-    } finally {
-      setLoading(false);
+    if (!semester || !selectedWeek?.weekIndex) {
+      return;
     }
+
+    setLoading(true);
+    setError(null);
+
+    request(
+      "get",
+      `/room-occupation/?semester=${semester}&weekIndex=${selectedWeek.weekIndex}`,
+      (res) => {
+        try {
+          const convertedData = convertSchedule(res.data);
+          setData(convertedData);
+          console.log('Converted data:', convertedData);
+        } catch (err) {
+          console.error('Error converting data:', err);
+          setError(err);
+          toast.error("Có lỗi khi xử lý dữ liệu");
+        }
+      },
+      (error) => {
+        console.error("API error:", error);
+        setError(error);
+        toast.error("Có lỗi khi tải dữ liệu sử dụng phòng");
+      }
+    ).finally(() => {
+      setLoading(false);
+    });
   }, [semester, selectedWeek]);
 
   useEffect(() => {
