@@ -136,7 +136,7 @@ export default function ClassroomListScreen() {
       <div
         className="flex justify-center items-center w-full mb-[16px]"
       >
-        <Typography variant="h5">Danh sách kỳ học</Typography>
+        <Typography variant="h5">Danh sách phòng học</Typography>
       </div>
 
       <div

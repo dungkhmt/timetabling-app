@@ -44,7 +44,12 @@ const GeneralGroupScreen = () => {
               setOpenNewGroupDialouge(true);
             }}
             disabled={selectedClasses.length === 0}
-            sx={{ width: "200px", height: "40px" }}
+            sx={{
+              width: "200px",
+              height: "40px",
+              textTransform: "none",
+              fontSize: "16px",
+            }}
             variant="outlined"
           >
             Thêm vào nhóm mới
@@ -55,7 +60,12 @@ const GeneralGroupScreen = () => {
               setOpenCreatedGroupDialouge(true);
             }}
             disabled={selectedClasses.length === 0}
-            sx={{ width: "240px", height: "40px" }}
+            sx={{
+              width: "200px",
+              height: "40px",
+              textTransform: "none",
+              fontSize: "16px",
+            }}
             variant="outlined"
           >
             Thêm vào nhóm đã tạo

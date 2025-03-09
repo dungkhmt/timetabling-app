@@ -32,7 +32,11 @@ export default function InputFileUpload({
   return (
     <div className="flex flex-row gap-2">
       <Button
-        sx={{ width: "200px" }}
+        sx={{
+          width: "120",
+          textTransform: "none",
+          fontSize: "16px",
+        }}
         disabled={selectedSemester === null}
         component="label"
         color={selectedFile ? "success" : "primary"}
@@ -52,6 +56,11 @@ export default function InputFileUpload({
         startIcon = {isUploading ? <FacebookCircularProgress/> : null}
         disabled={selectedFile === null || isUploading}
         variant="outlined"
+        sx={{
+          width: "120px",
+          textTransform: "none",
+          fontSize: "16px",
+        }}
         onClick={submitHandler}
       >
         Submit

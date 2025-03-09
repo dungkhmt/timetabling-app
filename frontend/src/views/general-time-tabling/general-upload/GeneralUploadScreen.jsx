@@ -70,10 +70,14 @@ const GeneralUploadScreen = () => {
               setSelectedFile={setSelectedFile}
               submitHandler={handleSubmitFile}
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 text-[16px]">
               <Button
                 startIcon={isDeletingByIds ? <FacebookCircularProgress /> : null}
-                sx={{ width: 290 }}
+                sx={{ 
+                  width: 220,
+                  textTransform: 'none',
+                  fontSize: '16px'
+                }}
                 disabled={isDeletingByIds || selectedIds.length === 0}
                 onClick={() => handleDeleteByIds()}
                 variant="contained"
@@ -83,11 +87,16 @@ const GeneralUploadScreen = () => {
               </Button>
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
-                sx={{ width: 290 }}
+                sx={{ 
+                  width: 220,
+                  textTransform: 'none',
+                  fontSize: '16px'
+                }}
                 disabled={isDeletingBySemester || !selectedSemester}
                 onClick={handleDeleteBySemester}
                 variant="contained"
                 color="error"
+                
               >
                 Xóa danh sách theo kỳ
               </Button>
