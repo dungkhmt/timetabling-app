@@ -50,11 +50,7 @@ public class RoomOccupationController {
     public ResponseEntity<List<RoomOccupation>> requestGetRoomOccupationsBySemesterAndWeekIndex(@RequestParam("semester")String semester, @RequestParam("weekIndex") int weekIndex) {
         return ResponseEntity.ok(roomOccupationService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
     }
-
-
-
-
-
+    
     @PostMapping("/empty-room")
     public ResponseEntity requestGetEmptyRooms(
             @RequestParam("semester") String semester,
