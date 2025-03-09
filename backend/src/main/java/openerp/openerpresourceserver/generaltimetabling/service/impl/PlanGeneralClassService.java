@@ -75,7 +75,7 @@ public class PlanGeneralClassService {
         }
 
         Long nextId = planGeneralClassRepository.getNextReferenceValue();
-        newClass.setParentClassId(nextId);
+        //newClass.setParentClassId(nextId);
         newClass.setClassCode(nextId.toString());
 
         List<RoomReservation> roomReservations = new ArrayList<>();
@@ -99,7 +99,7 @@ public class PlanGeneralClassService {
 
         for (int i = 0; i < request.getNumberClasses(); i++) {
             GeneralClass newClass = new GeneralClass();
-
+            newClass.setParentClassId(parentClass.getId());
             newClass.setRefClassId(parentClass.getRefClassId());
             newClass.setSemester(parentClass.getSemester());
             newClass.setModuleCode(parentClass.getModuleCode());
@@ -122,7 +122,11 @@ public class PlanGeneralClassService {
             List<RoomReservation> roomReservations = new ArrayList<>();
             RoomReservation roomReservation = new RoomReservation();
             roomReservation.setGeneralClass(newClass);
+            roomReservation.setCrew(newClass.getCrew());
+            roomReservation.setDuration(newClass.getDuration());
+
             roomReservations.add(roomReservation);
+
             newClass.setTimeSlots(roomReservations);
 
             generalClassRepository.save(newClass);

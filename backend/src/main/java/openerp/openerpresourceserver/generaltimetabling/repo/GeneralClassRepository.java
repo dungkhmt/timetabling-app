@@ -25,7 +25,9 @@ public interface GeneralClassRepository extends JpaRepository<GeneralClass, Long
 
     List<GeneralClass> findAllByParentClassId(Long parentClassId);
 
-    @Query("SELECT gc FROM GeneralClass gc WHERE gc.classCode = :parentClassId AND gc.parentClassId IS NULL")
+    //@Query("SELECT gc FROM GeneralClass gc WHERE gc.classCode = :parentClassId AND gc.parentClassId IS NULL")
+    @Query("SELECT gc FROM GeneralClass gc WHERE gc.parentClassId = :parentClassId")
+
     List<GeneralClass> findSubClassesByParentClassId(@Param("parentClassId") String parentClassId);
 
     @Query("SELECT gc FROM GeneralClass gc WHERE gc.classCode IN :parentClassIds AND gc.parentClassId IS NULL")

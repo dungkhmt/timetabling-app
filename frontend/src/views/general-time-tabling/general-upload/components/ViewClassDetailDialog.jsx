@@ -65,6 +65,7 @@ const ViewClassDetailDialog = ({
   const [newSubClass, setNewSubClass] = useState({
     studentCount: "",
     classType: "",
+    duration:"",
     classCount: "",
   });
 
@@ -85,7 +86,8 @@ const ViewClassDetailDialog = ({
 
     setIsLoadingSubClasses(true);
     try {
-      const data = await handlers.getSubClasses(classData.classCode);
+      //const data = await handlers.getSubClasses(classData.classCode);
+      const data = await handlers.getSubClasses(classData.id);
       setSubClasses(data || []);
     } catch (error) {
       console.error("Failed to fetch subclasses", error);
@@ -139,7 +141,8 @@ const ViewClassDetailDialog = ({
       fromParentClassId: classData?.id,
       classType: newSubClass.classType,
       numberStudents: parseInt(newSubClass.studentCount, 10),
-      duration: classData?.duration,
+      //duration: classData?.duration,
+      duration: newSubClass.duration,
       numberClasses: parseInt(newSubClass.classCount, 10),
     };
 
@@ -324,7 +327,7 @@ const ViewClassDetailDialog = ({
               <Button
                 variant="contained"
                 onClick={() => setOpenNewDialog(true)}
-                disabled={!classData?.parentClassId}
+                //disabled={!classData?.parentClassId}
               >
                 Thêm mới
               </Button>
@@ -434,6 +437,15 @@ const ViewClassDetailDialog = ({
               <MenuItem value="TN">TN</MenuItem>
               <MenuItem value="BT">BT</MenuItem>
             </TextField>
+            <TextField
+              label="Số tiết"
+              type="number"
+              value={newSubClass.duration}
+              onChange={(e) =>
+                setNewSubClass({ ...newSubClass, duration: e.target.value })
+              }
+              fullWidth
+            />
             <TextField
               label="SL lớp"
               type="number"
