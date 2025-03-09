@@ -84,6 +84,12 @@ public class PlanGeneralClassController {
         planClassService.clearPlanClass(I.getSemesterId());
         return ResponseEntity.ok().body("OK");
     }
+
+    @DeleteMapping("/delete-by-ids")
+    public ResponseEntity<?> requestDeletePlanClasses(@RequestParam("planClassId") List<Long> planClassIds){
+        return ResponseEntity.ok(planClassService.deleteClassesByIds(planClassIds));
+    }
+    
     @DeleteMapping("/")
     public ResponseEntity<PlanGeneralClass> requestDeletePlanClass(@RequestParam("planClassId") Long planClassId) {
         return ResponseEntity.ok(planClassService.deleteClassById(planClassId));
