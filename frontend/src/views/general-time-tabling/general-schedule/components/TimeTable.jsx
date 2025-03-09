@@ -119,17 +119,18 @@ const TimeTable = ({
     }
   }, [searchTerm, classDetails]);
 
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const periods = [1, 2, 3, 4, 5, 6];
 
   const convertWeekdayToDay = (weekday) => {
     const dayMap = {
-      2: "Mon",
+      2: "Mon", 
       3: "Tue",
       4: "Wed",
       5: "Thu",
       6: "Fri",
       7: "Sat",
+      8: "Sun"
     };
     return dayMap[weekday] || "";
   };
