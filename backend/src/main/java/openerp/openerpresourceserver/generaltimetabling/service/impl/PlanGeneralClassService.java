@@ -141,7 +141,6 @@ public class PlanGeneralClassService {
         return newClasses;
     }
 
-
     public List<PlanGeneralClass> getAllClasses(String semester) {
         return planGeneralClassRepository.findAllBySemester(semester);
     }
@@ -195,6 +194,16 @@ public class PlanGeneralClassService {
         planGeneralClass.setQuantityMax(planClass.getQuantityMax());
         planGeneralClass.setClassType(planClass.getClassType());
         return planGeneralClassRepository.save(planGeneralClass);
+    }
+
+    @Transactional
+    public List<PlanGeneralClass> deleteClassesByIds(List<Long> planClassIds){
+        List<PlanGeneralClass> foundClasses = planGeneralClassRepository.findAllById(planClassIds);
+        if(foundClasses == null){
+            throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
+        }
+        planGeneralClassRepository.deleteAllById(planClassIds);
+        return foundClasses;
     }
 
     @Transactional

@@ -12,6 +12,7 @@ const GeneralPlanClassOpenScreen = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isOpenDialog, setOpenDialog] = useState(false);
   const [isImportLoading, setImportLoading] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
 
 
   function getPlanClass(){
@@ -102,6 +103,22 @@ const GeneralPlanClassOpenScreen = () => {
       
     );
   }
+
+  const handleDeleteSelected = () => {
+    request(
+      "delete",
+      `/plan-general-classes/delete-by-ids?${selectedRows.map(id => `planClassId=${id}`).join('&')}`,
+      (res) => {
+        setPlanClasses(prev => prev.filter(row => !selectedRows.includes(row.id)));
+        setSelectedRows([]);
+        toast.success("Xóa lớp thành công!");
+      },
+      (error) => {
+        toast.error("Có lỗi khi xóa lớp!");
+      }
+    );
+  };
+
   return (
     <div>
       <div className="flex flex-row justify-between mb-4">
@@ -110,25 +127,6 @@ const GeneralPlanClassOpenScreen = () => {
           setSelectedSemester={setSelectedSemester}
         />
         <div className="flex flex-col justify-end gap-2 ">
-          <div className="flex flex-row gap-2">
-            {/* <Button
-              color="primary"
-              disabled={selectedSemester === null}
-              variant="contained"
-            >
-              Thêm lớp kế hoạch mới
-            </Button> */}
-          </div>
-          <div>
-            <Button
-              color="primary"
-              disabled={selectedSemester === null}
-              variant="contained"
-              onClick={clearPlan}
-            >
-              XÓA
-            </Button> 
-          </div>
           <div className="flex flex-row gap-2 justify-end">
             <InputFileUpload
               isUploading={isImportLoading}
@@ -138,7 +136,40 @@ const GeneralPlanClassOpenScreen = () => {
               submitHandler={handleImportExcel}
             />
           </div>
-
+          <div className="flex flex-row gap-2">
+            {/* <Button
+              color="primary"
+              disabled={selectedSemester === null}
+              variant="contained"
+            >
+              Thêm lớp kế hoạch mới
+            </Button> */}
+          </div>
+          <div className="flex flex-row gap-2">
+            <Button
+              color="primary"
+              disabled={selectedSemester === null}
+              variant="contained"
+              onClick={clearPlan}
+              sx={{
+                textTransform: "none",
+              }}
+            >
+              Xóa
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              disabled={selectedRows.length === 0}
+              onClick={handleDeleteSelected}
+              sx={{
+                textTransform: "none",
+              }}
+            >
+              Xóa các lớp đã chọn ({selectedRows.length})
+            </Button>
+            <div id="delete-selected-container"></div>
+          </div>
         </div>
       </div>
       <ClassOpenPlanTable
@@ -147,6 +178,8 @@ const GeneralPlanClassOpenScreen = () => {
         semester={selectedSemester?.semester}
         classes={planClasses}
         setClasses={setPlanClasses}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
       />
     </div>
   );

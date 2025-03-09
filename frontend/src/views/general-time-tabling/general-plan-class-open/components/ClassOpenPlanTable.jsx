@@ -1,16 +1,21 @@
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePlanTableConfig } from "../hooks/usePlanTableConfig";
 import ViewClassPlanDialog from "./ViewClassPlanDialog";
+import { Button } from "@mui/material";
+import { request } from "api";
+import { toast } from "react-toastify";
+import ReactDOM from "react-dom";
 
 const ClassOpenPlanTable = ({
   isOpenDialog,
   semester,
   classes,
   setOpenDialog,
-  setClasses
+  setClasses,
+  onSelectionChange,
+  selectedRows  // Add this prop
 }) => {
-
   const [selectedRow, setSelectedRow] = useState(null);
 
   const handleRowDoubleClick = (rowModel) => {
@@ -20,7 +25,6 @@ const ClassOpenPlanTable = ({
       setOpenDialog(true);
     }
   };
-
 
   return (
     <div className="">
@@ -58,6 +62,9 @@ const ClassOpenPlanTable = ({
         columns={usePlanTableConfig(setClasses)}
         rows={classes}
         sx={{ height: 550 }}
+        checkboxSelection
+        onRowSelectionModelChange={onSelectionChange}
+        rowSelectionModel={selectedRows}
       />
     </div>
   );
