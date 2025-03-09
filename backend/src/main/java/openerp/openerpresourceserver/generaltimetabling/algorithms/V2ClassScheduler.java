@@ -45,7 +45,9 @@ public class V2ClassScheduler {
         return false;
     }
 
-
+    public static String hashCourseGroup(String courseCode, Long groupId){
+        return courseCode + "-" + groupId;
+    }
 
     public MapDataScheduleTimeSlotRoomWrapper mapData(List<GeneralClass> classes, List<Classroom> rooms,List<TimeTablingCourse> ttcourses, List<Group> groups,List<ClassGroup> classGroups){
             log.info("mapData, number classes = " + classes.size());
@@ -71,6 +73,18 @@ public class V2ClassScheduler {
                 if(mClassId2ListGroupIds.get(cg.getClassId())==null){
                     mClassId2ListGroupIds.put(cg.getClassId(),new ArrayList<>());
                     mClassId2ListGroupIds.get(cg.getClassId()).add(cg.getGroupId());
+                }
+            }
+            Map<String, Integer>  mCourseGroup2NumberClasses = new HashMap<>();
+            for(GeneralClass gc: classes){
+                String courseCode = gc.getModuleCode();
+                for(Long gId: mClassId2ListGroupIds.get(gc.getId())){
+                    String cg = hashCourseGroup(courseCode,gId);
+                    if(mCourseGroup2NumberClasses.get(cg)==null){
+                        mCourseGroup2NumberClasses.put(cg,1);
+                    }else{
+                        mCourseGroup2NumberClasses.put(cg,mCourseGroup2NumberClasses.get(cg)+1);
+                    }
                 }
             }
             int groupIdx = -1;
@@ -145,8 +159,11 @@ public class V2ClassScheduler {
                     maxTeacherOfCourse[idxC] = ttc.getMaxTeacherInCharge();
                 }
             }
-            int[] courseIndex = new int[n];
 
+
+            int[] courseIndex = new int[n];
+            int[] nbSplits = new int[n];// nbSplits[i] SL class-segments ma GeneralClass cua class-segment i sinh ra
+            int[] nbIns = new int[n]; // nbIns[i]: SL instance of course of this class-segment i in the involced group
 
             for (int i = 0; i < classes.size(); i++) {
                 GeneralClass gc = classes.get(i);
@@ -157,6 +174,15 @@ public class V2ClassScheduler {
                     for (int j = 0; j < gc.getTimeSlots().size(); j++) {
                         RoomReservation rr = gc.getTimeSlots().get(j);
                         idx++; // new class-segment (RoomReservation)
+                        nbSplits[idx] = gc.getTimeSlots().size();
+                        if(mClassId2ListGroupIds.get(gc.getId()) != null) {
+                            for (Long gId : mClassId2ListGroupIds.get(gc.getId())) {
+                                String cg = hashCourseGroup(gc.getModuleCode(), gId);
+                                nbIns[i] = mCourseGroup2NumberClasses.get(cg);
+                            }
+                        }else{
+                            log.info("mapData, BUG classId " + gc.getId() + " did not assigned to any group???");
+                        }
                         mClassSegment2Class.put(idx, gc);
                         indexOfClass[idx] = i;
                         relatedGroups[idx] = mClassId2GroupIndex.get(gc.getId());
@@ -165,7 +191,7 @@ public class V2ClassScheduler {
                         courseIndex[idx] = mCourseCode2Index.get(gc.getModuleCode());
 
                         d[idx] = rr.getDuration();//gc.getDuration();//gc.getQuantityMax();
-                        c[idx] = gc.getCourse();
+                        c[idx] = gc.getModuleCode();//gc.getCourse();
                         cls[idx] = gc.getId();//gc.getClassCode();
                         vol[idx] = 0;
                         if(gc.getQuantityMax() != null) vol[idx] = gc.getQuantityMax();
@@ -222,6 +248,10 @@ public class V2ClassScheduler {
                 }
             }
 
+            //int[] ins = new int[n];
+            //for(int i = 0; i < n; i++) ins[i] = 0;// number of instances of class-segment i
+                                                  //
+
             for (int i = 0; i < n; i++) {
                 for (int j = i+1; j < n; j++) {
                     boolean hasConflict = false;
@@ -232,12 +262,17 @@ public class V2ClassScheduler {
                     GeneralClass ci = classes.get(indexOfClass[i]);
                     GeneralClass cj = classes.get(indexOfClass[j]);
                     if (ci.getId().equals(cj.getParentClassId()) ||
-                            cj.getId().equals(ci.getParentClassId())
+                            cj.getId().equals(ci.getParentClassId())// lop LT va BT (lop con) conflict
                     ) {
                         //conflict.add(new Integer[]{i,j});
                         hasConflict = true;
                     }
-                    if(groupId[i] == groupId[j]) hasConflict = true;
+                    //if(groupId[i] == groupId[j]) hasConflict = true;
+                    if(Util.intersect(relatedGroups[i],relatedGroups[j]) > 0){
+                        if(nbIns[i] == 1 || nbIns[j] == 1){
+                            hasConflict = true;
+                        }
+                    }
                     if(hasConflict)conflict.add(new Integer[]{i,j});
                 }
             }
@@ -258,6 +293,7 @@ public class V2ClassScheduler {
         //data.print();
         return DW;
     }
+
     public List<GeneralClass> autoScheduleTimeSlotRoom(List<GeneralClass> classes, List<Classroom> rooms, List<TimeTablingCourse> ttcourses, List<Group> groups, List<ClassGroup> classGroups, int timeLimit, String algorithm) {
         log.info("autoScheduleTimeSlotRoom, START....");
         //for(int i = 0; i < rooms.size(); i++){

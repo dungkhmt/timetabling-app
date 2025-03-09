@@ -7,6 +7,13 @@ import java.util.*;
 @Log4j2
 public class Util {
 
+    public static int intersect(List<Integer> L1, List<Integer> L2){
+        int res = 0;
+        for(Integer e: L1){
+            if(L2.contains(e)) res += 1;
+        }
+        return res;
+    }
     public static boolean overLap(int startSlot1, int duration1, int startSlot2, int duration2){
         if(startSlot1 + duration1 <= startSlot2 || startSlot2 + duration2 <= startSlot1) return false;
         return true;

@@ -265,10 +265,13 @@ public class GreedySolver1 implements Solver {
             }else{
                 // try to find another time-slot and room for class-segment i
                 int maxScore = -1;
+                log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() +
+                        " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
                 for(int timeslot: cs.getDomainTimeSlots())if(timeslot != selectTimeSlot){
                     for(int room: cs.getDomainRooms()){
                         if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
                             int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
+                            log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
                             if(score > maxScore){
                                 maxScore = score; selectedRoom = room; selectTimeSlot = timeslot;
                             }
@@ -281,7 +284,7 @@ public class GreedySolver1 implements Solver {
                     //log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
                     assignTimeSlotRoom(cs.getId(),selectTimeSlot,selectedRoom);
                 }else{
-                    log.info("solve CANNOT find solution for class-segment " + i);
+                    log.info("solve CANNOT find solution for class-segment[" + i + "], id = " + cs.getId() + " classId = " + cs.getClassId());
                 }
             }
         }
@@ -322,7 +325,8 @@ public class GreedySolver1 implements Solver {
         }
         return score;
     }
-        private boolean checkTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments){
+    private boolean checkTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments){
+        int DEBUG_ID = -1;
         // check if the class-segment i can be assigned to timeSlot
         ClassSegment csi = sortedClassSegments.get(i);
         int maxTeacher = I.getMaxTeacherOfCourses()[csi.getCourseIndex()];
@@ -335,12 +339,19 @@ public class GreedySolver1 implements Solver {
             int timeSlotJ = solutionSlot[csj.getId()];
             if(Util.overLap(timeSlot,di,timeSlotJ,dj)){
                 if(conflictClassSegment[csi.getId()].contains(csj.getId())){
+                    if(csi.getId() == DEBUG_ID){
+                        log.info("checkTimeSlotRoom(" + i + "," + timeSlot + "," + room +"), conflict with class-segment[" + j + "] classId = " + csj.getClassId() + " -> RETURN FALSE");
+                    }
                     return false;
                 }
                 if(csj.getCourseIndex()==csi.getCourseIndex()){
                     teachers++;
                 }
                 if(room == solutionRoom[csj.getId()]){
+                    if(csi.getId() == DEBUG_ID){
+                        log.info("checkTimeSlotRoom(" + i + "," + timeSlot + "," + room +"), conflict with room(" + solutionRoom[csj.getId()] + ") of class-segment[" + j + "] classId = " + csj.getClassId() + " -> RETURN FALSE");
+
+                    }
                     return false;
                 }
             }
