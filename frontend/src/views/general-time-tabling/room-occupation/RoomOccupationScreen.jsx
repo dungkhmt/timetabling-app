@@ -4,7 +4,6 @@ import { useRoomOccupations } from "./hooks/useRoomOccupations";
 import FilterSelectBox from "./components/FilterSelectBox";
 import { Button, TablePagination, Autocomplete, TextField, CircularProgress } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-
 const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [page, setPage] = useState(0);
@@ -28,6 +27,10 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
   }, [selectedSemester, selectedWeek, refresh]);
 
   const handleExportExcel = () => {
+    if (!selectedSemester || !selectedWeek) {
+      return;
+    }
+
     request(
       "post",
       `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}&includeBorders=true`,
@@ -40,7 +43,9 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
         link.click();
         document.body.removeChild(link);
       },
-      (error) => console.error("Error exporting Excel:", error),
+      (error) => {
+        console.error("Error exporting Excel:", error);
+      },
       null,
       { responseType: "arraybuffer" }
     ).then();
