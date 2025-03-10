@@ -54,6 +54,12 @@ public class ExcelService {
     @Autowired
     private PlanGeneralClassService planGeneralClassService;
 
+    @Autowired
+    private ClassGroupRepo classGroupRepo;
+
+    @Autowired
+    private GroupRepo groupRepo;
+
     public InputStream exportGeneralExcel(String semester) {
         List<GeneralClass> classes = gcoRepo.findAllBySemester(semester)
                 .stream()
@@ -334,7 +340,7 @@ public class ExcelService {
 
 
     @Transactional
-    public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass) {
+    public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass, String groupName) {
         try {
             //planGeneralClassRepository.deleteAllBySemester(semester);
             List<PlanGeneralClass> planClasses = PlanGeneralClassExcelHelper
@@ -342,6 +348,7 @@ public class ExcelService {
             //return planGeneralClassRepository.saveAll(planClasses);
             planGeneralClassRepository.saveAll(planClasses);
             if(createClass){
+                
                 // create classes from planClasses
                 for(PlanGeneralClass p: planClasses) {
                     for(int i = 1;i <= p.getNumberOfClasses();i++) {
@@ -361,7 +368,7 @@ public class ExcelService {
                         req.setLectureExerciseMaxQuantity(p.getLectureExerciseMaxQuantity());
                         req.setProgramName(p.getProgramName());
                         req.setWeekType(p.getWeekType());
-                        planGeneralClassService.makeClass(req);
+                        planGeneralClassService.makeClass(req, groupName);
                     }
                 }
             }

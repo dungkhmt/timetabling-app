@@ -5,6 +5,8 @@ import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAut
 import { Button } from "@mui/material";
 import InputFileUpload from "../general-upload/components/InputFileUpload";
 import ClassOpenPlanTable from "./components/ClassOpenPlanTable";
+import { useGeneralSchedule } from "services/useGeneralScheduleData";
+import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoComplete";
 
 const GeneralPlanClassOpenScreen = () => {
   const [selectedSemester, setSelectedSemester] = useState(null);
@@ -14,8 +16,9 @@ const GeneralPlanClassOpenScreen = () => {
   const [isImportLoading, setImportLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
 
-
-  function getPlanClass(){
+    const { states, setters, handlers } = useGeneralSchedule();
+  
+  function getPlanClass() {
     request(
       "get",
       `/plan-general-classes/?semester=${selectedSemester.semester}`,
@@ -34,7 +37,6 @@ const GeneralPlanClassOpenScreen = () => {
   }
   useEffect(() => {
     if (selectedSemester) {
-
       getPlanClass();
     }
   }, [selectedSemester]);
@@ -44,17 +46,18 @@ const GeneralPlanClassOpenScreen = () => {
       setImportLoading(true);
       const formData = new FormData();
       formData.append("file", selectedFile);
-      
+
       const config = {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Accept': 'application/json'
-        }
+          "Content-Type": "multipart/form-data",
+          Accept: "application/json",
+        },
       };
+
 
       request(
         "post",
-        `/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T`,
+        `/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T&groupName=${states.selectedGroup?.groupName}`,
         (res) => {
           setImportLoading(false);
           toast.success("Upload file thành công!");
@@ -62,7 +65,7 @@ const GeneralPlanClassOpenScreen = () => {
           setPlanClasses(res?.data);
         },
         (err) => {
-          if(err.response?.status === 410) {
+          if (err.response?.status === 410) {
             toast.error(err.response.data);
           } else {
             toast.error("Có lỗi khi upload file!");
@@ -76,10 +79,10 @@ const GeneralPlanClassOpenScreen = () => {
     }
   };
 
-  function clearPlan(){
+  function clearPlan() {
     let body = {
-      semesterId: selectedSemester.semester
-    }
+      semesterId: selectedSemester.semester,
+    };
     setImportLoading(true);
     request(
       "post",
@@ -91,25 +94,28 @@ const GeneralPlanClassOpenScreen = () => {
         setImportLoading(false);
       },
       (err) => {
-        if(err.response.status === 410) {
+        if (err.response.status === 410) {
           toast.error(err.response.data);
         } else {
           toast.error("Có lỗi khi clear");
         }
-        
+
         console.log(err);
       },
-      body,
-      
+      body
     );
   }
 
   const handleDeleteSelected = () => {
     request(
       "delete",
-      `/plan-general-classes/delete-by-ids?${selectedRows.map(id => `planClassId=${id}`).join('&')}`,
+      `/plan-general-classes/delete-by-ids?${selectedRows
+        .map((id) => `planClassId=${id}`)
+        .join("&")}`,
       (res) => {
-        setPlanClasses(prev => prev.filter(row => !selectedRows.includes(row.id)));
+        setPlanClasses((prev) =>
+          prev.filter((row) => !selectedRows.includes(row.id))
+        );
         setSelectedRows([]);
         toast.success("Xóa lớp thành công!");
       },
@@ -122,30 +128,22 @@ const GeneralPlanClassOpenScreen = () => {
   return (
     <div>
       <div className="flex flex-row justify-between mb-4">
-        <GeneralSemesterAutoComplete
-          selectedSemester={selectedSemester}
-          setSelectedSemester={setSelectedSemester}
-        />
-        <div className="flex flex-col justify-end gap-2 ">
+        <div className="flex flex-row gap-2">
+          <GeneralSemesterAutoComplete
+            selectedSemester={selectedSemester}
+            setSelectedSemester={setSelectedSemester}
+          />
+          <GeneralGroupAutoComplete
+            selectedGroup={states.selectedGroup}
+            setSelectedGroup={setters.setSelectedGroup}
+            sx={{
+              minWidth: 200,
+              "& .MuiInputBase-root": { height: "40px" },
+            }}
+          />
+        </div>
+        <div className="flex flex-col justify-end gap-2">
           <div className="flex flex-row gap-2 justify-end">
-            <InputFileUpload
-              isUploading={isImportLoading}
-              selectedFile={selectedFile}
-              setSelectedFile={setSelectedFile}
-              selectedSemester={selectedSemester}
-              submitHandler={handleImportExcel}
-            />
-          </div>
-          <div className="flex flex-row gap-2">
-            {/* <Button
-              color="primary"
-              disabled={selectedSemester === null}
-              variant="contained"
-            >
-              Thêm lớp kế hoạch mới
-            </Button> */}
-          </div>
-          <div className="flex flex-row gap-2">
             <Button
               color="primary"
               disabled={selectedSemester === null}
@@ -169,6 +167,15 @@ const GeneralPlanClassOpenScreen = () => {
               Xóa các lớp đã chọn ({selectedRows.length})
             </Button>
             <div id="delete-selected-container"></div>
+          </div>
+          <div className="flex flex-row gap-2 justify-end">
+            <InputFileUpload
+              isUploading={isImportLoading}
+              selectedFile={selectedFile}
+              setSelectedFile={setSelectedFile}
+              selectedSemester={selectedSemester}
+              submitHandler={handleImportExcel}
+            />
           </div>
         </div>
       </div>

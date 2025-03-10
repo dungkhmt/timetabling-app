@@ -41,8 +41,10 @@ public class PlanGeneralClassController {
 
 
     @PostMapping("/make-class")
-    public ResponseEntity<?> requestMakeClass(@RequestBody MakeGeneralClassRequest request) {
-        return ResponseEntity.ok(planClassService.makeClass(request));
+    public ResponseEntity<?> requestMakeClass(@RequestBody MakeGeneralClassRequest request
+    ) {
+    //        return ResponseEntity.ok(planClassService.makeClass(request));
+    return null;
     }
 
     @PostMapping("/make-subclass")

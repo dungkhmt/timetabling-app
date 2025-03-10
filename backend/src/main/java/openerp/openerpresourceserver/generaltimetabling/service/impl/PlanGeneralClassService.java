@@ -11,13 +11,12 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCrea
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
-import openerp.openerpresourceserver.generaltimetabling.repo.AcademicWeekRepo;
-import openerp.openerpresourceserver.generaltimetabling.repo.ClassGroupRepo;
-import openerp.openerpresourceserver.generaltimetabling.repo.GeneralClassRepository;
-import openerp.openerpresourceserver.generaltimetabling.repo.PlanGeneralClassRepository;
+import openerp.openerpresourceserver.generaltimetabling.repo.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,13 +32,22 @@ public class PlanGeneralClassService {
     private PlanGeneralClassRepository planGeneralClassRepository;
     private AcademicWeekRepo academicWeekRepo;
     private ClassGroupRepo classGroupRepo;
+    
+    @Autowired
+    private GroupRepo groupRepo;
 
     @Transactional
     public int clearPlanClass(String semesterId){
         planGeneralClassRepository.deleteAllBySemester(semesterId);
         return 0;
     }
-    public GeneralClass makeClass(MakeGeneralClassRequest request) {
+    public void makeClass(MakeGeneralClassRequest request, String groupName) {
+
+        List<Group> groups = groupRepo.getAllByGroupName(groupName);
+        if (groups == null || groups.isEmpty())
+            throw new NotFoundException("Không tìm thấy nhóm lớp " + groupName);
+        Long groupId = groups.get(0).getId();
+        
         GeneralClass newClass = new GeneralClass();
 
         newClass.setRefClassId(request.getId());
@@ -47,6 +55,7 @@ public class PlanGeneralClassService {
         newClass.setModuleCode(request.getModuleCode());
         newClass.setModuleName(request.getModuleName());
         newClass.setMass(request.getMass());
+        newClass.setGroupName(groupName);
         newClass.setCrew(request.getCrew());
         //newClass.setQuantityMax(request.getQuantityMax());
         if(request.getLectureExerciseMaxQuantity()!=null) newClass.setQuantityMax(request.getLectureExerciseMaxQuantity());
@@ -86,8 +95,9 @@ public class PlanGeneralClassService {
         roomReservation.setDuration(request.getDuration());
         roomReservation.setCrew(newClass.getCrew());
         newClass.setTimeSlots(roomReservations);
-
-        return generalClassRepository.save(newClass);
+        generalClassRepository.save(newClass);
+        ClassGroup classGroup = new ClassGroup(newClass.getId(),groupId);
+        classGroupRepo.save(classGroup);
     }
 
     @Transactional
