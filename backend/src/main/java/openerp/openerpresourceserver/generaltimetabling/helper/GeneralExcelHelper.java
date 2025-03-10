@@ -218,10 +218,15 @@ public class GeneralExcelHelper {
         HashMap<String, List<OccupationClassPeriod>> periodMap = new HashMap<>();
         HashMap<OccupationClassPeriod, List<OccupationClassPeriod>> conflictMap = new HashMap<>();
         for(RoomOccupation room : rooms) {
+            if (room.getStartPeriod() == null || room.getEndPeriod() == null || 
+                room.getDayIndex() == null || room.getClassRoom() == null) {
+                continue;
+            }
+            
             String classRoom = room.getClassRoom();
-            long crewPeriod = room.getCrew().equals("S") ? 0 : 6;
-            long startPeriodIndex = room.getStartPeriod() + 12L *(room.getDayIndex()-2) + crewPeriod;
-            long endPeriodIndex = room.getEndPeriod() + 12L *(room.getDayIndex()-2) + crewPeriod;
+            long crewPeriod = "S".equals(room.getCrew()) ? 0 : 6;
+            long startPeriodIndex = room.getStartPeriod().intValue() + 12L * (room.getDayIndex().intValue()-2) + crewPeriod;
+            long endPeriodIndex = room.getEndPeriod().intValue() + 12L * (room.getDayIndex().intValue()-2) + crewPeriod;
             OccupationClassPeriod period = new OccupationClassPeriod(startPeriodIndex, endPeriodIndex, room.getClassCode(), classRoom);
             if(periodMap.get(classRoom) == null) {
                 List<OccupationClassPeriod> initList = new ArrayList<>();
