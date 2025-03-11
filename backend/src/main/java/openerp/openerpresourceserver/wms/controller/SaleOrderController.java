@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.wms.controller;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.saleOrder.CreateOutBounndReq;
 import openerp.openerpresourceserver.wms.dto.saleOrder.CreateSaleOrderReq;
 import openerp.openerpresourceserver.wms.dto.saleOrder.OrderListRes;
 import openerp.openerpresourceserver.wms.dto.saleOrder.SalesOrderDetailRes;
@@ -37,5 +38,16 @@ public class SaleOrderController {
     public ApiResponse<Pagination<OrderListRes>>  getAllSaleOrders(@RequestParam int page, @RequestParam int limit, @RequestBody Map<String, Object> filters) {
         return saleOrderService.getAllSaleOrders(page, limit, filters);
     }
+
+    @PostMapping("/outbound/create")
+    public ApiResponse<Void> createOutboundSaleOrder(@RequestBody CreateOutBounndReq saleOrder, Principal principal) {
+        return saleOrderService.createOutboundSaleOrder(saleOrder, principal.getName());
+    }
+
+    @GetMapping("/get-approved")
+    public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(@RequestParam int page, @RequestParam int limit) {
+        return saleOrderService.getApprovedSaleOrders(page, limit);
+    }
+
 
 }

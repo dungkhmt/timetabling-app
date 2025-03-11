@@ -1,0 +1,58 @@
+export const ORDER_STATUSES = {
+  DRAFT: {
+    display: "Nháp",
+    allowApprove: true,
+    allowCancel: true,
+    allowEdit: true,
+    allowDiscount: true,
+  },
+  CREATED: {
+    display: "Mới tạo",
+    allowApprove: true,
+    allowCancel: true,
+    allowEdit: true,
+    allowDiscount: true,
+  },
+  WAITING_FOR_APPROVAL: {
+    display: "Chờ duyệt",
+    allowApprove: true,
+    allowCancel: true,
+    allowEdit: true,
+    allowDiscount: true,
+  },
+  APPROVED: {
+    display: "Đã duyệt",
+    allowApprove: false,
+    allowCancel: true,
+    allowEdit: false,
+    allowDiscount: true,
+  },
+  DELIVERED: {
+    display: "Đã giao hàng",
+    allowApprove: false,
+    allowCancel: false,
+    allowEdit: false,
+    allowDiscount: false,
+  },
+  COMPLETED: {
+    display: "Hoàn thành",
+    allowApprove: false,
+    allowCancel: false,
+    allowEdit: false,
+    allowDiscount: false,
+  },
+  CANCELED: {
+    display: "Đã hủy",
+    allowApprove: false,
+    allowCancel: false,
+    allowEdit: false,
+    allowDiscount: false,
+  },
+  REJECTED: {
+    display: "Từ chối",
+    allowApprove: false,
+    allowCancel: false,
+    allowEdit: false,
+    allowDiscount: false,
+  },
+};

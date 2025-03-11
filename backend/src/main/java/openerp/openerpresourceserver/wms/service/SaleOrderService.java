@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.wms.service;
 
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.saleOrder.CreateOutBounndReq;
 import openerp.openerpresourceserver.wms.dto.saleOrder.CreateSaleOrderReq;
 import openerp.openerpresourceserver.wms.dto.saleOrder.OrderListRes;
 import openerp.openerpresourceserver.wms.dto.saleOrder.SalesOrderDetailRes;
@@ -16,4 +17,9 @@ public interface SaleOrderService {
     ApiResponse<Void> approveSaleOrder(String id, String name);
 
     ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, Map<String, Object> filters);
+
+    ApiResponse<Void> createOutboundSaleOrder(CreateOutBounndReq saleOrder, String name);
+
+    ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit);
+
 }

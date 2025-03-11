@@ -1,5 +1,5 @@
 import React from "react";
-import InfoCard from "./InfoCard";
+import InfoCard from "../../common/components/InfoCard";
 import { useOrderDetail } from "../context/OrderDetailContext";
 
 const OrderBasicInfo = () => {

@@ -6,5 +6,8 @@ public enum SaleOrderStatus {
     WAITING_FOR_APPROVAL,
     APPROVED,
     DELIVERED,
-    CANCELLED
+    CANCELLED,
+    REJECTED,
+    COMPLETED,
+    SHIPPING,
 }

@@ -118,6 +118,17 @@ export const useWms2Data = () => {
         return { data: {} };
       }
     }
+
+    const getSalesOrdersApproved = async (page, limit) => {
+      try {
+        const response = await wms2Service.getSalesOrdersApproved(page, limit);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching approved sales orders:", error);
+        toast.error("Không thể tải danh sách đơn hàng đã duyệt");
+        return { data: {} };
+      }
+    }
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -129,6 +140,7 @@ export const useWms2Data = () => {
       updateStatusOrder,
       approveOrder,
       rejectOrder,
-      getSalesOrders
+      getSalesOrders,
+      getSalesOrdersApproved
    };
 };
