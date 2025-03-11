@@ -45,17 +45,9 @@ import { courseTimeTabling } from "./menuconfig/courseTimeTabling";
 import { generalTimeTabling } from "./menuconfig/generalTimeTabling";
 import { ExamTimeTabling } from "./menuconfig/examTimeTabling";
 
-import { firstYearTimeTabling } from "./menuconfig/firstYearTimeTabling";
 import { computerLabTimeTabling } from "./menuconfig/computerLabTimeTabling";
 import { taRecruitment } from "./menuconfig/taRecruitment";
-import {
-  ThesisDefensePlanManagement,
-  ThesisDefensePlanStudent,
-} from "./menuconfig/Thesis_defense_plan_managenment";
 import { Schedule } from "@mui/icons-material/";
-import { AssetManagementAsset } from "./menuconfig/assetManagement";
-import {TrainingFrogCourse} from "./menuconfig/trainingprogcourse";
-
 
 export const MENUS = [];
 

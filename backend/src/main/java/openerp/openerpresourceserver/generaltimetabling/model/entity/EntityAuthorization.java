@@ -17,6 +17,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+
 public class EntityAuthorization {
 
     @Id

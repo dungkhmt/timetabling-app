@@ -1,8 +1,15 @@
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, TextField } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-
+import { useState } from "react";
 
 export default function CourseDataGrid({ courses, isLoading, onEdit, onDelete, onCreate }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const filteredCourses = courses.filter(course =>
+    course.id.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.courseName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const columns = [
     { headerName: "Mã môn học", field: "id", width: 170 },
     { headerName: "Tên môn học", field: "courseName", width: 400 },
@@ -33,29 +40,46 @@ export default function CourseDataGrid({ courses, isLoading, onEdit, onDelete, o
     },
   ];
 
-  const CustomToolbar = () => (
-    <>
-      <Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
-        <Typography variant="h5">Danh sách môn học</Typography>
-      </Box>
-      <Box
-        sx={{ display: "flex", justifyContent: "flex-end", marginRight: "8px" }}
-      >
-        <Button variant="outlined" color="primary" onClick={onCreate}>
-          Thêm mới
-        </Button>
-      </Box>
-    </>
-  );
-
   return (
-    <DataGrid
-      loading={isLoading}
-      className="h-full"
-      components={{ Toolbar: CustomToolbar }}
-      rows={courses}
-      columns={columns}
-      pageSize={10}
-    />
+    <>
+      <Box sx={{ marginBottom: 2 }}>
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: 2,
+          }}
+        >
+          <Typography variant="h5">Danh sách môn học</Typography>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginRight: "8px",
+          }}
+        >
+          <TextField
+            label="Tìm kiếm (Mã môn học hoặc Tên môn học)"
+            variant="outlined"
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ width: "300px", marginRight: 2, fontSize: "14px" }} 
+          />
+          <Button variant="outlined" color="primary" onClick={onCreate} sx={{ textTransform: "none", fontSize: "16px" }}>
+            Thêm mới
+          </Button>
+        </Box>
+      </Box>
+      <DataGrid
+        loading={isLoading}
+        className="h-full"
+        rows={filteredCourses}
+        columns={columns}
+        pageSize={10}
+      />
+    </>
   );
 }
