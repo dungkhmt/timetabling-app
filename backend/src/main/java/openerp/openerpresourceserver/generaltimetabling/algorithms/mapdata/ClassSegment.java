@@ -23,6 +23,9 @@ public class ClassSegment {
     public int nbStudents;
     public List<Integer> domainTimeSlots;
     public List<Integer> domainRooms;
+    // additional and temp data for debugging (to be removed later)
+    public String courseCode;
+    public String groupNames;
 
     public String hashCourseGroup(){
         String s = courseIndex + "-";

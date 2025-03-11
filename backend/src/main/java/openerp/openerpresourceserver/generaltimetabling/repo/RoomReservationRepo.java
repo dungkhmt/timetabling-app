@@ -12,6 +12,7 @@ import java.util.List;
 
 public interface RoomReservationRepo extends JpaRepository<RoomReservation, Long> {
     List<RoomReservation> findAllByIdIn(List<Long> rrIds);
+    List<RoomReservation> findAllByGeneralClassIn(List<GeneralClass> generalClasses);
     List<RoomReservation> findAllByGeneralClass(GeneralClass generalClass);
 
     @Transactional

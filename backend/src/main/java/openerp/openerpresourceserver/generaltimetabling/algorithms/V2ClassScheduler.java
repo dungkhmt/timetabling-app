@@ -9,6 +9,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.G
 import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.GreedySolver2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.GreedySolver3;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.GreedySolver1;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidClassStudentQuantityException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
@@ -49,7 +50,7 @@ public class V2ClassScheduler {
         return courseCode + "-" + groupId;
     }
 
-    public MapDataScheduleTimeSlotRoomWrapper mapData(List<GeneralClass> classes, List<Classroom> rooms,List<TimeTablingCourse> ttcourses, List<Group> groups,List<ClassGroup> classGroups){
+    public MapDataScheduleTimeSlotRoomWrapper mapData(List<GeneralClass> classes, List<Classroom> rooms, Map<String, List<RoomReservation>> mId2RoomReservation, List<TimeTablingCourse> ttcourses, List<Group> groups,List<ClassGroup> classGroups){
             log.info("mapData, number classes = " + classes.size());
             int n = 0;
             Map<Integer, GeneralClass> mClassSegment2Class = new HashMap();
@@ -109,12 +110,30 @@ public class V2ClassScheduler {
             }
             int[] roomCapacity = new int[rooms.size()];
             Map<String, Integer> mRoom2Index = new HashMap<>();
+            List<Integer>[] roomOccupation = new List[rooms.size()];
+
             for(int i = 0; i < rooms.size(); i++) {
                 Long cap = rooms.get(i).getQuantityMax();
                 roomCapacity[i] = (int) cap.intValue();
                 mRoom2Index.put(rooms.get(i).getId(),i);
+                roomOccupation[i] = new ArrayList<>();
             }
+            for(String rId: mId2RoomReservation.keySet()){
+                if(mRoom2Index.get(rId)==null)
+                    log.info("mapData, roomId " + rId + " not mapped");
 
+                int roomIdx = mRoom2Index.get(rId);
+                for(RoomReservation rr: mId2RoomReservation.get(rId)){
+                    if(rr.getStartTime() != null && rr.getEndTime() != null && rr.getWeekday() != null){
+                        int KIP = rr.getCrew().equals("S") ? 0 : 1;
+                        for(int s = rr.getStartTime(); s <= rr.getEndTime(); s++) {
+                            int slot = Constant.slotPerCrew * 2 * (rr.getWeekday() - 2) + KIP * Constant.slotPerCrew + s;
+                            roomOccupation[roomIdx].add(slot);
+                        }
+                    }
+                }
+            }
+            ClassSegment[] classSegments = new ClassSegment[n];
             List<Integer>[] relatedGroups = new ArrayList[n];
             int[] indexOfClass = new int[n];// indexOfClass[j] : index of the class of the class-segment (RoomReservation) j
             int[] d = new int[n];
@@ -124,6 +143,7 @@ public class V2ClassScheduler {
             int[] vol = new int[n];
             int[] groupId = new int[n];
             List<Integer>[] roomPriority = new ArrayList[n];
+
             //boolean[][] conflict = new boolean[n][n];
             List<Integer[]> conflict = new ArrayList();
             List<Integer>[] D = new List[n];
@@ -244,6 +264,9 @@ public class V2ClassScheduler {
                                 roomPriority[i].add(r);
                             }
                         }
+
+                        classSegments[idx] = new ClassSegment(idx, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],gc.getModuleCode(),gc.getGroupName());
+
                     }
                 }
             }
@@ -276,6 +299,15 @@ public class V2ClassScheduler {
                     if(hasConflict)conflict.add(new Integer[]{i,j});
                 }
             }
+            Set<Integer>[] conflictClassSegment = new HashSet[n];
+            for(int i = 0; i < n; i++) conflictClassSegment[i] = new HashSet<>();
+            for(Integer[] p: conflict){
+                int i = p[0]; int j = p[1];
+                conflictClassSegment[i].add(j); conflictClassSegment[j].add(i);
+            }
+            for(int i = 0; i < n; i++)
+                classSegments[i].setConflictClassSegmentIds(conflictClassSegment[i]);
+
             //MapDataScheduleTimeSlotRoomOneGroup data = new MapDataScheduleTimeSlotRoomOneGroup(n,d,c,cls,parentClassId,vol,conflict,D,0,null,mClassSegment2Class);
             //MapDataScheduleTimeSlotRoomOneGroup aGroup = new MapDataScheduleTimeSlotRoomOneGroup(n, d, c, cls, -1, parentClassId, vol, conflict, D, null, null);
 
@@ -286,7 +318,7 @@ public class V2ClassScheduler {
         //}
         //MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,c,cls,groupId,parentClassId,vol,conflict,D,roomPriority,mClassSegment2Class);
         //MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,c,courseIndex,maxTeacherOfCourse,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority);
-        MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,courseIndex,maxTeacherOfCourse,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority);
+        MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,courseIndex,maxTeacherOfCourse,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority,roomOccupation,classSegments);
 
         MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class);
 
@@ -294,12 +326,12 @@ public class V2ClassScheduler {
         return DW;
     }
 
-    public List<GeneralClass> autoScheduleTimeSlotRoom(List<GeneralClass> classes, List<Classroom> rooms, List<TimeTablingCourse> ttcourses, List<Group> groups, List<ClassGroup> classGroups, int timeLimit, String algorithm) {
+    public List<GeneralClass> autoScheduleTimeSlotRoom(List<GeneralClass> classes, List<Classroom> rooms, Map<String, List<RoomReservation>> mId2RoomReservations, List<TimeTablingCourse> ttcourses, List<Group> groups, List<ClassGroup> classGroups, int timeLimit, String algorithm) {
         log.info("autoScheduleTimeSlotRoom, START....");
         //for(int i = 0; i < rooms.size(); i++){
         //    log.info("autoScheduleTimeSlotRoom, room[" + i + "] = " + rooms.get(i).getClassroom());
         //}
-        MapDataScheduleTimeSlotRoomWrapper D = mapData(classes, rooms,ttcourses,groups,classGroups);
+        MapDataScheduleTimeSlotRoomWrapper D = mapData(classes, rooms,mId2RoomReservations,ttcourses,groups,classGroups);
         MapDataScheduleTimeSlotRoom data = D.data;
         //data.print();
         Gson gson = new Gson();

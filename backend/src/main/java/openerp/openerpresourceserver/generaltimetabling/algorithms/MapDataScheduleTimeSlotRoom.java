@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 
 import java.util.List;
 
@@ -26,7 +27,9 @@ public class MapDataScheduleTimeSlotRoom {
     List<Integer[]> conflict; // conflict[i] = pair [i,j] of 2 class-segments i and j cannot be scheduled in overlapping time durations
     List<Integer>[] domains;// domains[i] is the domain (time-slot) of class-segment i
     List<Integer>[] rooms; // rooms[i] - list of indices of rooms sorted in descendant of priority
+    List<Integer>[] roomOccupations;// roomOccupations[i] is the list of time-slot occupying the room i
     // additional data
     //Map<Integer, GeneralClass> mClassSegment2Class;
+    ClassSegment[] classSegments;
 }
 

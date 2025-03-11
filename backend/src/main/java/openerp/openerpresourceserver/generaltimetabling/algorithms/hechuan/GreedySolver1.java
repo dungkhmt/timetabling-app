@@ -82,6 +82,8 @@ public class GreedySolver1 implements Solver {
             int i = p[0]; int j = p[1];
             conflictClassSegment[i].add(j); conflictClassSegment[j].add(i);
         }
+        classSegments = I.getClassSegments();
+        /*
         classSegments = new ClassSegment[I.getNbClassSegments()];
         for(int i = 0; i < I.getNbClassSegments(); i++){
             int id = i;
@@ -98,7 +100,9 @@ public class GreedySolver1 implements Solver {
             List<Integer> domainRooms = I.getRooms()[i];
             classSegments[i] = new ClassSegment(id, classId,parentClassId,groupIds,conflictClassSegmentIds,duration,courseIndex,nbStudents,domainTimeSlots,domainRooms);
             log.info("Constructor, class-segment[" + i + "] = " + classSegments[i]);
+
         }
+        */
         relatedCourseGroups = new HashSet[classSegments.length];
         for(int i = 0; i < classSegments.length; i++){
             ClassSegment cs = classSegments[i];
@@ -271,7 +275,7 @@ public class GreedySolver1 implements Solver {
                     for(int room: cs.getDomainRooms()){
                         if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
                             int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
-                            log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
+                            //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
                             if(score > maxScore){
                                 maxScore = score; selectedRoom = room; selectTimeSlot = timeslot;
                             }
@@ -327,6 +331,9 @@ public class GreedySolver1 implements Solver {
     }
     private boolean checkTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments){
         int DEBUG_ID = -1;
+        for(int s: I.getRoomOccupations()[room]){
+            if(s == timeSlot) return false;
+        }
         // check if the class-segment i can be assigned to timeSlot
         ClassSegment csi = sortedClassSegments.get(i);
         int maxTeacher = I.getMaxTeacherOfCourses()[csi.getCourseIndex()];
