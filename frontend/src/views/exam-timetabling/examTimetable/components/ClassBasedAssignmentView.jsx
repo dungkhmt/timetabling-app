@@ -17,7 +17,11 @@ import {
   InputAdornment,
   IconButton,
   Autocomplete,
-  Paper
+  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
@@ -29,7 +33,8 @@ import {
   Schedule, 
   CalendarMonth, 
   Search, 
-  Clear 
+  Clear,
+  Room
 } from '@mui/icons-material';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -69,7 +74,7 @@ const FixedColumnCell = styled(TableCell)(({ theme }) => ({
   padding: theme.spacing(0.75),
   fontWeight: 'bold',
   whiteSpace: 'nowrap',
-  minWidth: '80px',
+  minWidth: '120px',
   borderRight: `1px solid ${theme.palette.divider}`,
 }));
 
@@ -98,26 +103,26 @@ const AssignmentCell = styled(TableCell)(({ theme, hasassignment }) => ({
   transition: 'background-color 0.2s ease',
 }));
 
-const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
+const ClassBasedAssignmentView = ({ rooms, slots, assignments }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [popoverContent, setPopoverContent] = useState(null);
   const tableRef = useRef(null);
   const [searchValue, setSearchValue] = useState('');
   const [activeSearchValue, setActiveSearchValue] = useState('');
-  const [filteredRooms, setFilteredRooms] = useState([]);
-  const [matchingRoomIds, setMatchingRoomIds] = useState(new Set());
+  const [selectedRoom, setSelectedRoom] = useState('');
+  const [filteredClasses, setFilteredClasses] = useState([]);
   const [matchingAssignments, setMatchingAssignments] = useState(new Set());
-  // Create a lookup map for efficient assignment finding
+  const [noResultsFound, setNoResultsFound] = useState(false);
+
   const assignmentMap = useMemo(() => {
     const map = {};
     assignments.forEach(assignment => {
-      const key = `${assignment.roomId}_${assignment.date}_${assignment.sessionId}`;
+      const key = `${assignment.examClassId}_${assignment.date}_${assignment.sessionId}`;
       map[key] = assignment;
     });
     return map;
   }, [assignments]);
 
-  // Extract unique descriptions for autocomplete
   const uniqueDescriptions = useMemo(() => {
     if (!assignments || assignments.length === 0) return [];
     
@@ -133,17 +138,34 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
     return Array.from(descSet).sort();
   }, [assignments]);
 
-  // Sort rooms for a more predictable display
-  const sortedRooms = useMemo(() => {
-    return [...rooms].sort((a, b) => a.name.localeCompare(b.name));
-  }, [rooms]);
+  const examClasses = useMemo(() => {
+    if (!assignments || assignments.length === 0) return [];
+    
+    const classesMap = new Map();
+    
+    assignments.forEach(assignment => {
+      if (!classesMap.has(assignment.examClassId)) {
+        classesMap.set(assignment.examClassId, {
+          examClassId: assignment.examClassId,
+          courseId: assignment.courseId,
+          courseName: assignment.courseName,
+          description: assignment.description,
+          numberOfStudents: assignment.numberOfStudents
+        });
+      }
+    });
+    
+    return Array.from(classesMap.values()).sort((a, b) => 
+      a.examClassId.localeCompare(b.examClassId)
+    );
+  }, [assignments]);
 
   useEffect(() => {
-    setFilteredRooms(sortedRooms);
-  }, [sortedRooms]);
+    setFilteredClasses(examClasses);
+  }, [examClasses]);
 
-  const handleCellClick = (event, room, slot) => {
-    const key = `${room.id}_${slot.date}_${slot.slotId}`;
+  const handleCellClick = (event, examClass, slot) => {
+    const key = `${examClass.examClassId}_${slot.date}_${slot.slotId}`;
     const assignment = assignmentMap[key];
     
     if (assignment && (!activeSearchValue || matchingAssignments.has(key))) {
@@ -166,96 +188,101 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
   };
 
   const handleSearchInputChange = (event, newInputValue) => {
-    // Only for typing behavior, not selection
   };
 
   const handleSearchSubmit = () => {
     setActiveSearchValue(searchValue || '');
-    filterRoomsBySearch(searchValue);
+    filterClassesBySearch(searchValue, selectedRoom);
   };
 
-  const isAssignmentMatch = useCallback((assignment, searchText) => {
-    if (!searchText) return true;
+  const handleClearSearch = () => {
+    setSearchValue('');
+    setActiveSearchValue('');
+    setMatchingAssignments(new Set());
     
-    const lowerSearchText = searchText.toLowerCase();
-    const isExactDescription = uniqueDescriptions.some(
-      desc => desc.toLowerCase() === lowerSearchText
-    );
-    
-    if (isExactDescription) {
-      return assignment.description && 
-             assignment.description.toLowerCase() === lowerSearchText;
+    if (selectedRoom) {
+      filterClassesByRoom(selectedRoom);
+    } else {
+      setFilteredClasses(examClasses);
     }
-    
-    return (
-      (assignment.description && assignment.description.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.courseName && assignment.courseName.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.courseId && assignment.courseId.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.classId && assignment.classId.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.examClassId && assignment.examClassId.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.school && assignment.school.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.managementCode && assignment.managementCode.toLowerCase().includes(lowerSearchText))
-    );
-  }, [uniqueDescriptions]);
+  };
+  
+  const handleRoomChange = (event) => {
+    const roomId = event.target.value;
+    setSelectedRoom(roomId);
+    filterClassesByRoom(roomId, activeSearchValue);
+  };
+  
+  const handleClearRoomFilter = () => {
+    setSelectedRoom('');
+    filterClassesBySearch(activeSearchValue, '');
+  };
 
- /// Update the filterRoomsBySearch function to track matching assignments by their keys
-  const filterRoomsBySearch = useCallback((searchText) => {
-    if (!searchText) {
-      // When there's no search text, show all assignments
+  const filterClassesBySearch = useCallback((searchText, roomId) => {
+    if (!searchText && !roomId) {
       setMatchingAssignments(new Set());
-      setFilteredRooms(sortedRooms);
+      setFilteredClasses(examClasses);
+      setNoResultsFound(false);
       return;
     }
     
-    const lowerSearchText = searchText.toLowerCase();
+    const lowerSearchText = searchText ? searchText.toLowerCase() : '';
     const matches = new Set();
+    const matchingClassIds = new Set();
     
-    // Check if exact description match
-    const isExactDescription = uniqueDescriptions.some(
+    const isExactDescription = searchText ? uniqueDescriptions.some(
       desc => desc.toLowerCase() === lowerSearchText
-    );
+    ) : false;
     
-    // Find assignments that match the search criteria
-    sortedRooms.forEach(room => {
+    examClasses.forEach(examClass => {
       slots.forEach(slot => {
-        const key = `${room.id}_${slot.date}_${slot.slotId}`;
+        const key = `${examClass.examClassId}_${slot.date}_${slot.slotId}`;
         const assignment = assignmentMap[key];
         
         if (!assignment) return;
         
-        let isMatch = false;
-        if (isExactDescription) {
-          isMatch = assignment.description && 
-                  assignment.description.toLowerCase() === lowerSearchText;
-        } else {
-          isMatch = (
-            (assignment.description && assignment.description.toLowerCase().includes(lowerSearchText)) ||
-            (assignment.courseName && assignment.courseName.toLowerCase().includes(lowerSearchText)) ||
-            (assignment.courseId && assignment.courseId.toLowerCase().includes(lowerSearchText)) ||
-            (assignment.classId && assignment.classId.toLowerCase().includes(lowerSearchText)) ||
-            (assignment.examClassId && assignment.examClassId.toLowerCase().includes(lowerSearchText)) ||
-            (assignment.school && assignment.school.toLowerCase().includes(lowerSearchText)) ||
-            (assignment.managementCode && assignment.managementCode.toLowerCase().includes(lowerSearchText))
-          );
+        const passesRoomFilter = !roomId || assignment.roomId === roomId;
+        if (!passesRoomFilter) return;
+        
+        let passesSearchFilter = true;
+        if (searchText) {
+          if (isExactDescription) {
+            passesSearchFilter = assignment.description && 
+                    assignment.description.toLowerCase() === lowerSearchText;
+          } else {
+            passesSearchFilter = (
+              (assignment.description && assignment.description.toLowerCase().includes(lowerSearchText)) ||
+              (assignment.courseName && assignment.courseName.toLowerCase().includes(lowerSearchText)) ||
+              (assignment.courseId && assignment.courseId.toLowerCase().includes(lowerSearchText)) ||
+              (assignment.classId && assignment.classId.toLowerCase().includes(lowerSearchText)) ||
+              (assignment.examClassId && assignment.examClassId.toLowerCase().includes(lowerSearchText)) ||
+              (assignment.school && assignment.school.toLowerCase().includes(lowerSearchText)) ||
+              (assignment.managementCode && assignment.managementCode.toLowerCase().includes(lowerSearchText))
+            );
+          }
         }
         
-        if (isMatch) {
+        if (passesRoomFilter && passesSearchFilter) {
           matches.add(key);
+          matchingClassIds.add(examClass.examClassId);
         }
       });
     });
     
     setMatchingAssignments(matches);
-    setFilteredRooms(sortedRooms); // Keep all rooms visible
-  }, [sortedRooms, slots, assignmentMap, uniqueDescriptions]);
-
-  // Update the clear function
-  const handleClearSearch = () => {
-    setSearchValue('');
-    setActiveSearchValue('');
-    setMatchingAssignments(new Set());
-    setFilteredRooms(sortedRooms);
-  };
+    
+    const filtered = examClasses.filter(examClass => 
+      matchingClassIds.has(examClass.examClassId)
+    );
+    
+    setNoResultsFound(filtered.length === 0);
+    setFilteredClasses(filtered);
+  }, [examClasses, slots, assignmentMap, uniqueDescriptions]);
+  
+  const filterClassesByRoom = useCallback((roomId, searchText = '') => {
+    // Reuse the search filter function with the room filter
+    filterClassesBySearch(searchText, roomId);
+  }, [filterClassesBySearch]);
 
   // Autocomplete options filter
   const filterOptions = (options, { inputValue }) => {
@@ -295,7 +322,7 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
 
   return (
     <Box sx={{ height: '100%', position: 'relative' }}>
-      {/* Search Filter */}
+      {/* Search and Filter Controls */}
       <Box sx={{ 
         p: 1.5, 
         display: 'flex', 
@@ -305,7 +332,41 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
         backgroundColor: '#f5f5f5',
         borderRadius: 1
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', width: '60%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '85%' }}>
+          {/* Room filter */}
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="room-select-label">Phòng</InputLabel>
+            <Select
+              labelId="room-select-label"
+              id="room-select"
+              value={selectedRoom}
+              label="Phòng"
+              onChange={handleRoomChange}
+              displayEmpty
+              endAdornment={
+                selectedRoom ? (
+                  <IconButton
+                    size="small"
+                    sx={{ mr: 0.5 }}
+                    onClick={handleClearRoomFilter}
+                  >
+                    <Clear fontSize="small" />
+                  </IconButton>
+                ) : null
+              }
+            >
+              <MenuItem value="">
+                <em>Tất cả phòng</em>
+              </MenuItem>
+              {rooms.map((room) => (
+                <MenuItem key={room.id} value={room.id}>
+                  {room.name} ({room.numberSeat} chỗ)
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          {/* Assignment search */}
           <Autocomplete
             freeSolo
             disableClearable
@@ -363,16 +424,18 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
         </Box>
         
         <Typography variant="body2" color="text.secondary">
-          {filteredRooms.length}/{sortedRooms.length} phòng
+          {(activeSearchValue || selectedRoom) ? 
+            `${matchingAssignments.size} kết quả tìm thấy` : 
+            `${filteredClasses.length} lớp thi`}
         </Typography>
       </Box>
 
-      {/* Timetable Grid */}
+      {/* Class-based Timetable Grid */}
       <StyledTableContainer ref={tableRef}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <CornerCell></CornerCell>
+              <CornerCell>Lớp thi</CornerCell>
               {Object.entries(slotsByWeek).map(([week, weekSlots]) => (
                 <React.Fragment key={`week-${week}`}>
                   <FixedHeaderCell 
@@ -389,7 +452,7 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
               ))}
             </TableRow>
             <TableRow>
-              <CornerCell>Phòng</CornerCell>
+              <CornerCell>Mã lớp thi</CornerCell>
               {slots.map((slot) => (
                 <FixedHeaderCell key={`${slot.date}-${slot.slotId}`} align="center">
                   <Tooltip title={`${slot.dateDisplay} - ${slot.slotName}`} placement="top">
@@ -408,59 +471,71 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
           </TableHead>
 
           <TableBody>
-            {filteredRooms.map((room) => (
-              <TableRow key={room.id} hover>
-                <FixedColumnCell>
-                  <Tooltip title={`Số chỗ ngồi: ${room.numberSeat}`} placement="right">
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{room.name}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {room.numberSeat} chỗ ngồi
-                      </Typography>
-                    </Box>
-                  </Tooltip>
-                </FixedColumnCell>
-
-                {slots.map((slot) => {
-                  const key = `${room.id}_${slot.date}_${slot.slotId}`;
-                  const assignment = assignmentMap[key];
-                  
-                  // Check if the assignment should be visible based on search
-                  const isVisible = !activeSearchValue || 
-                                    (assignment && matchingAssignments.has(key));
-                  
-                  return (
-                    <AssignmentCell 
-                      key={`${room.id}-${slot.date}-${slot.slotId}`}
-                      onMouseEnter={(e) => handleCellClick(e, room, slot)}
-                      onMouseLeave={handleMouseLeave}
-                      hasassignment={(assignment && isVisible) ? 'true' : 'false'}
-                    >
-                      {(assignment && isVisible) && (
-                        <Box sx={{ 
-                          p: 0.5, 
-                          borderRadius: 1,
-                          border: '1px solid rgba(25, 118, 210, 0.3)'
-                        }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976D2' }}>
-                            Mã LT: {assignment.examClassId}
-                          </Typography>
-                          <Typography variant="caption" sx={{ 
-                            color: 'text.primary', 
-                            fontWeight: 600,
-                            backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                            px: 0.5,
-                            borderRadius: 1
-                          }}>
-                            Mã LH: {assignment.classId}
-                          </Typography>
-                        </Box>
-                      )}
-                    </AssignmentCell>
-                  );
-                })}
+            {noResultsFound ? (
+              <TableRow>
+                <TableCell colSpan={slots.length + 1} sx={{ textAlign: 'center', py: 8 }}>
+                  <Typography variant="h6" color="text.secondary">
+                    Không tìm thấy kết quả phù hợp
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Vui lòng thử tìm kiếm khác hoặc xóa bộ lọc
+                  </Typography>
+                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredClasses.map((examClass) => (
+                <TableRow key={examClass.examClassId} hover>
+                  <FixedColumnCell>
+                    <Tooltip title={`${examClass.courseName} - ${examClass.description}`} placement="right">
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{examClass.examClassId}</Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {examClass.courseId} - {examClass.numberOfStudents} SV
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  </FixedColumnCell>
+
+                  {slots.map((slot) => {
+                    const key = `${examClass.examClassId}_${slot.date}_${slot.slotId}`;
+                    const assignment = assignmentMap[key];
+                    
+                    const isVisible = (!activeSearchValue && !selectedRoom) || 
+                                      (assignment && matchingAssignments.has(key));
+                    
+                    return (
+                      <AssignmentCell 
+                        key={`${examClass.examClassId}-${slot.date}-${slot.slotId}`}
+                        onMouseEnter={(e) => handleCellClick(e, examClass, slot)}
+                        onMouseLeave={handleMouseLeave}
+                        hasassignment={(assignment && isVisible) ? 'true' : 'false'}
+                      >
+                        {(assignment && isVisible) && (
+                          <Box sx={{ 
+                            p: 0.5, 
+                            borderRadius: 1,
+                            border: '1px solid rgba(25, 118, 210, 0.3)'
+                          }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976D2' }}>
+                              {rooms.find(r => r.id === assignment.roomId)?.name || 'Chưa xếp phòng'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ 
+                              color: 'text.primary', 
+                              fontWeight: 600,
+                              backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                              px: 0.5,
+                              borderRadius: 1
+                            }}>
+                              {assignment.numberOfStudents} SV
+                            </Typography>
+                          </Box>
+                        )}
+                      </AssignmentCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </StyledTableContainer>
@@ -566,4 +641,4 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
   );
 };
 
-export default RoomBasedAssignmentView;
+export default ClassBasedAssignmentView;

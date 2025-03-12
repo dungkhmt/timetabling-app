@@ -37,7 +37,9 @@ export const examClassService = {
       null,
       formData,
       {
-        'Content-Type': 'multipart/form-data',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
       }
     );
   },

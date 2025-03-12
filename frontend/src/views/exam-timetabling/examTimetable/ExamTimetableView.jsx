@@ -16,6 +16,7 @@ import RoomBasedAssignmentView from './components/RoomBasedAssignmentView';
 import { useExamTimetableData } from 'services/useExamTimetableData';
 import { useExamRoomData } from 'services/useExamRoomData';
 import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
+import ClassBasedAssignmentView from './components/ClassBasedAssignmentView'
 
 const ExamTimeTableView = () => {
   const { id } = useParams();
@@ -171,9 +172,11 @@ const ExamTimeTableView = () => {
               assignments={examTimetableAssignments}
             />
           ) : (
-            <Typography variant="body1" sx={{ p: 3 }}>
-              Chức năng xem theo lớp đang được phát triển.
-            </Typography>
+            <ClassBasedAssignmentView 
+            rooms={examRooms}
+            slots={slots}
+            assignments={examTimetableAssignments}
+          />
           )}
         </Box>
       </Paper>
