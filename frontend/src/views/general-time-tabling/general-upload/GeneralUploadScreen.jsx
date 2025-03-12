@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import InputFileUpload from "./components/InputFileUpload";
@@ -10,6 +10,7 @@ import { useGeneralSchedule } from "services/useGeneralScheduleData";
 const GeneralUploadScreen = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [isUserEditing, setIsUserEditing] = useState(false);
   
   const { 
     states,
@@ -46,13 +47,24 @@ const GeneralUploadScreen = () => {
   };
 
   const handleRefreshData = useCallback(async () => {
+    if (isUserEditing) {
+      console.log("Skipping refresh while user is editing");
+      return;
+    }
+    
     try {
       await states.refetchNoSchedule();
       console.log("Data refreshed in GeneralUploadScreen");
     } catch (error) {
       console.error("Error refreshing data:", error);
     }
-  }, [states]);
+  }, [states, isUserEditing]);
+
+  useEffect(() => {
+    return () => {
+      setIsUserEditing(false);
+    };
+  }, []);
 
   return (
     <LoadingProvider>
@@ -110,6 +122,7 @@ const GeneralUploadScreen = () => {
           onSelectionChange={handleSelectionChange} 
           selectedIds={selectedIds}
           onRefreshNeeded={handleRefreshData}
+          setIsEditing={setIsUserEditing}
         />
       </div>
     </LoadingProvider>
