@@ -104,6 +104,9 @@ const ClassesTable = forwardRef(({
   onSelectionChange // Add this prop to handle selection changes
 }, ref) => {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [roomFilter, setRoomFilter] = useState('all'); // Added room filter
+  const [dateFilter, setDateFilter] = useState('all'); // Added date filter
+  const [slotFilter, setSlotFilter] = useState('all'); // Added slot filter
   const [searchValue, setSearchValue] = useState('');
   const [activeSearchValue, setActiveSearchValue] = useState('');
   const [activeFilters, setActiveFilters] = useState(false);
@@ -135,6 +138,77 @@ const ClassesTable = forwardRef(({
     return Array.from(descSet).sort();
   }, [classesData]);
 
+  // Extract unique rooms, dates, and slots for filters
+  const uniqueRooms = useMemo(() => {
+    if (!classesData || classesData.length === 0) return [];
+    
+    const roomsSet = new Set();
+    
+    // Collect all non-empty room IDs
+    for (let i = 0; i < classesData.length; i++) {
+      const roomId = classesData[i].roomId;
+      if (roomId) {
+        roomsSet.add(roomId);
+      }
+    }
+    
+    return Array.from(roomsSet).sort();
+  }, [classesData]);
+
+  const uniqueDates = useMemo(() => {
+    if (!classesData || classesData.length === 0) return [];
+    
+    const datesSet = new Set();
+    
+    // Collect all non-empty dates
+    for (let i = 0; i < classesData.length; i++) {
+      const date = classesData[i].date;
+      if (date) {
+        datesSet.add(date);
+      }
+    }
+    
+    return Array.from(datesSet).sort();
+  }, [classesData]);
+
+  const uniqueSlots = useMemo(() => {
+    if (!classesData || classesData.length === 0) return [];
+    
+    const slotsSet = new Set();
+    
+    // Collect all non-empty session IDs
+    for (let i = 0; i < classesData.length; i++) {
+      const sessionId = classesData[i].sessionId;
+      if (sessionId) {
+        slotsSet.add(sessionId);
+      }
+    }
+    
+    return Array.from(slotsSet).sort();
+  }, [classesData]);
+
+  // Added handlers for room, date, and slot filters
+  const handleRoomFilterChange = (event) => {
+    setRoomFilter(event.target.value);
+    setPage(0);
+    setActiveFilters(!!(activeSearchValue || statusFilter !== 'all' || event.target.value !== 'all' || dateFilter !== 'all' || slotFilter !== 'all'));
+    setFrozenFilteredClasses(null);
+  };
+
+  const handleDateFilterChange = (event) => {
+    setDateFilter(event.target.value);
+    setPage(0);
+    setActiveFilters(!!(activeSearchValue || statusFilter !== 'all' || roomFilter !== 'all' || event.target.value !== 'all' || slotFilter !== 'all'));
+    setFrozenFilteredClasses(null);
+  };
+
+  const handleSlotFilterChange = (event) => {
+    setSlotFilter(event.target.value);
+    setPage(0);
+    setActiveFilters(!!(activeSearchValue || statusFilter !== 'all' || roomFilter !== 'all' || dateFilter !== 'all' || event.target.value !== 'all'));
+    setFrozenFilteredClasses(null);
+  };
+
   // Handle row selection change
   const handleSelectionModelChange = (newSelectionModel) => {
     setSelectedRows(newSelectionModel);
@@ -155,15 +229,15 @@ const ClassesTable = forwardRef(({
 
   const handleSearchSubmit = () => {
     setActiveSearchValue(searchValue || '');
-    setPage(0); // Reset to first page on search
-    setActiveFilters(!!(searchValue || statusFilter !== 'all'));
-    setFrozenFilteredClasses(null); // Reset frozen results when search changes
+    setPage(0);
+    setActiveFilters(!!(searchValue || statusFilter !== 'all' || roomFilter !== 'all' || dateFilter !== 'all' || slotFilter !== 'all'));
+    setFrozenFilteredClasses(null);
   };
   
   const handleStatusFilterChange = (event) => {
     setStatusFilter(event.target.value);
     setPage(0);
-    setActiveFilters(!!(activeSearchValue || event.target.value !== 'all'));
+    setActiveFilters(!!(activeSearchValue || event.target.value !== 'all' || roomFilter !== 'all' || dateFilter !== 'all' || slotFilter !== 'all'));
     setFrozenFilteredClasses(null);
   };
   
@@ -171,9 +245,12 @@ const ClassesTable = forwardRef(({
     setSearchValue('');
     setActiveSearchValue('');
     setStatusFilter('all');
+    setRoomFilter('all');
+    setDateFilter('all');
+    setSlotFilter('all');
     setPage(0);
     setActiveFilters(false);
-    setFrozenFilteredClasses(null); // Reset frozen results when filters are cleared
+    setFrozenFilteredClasses(null);
   };
   
   // Create a memoized filtering function that only recalculates when necessary
@@ -234,12 +311,42 @@ const ClassesTable = forwardRef(({
       });
     }
 
+    // Apply room filter
+    if (roomFilter !== 'all') {
+      results = results.filter(item => {
+        const id = item.id;
+        const assignmentChange = assignmentChanges[id];
+        const currentRoomId = assignmentChange?.roomId !== undefined ? assignmentChange.roomId : item.roomId;
+        return currentRoomId === roomFilter;
+      });
+    }
+
+    // Apply date filter
+    if (dateFilter !== 'all') {
+      results = results.filter(item => {
+        const id = item.id;
+        const assignmentChange = assignmentChanges[id];
+        const currentDate = assignmentChange?.date !== undefined ? assignmentChange.date : item.date;
+        return currentDate === dateFilter;
+      });
+    }
+
+    // Apply slot filter
+    if (slotFilter !== 'all') {
+      results = results.filter(item => {
+        const id = item.id;
+        const assignmentChange = assignmentChanges[id];
+        const currentSessionId = assignmentChange?.sessionId !== undefined ? assignmentChange.sessionId : item.sessionId;
+        return currentSessionId === slotFilter;
+      });
+    }
+
     if (activeFilters) {
       setFrozenFilteredClasses(results);
     }
     
     return results;
-  }, [classesData, activeSearchValue, statusFilter, assignmentChanges, uniqueDescriptions, activeFilters, frozenFilteredClasses]);
+  }, [classesData, activeSearchValue, statusFilter, roomFilter, dateFilter, slotFilter, assignmentChanges, uniqueDescriptions, activeFilters, frozenFilteredClasses]);
 
   // Updated handler functions to preserve all fields
   const handleRoomChange = useCallback((classId, roomId) => {
@@ -570,7 +677,8 @@ const ClassesTable = forwardRef(({
         p: 2, 
         display: 'flex', 
         justifyContent: 'space-between', 
-        borderBottom: '1px solid #eee'
+        borderBottom: '1px solid #eee',
+        gap: 2
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', width: '50%' }}>
           <Autocomplete
@@ -639,6 +747,75 @@ const ClassesTable = forwardRef(({
             sx={{ width: '100%' }}
           />
         </Box>
+
+        {/* Room Filter */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <Select
+              value={roomFilter}
+              onChange={handleRoomFilterChange}
+              displayEmpty
+            >
+              <MenuItem value="all">Tất cả phòng thi</MenuItem>
+              {uniqueRooms.map((roomId) => {
+                // Find the room name from the rooms prop
+                const room = rooms.find(r => r.id === roomId);
+                const roomName = room ? room.name : roomId;
+                return (
+                  <MenuItem key={roomId} value={roomId}>
+                    {roomName}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Date Filter */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <Select
+              value={dateFilter}
+              onChange={handleDateFilterChange}
+              displayEmpty
+            >
+              <MenuItem value="all">Tất cả ngày thi</MenuItem>
+              {uniqueDates.map((dateValue) => {
+                // Find the date name from the dates prop
+                const dateObj = dates.find(d => d.date === dateValue);
+                const dateName = dateObj ? dateObj.name : dateValue;
+                return (
+                  <MenuItem key={dateValue} value={dateValue}>
+                    {dateName}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Slot Filter */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <Select
+              value={slotFilter}
+              onChange={handleSlotFilterChange}
+              displayEmpty
+            >
+              <MenuItem value="all">Tất cả ca thi</MenuItem>
+              {uniqueSlots.map((slotId) => {
+                // Find the slot name from the slots prop
+                const slot = slots.find(s => s.id === slotId);
+                const slotName = slot ? slot.name : slotId;
+                return (
+                  <MenuItem key={slotId} value={slotId}>
+                    {slotName}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        </Box>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -655,37 +832,39 @@ const ClassesTable = forwardRef(({
               </Select>
             </FormControl>
           </Box>
-          
-          {activeFilters && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleClearFilters}
-              sx={{ 
-                ml: 1, 
-                border: '1px solid #ccc',
-                color: 'text.secondary',
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                  borderColor: '#aaa'
-                }
-              }}
-            >
-              Xóa bộ lọc
-            </Button>
-          )}
-
-          {activeFilters && frozenFilteredClasses !== null && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setFrozenFilteredClasses(null)}
-              sx={{ ml: 1 }}
-            >
-              Làm mới bộ lọc
-            </Button>
-          )}
         </Box>
+
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end', p: 2 }}>
+        {activeFilters && (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleClearFilters}
+            sx={{ 
+              ml: 1, 
+              border: '1px solid #ccc',
+              color: 'text.secondary',
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+                borderColor: '#aaa'
+              }
+            }}
+          >
+            Xóa bộ lọc
+          </Button>
+        )}
+
+        {activeFilters && frozenFilteredClasses !== null && (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setFrozenFilteredClasses(null)}
+            sx={{ ml: 1 }}
+          >
+            Làm mới bộ lọc
+          </Button>
+        )}
       </Box>
       
       <Box sx={{ flex: 1, height: 500 }}>
