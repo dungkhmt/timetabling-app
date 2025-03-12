@@ -57,7 +57,9 @@ const GeneralPlanClassOpenScreen = () => {
 
       request(
         "post",
-        `/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T&groupName=${states.selectedGroup?.groupName}`,
+        //`/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T&groupName=${states.selectedGroup?.groupName}`,
+        `/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T&groupId=${states.selectedGroup?.id}`,
+        
         (res) => {
           setImportLoading(false);
           toast.success("Upload file thành công!");

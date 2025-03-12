@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.generaltimetabling.service.impl;
 
 
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
+@Log4j2
 public class PlanGeneralClassService {
     private GeneralClassRepository generalClassRepository;
     private PlanGeneralClassRepository planGeneralClassRepository;
@@ -41,13 +43,21 @@ public class PlanGeneralClassService {
         planGeneralClassRepository.deleteAllBySemester(semesterId);
         return 0;
     }
-    public void makeClass(MakeGeneralClassRequest request, String groupName) {
+    //public void makeClass(MakeGeneralClassRequest request, String groupName) {
+    public void makeClass(MakeGeneralClassRequest request, Long groupId) {
+        log.info("makeClass, groupId = " + groupId);
+        //List<Group> groups = groupRepo.getAllByGroupName(groupName);
+        //if (groups == null || groups.isEmpty()) {
+        //    throw new NotFoundException("Không tìm thấy nhóm lớp " + groupName);
+        //}
+        Group gr = groupRepo.findById(groupId).orElse(null);
+        if(gr == null){
+            throw new NotFoundException("Không tìm thấy nhóm lớp " + groupId);
+        }
+        String groupName = gr.getGroupName();
+        //Long groupId = groups.get(0).getId();
+        //Long groupId = gr.getId();
 
-        List<Group> groups = groupRepo.getAllByGroupName(groupName);
-        if (groups == null || groups.isEmpty())
-            throw new NotFoundException("Không tìm thấy nhóm lớp " + groupName);
-        Long groupId = groups.get(0).getId();
-        
         GeneralClass newClass = new GeneralClass();
 
         newClass.setRefClassId(request.getId());

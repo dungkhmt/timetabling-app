@@ -340,7 +340,9 @@ public class ExcelService {
 
 
     @Transactional
-    public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass, String groupName) {
+    //public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass, String groupName) {
+    public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass, Long groupId) {
+
         try {
             //planGeneralClassRepository.deleteAllBySemester(semester);
             List<PlanGeneralClass> planClasses = PlanGeneralClassExcelHelper
@@ -368,7 +370,8 @@ public class ExcelService {
                         req.setLectureExerciseMaxQuantity(p.getLectureExerciseMaxQuantity());
                         req.setProgramName(p.getProgramName());
                         req.setWeekType(p.getWeekType());
-                        planGeneralClassService.makeClass(req, groupName);
+                        //planGeneralClassService.makeClass(req, groupName);
+                        planGeneralClassService.makeClass(req, groupId);
                     }
                 }
             }

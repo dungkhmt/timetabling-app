@@ -89,13 +89,16 @@ public class ExcelController {
     public ResponseEntity requestUploadFilePlanCLass(@RequestParam("file") MultipartFile file,
                                                        @RequestParam("semester") String semester,
                                                      @RequestParam("createclass") String createclass,
-                                                     @RequestParam("groupName") String groupName
+                                                     //@RequestParam("groupName") String groupName
+                                                     @RequestParam("groupId") Long groupId
                                                      ) {
         log.info("requestUploadFilePlanCLass, createclass = " + createclass);
         boolean createClass = true;
         if(createclass.equals("F")) createClass = false;
         if (ExcelHelper.hasExcelFormat(file)) {
-            List<PlanGeneralClass> classOpenedConflict = fileService.savePlanClasses(file, semester,createClass, groupName);
+            //List<PlanGeneralClass> classOpenedConflict = fileService.savePlanClasses(file, semester,createClass, groupName);
+            List<PlanGeneralClass> classOpenedConflict = fileService.savePlanClasses(file, semester,createClass, groupId);
+
             return ResponseEntity.status(HttpStatus.OK).body(classOpenedConflict);
         } else {
             throw new InvalidFileInputException("File không đúng định dạng! (Yêu cầu: .xlsx)");
