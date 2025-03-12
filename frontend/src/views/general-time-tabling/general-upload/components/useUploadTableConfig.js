@@ -1,21 +1,37 @@
-import { SaveAlt } from "@mui/icons-material";
+import { Update } from "@mui/icons-material";
 import { Autocomplete, Button, TextField } from "@mui/material";
+import { memo } from "react";
 import { request } from "api";
 import { toast } from "react-toastify";
 
-export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => {
+// Create memoized cell components to prevent unnecessary re-renders
+export const TextFieldCell = memo(({ value, onChange, params }) => (
+  <TextField
+    variant="standard"
+    value={value || ""}
+    onChange={(e) => onChange(e, params)}
+    sx={{ width: '100%' }}
+  />
+));
 
-  const handleSaveClass = (classData) => {
-    request("post", "/general-classes/update-class", (res) => {
-      console.log(res);
-      toast.success("Cập nhật lớp học thành công!");
-    }, (err) => {
-      console.log(err);
-      toast.error("Có lỗi khi cập nhật lớp học!");
-    }, {
-      generalClass: {...classData}
-    })
-  }
+export const AutocompleteCell = memo(({ value, onChange, options, params }) => (
+  <Autocomplete
+    options={options}
+    value={value || null}
+    onChange={(e, option) => onChange(e, params, option)}
+    renderInput={(option) => (
+      <TextField variant="standard" {...option} sx={{ width: '100%' }} />
+    )}
+  />
+));
+
+// Export this as a utility function, not a hook
+export const createColumns = (
+  handleOnChangeCell, 
+  handleOnCellSelect,
+  onUpdateClick
+) => {
+  // Return the columns configuration directly
   return [
     {
       headerName: "Mã lớp",
@@ -31,16 +47,23 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       headerName: "Tuần học",
       field: "learningWeeks",
       width: 120,
+      renderCell: (params) => (
+        <TextFieldCell 
+          value={params.row.learningWeeks} 
+          onChange={handleOnChangeCell} 
+          params={params} 
+        />
+      ),
     },
     {
       headerName: "Mã học phần",
       field: "moduleCode",
       width: 80,
       renderCell: (params) => (
-        <TextField
-          variant="standard"
-          value={params.row.moduleCode}
-          onChange={(e) => handleOnChangeCell(e, params)}
+        <TextFieldCell 
+          value={params.row.moduleCode} 
+          onChange={handleOnChangeCell} 
+          params={params} 
         />
       ),
     },
@@ -49,10 +72,10 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "moduleName",
       width: 200,
       renderCell: (params) => (
-        <TextField
-          variant="standard"
-          value={params.row.moduleName}
-          onChange={(e) => handleOnChangeCell(e, params)}
+        <TextFieldCell 
+          value={params.row.moduleName} 
+          onChange={handleOnChangeCell} 
+          params={params} 
         />
       ),
     },
@@ -60,22 +83,35 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       headerName: "SL MAX",
       field: "quantityMax",
       width: 100,
+      renderCell: (params) => (
+        <TextFieldCell 
+          value={params.row.quantityMax} 
+          onChange={handleOnChangeCell} 
+          params={params} 
+        />
+      ),
     },
     {
       headerName: "Loại lớp",
       field: "classType",
       width: 100,
+      renderCell: (params) => (
+        <TextFieldCell 
+          value={params.row.classType} 
+          onChange={handleOnChangeCell} 
+          params={params} 
+        />
+      ),
     },
-
     {
       headerName: "Thời lượng",
       field: "mass",
       width: 100,
       renderCell: (params) => (
-        <TextField
-          variant="standard"
-          value={params.row.mass}
-          onChange={(e) => handleOnChangeCell(e, params)}
+        <TextFieldCell 
+          value={params.row.mass} 
+          onChange={handleOnChangeCell} 
+          params={params} 
         />
       ),
     },
@@ -84,15 +120,11 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "crew",
       width: 80,
       renderCell: (params) => (
-        <Autocomplete
-          {...params}
+        <AutocompleteCell 
+          value={params.row.crew}
+          onChange={handleOnCellSelect}
           options={["S", "C"]}
-          onChange={(e, option) => handleOnCellSelect(e, params, option)}
-          renderInput={(option) => {
-            return (
-              <TextField variant="standard" {...option} sx={{ width: 80 }} />
-            );
-          }}
+          params={params}
         />
       ),
     },
@@ -101,15 +133,11 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       field: "openBatch",
       width: 80,
       renderCell: (params) => (
-        <Autocomplete
-          {...params}
+        <AutocompleteCell 
+          value={params.row.openBatch}
+          onChange={handleOnCellSelect}
           options={["Chẵn", "Lẻ", "A", "B", "AB"]}
-          onChange={(e, option) => handleOnCellSelect(e, params, option)}
-          renderInput={(option) => {
-            return (
-              <TextField variant="standard" {...option} sx={{ width: 80 }} />
-            );
-          }}
+          params={params}
         />
       ),
     },
@@ -126,12 +154,19 @@ export const useUploadTableConfig = (handleOnChangeCell, handleOnCellSelect) => 
       ),
     },
     {
-      headerName: "Lưu",
-      field: "saveBtn",
-      width: 100,
+      headerName: "Thao tác",
+      field: "actions",
+      width: 120,
+      align: "center",
       renderCell: (params) => (
-        <Button onClick={(e) => handleSaveClass(params.row)}>
-          <SaveAlt />
+        <Button 
+          onClick={() => onUpdateClick(params.row)}
+          variant="outlined"
+          color="primary"
+          size="small"
+        >
+          <Update />
+          Cập nhật
         </Button>
       ),
     },

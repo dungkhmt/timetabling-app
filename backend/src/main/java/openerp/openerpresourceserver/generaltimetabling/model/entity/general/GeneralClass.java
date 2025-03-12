@@ -125,5 +125,6 @@ public class GeneralClass {
          this.crew = generalClass.crew;
          this.openBatch = generalClass.openBatch;
          this.course = generalClass.course;
+         this.learningWeeks = generalClass.learningWeeks;
     }
 }

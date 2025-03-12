@@ -291,6 +291,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
             roomOccupationList.forEach(ro->{ro.setCrew(request.getGeneralClass().getCrew());});
             roomOccupationRepo.saveAll(roomOccupationList);
         }
+        System.out.println(request.getGeneralClass().getLearningWeeks());
         gClass.setInfo(request.getGeneralClass());
         return gcoRepo.save(gClass);
     }
