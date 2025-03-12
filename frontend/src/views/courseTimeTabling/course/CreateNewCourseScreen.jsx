@@ -63,7 +63,42 @@ export default function CreateNewCourse({ open, handleClose, selectedCourse }) {
     const newErrors = {};
     if (!course.id) newErrors.id = "Mã môn học không được để trống";
     if (!course.courseName) newErrors.courseName = "Tên môn học không được để trống";
-    if (!course.slotsPriority) newErrors.slotsPriority = "Độ ưu tiên ca học không được để trống";
+    
+    if (!course.slotsPriority || course.slotsPriority.trim() === '') {
+      newErrors.slotsPriority = "Độ ưu tiên ca học không được để trống";
+    } else {
+      if (course.slotsPriority.endsWith(',')) {
+        newErrors.slotsPriority = "Không được có dấu phẩy ở cuối";
+      } else {
+        const parts = course.slotsPriority.split(',');
+        if (parts.length === 0) {
+          newErrors.slotsPriority = "Độ ưu tiên ca học không được để trống";
+        } else {
+          let isValid = true;
+          const uniqueNumbers = new Set();
+          
+          for (let i = 0; i < parts.length; i++) {
+            const part = parts[i].trim();
+            if (part === '' || !/^\d+$/.test(part)) {
+              newErrors.slotsPriority = "Các giá trị phải là số nguyên và cách nhau bởi dấu phẩy";
+              isValid = false;
+              break;
+            }
+            
+            // Check for duplicates
+            const num = parseInt(part, 10);
+            if (uniqueNumbers.has(num)) {
+              newErrors.slotsPriority = "Các số nguyên không được trùng nhau";
+              isValid = false;
+              break;
+            }
+            
+            uniqueNumbers.add(num);
+          }
+        }
+      }
+    }
+    
     if (!course.maxTeacherInCharge && course.maxTeacherInCharge !== 0) {
       newErrors.maxTeacherInCharge = "Số giáo viên tối đa không được để trống";
     }
