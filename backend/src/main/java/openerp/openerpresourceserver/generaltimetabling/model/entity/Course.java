@@ -7,8 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -17,20 +15,26 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "edu_course")
+@Table(name = "timetabling_course")
 public class Course {
     @Id
     @Column(name = "id", nullable = false)
     private String id;
+
+    @Column(name = "name")
     private String courseName;
-    private Short credit;
-//    @LastModifiedDate
+    
+    @Column(name = "slots_priority")
+    private String slotsPriority;
+
     @UpdateTimestamp
-    @Column(name = "last_updated_stamp")
+    @Column(name = "last_updated")
     private LocalDateTime lastUpdatedStamp;
 
-//    @CreatedDate
     @CreationTimestamp
     @Column(name = "created_stamp")
     private LocalDateTime createdStamp;
+
+    @Column(name = "max_teacher_in_charge")
+    private Integer maxTeacherInCharge;
 }
