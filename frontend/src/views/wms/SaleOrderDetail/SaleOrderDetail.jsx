@@ -2,12 +2,17 @@ import React, { useState } from "react";
 import { Box, Grid, CircularProgress, Typography } from "@mui/material";
 import { OrderDetailProvider, useOrderDetail } from "./context/OrderDetailContext";
 import OrderHeader from "./components/OrderHeader";
-import OrderTabs from "./components/OrderTabs";
 import OrderBasicInfo from "./components/OrderBasicInfo";
 import OrderDeliveryInfo from "./components/OrderDeliveryInfo";
 import OrderItemsList from "./components/OrderItemsList";
 import OrderSummary from "./components/OrderSummary";
-
+import CustomTabs from "../common/components/CustomTabs";
+const orderLabels = [
+  "Tổng quan",
+  "Thông tin chung",
+  "Thanh toán",
+  "Sản phẩm",
+]
 const SaleOrderDetailContent = () => {
   const [tabValue, setTabValue] = useState(0);
   const { loading, orderData } = useOrderDetail();
@@ -38,7 +43,7 @@ const SaleOrderDetailContent = () => {
     <Box p={{ xs: 1, md: 3 }}>
       <OrderHeader />
       
-      <OrderTabs value={tabValue} onChange={handleTabChange} />
+      <CustomTabs value={tabValue} onChange={handleTabChange} labels={orderLabels} />
       
       {tabValue === 0 && (
         <>

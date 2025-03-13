@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Tabs, Tab, useMediaQuery, useTheme } from "@mui/material";
 
-const OrderTabs = ({ value, onChange }) => {
+const CustomTabs = ({ value, onChange, labels }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -14,13 +14,12 @@ const OrderTabs = ({ value, onChange }) => {
         variant={isMobile ? "scrollable" : "standard"}
         scrollButtons={isMobile ? "auto" : false}
       >
-        <Tab label="Tổng quan" />
-        <Tab label="Thông tin chung" />
-        <Tab label="Thanh toán" />
-        <Tab label="Sản phẩm" />
+        {labels?.map((label, index) => (
+          <Tab key={index} label={label} />
+        ))}
       </Tabs>
     </Box>
   );
 };
 
-export default React.memo(OrderTabs);
+export default React.memo(CustomTabs);

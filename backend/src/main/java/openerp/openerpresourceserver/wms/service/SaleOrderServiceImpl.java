@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -57,25 +58,25 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         } else {
             orderHeader.setId(request.getId());
         }
-
+        AtomicInteger increment = new AtomicInteger(0);
         var orderItems = request.getOrderItems()
                 .stream()
                 .map(orderItem -> {
-                   var product = productRepo.findById(orderItem.getProductId())
-                           .orElseThrow(() -> new DataNotFoundException("Product not found in List of OrderItems with id: " + orderItem.getProductId()));
-                   var increment = 1;
-                   return OrderItem.builder()
-                           .order(orderHeader)
+                    var product = productRepo.findById(orderItem.getProductId())
+                            .orElseThrow(() -> new DataNotFoundException("Product not found in List of OrderItems with id: " + orderItem.getProductId()));
+                    return OrderItem.builder()
+                            .order(orderHeader)
                             .product(product)
                             .quantity(orderItem.getQuantity())
-                           .amount(product.getWholeSalePrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
-                           .id(OrderItemPK.builder()
-                                   .orderId(orderHeader.getId())
-                                   .orderItemSeqId(CommonUtil.getSequenceId("ORDITEM", 4, increment))
-                                   .build())
+                            .amount(product.getWholeSalePrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
+                            .id(OrderItemPK.builder()
+                                    .orderId(orderHeader.getId())
+                                    .orderItemSeqId(CommonUtil.getSequenceId("ORDITEM", 4, increment.incrementAndGet())) // Tăng dần đúng cách
+                                    .build())
                             .build();
                 })
                 .toList();
+
 
 
         orderHeaderRepo.save(orderHeader);

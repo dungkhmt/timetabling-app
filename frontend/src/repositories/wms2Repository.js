@@ -38,5 +38,11 @@ export const wms2Service = {
   }, 
   getSalesOrdersApproved: (page, limit) => {
     return request("get", `/sale-order/get-approved?page=${page}&limit=${limit}`);
+  }, 
+  getOutBoundsOrder: (orderId) => {
+    return request("get", `/out-bound-order/details/${orderId}`);
+  },
+  getMoreInventoryItems: (page, limit, orderId) => {
+    return request("get", `/inventory-item/for-order/${orderId}?page=${page}&limit=${limit}`);
   }
 };

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWms2Data } from 'services/useWms2Data';
 import { toast } from 'react-toastify';
+import { create } from '@mui/material/styles/createTransitions';
 
 // Tạo context
 const ApprovedOrderDetailContext = createContext();
@@ -9,7 +10,7 @@ const ApprovedOrderDetailContext = createContext();
 export const ApprovedOrderDetailProvider = ({ children }) => {
   const { id } = useParams();
   const navigate = useHistory();
-  const { getOrderDetails } = useWms2Data();
+  const { getOrderDetails, getOutBoundsOrder, getMoreInventoryItems, createOutBoundOrder  } = useWms2Data();
   
   const [orderData, setOrderData] = useState(null);
   // const [loading, setLoading] = useState(true);
@@ -42,8 +43,50 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
     fetchOrderData();
   }, [id]);
 
+  const getOutBoundsOrderApi = async (id) => {
+    try {
+      const res = await getOrderDetails(id);
+      if ( !res || res.code !== 200) {
+        toast.error("Lỗi khi tải thông tin đơn hàng : " + res?.message);
+        return;
+      }
+      
+      setOrderData(res.data);
+    } catch (error) {
+      console.error("Error fetching order: ", error);
+      toast.error("Không thể tải thông tin đơn hàng");
+    }
+  };
+
+  const getMoreInventoryItemsApi = async (page, limit) => {
+    try {
+      const response = await getMoreInventoryItems(page, limit, id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facilities:", error);
+      toast.error("Không thể tải danh sách kho hàng");
+      return { data: {} };
+    }
+  }
+
+  const createOutBoundOrderApi = async (data) => {
+    try {
+      const response = await createOutBoundOrder(data);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating out bound order:", error);
+      toast.error("Không thể tạo phiếu xuất");
+      return { data: {} };
+    }
+  }
+
   const value = {
     orderData,
+    getOutBoundsOrder,
+    getOutBoundsOrderApi,
+    createOutBoundOrder,
+    createOutBoundOrderApi,
+    getMoreInventoryItemsApi,
     // loading,
   };
 
