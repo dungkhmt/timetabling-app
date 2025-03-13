@@ -57,7 +57,6 @@ public class ExamTimetableAssignmentService {
     private final ExamRoomRepository roomRepository;
     private final ExamTimetableSessionRepository sessionRepository;
     private final EntityManager entityManager;
-    @Autowired
     
     public List<ConflictDTO> checkForConflicts(List<AssignmentUpdateDTO> assignmentChanges) {
         if (assignmentChanges == null || assignmentChanges.isEmpty()) {
