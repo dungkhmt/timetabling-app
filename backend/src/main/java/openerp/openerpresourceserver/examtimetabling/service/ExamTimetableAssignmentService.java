@@ -76,8 +76,10 @@ public class ExamTimetableAssignmentService {
         for (AssignmentUpdateDTO change : assignmentChanges) {
             // Skip if essential scheduling data is missing
             if (change.getRoomId() == null || change.getDate() == null || 
-                change.getSessionId() == null || change.getAssignmentId() == null) {
-                continue;
+                change.getSessionId() == null || change.getAssignmentId() == null ||
+                change.getTimetableId() == null) { // Check timetableId is not null
+                    System.err.println("Skipping assignment change with missing data");
+                    continue;
             }
             
             try {
@@ -98,7 +100,7 @@ public class ExamTimetableAssignmentService {
                     continue;
                 }
                 
-                // Find conflicting assignments (same room, date, session but different assignment)
+                // Find conflicting assignments (same timetable, room, date, session but different assignment)
                 String conflictSql = 
                     "SELECT a.id, c.exam_class_id, a.exam_timtabling_class_id " +
                     "FROM exam_timetable_assignment a " +
@@ -107,12 +109,14 @@ public class ExamTimetableAssignmentService {
                     "AND a.deleted_at IS NULL " +
                     "AND CAST(a.room_id AS VARCHAR) = :roomId " +
                     "AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
-                    "AND a.date = :date";
+                    "AND a.date = :date " +
+                    "AND CAST(a.exam_timetable_id AS VARCHAR) = :timetableId"; // Added timetableId check
                 
                 Query conflictQuery = entityManager.createNativeQuery(conflictSql);
                 conflictQuery.setParameter("assignmentId", change.getAssignmentId());
                 conflictQuery.setParameter("roomId", change.getRoomId());
                 conflictQuery.setParameter("sessionId", change.getSessionId());
+                conflictQuery.setParameter("timetableId", change.getTimetableId().toString()); // Add timetableId parameter
                 
                 // Parse date from dd/MM/yyyy format
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");

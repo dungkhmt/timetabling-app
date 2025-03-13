@@ -142,10 +142,15 @@ const TimetableDetailPage = () => {
       setIsInvalidModalOpen(true);
       return;
     }
-    
+
     const {
       data: foundConflicts,
-    } = await getAssignmentConflicts(assignmentChanges);
+    } = await getAssignmentConflicts(
+      assignmentChanges.map((assignment) => ({
+        timetableId: timetable.id,
+        ...assignment,
+      }))
+    );
 
     if (foundConflicts.length > 0) {
       setConflicts(foundConflicts);

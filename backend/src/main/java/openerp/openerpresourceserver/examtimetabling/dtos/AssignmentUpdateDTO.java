@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class AssignmentUpdateDTO {
+    private UUID timetableId;
     private String assignmentId;
     private String roomId;
     private Integer weekNumber;
