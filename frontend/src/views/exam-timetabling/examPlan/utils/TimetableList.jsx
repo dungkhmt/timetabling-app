@@ -91,7 +91,7 @@ const TimetableList = ({
           />
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
             <Typography variant="body2" color="text.secondary">
-              {`${Math.round(params.value * 100)}%`}
+              {`${Math.round(params.value)}%`}
             </Typography>
           </Box>
         </Box>

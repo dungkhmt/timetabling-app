@@ -37,8 +37,6 @@ export default function ExamSessionListPage() {
   const [isDeleteCollectionConfirmOpen, setIsDeleteCollectionConfirmOpen] = useState(false)
   const [sessionToDelete, setSessionToDelete] = useState(null);
   
-
-  // Form data state
   const [sessionFormData, setSessionFormData] = useState({
     id: '',
     name: '',
@@ -52,7 +50,6 @@ export default function ExamSessionListPage() {
     name: ''
   })
 
-  // Fetch data using the hook
   const {
     sessionCollections,
     isLoading,
@@ -64,17 +61,14 @@ export default function ExamSessionListPage() {
     deleteExamSession,
   } = useExamSessionData()
 
-  // Set initial selected collection
   useEffect(() => {
     if (sessionCollections && sessionCollections.length > 0 && !selectedCollection) {
       setSelectedCollection(sessionCollections[0]);
     }
   }, [sessionCollections, selectedCollection]);
 
-  // Get current sessions from selected collection
   const currentSessions = selectedCollection ? selectedCollection.sessions : []
 
-  // Collection handlers
   const handleSelectCollection = (event, collection) => {
     setSelectedCollection(collection);
     // Clear selected rows when changing collection
@@ -343,7 +337,6 @@ export default function ExamSessionListPage() {
     );
   }
 
-  // Inside your component, before returning JSX
   const actionColumn = {
     headerName: "Thao tác",
     field: "actions",
@@ -370,7 +363,6 @@ export default function ExamSessionListPage() {
             color="error"
             onClick={(event) => {
               event.stopPropagation();
-              // Pass the full row data to your handler
               handleDeleteSingleSession(params);
             }}
           >
@@ -390,7 +382,6 @@ export default function ExamSessionListPage() {
       )}
       <DataGrid
         onCellClick={(params) => {
-          // This prevents row clicks from triggering when clicking action buttons
           if (params.field === 'actions') {
             return;
           }

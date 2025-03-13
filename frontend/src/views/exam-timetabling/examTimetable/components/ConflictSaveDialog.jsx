@@ -12,10 +12,6 @@ import {
 } from '@mui/material';
 import { Error, AccessTime, Room, Group } from '@mui/icons-material';
 
-/**
- * Dialog component for showing timetable assignment conflicts
- * With compact layout - one line for room/time info and one line per exam ID
- */
 const ConflictDialog = ({ 
   open, 
   conflicts, 
@@ -48,10 +44,10 @@ const ConflictDialog = ({
         
         {/* Add fixed height and scroll for many conflicts */}
         <Box sx={{ 
-          height: conflicts.length > 5 ? '300px' : 'auto', // Fixed height for many conflicts
-          maxHeight: '50vh',  // Limit to half the viewport height
-          overflowY: 'auto',  // Enable vertical scrolling
-          pr: 1  // Add some padding for scrollbar
+          height: conflicts.length > 5 ? '300px' : 'auto', 
+          maxHeight: '50vh',  
+          overflowY: 'auto',  
+          pr: 1  
         }}>
           {conflicts.map((conflict, index) => (
             <Box 

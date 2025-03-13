@@ -101,32 +101,29 @@ const ClassesTable = forwardRef(({
   weeks,
   dates,
   slots,
-  onSelectionChange // Add this prop to handle selection changes
+  onSelectionChange 
 }, ref) => {
   const [statusFilter, setStatusFilter] = useState('all');
-  const [roomFilter, setRoomFilter] = useState('all'); // Added room filter
-  const [dateFilter, setDateFilter] = useState('all'); // Added date filter
-  const [slotFilter, setSlotFilter] = useState('all'); // Added slot filter
+  const [roomFilter, setRoomFilter] = useState('all'); 
+  const [dateFilter, setDateFilter] = useState('all'); 
+  const [slotFilter, setSlotFilter] = useState('all'); 
   const [searchValue, setSearchValue] = useState('');
   const [activeSearchValue, setActiveSearchValue] = useState('');
   const [activeFilters, setActiveFilters] = useState(false);
   const [assignmentChanges, setAssignmentChanges] = useState({});
   const [page, setPage] = useState(0);
-  const [selectedRows, setSelectedRows] = useState([]); // Add state for selected rows
+  const [selectedRows, setSelectedRows] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState([
     'roomId', 'weekNumber', 'date', 'sessionId', 'examClassId', 'classId', "courseId",
      'numberOfStudents', 'description',
   ]);
   const [frozenFilteredClasses, setFrozenFilteredClasses] = useState(null);
   
-  // Optimize uniqueDescriptions extraction with useMemo to run only when classesData changes
   const uniqueDescriptions = useMemo(() => {
     if (!classesData || classesData.length === 0) return [];
     
-    // Use a Set for faster lookup and to ensure uniqueness
     const descSet = new Set();
     
-    // First pass: collect all non-empty descriptions
     for (let i = 0; i < classesData.length; i++) {
       const desc = classesData[i].description;
       if (desc !== null && desc !== undefined && desc !== '') {
@@ -134,17 +131,14 @@ const ClassesTable = forwardRef(({
       }
     }
     
-    // Convert to array and sort alphabetically for better user experience
     return Array.from(descSet).sort();
   }, [classesData]);
 
-  // Extract unique rooms, dates, and slots for filters
   const uniqueRooms = useMemo(() => {
     if (!classesData || classesData.length === 0) return [];
     
     const roomsSet = new Set();
     
-    // Collect all non-empty room IDs
     for (let i = 0; i < classesData.length; i++) {
       const roomId = classesData[i].roomId;
       if (roomId) {
@@ -160,7 +154,6 @@ const ClassesTable = forwardRef(({
     
     const datesSet = new Set();
     
-    // Collect all non-empty dates
     for (let i = 0; i < classesData.length; i++) {
       const date = classesData[i].date;
       if (date) {
@@ -176,7 +169,6 @@ const ClassesTable = forwardRef(({
     
     const slotsSet = new Set();
     
-    // Collect all non-empty session IDs
     for (let i = 0; i < classesData.length; i++) {
       const sessionId = classesData[i].sessionId;
       if (sessionId) {
@@ -187,7 +179,6 @@ const ClassesTable = forwardRef(({
     return Array.from(slotsSet).sort();
   }, [classesData]);
 
-  // Added handlers for room, date, and slot filters
   const handleRoomFilterChange = (event) => {
     setRoomFilter(event.target.value);
     setPage(0);
@@ -209,10 +200,8 @@ const ClassesTable = forwardRef(({
     setFrozenFilteredClasses(null);
   };
 
-  // Handle row selection change
   const handleSelectionModelChange = (newSelectionModel) => {
     setSelectedRows(newSelectionModel);
-    // Call the parent component's handler if provided
     if (onSelectionChange) {
       onSelectionChange(newSelectionModel);
     }
@@ -223,8 +212,6 @@ const ClassesTable = forwardRef(({
   };
 
   const handleSearchInputChange = (event, newInputValue) => {
-    // Only update the input value, not the selected value
-    // This allows the user to type and see suggestions without committing
   };
 
   const handleSearchSubmit = () => {
@@ -253,7 +240,6 @@ const ClassesTable = forwardRef(({
     setFrozenFilteredClasses(null);
   };
   
-  // Create a memoized filtering function that only recalculates when necessary
   const filteredClasses = useMemo(() => {
     if (frozenFilteredClasses !== null) {
       return frozenFilteredClasses;
@@ -261,22 +247,18 @@ const ClassesTable = forwardRef(({
 
     let results = classesData;
     
-    // Apply search filter if active
     if (activeSearchValue) {
       const lowerSearchText = activeSearchValue.toLowerCase();
       
-      // Check if the search text exactly matches one of our descriptions
       const isExactDescription = uniqueDescriptions.some(
         desc => desc.toLowerCase() === lowerSearchText
       );
       
       if (isExactDescription) {
-        // If it's an exact description match, only filter by description
         results = results.filter(item => 
           item.description && item.description.toLowerCase() === lowerSearchText
         );
       } else {
-        // Otherwise, search across multiple fields
         results = results.filter(item => 
           (item.description && item.description.toLowerCase().includes(lowerSearchText)) ||
           (item.courseName && item.courseName.toLowerCase().includes(lowerSearchText)) ||
@@ -293,25 +275,20 @@ const ClassesTable = forwardRef(({
     // Apply status filter - check if assignment is fully scheduled or not
     if (statusFilter !== 'all') {
       results = results.filter(item => {
-        // Get the current state of the assignment (including any changes)
         const id = item.id;
         const assignmentChange = assignmentChanges[id];
         
-        // Check if all required fields have values
         const roomId = assignmentChange?.roomId !== undefined ? assignmentChange.roomId : item.roomId;
         const weekNumber = assignmentChange?.weekNumber !== undefined ? assignmentChange.weekNumber : item.weekNumber;
         const date = assignmentChange?.date !== undefined ? assignmentChange.date : item.date;
         const sessionId = assignmentChange?.sessionId !== undefined ? assignmentChange.sessionId : item.sessionId;
         
-        // Check if the assignment is fully scheduled (all fields have values)
         const isScheduled = roomId && weekNumber && date && sessionId;
         
-        // Return items based on the filter selection
         return statusFilter === 'scheduled' ? isScheduled : !isScheduled;
       });
     }
 
-    // Apply room filter
     if (roomFilter !== 'all') {
       results = results.filter(item => {
         const id = item.id;
@@ -321,7 +298,6 @@ const ClassesTable = forwardRef(({
       });
     }
 
-    // Apply date filter
     if (dateFilter !== 'all') {
       results = results.filter(item => {
         const id = item.id;
@@ -331,7 +307,6 @@ const ClassesTable = forwardRef(({
       });
     }
 
-    // Apply slot filter
     if (slotFilter !== 'all') {
       results = results.filter(item => {
         const id = item.id;
@@ -348,19 +323,15 @@ const ClassesTable = forwardRef(({
     return results;
   }, [classesData, activeSearchValue, statusFilter, roomFilter, dateFilter, slotFilter, assignmentChanges, uniqueDescriptions, activeFilters, frozenFilteredClasses]);
 
-  // Updated handler functions to preserve all fields
   const handleRoomChange = useCallback((classId, roomId) => {
     setAssignmentChanges(prev => {
-      // Get existing values from the current assignment state or from the original row data
       const currentAssignment = prev[classId] || {};
       const originalRow = classesData.find(row => row.id === classId);
       
       return {
         ...prev,
         [classId]: {
-          // Include the new value
           roomId,
-          // Preserve other fields from either current changes or original data
           weekNumber: currentAssignment.weekNumber !== undefined ? 
             currentAssignment.weekNumber : originalRow.weekNumber,
           date: currentAssignment.date !== undefined ? 
@@ -373,7 +344,6 @@ const ClassesTable = forwardRef(({
   }, [classesData]);
   
   const handleWeekChange = useCallback((classId, weekNumber) => {
-    // When week changes, clear date and slot since they depend on week
     setAssignmentChanges(prev => {
       const currentAssignment = prev[classId] || {};
       const originalRow = classesData.find(row => row.id === classId);
@@ -382,10 +352,8 @@ const ClassesTable = forwardRef(({
         ...prev,
         [classId]: {
           weekNumber,
-          // Reset dependent fields
           date: '',
           sessionId: '',
-          // Preserve room field
           roomId: currentAssignment.roomId !== undefined ? 
             currentAssignment.roomId : originalRow.roomId
         }
@@ -402,9 +370,7 @@ const ClassesTable = forwardRef(({
         ...prev,
         [classId]: {
           date,
-          // Reset slot since it depends on date
           sessionId: '',
-          // Preserve other fields
           roomId: currentAssignment.roomId !== undefined ? 
             currentAssignment.roomId : originalRow.roomId,
           weekNumber: currentAssignment.weekNumber !== undefined ? 
@@ -423,7 +389,6 @@ const ClassesTable = forwardRef(({
         ...prev,
         [classId]: {
           sessionId,
-          // Preserve other fields
           roomId: currentAssignment.roomId !== undefined ? 
             currentAssignment.roomId : originalRow.roomId,
           weekNumber: currentAssignment.weekNumber !== undefined ? 
@@ -435,7 +400,6 @@ const ClassesTable = forwardRef(({
     });
   }, [classesData]);
   
-  // Use memoization to optimize cell renderers and prevent unnecessary re-renders
   const renderRoomCell = useCallback((params) => {
     const classId = params.row.id;
     const currentValue = assignmentChanges[classId]?.roomId !== undefined
@@ -468,7 +432,7 @@ const ClassesTable = forwardRef(({
     
     const currentValue = assignmentChanges[classId]?.weekNumber !== undefined
       ? assignmentChanges[classId]?.weekNumber
-      : params.row.weekNumber;  // Use params.row.weekNumber instead of params.value
+      : params.row.weekNumber; 
       
     return (
       <FormControl fullWidth size="small">
@@ -634,10 +598,8 @@ const ClassesTable = forwardRef(({
     },
   ], [renderRoomCell, renderWeekCell, renderDateCell, renderSlotCell]);
 
-  // Update the imperative handle to include validation of assignment changes and selected rows
   useImperativeHandle(ref, () => ({
     getAssignmentChanges: () => {
-      // Convert to array format with assignmentId included
       return Object.entries(assignmentChanges).map(([key, value]) => ({
         assignmentId: key,
         ...value
@@ -647,27 +609,22 @@ const ClassesTable = forwardRef(({
     getSelectedRows: () => selectedRows
   }));
 
-  // Function to filter options shown in the autocomplete
   const filterOptions = (options, { inputValue }) => {
     if (!inputValue) return [];
     
     const lowerInput = inputValue.toLowerCase();
     
-    // First, find exact matches at the beginning
     const startsWithMatches = options.filter(option => 
       option.toLowerCase().startsWith(lowerInput)
     );
     
-    // Then find contains matches, but exclude those already in startsWithMatches
     const containsMatches = options.filter(option => 
       option.toLowerCase().includes(lowerInput) && 
       !startsWithMatches.includes(option)
     );
     
-    // Combine the results, prioritizing exact matches
     const filteredOptions = [...startsWithMatches, ...containsMatches];
     
-    // Limit to 10 options for performance
     return filteredOptions.slice(0, 10);
   };
 
@@ -889,10 +846,10 @@ const ClassesTable = forwardRef(({
             density="standard"
             disableColumnFilter
             disableColumnMenu
-            checkboxSelection // Enable checkbox selection
-            onRowSelectionModelChange={handleSelectionModelChange} // Add selection change handler
-            rowSelectionModel={selectedRows} // Controlled selection model
-            disableSelectionOnClick={false} // Allow selection on click
+            checkboxSelection
+            onRowSelectionModelChange={handleSelectionModelChange}
+            rowSelectionModel={selectedRows} 
+            disableSelectionOnClick={false} 
             columnVisibilityModel={
               Object.fromEntries(columns.map(col => [col.field, visibleColumns.includes(col.field)]))
             }

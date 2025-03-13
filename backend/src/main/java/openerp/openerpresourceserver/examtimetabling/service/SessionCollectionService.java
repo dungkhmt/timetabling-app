@@ -29,26 +29,21 @@ public class SessionCollectionService {
     private EntityManager entityManager;
 
     public List<SessionCollectionDTO> getAllSessionCollections() {
-        // Get all collections
         List<ExamTimetableSessionCollection> collections = sessionCollectionRepository.findAll();
         
-        // Map collections to DTOs with their sessions
         return collections.stream().map(collection -> {
             SessionCollectionDTO dto = new SessionCollectionDTO();
             dto.setId(collection.getId());
             dto.setName(collection.getName());
             
-            // Get all sessions for this collection
             List<ExamTimetableSession> sessions = sessionRepository
                 .findByExamTimetableSessionCollectionId(collection.getId());
                 
-            // Map sessions to DTOs
             List<SessionDTO> sessionDTOs = sessions.stream().map(session -> {
                 SessionDTO sessionDTO = new SessionDTO();
                 sessionDTO.setId(session.getId());
                 sessionDTO.setName(session.getName());
                 
-                // Format times for display
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                 String startTime = session.getStartTime().format(formatter);
                 String endTime = session.getEndTime().format(formatter);
@@ -67,12 +62,10 @@ public class SessionCollectionService {
 
     @Transactional
     public ExamTimetableSession createSession(ExamSessionDTO sessionDTO) {
-        // Validate session collection exists
         if (!sessionCollectionRepository.existsById(sessionDTO.getExamTimetableSessionCollectionId())) {
             throw new RuntimeException("Session collection not found");
         }
         
-        // Create new session entity
         ExamTimetableSession session = new ExamTimetableSession();
         session.setId(UUID.randomUUID());
         session.setName(sessionDTO.getName());
@@ -80,7 +73,6 @@ public class SessionCollectionService {
         session.setStartTime(sessionDTO.getStartTime());
         session.setEndTime(sessionDTO.getEndTime());
         
-        // Save and return the session
         return sessionRepository.save(session);
     }
 
@@ -90,7 +82,6 @@ public class SessionCollectionService {
         ExamTimetableSession session = sessionRepository.findById(sessionId)
             .orElseThrow(() -> new RuntimeException("Session not found"));
         
-        // If collection ID is being changed, validate the new collection exists
         if (sessionDTO.getExamTimetableSessionCollectionId() != null && 
             !session.getExamTimetableSessionCollectionId().equals(sessionDTO.getExamTimetableSessionCollectionId())) {
             
@@ -100,7 +91,6 @@ public class SessionCollectionService {
             session.setExamTimetableSessionCollectionId(sessionDTO.getExamTimetableSessionCollectionId());
         }
         
-        // Update fields
         if (sessionDTO.getName() != null) {
             session.setName(sessionDTO.getName());
         }
@@ -113,29 +103,22 @@ public class SessionCollectionService {
             session.setEndTime(sessionDTO.getEndTime());
         }
         
-        // Save and return the updated session
         return sessionRepository.save(session);
     }
     
     @Transactional
     public void deleteSession(UUID sessionId) {
-        // Check if session exists
         if (!sessionRepository.existsById(sessionId)) {
             System.err.println("Session not found");
             throw new RuntimeException("Session not found");
         }
 
-        System.err.println("Session found");
-
-        
-        // Check if the session is being used in any assignments
         boolean isSessionInUse = sessionIsInUse(sessionId);
         System.err.println("isSessionInUse: " + isSessionInUse);
         if (isSessionInUse) {
             throw new RuntimeException("Cannot delete session as it is being used in assignments");
         }
         
-        // Delete the session
         sessionRepository.deleteById(sessionId);
     }
     
@@ -178,16 +161,13 @@ public class SessionCollectionService {
             throw new RuntimeException("Collection not found");
         }
         
-        // Check if any sessions in this collection are being used
         if (isCollectionInUse(collectionId)) {
             throw new RuntimeException("Cannot delete collection as it contains sessions that are being used in assignments");
         }
         
-        // Delete all sessions in this collection
         List<ExamTimetableSession> sessions = sessionRepository.findByExamTimetableSessionCollectionId(collectionId);
         sessionRepository.deleteAll(sessions);
         
-        // Delete the collection
         sessionCollectionRepository.deleteById(collectionId);
     }
     

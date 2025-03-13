@@ -280,35 +280,29 @@ const ClassBasedAssignmentView = ({ rooms, slots, assignments }) => {
   }, [examClasses, slots, assignmentMap, uniqueDescriptions]);
   
   const filterClassesByRoom = useCallback((roomId, searchText = '') => {
-    // Reuse the search filter function with the room filter
     filterClassesBySearch(searchText, roomId);
   }, [filterClassesBySearch]);
 
-  // Autocomplete options filter
   const filterOptions = (options, { inputValue }) => {
     if (!inputValue) return [];
     
     const lowerInput = inputValue.toLowerCase();
     
-    // Find exact matches at the beginning
     const startsWithMatches = options.filter(option => 
       option.toLowerCase().startsWith(lowerInput)
     );
     
-    // Find contains matches
     const containsMatches = options.filter(option => 
       option.toLowerCase().includes(lowerInput) && 
       !startsWithMatches.includes(option)
     );
     
-    // Combine results
     return [...startsWithMatches, ...containsMatches].slice(0, 10);
   };
 
   const open = Boolean(anchorEl);
   const popoverId = open ? 'assignment-popover' : undefined;
 
-  // Group slots by week for better organization
   const slotsByWeek = useMemo(() => {
     const groupedSlots = {};
     slots.forEach(slot => {

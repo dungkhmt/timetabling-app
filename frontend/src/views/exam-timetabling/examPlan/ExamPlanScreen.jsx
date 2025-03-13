@@ -32,7 +32,7 @@ const ExamPlanListPage = () => {
   
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
-    setPage(1); // Reset to first page when searching
+    setPage(1);
   };
 
   const handleCreatePlan = () => {
@@ -63,18 +63,15 @@ const ExamPlanListPage = () => {
     history.push(`/exam-time-tabling/exam-plan/${planId}`);
   };
 
-  // Simple filtering by name
   const filteredPlans = examPlans ? examPlans.filter(plan => 
     plan.name.toLowerCase().includes(search.toLowerCase())
   ) : [];
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredPlans.length / rowsPerPage);
   const startIndex = (page - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedPlans = filteredPlans.slice(startIndex, endIndex);
 
-  // Reset page if it exceeds total pages after filtering
   useEffect(() => {
     if (page > totalPages && totalPages > 0) {
       setPage(1);

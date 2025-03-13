@@ -107,7 +107,6 @@ const ExamPlanDetailPage = () => {
             overflow: 'hidden',
             border: '1px solid #ddd',
           }}>
-            {/* Improved Header with Gradient */}
             <Box sx={{ 
               background: 'linear-gradient(90deg, #1976D2, #2196F3)', 
               color: 'white',

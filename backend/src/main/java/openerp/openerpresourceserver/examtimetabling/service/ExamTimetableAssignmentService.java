@@ -12,10 +12,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -23,7 +20,6 @@ import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
@@ -35,7 +31,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +40,6 @@ import openerp.openerpresourceserver.examtimetabling.dtos.BusyCombinationDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ScheduleSlotDTO;
-import openerp.openerpresourceserver.examtimetabling.entity.ExamClass;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
@@ -64,7 +58,6 @@ public class ExamTimetableAssignmentService {
     private final ExamTimetableSessionRepository sessionRepository;
     private final EntityManager entityManager;
     @Autowired
-    private EntityManagerFactory entityManagerFactory;
     
     public List<ConflictDTO> checkForConflicts(List<AssignmentUpdateDTO> assignmentChanges) {
         if (assignmentChanges == null || assignmentChanges.isEmpty()) {
@@ -74,16 +67,14 @@ public class ExamTimetableAssignmentService {
         List<ConflictDTO> conflicts = new ArrayList<>();
         
         for (AssignmentUpdateDTO change : assignmentChanges) {
-            // Skip if essential scheduling data is missing
             if (change.getRoomId() == null || change.getDate() == null || 
                 change.getSessionId() == null || change.getAssignmentId() == null ||
-                change.getTimetableId() == null) { // Check timetableId is not null
+                change.getTimetableId() == null) { 
                     System.err.println("Skipping assignment change with missing data");
                     continue;
             }
             
             try {
-                // First get the current assignment we're updating
                 String sql = "SELECT a.id, a.exam_timtabling_class_id, c.exam_class_id " +
                              "FROM exam_timetable_assignment a " +
                              "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
@@ -96,11 +87,9 @@ public class ExamTimetableAssignmentService {
                 try {
                     currentAssignment = (Object[]) query.getSingleResult();
                 } catch (Exception e) {
-                    // Assignment not found
                     continue;
                 }
                 
-                // Find conflicting assignments (same timetable, room, date, session but different assignment)
                 String conflictSql = 
                     "SELECT a.id, c.exam_class_id, a.exam_timtabling_class_id " +
                     "FROM exam_timetable_assignment a " +
@@ -110,15 +99,14 @@ public class ExamTimetableAssignmentService {
                     "AND CAST(a.room_id AS VARCHAR) = :roomId " +
                     "AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
                     "AND a.date = :date " +
-                    "AND CAST(a.exam_timetable_id AS VARCHAR) = :timetableId"; // Added timetableId check
+                    "AND CAST(a.exam_timetable_id AS VARCHAR) = :timetableId"; 
                 
                 Query conflictQuery = entityManager.createNativeQuery(conflictSql);
                 conflictQuery.setParameter("assignmentId", change.getAssignmentId());
                 conflictQuery.setParameter("roomId", change.getRoomId());
                 conflictQuery.setParameter("sessionId", change.getSessionId());
-                conflictQuery.setParameter("timetableId", change.getTimetableId().toString()); // Add timetableId parameter
+                conflictQuery.setParameter("timetableId", change.getTimetableId().toString());
                 
-                // Parse date from dd/MM/yyyy format
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                 LocalDate date = LocalDate.parse(change.getDate(), formatter);
                 conflictQuery.setParameter("date", date);
@@ -126,16 +114,12 @@ public class ExamTimetableAssignmentService {
                 List<Object[]> conflictResults = conflictQuery.getResultList();
                 
                 if (!conflictResults.isEmpty()) {
-                    // We found conflicts - create a conflict entry
                     ConflictDTO conflict = new ConflictDTO();
                     
-                    // Format week name
                     conflict.setWeekName("W" + change.getWeekNumber());
                     
-                    // Set date as is
                     conflict.setDate(change.getDate());
                     
-                    // Get room name
                     try {
                         String roomSql = "SELECT name FROM exam_room WHERE CAST(id AS VARCHAR) = :roomId";
                         Query roomQuery = entityManager.createNativeQuery(roomSql);
@@ -146,7 +130,6 @@ public class ExamTimetableAssignmentService {
                         conflict.setRoomName("Unknown Room");
                     }
                     
-                    // Get session name
                     try {
                         String sessionSql = 
                             "SELECT name, start_time, end_time FROM exam_timetable_session WHERE CAST(id AS VARCHAR) = :sessionId";
@@ -158,7 +141,6 @@ public class ExamTimetableAssignmentService {
                         Timestamp startTime = (Timestamp) sessionResult[1];
                         Timestamp endTime = (Timestamp) sessionResult[2];
                         
-                        // Format session name with times
                         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:mm");
                         LocalDateTime startDateTime = startTime.toLocalDateTime();
                         LocalDateTime endDateTime = endTime.toLocalDateTime();
@@ -172,15 +154,12 @@ public class ExamTimetableAssignmentService {
                         conflict.setSessionName("Unknown Session");
                     }
                     
-                    // Collect all exam class IDs in conflict
                     List<String> examClassIds = new ArrayList<>();
                     
-                    // Add the exam class we're trying to move
                     if (currentAssignment != null && currentAssignment[2] != null) {
                         examClassIds.add(currentAssignment[2].toString());
                     }
                     
-                    // Add all conflicting exam classes
                     for (Object[] result : conflictResults) {
                         if (result[1] != null) {
                             examClassIds.add(result[1].toString());
@@ -192,7 +171,6 @@ public class ExamTimetableAssignmentService {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                // Continue with next assignment change
             }
         }
         
@@ -207,7 +185,6 @@ public class ExamTimetableAssignmentService {
         
         for (AssignmentUpdateDTO change : assignmentChanges) {
             try {
-                // Build update query with proper type casting
                 StringBuilder queryBuilder = new StringBuilder(
                     "UPDATE exam_timetable_assignment SET updated_at = NOW()");
                 
@@ -229,7 +206,6 @@ public class ExamTimetableAssignmentService {
                 
                 queryBuilder.append(" WHERE CAST(id AS VARCHAR) = :assignmentId");
                 
-                // Create and execute the query
                 Query query = entityManager.createNativeQuery(queryBuilder.toString());
                 query.setParameter("assignmentId", change.getAssignmentId());
                 
@@ -246,7 +222,6 @@ public class ExamTimetableAssignmentService {
                 }
                 
                 if (change.getDate() != null) {
-                    // Parse date from dd/MM/yyyy format
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                     LocalDate localDate = LocalDate.parse(change.getDate(), formatter);
                     query.setParameter("date", localDate);
@@ -254,14 +229,12 @@ public class ExamTimetableAssignmentService {
                 
                 query.executeUpdate();
             } catch (Exception e) {
-                // Log error but continue with other assignments
                 System.err.println("Error updating assignment: " + e.getMessage());
             }
         }
     }
 
     public List<ExamAssignmentDTO> getAssignmentsByTimetableId(UUID timetableId) {
-        // Use native query for better control over the results
         String sql = 
             "SELECT " +
             "  a.id, " +
@@ -290,7 +263,6 @@ public class ExamTimetableAssignmentService {
         
         List<Object[]> results = query.getResultList();
         
-        // Map results to DTOs
         return results.stream().map(row -> {
             ExamAssignmentDTO dto = new ExamAssignmentDTO();
             
@@ -319,7 +291,6 @@ public class ExamTimetableAssignmentService {
                     } else if (row[14] instanceof java.sql.Timestamp) {
                         localDate = ((java.sql.Timestamp) row[14]).toLocalDateTime().toLocalDate();
                     } else {
-                        // Try to parse from string
                         localDate = LocalDate.parse(row[14].toString());
                     }
                     
@@ -340,7 +311,6 @@ public class ExamTimetableAssignmentService {
             return createEmptyExcel();
         }
         
-        // Build query to get assignment details
         String sql = 
             "SELECT " +
             "c.class_id, c.class_id as class_lt, c.course_id, c.course_name, " +
@@ -356,7 +326,6 @@ public class ExamTimetableAssignmentService {
             "WHERE CAST(a.id AS VARCHAR) IN :assignmentIds " +
             "AND a.deleted_at IS NULL";
         
-        // Execute query
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("assignmentIds", assignmentIds);
         
@@ -366,14 +335,12 @@ public class ExamTimetableAssignmentService {
             return createEmptyExcel();
         }
         
-        // Create Excel file
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Exam Assignments");
             
-            // Create header row with styles
             CellStyle headerStyle = workbook.createCellStyle();
             headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
-            headerStyle.setFillPattern((short) 1); // SOLID_FOREGROUND
+            headerStyle.setFillPattern((short) 1); 
             Font headerFont = workbook.createFont();
             headerFont.setBold(true);
             headerStyle.setFont(headerFont);
@@ -400,11 +367,10 @@ public class ExamTimetableAssignmentService {
             for (Object[] result : results) {
                 Row row = sheet.createRow(rowNum++);
                 
-                // First 15 columns directly from the original format
                 for (int i = 0; i < 15; i++) {
                     Cell cell = row.createCell(i);
                     if (result[i] != null) {
-                        if (i == 8) { // Number of students (SL)
+                        if (i == 8) {
                             cell.setCellValue(getInteger(result[i]));
                         } else {
                             cell.setCellValue(getString(result[i]));
@@ -439,12 +405,10 @@ public class ExamTimetableAssignmentService {
                 row.createCell(18).setCellValue(getString(result[18]) != null ? getString(result[18]) : "");
             }
             
-            // Auto size columns
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
             
-            // Write to output stream
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
             return new ByteArrayInputStream(outputStream.toByteArray());
@@ -487,15 +451,10 @@ public class ExamTimetableAssignmentService {
 
         @Transactional
     public List<ExamTimetableAssignment> autoAssignSchedule(List<UUID> assignmentIds) {
-        // Step 1: Gather all necessary data
-        
-        // Validate and get assignments
         List<ExamTimetableAssignment> assignments = assignmentRepository.findAllById(assignmentIds);
         if (assignments.isEmpty()) {
             throw new RuntimeException("No assignments found");
         }
-        
-        // Make sure all assignments belong to the same timetable
         Set<UUID> timetableIds = assignments.stream()
             .map(ExamTimetableAssignment::getExamTimetableId)
             .collect(Collectors.toSet());
@@ -535,7 +494,6 @@ public class ExamTimetableAssignmentService {
         // Get busy combinations (room + slot that are already used)
         List<BusyCombinationDTO> busyCombinations = getBusyCombinations();
         
-        // Step 2: Call the algorithm
         List<AssignmentResultDTO> assignmentResults = runAssignmentAlgorithm(
             availableRooms, 
             availableSlots, 
@@ -543,7 +501,6 @@ public class ExamTimetableAssignmentService {
             busyCombinations
         );
         
-        // Step 3: Update assignments with the results
         for (AssignmentResultDTO result : assignmentResults) {
             ExamTimetableAssignment assignment = assignments.stream()
                 .filter(a -> a.getId().equals(result.getAssignmentId()))
@@ -556,7 +513,6 @@ public class ExamTimetableAssignmentService {
             assignment.setWeekNumber(result.getWeekNumber());
         }
         
-        // Save and return
         return assignmentRepository.saveAll(assignments);
     }
 
@@ -570,27 +526,22 @@ public class ExamTimetableAssignmentService {
             int startWeek) {
         List<ScheduleSlotDTO> slots = new ArrayList<>();
         
-        // Ensure startDate is at beginning of week (Monday)
         LocalDate weekStart = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         
-        // Generate slots for each day between start and end dates
         LocalDate currentDate = startDate;
         while (!currentDate.isAfter(endDate)) {
             // Skip weekends
             if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY && 
                 currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
                 
-                // Calculate week number based on startWeek
                 int weeksDifference = (int)ChronoUnit.WEEKS.between(weekStart, currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)));
                 int weekNumber = startWeek + weeksDifference;
                 
-                // For each date, create a slot with each session
                 for (ExamTimetableSession session : sessions) {
                     slots.add(new ScheduleSlotDTO(session.getId(), currentDate, weekNumber));
                 }
             }
             
-            // Move to next day
             currentDate = currentDate.plusDays(1);
         }
         
@@ -630,17 +581,14 @@ public class ExamTimetableAssignmentService {
             List<ExamTimetableAssignment> assignments,
             List<BusyCombinationDTO> busyCombinations) {
         
-        // This is the mock algorithm that will be replaced later
         List<AssignmentResultDTO> results = new ArrayList<>();
         Random random = new Random();
         
-        // Create a set of busy combinations for faster lookup
         Set<String> busySet = busyCombinations.stream()
             .map(combo -> combo.getRoomId() + ":" + combo.getSessionId() + ":" + combo.getDate())
             .collect(Collectors.toSet());
         
         for (ExamTimetableAssignment assignment : assignments) {
-            // Mock logic: Randomly assign until we find a non-busy combination
             boolean assigned = false;
             int attempts = 0;
             
@@ -649,9 +597,6 @@ public class ExamTimetableAssignmentService {
                 ScheduleSlotDTO slot = availableSlots.get(random.nextInt(availableSlots.size()));
                 
                 String combination = room.getId() + ":" + slot.getSessionId() + ":" + slot.getDate();
-                
-                // For mock, we'll allow conflicts by not checking busySet
-                // In the real algorithm, you'd check: if (!busySet.contains(combination))
                 
                 results.add(new AssignmentResultDTO(
                     assignment.getId(),
@@ -665,7 +610,6 @@ public class ExamTimetableAssignmentService {
                 attempts++;
             }
             
-            // If couldn't assign after max attempts, just pick something
             if (!assigned) {
                 ExamRoom room = availableRooms.get(random.nextInt(availableRooms.size()));
                 ScheduleSlotDTO slot = availableSlots.get(random.nextInt(availableSlots.size()));

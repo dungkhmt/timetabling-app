@@ -15,16 +15,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -32,6 +37,7 @@ import javax.sql.DataSource;
 @RequiredArgsConstructor
 public class ExamClassService {
     private final ExamClassRepository examClassRepository;
+    private final EntityManager entityManager;
     @Autowired
     private DataSource dataSource;
     private static final int BATCH_SIZE = 1000;
@@ -42,6 +48,27 @@ public class ExamClassService {
 
     @Transactional
     public void deleteClasses(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        
+        for (int i = 0; i < ids.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, ids.size());
+            List<UUID> batchIds = ids.subList(i, end);
+            
+            String idParams = batchIds.stream()
+                .map(id -> "'" + id + "'")
+                .collect(Collectors.joining(","));
+            
+            String deleteAssignmentsSql = 
+                "DELETE FROM exam_timetable_assignment " +
+                "WHERE exam_timtabling_class_id IN (" +
+                "SELECT id FROM exam_timetabling_class WHERE id IN (" + idParams + ")" +
+                ")";
+            
+            entityManager.createNativeQuery(deleteAssignmentsSql).executeUpdate();
+        }
+        
         for (int i = 0; i < ids.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, ids.size());
             List<UUID> batchIds = ids.subList(i, end);
@@ -53,8 +80,25 @@ public class ExamClassService {
         return examClassRepository.existsByExamClassIdAndExamPlanId(examClassId, examPlanId);
     }
 
+    @Transactional
     public ExamClass createExamClass(ExamClass examClass) {
-        return examClassRepository.save(examClass);
+        ExamClass savedClass = examClassRepository.save(examClass);
+        
+        String bulkInsertSql = 
+            "INSERT INTO exam_timetable_assignment " +
+            "(id, exam_timetable_id, exam_timtabling_class_id, created_at, updated_at) " +
+            "SELECT uuid_generate_v4(), id, :examClassId, :now, :now " +
+            "FROM exam_timetable " + 
+            "WHERE exam_plan_id = :examPlanId AND deleted_at IS NULL";
+        
+        Query query = entityManager.createNativeQuery(bulkInsertSql);
+        query.setParameter("examClassId", savedClass.getId());
+        query.setParameter("examPlanId", examClass.getExamPlanId());
+        query.setParameter("now", LocalDateTime.now());
+        
+        query.executeUpdate();
+        
+        return savedClass;
     }
 
     public ExamClass updateExamClass(ExamClass examClass) {
@@ -74,7 +118,6 @@ public class ExamClassService {
         // For conflicts check
         Set<String> excelExamClassIds = new HashSet<>();
         
-        // Prepare a batch insert
         StringBuilder insertValuesBuilder = new StringBuilder();
         List<Object[]> batchParams = new ArrayList<>();
         
@@ -91,7 +134,6 @@ public class ExamClassService {
                 
                 excelExamClassIds.add(examClassId);
                 
-                // Add parameters for this row
                 UUID id = UUID.randomUUID();
                 String classId = getStringValue(row.getCell(0));
                 String courseId = getStringValue(row.getCell(2));
@@ -114,12 +156,10 @@ public class ExamClassService {
         }
         workbook.close();
         
-        // Skip further processing if no valid records
         if (excelExamClassIds.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // Check for conflicts in one database call
         List<ExamClass> conflictClasses = examClassRepository.findByExamPlanIdAndExamClassIdIn(
             examPlanId, new ArrayList<>(excelExamClassIds));
         
@@ -128,7 +168,7 @@ public class ExamClassService {
             return conflictClasses;
         }
         
-        // No conflicts - perform batch insert using JDBC batch
+        // No conflicts
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         
         String sql = "INSERT INTO exam_timetabling_class (id, exam_class_id, class_id, course_id, " +
@@ -140,18 +180,18 @@ public class ExamClassService {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 Object[] params = batchParams.get(i);
-                ps.setObject(1, params[0]);  // id
-                ps.setString(2, (String)params[1]);  // exam_class_id
-                ps.setString(3, (String)params[2]);  // class_id
-                ps.setString(4, (String)params[3]);  // course_id
-                ps.setString(5, (String)params[4]);  // group_id
-                ps.setString(6, (String)params[5]);  // course_name
-                ps.setString(7, (String)params[6]);  // description
-                ps.setObject(8, params[7]);  // number_students
-                ps.setString(9, (String)params[8]);  // period
-                ps.setString(10, (String)params[9]); // management_code
-                ps.setString(11, (String)params[10]); // school
-                ps.setObject(12, params[11]); // exam_plan_id
+                ps.setObject(1, params[0]); 
+                ps.setString(2, (String)params[1]); 
+                ps.setString(3, (String)params[2]);  
+                ps.setString(4, (String)params[3]);  
+                ps.setString(5, (String)params[4]);  
+                ps.setString(6, (String)params[5]);  
+                ps.setString(7, (String)params[6]);  
+                ps.setObject(8, params[7]);  
+                ps.setString(9, (String)params[8]);  
+                ps.setString(10, (String)params[9]);
+                ps.setString(11, (String)params[10]); 
+                ps.setObject(12, params[11]); 
             }
 
             @Override
@@ -166,7 +206,7 @@ public class ExamClassService {
    public ByteArrayInputStream loadExamClasses(List<UUID> ids) {
         List<ExamClass> examClasses = examClassRepository.findAllById(ids);
 
-        try (Workbook workbook = new XSSFWorkbook()) { // Using XLSX format
+        try (Workbook workbook = new XSSFWorkbook()) { 
             Sheet sheet = workbook.createSheet("Exam Classes");
 
             // Create header row

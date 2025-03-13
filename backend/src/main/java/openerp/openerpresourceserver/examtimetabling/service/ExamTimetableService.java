@@ -51,18 +51,15 @@ public class ExamTimetableService {
     
     @Transactional
     public ExamTimetable createExamTimetable(ExamTimetable examTimetable) {
-        // Generate UUID if not provided
         if (examTimetable.getId() == null) {
             examTimetable.setId(UUID.randomUUID());
         }
         
-        // Set timestamps and save timetable
         LocalDateTime now = LocalDateTime.now();
         examTimetable.setCreatedAt(now);
         examTimetable.setUpdatedAt(now);
         ExamTimetable savedTimetable = examTimetableRepository.save(examTimetable);
         
-        // Use native SQL for bulk insert
         String insertSql = "INSERT INTO exam_timetable_assignment " +
                           "(id, exam_timetable_id, exam_timtabling_class_id, created_at, updated_at) " +
                           "SELECT uuid_generate_v4(), :timetableId, id, :createdAt, :updatedAt " +
@@ -81,13 +78,10 @@ public class ExamTimetableService {
     }
     
     public List<ExamTimetableDTO> getAllTimetablesByExamPlanId(UUID examPlanId) {
-        // Get total count of exam classes for this plan
         long totalClasses = examClassRepository.countByExamPlanId(examPlanId);
         
-        // Get all timetables for this plan
         List<ExamTimetable> timetables = examTimetableRepository.findByExamPlanIdAndDeletedAtIsNull(examPlanId);
         
-        // Map to DTOs with progress calculation
         return timetables.stream().map(timetable -> {
             ExamTimetableDTO dto = new ExamTimetableDTO();
             dto.setId(timetable.getId());
@@ -96,7 +90,6 @@ public class ExamTimetableService {
             dto.setCreatedAt(timetable.getCreatedAt());
             dto.setUpdatedAt(timetable.getUpdatedAt());
             
-            // Calculate progress
             long completedAssignments = examTimetableAssignmentRepository
                 .countByExamTimetableIdAndRoomIdIsNotNullAndExamSessionIdIsNotNull(timetable.getId());
             
@@ -104,7 +97,7 @@ public class ExamTimetableService {
                 ? ((double) completedAssignments / totalClasses) * 100 
                 : 0.0;
             
-            dto.setProgressPercentage(Math.round(progressPercentage * 100.0) / 100.0); // Round to 2 decimal places
+            dto.setProgressPercentage(Math.round(progressPercentage * 100.0) / 100.0);
             
             return dto;
         }).collect(Collectors.toList());
@@ -112,11 +105,9 @@ public class ExamTimetableService {
 
     @Transactional
     public void softDeleteTimetable(UUID timetableId) {
-        // First verify the timetable exists
         ExamTimetable timetable = examTimetableRepository.findById(timetableId)
             .orElseThrow(() -> new RuntimeException("Timetable not found with id: " + timetableId));
         
-        // Use native query to soft delete all assignments
         Query assignmentsQuery = entityManager.createNativeQuery(
             "UPDATE exam_timetable_assignment " +
             "SET deleted_at = NOW() " +
@@ -184,27 +175,23 @@ public class ExamTimetableService {
         detailDTO.setCompletedAssignments(completedAssignments);
         detailDTO.setTotalAssignments(totalAssignments);
         
-        // Generate weeks - now as a list of integers
         List<Integer> weeks = generateWeekNumbers(plan.getStartWeek(), 
                                                 plan.getStartTime().toLocalDate(), 
                                                 plan.getEndTime().toLocalDate());
         detailDTO.setWeeks(weeks);
         
-        // Generate dates - modified format
         List<DateDTO> dates = generateDatesNew(
             plan.getStartTime().toLocalDate(),
             plan.getEndTime().toLocalDate(),
-            plan.getStartWeek()  // Pass startWeek to ensure consistent numbering
+            plan.getStartWeek()  
         );
         
         detailDTO.setDates(dates);
         
-        // Generate slots from sessions - modified format
         List<SlotDTO> slots = sessions.stream().map(session -> {
             SlotDTO dto = new SlotDTO();
-            dto.setId(session.getId());  // Now returning UUID directly
+            dto.setId(session.getId()); 
             
-            // Format time for display
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:mm");
             String startTimeStr = session.getStartTime().format(timeFormatter);
             String endTimeStr = session.getEndTime().format(timeFormatter);
@@ -218,11 +205,9 @@ public class ExamTimetableService {
         return detailDTO;
     }
 
-    // New methods for the updated DTO structure
     private List<Integer> generateWeekNumbers(Integer startWeek, LocalDate startDate, LocalDate endDate) {
         List<Integer> weeks = new ArrayList<>();
         
-        // Calculate the start of the week containing the startDate
         LocalDate firstDayOfStartWeek = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         
         LocalDate currentWeekStart = firstDayOfStartWeek;
@@ -231,7 +216,6 @@ public class ExamTimetableService {
         while (!currentWeekStart.isAfter(endDate)) {
             weeks.add(currentWeek);
             
-            // Move to next week
             currentWeekStart = currentWeekStart.plusWeeks(1);
             currentWeek++;
         }
@@ -241,7 +225,6 @@ public class ExamTimetableService {
     private List<DateDTO> generateDatesNew(LocalDate startDate, LocalDate endDate, Integer startWeek) {
         List<DateDTO> dates = new ArrayList<>();
         
-        // Calculate the start of the week containing the startDate
         LocalDate firstDayOfStartWeek = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         
         LocalDate currentDate = startDate;
@@ -249,7 +232,6 @@ public class ExamTimetableService {
         while (!currentDate.isAfter(endDate)) {
             DateDTO dateDTO = new DateDTO();
             
-            // Calculate which week this date belongs to
             LocalDate mondayOfThisWeek = currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             int weeksDiff = (int) ChronoUnit.WEEKS.between(firstDayOfStartWeek, mondayOfThisWeek);
             int weekNumber = startWeek + weeksDiff;
