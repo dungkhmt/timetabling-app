@@ -112,7 +112,6 @@ const OutBoundList = () => {
       <CreateOutboundDialog
         open={openCreateDialog}
         onClose={handleCloseDialog}
-        orderData={orderData}
       />
     </Box>
   );

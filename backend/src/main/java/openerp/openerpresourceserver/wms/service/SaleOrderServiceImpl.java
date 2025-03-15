@@ -29,9 +29,6 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     private final FacilityRepo facilityRepo;
     private final UserLoginRepo userLoginRepo;
     private final ProductRepo productRepo;
-    private final InventoryItemRepo inventoryItemRepo;
-    private final InventoryItemDetailRepo inventoryItemDetailRepo;
-    private final ShipmentRepo shipmentRepo;
     @Override
     public ApiResponse<Void> createSaleOrder(CreateSaleOrderReq request, String name) {
         var facility = facilityRepo.findById(request.getFacilityId())
@@ -99,6 +96,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .map(orderItem -> {
                     var orderItemRes = OrderProductRes.builder()
                             .id(orderItem.getId().getOrderId())
+                            .orderItemSeqId(orderItem.getId().getOrderItemSeqId())
                         .productId(orderItem.getProduct().getId())
                         .quantity(orderItem.getQuantity())
                         .amount(orderItem.getAmount())
@@ -174,50 +172,6 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .build();
     }
 
-    @Override
-    public ApiResponse<Void> createOutboundSaleOrder(CreateOutBounndReq req, String name) {
-        var order = orderHeaderRepo.findById(req.getOrderId())
-                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + req.getOrderId()));
-
-        var orderSeq = orderItemRepo.findById(req.getOrderItemSeqId())
-                .orElseThrow(() -> new DataNotFoundException("OrderItem not found with id: " + req.getOrderItemSeqId()));
-
-        var userLogin = userLoginRepo.findById(name)
-                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name));
-
-        var inventoryItem = inventoryItemRepo.findById(req.getInventoryItemId())
-                .orElseThrow(() -> new DataNotFoundException("InventoryItem not found with id: " + req.getInventoryItemId()));
-
-        var product = productRepo.findById(req.getProductId())
-                .orElseThrow(() -> new DataNotFoundException("Product not found with id: " + orderSeq.getProduct().getId()));
-
-        if(orderSeq.getQuantity() < req.getQuantity()) {
-            throw new RuntimeException("Quantity not available in stock");
-        }
-
-        inventoryItemRepo.save(inventoryItem);
-        var shipment = Shipment.builder()
-                .id(CommonUtil.getUUID())
-                .shipmentTypeId(ShipmentType.OUTBOUND.name())
-                .createdByUser(userLogin)
-                .order(order)
-                .toCustomer(order.getToCustomer())
-                .build();
-        var inventoryItemDetail = InventoryItemDetail.builder()
-                .inventoryItem(inventoryItem)
-                .quantity(req.getQuantity())
-                .product(product)
-                .shipment(shipment)
-                .build();
-        shipmentRepo.save(shipment);
-        inventoryItemDetailRepo.save(inventoryItemDetail);
-
-        return ApiResponse.<Void>builder()
-                .code(200)
-                .message("Create Outbound Sale Order successfully")
-                .build();
-
-    }
 
     @Override
     public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit) {

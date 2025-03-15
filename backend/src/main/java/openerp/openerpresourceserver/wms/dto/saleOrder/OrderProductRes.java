@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @Builder
 public class OrderProductRes {
     private String id;
+    private String orderItemSeqId;
     private String productId;
     private String productName;
     private Integer quantity;

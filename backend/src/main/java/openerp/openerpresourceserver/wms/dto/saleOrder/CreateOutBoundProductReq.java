@@ -5,15 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
 @Getter
-public class CreateOutBounndReq {
-    private String id;
-    private String note;
+public class CreateOutBoundProductReq {
+    private String productId;
+    private String inventoryItemId;
+    private Integer quantity;
     private String orderId;
-    private List<CreateOutBoundProductReq> products;
+    private String orderItemSeqId;
 }

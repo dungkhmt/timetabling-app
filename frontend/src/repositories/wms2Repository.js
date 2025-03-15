@@ -44,5 +44,8 @@ export const wms2Service = {
   },
   getMoreInventoryItems: (page, limit, orderId) => {
     return request("get", `/inventory-item/for-order/${orderId}?page=${page}&limit=${limit}`);
+  }, 
+  createOutBoundOrder : (data) => {
+    return request("post", "/inventory-item/outbound/create", null, null, data);
   }
 };

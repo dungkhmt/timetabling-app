@@ -14,87 +14,57 @@ import {
   Alert,
 } from "@mui/material";
 import OutboundRow from "./outbound/OutboundRow";
+import { useApprovedOrderDetail } from "../context/OrderDetailContext";
 
-const OutBoundTable = ({ items = [], facilities = [], onExport }) => {
+const OutBoundTable = ({ items = [] }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
-  const [itemRows, setItemRows] = useState([]);
   const [exportedItems, setExportedItems] = useState([]);
-  
-  // Khởi tạo rows từ items
+  const [facilities, setFacilities] = useState([]);
+  const { getMoreInventoryItemsApi, createOutBoundOrderApi } = useApprovedOrderDetail();
+
+  // Tải danh sách kho
   useEffect(() => {
-    if (items?.length > 0) {
-      const initialRows = items.map((item, index) => ({
-        ...item,
-        rowId: `${item.id || item.productId}-main-${index}`,
-        isMainRow: true,
-        parentId: null,
-        splitQuantity: item.quantity || 0,
-        remainingQuantity: item.quantity || 0,
-      }));
-      setItemRows(initialRows);
-    }
-  }, [items]);
-
-  // Xử lý tách row khi số lượng không đủ
-  const handleSplitRow = (parentRowId, originalRow) => {
-    // Tạo ID mới cho row được tách
-    const splitRowId = `${originalRow.id || originalRow.productId}-split-${Date.now()}`;
-    
-    // Lấy số lượng tách từ originalRow (đã được xác định trong dialog)
-    const splitQuantity = originalRow.quantity;
-    
-    // Tìm row cha
-    const parentRow = itemRows.find(row => row.rowId === parentRowId);
-    if (!parentRow) return;
-    
-    // Tạo row mới từ thông tin của row cha
-    const newRow = {
-      ...parentRow,
-      rowId: splitRowId,
-      isMainRow: false,
-      parentId: parentRowId,
-      splitQuantity: splitQuantity,
-      remainingQuantity: splitQuantity
-    };
-    
-    // Cập nhật số lượng còn lại của row cha
-    const updatedRows = itemRows.map(row => {
-      if (row.rowId === parentRowId) {
-        return {
-          ...row,
-          remainingQuantity: row.remainingQuantity - splitQuantity
-        };
+    const fetchFacilities = async () => {
+      try {
+        const response = await getMoreInventoryItemsApi(0, 100);
+        if (response?.data) {
+          setFacilities(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching facilities:", error);
       }
-      return row;
-    });
-    
-    // Thêm row mới vào danh sách
-    setItemRows([...updatedRows, newRow]);
-  };
+    };
 
-  // Cập nhật số lượng còn lại của row
-  const updateRowQuantity = (rowId, newRemainingQuantity) => {
-    setItemRows(prevRows => 
-      prevRows.map(row => 
-        row.rowId === rowId 
-          ? { ...row, remainingQuantity: newRemainingQuantity } 
-          : row
-      )
-    );
-  };
+    fetchFacilities();
+  }, [getMoreInventoryItemsApi]);
 
   // Xử lý xuất kho
-  const handleExport = (rowId, exportData) => {
-    // Đánh dấu row này đã được xuất
-    updateRowQuantity(rowId, 0);
-    
-    // Thêm vào danh sách đã xuất
-    setExportedItems(prev => [...prev, { rowId, ...exportData }]);
-    
-    // Gọi callback để thông báo ra bên ngoài
-    if (onExport) {
-      onExport(exportData);
+  const handleExport = async (exportData) => {
+    try {
+      // Thêm vào danh sách đã xuất
+      setExportedItems(prev => [...prev, exportData]);
+
+      // Chuẩn bị dữ liệu API
+      const outboundData = {
+        warehouseId: exportData.warehouseId,
+        items: [{
+          orderItemSeqId: exportData.orderItemSeqId,
+          productId: exportData.productId,
+          quantity: exportData.quantity
+        }]
+      };
+
+      // Gọi API tạo phiếu xuất kho
+      await createOutBoundOrderApi(outboundData);
+
+    } catch (err) {
+      console.error("Error creating outbound:", err);
+      alert(`Xuất kho thất bại: ${err.message || "Lỗi không xác định"}`);
+      // Xóa khỏi danh sách đã xuất nếu lỗi
+      setExportedItems(prev => 
+        prev.filter(item => item.orderItemSeqId !== exportData.orderItemSeqId)
+      );
     }
   };
 
@@ -102,54 +72,78 @@ const OutBoundTable = ({ items = [], facilities = [], onExport }) => {
   if (!items || items.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography color="text.secondary">Không có phiếu nào</Typography>
+        <Typography color="text.secondary">Không có sản phẩm nào</Typography>
       </Box>
     );
   }
 
-  // Hiển thị thông báo nếu có phiếu đã xuất
-  const renderExportedAlert = () => {
-    if (exportedItems.length > 0) {
-      return (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Đã xuất {exportedItems.length} phiếu thành công
-        </Alert>
-      );
-    }
-    return null;
-  };
-
   return (
     <>
-      {renderExportedAlert()}
-      <TableContainer component={Paper}>
+      {exportedItems.length > 0 && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Đã xuất {exportedItems.length} sản phẩm thành công
+        </Alert>
+      )}
+
+      <TableContainer component={Paper} variant="outlined">
         <Table size={isSmall ? "small" : "medium"}>
-          <TableHead>
+          <TableHead sx={{ bgcolor: 'action.hover' }}>
             <TableRow>
-              <TableCell>Mã phiếu/SP</TableCell>
-              <TableCell>Trạng thái</TableCell>
+              <TableCell>Mã sản phẩm</TableCell>
+              <TableCell>Tên sản phẩm</TableCell>
               <TableCell>Đơn vị</TableCell>
-              <TableCell>Số lượng</TableCell>
-              <TableCell>Giao trước ngày</TableCell>
+              <TableCell align="center">Số lượng</TableCell>
               <TableCell>Kho xuất</TableCell>
               <TableCell>Thao tác</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {itemRows.map((row) => (
-              <OutboundRow 
-                key={row.rowId}
-                row={row}
-                facilities={facilities}
-                onSplitRow={handleSplitRow}
-                updateRowQuantity={updateRowQuantity}
-                onExport={handleExport}
-                isSmall={isSmall}
-              />
-            ))}
+            {items
+              .filter(item => !exportedItems.some(exported => exported.orderItemSeqId === item.orderItemSeqId))
+              .map((item) => (
+                <OutboundRow 
+                  key={item.orderItemSeqId || item.id}
+                  row={item}
+                  facilities={facilities}
+                  onExport={handleExport}
+                  isSmall={isSmall}
+                />
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {exportedItems.length > 0 && (
+        <Box mt={4}>
+          <Typography variant="subtitle1" gutterBottom>
+            Sản phẩm đã xuất kho:
+          </Typography>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead sx={{ bgcolor: 'success.light' }}>
+                <TableRow>
+                  <TableCell>Mã sản phẩm</TableCell>
+                  <TableCell>Tên sản phẩm</TableCell>
+                  <TableCell>Số lượng</TableCell>
+                  <TableCell>Kho xuất</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {exportedItems.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{item.productId}</TableCell>
+                    <TableCell>{item.productName}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>
+                      {facilities.find(f => f.id === item.warehouseId)?.name || item.warehouseId}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </>
   );
 };

@@ -39,10 +39,7 @@ public class SaleOrderController {
         return saleOrderService.getAllSaleOrders(page, limit, filters);
     }
 
-    @PostMapping("/outbound/create")
-    public ApiResponse<Void> createOutboundSaleOrder(@RequestBody CreateOutBounndReq saleOrder, Principal principal) {
-        return saleOrderService.createOutboundSaleOrder(saleOrder, principal.getName());
-    }
+
 
     @GetMapping("/get-approved")
     public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(@RequestParam int page, @RequestParam int limit) {

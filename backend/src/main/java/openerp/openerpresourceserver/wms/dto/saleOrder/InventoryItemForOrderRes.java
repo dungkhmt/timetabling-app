@@ -12,4 +12,5 @@ public class InventoryItemForOrderRes {
     private String id;
     private String facilityName;
     private Integer quantity;
+    private String productId;
 }

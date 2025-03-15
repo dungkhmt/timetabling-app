@@ -18,7 +18,6 @@ public interface SaleOrderService {
 
     ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, Map<String, Object> filters);
 
-    ApiResponse<Void> createOutboundSaleOrder(CreateOutBounndReq saleOrder, String name);
 
     ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit);
 

@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface InventoryItemRepo extends JpaRepository<InventoryItem, String> {
     Page<InventoryItem> findByProductIdIn(List<String> productIds, PageRequest pageRequest);
+
+    List<InventoryItem> findByProductIdIn(List<String> productIds);
 }
