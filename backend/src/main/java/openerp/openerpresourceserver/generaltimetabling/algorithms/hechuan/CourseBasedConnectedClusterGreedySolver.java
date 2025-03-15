@@ -11,17 +11,17 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.Class
 import java.util.*;
 
 @Log4j2
-public class GreedySolver1 implements Solver {
+public class CourseBasedConnectedClusterGreedySolver implements Solver {
     MapDataScheduleTimeSlotRoom I;
     //int[] solutionSlot;// solutionSlot[i] is the start time-slot assigned to class-segment i
-    //int[] solutionRoom; // solutionRoom[i] is the room assigned to class-segment i
     Map<Integer, Integer> solutionSlot;
-    Map<Integer,Integer> solutionRoom;
+    //int[] solutionRoom; // solutionRoom[i] is the room assigned to class-segment i
+    Map<Integer, Integer> solutionRoom;
     //HashSet<Integer>[] conflictClassSegment;// conflictClassSegment[i] is the list of class-segment conflict with class segment i
     Map<Integer, Set<Integer>> conflictClassSegment;
     //HashSet<String>[] relatedCourseGroups;// relatedCourseGroups[i] is the set of related course-group of class-segment i
     Map<Integer, Set<String>> relatedCourseGroups;
-    int[] ins; // ins[i]: number of class having the same course with class segment i
+    //int[] ins; // ins[i]: number of class having the same course with class segment i
     //ClassSegment[] classSegments = null;
     List<ClassSegment> classSegments = null;
     // output data structures
@@ -76,24 +76,28 @@ public class GreedySolver1 implements Solver {
             return commonGroup(cg);
         }
     }
-    public GreedySolver1(MapDataScheduleTimeSlotRoom I){
+    public CourseBasedConnectedClusterGreedySolver(MapDataScheduleTimeSlotRoom I){
 
         this.I = I;
-        classSegments = I.getClassSegments();
         //conflictClassSegment = new HashSet[I.getClassSegments().length];
+        conflictClassSegment= new HashMap<>();
+        for(ClassSegment cs: I.getClassSegments()){
+            conflictClassSegment.put(cs.getId(),new HashSet<>());
+        }
+
         //for(int i = 0; i < I.getClassSegments().length; i++){
         //    conflictClassSegment[i] = new HashSet();
         //}
-        conflictClassSegment = new HashMap<>();
-        for(ClassSegment cs: classSegments){
-            conflictClassSegment.put(cs.getId(), new HashSet<>());
-        }
         for(Integer[] p: I.getConflict()){
             int i = p[0]; int j = p[1];
-            conflictClassSegment.get(i).add(j);
-            conflictClassSegment.get(j).add(i);
+            //conflictClassSegment[i].add(j); conflictClassSegment[j].add(i);
+            //conflictClassSegment.get(i).add(j);
+            if(conflictClassSegment.get(i) != null && conflictClassSegment.get(j)!= null){
+                conflictClassSegment.get(i).add(j);
+                conflictClassSegment.get(j).add(i);
+            }
         }
-        //classSegments = I.getClassSegments();
+        classSegments = I.getClassSegments();
         /*
         classSegments = new ClassSegment[I.getNbClassSegments()];
         for(int i = 0; i < I.getNbClassSegments(); i++){
@@ -115,7 +119,8 @@ public class GreedySolver1 implements Solver {
         }
         */
         /*
-        relatedCourseGroups = new HashSet[classSegments.size()];
+        relatedCourseGroups = new HashSet[classSegments.length];
+
         for(int i = 0; i < classSegments.length; i++){
             ClassSegment cs = classSegments[i];
             //String courseGroupId = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
@@ -126,42 +131,38 @@ public class GreedySolver1 implements Solver {
                 relatedCourseGroups[i].add(courseGroupId);
             }
         }
-
-         */
-        relatedCourseGroups= new HashMap<>();
-        for(ClassSegment cs: classSegments){
+        */
+        relatedCourseGroups = new HashMap<>();
+        for(ClassSegment cs: I.getClassSegments()){
             relatedCourseGroups.put(cs.getId(), new HashSet<>());
-            for(ClassSegment csj: classSegments){
-                String courseGroupId = csj.hashCourseGroup();
+            for(ClassSegment csj: I.getClassSegments()){
+                String courseGroupId = csj.hashCourseGroup();//hashCourseGroup(csj.getCourseIndex(),csj.getGroupIds())
                 relatedCourseGroups.get(cs.getId()).add(courseGroupId);
             }
         }
     }
 
     private boolean check(int i, int s, int r){
-        ClassSegment csi = classSegments.get(i);
         // check and return true if slot s and room r can be assigned to class segment i without violating constraintsa
         // explore all class segment j before i (have been assigned slot and room)
-        //int duration_i = I.getClassSegments()[i].getDuration();
-        int duration_i = csi.getDuration();
+        //int duration_i = I.getNbSlots()[i];
+        int duration_i = I.getClassSegments().get(i).getDuration();
         int startSlot_i = s;
 
         for(int j = 0; j <= i-1; j++){
-            ClassSegment csj = classSegments.get(j);
-            //int duration_j = I.getClassSegments()[j].getDuration();
-            int duration_j = csj.getDuration();
+            int duration_j = I.getClassSegments().get(j).getDuration();
             //int startSlot_j = solutionSlot[j];
-            int startSlot_j = solutionSlot.get(csj.getId());
+            int startSlot_j = solutionSlot.get(j);
 
             //if(i == 4)log.info("check(" + i + "," + s + "," + r + " compare class-segment " + j + " having start_slot_j = " + startSlot_j + " duration_j = " + duration_j + " room " + solutionRoom[j]);
             //if(conflictClassSegment[i].contains(j)){// class segments i and j conflict
-            if(conflictClassSegment.get(csi.getId()).contains(csj.getId())){// class segments i and j conflict
+            if(conflictClassSegment.get(i).contains(j)){// class segments i and j conflict
                 if(Util.overLap(startSlot_i,duration_i,startSlot_j,duration_j))
                     return false;
             }
             if(Util.overLap(startSlot_i, duration_i,startSlot_j,duration_j)){
                 //if(solutionRoom[j] == r) return false;
-                if(solutionRoom.get(csj.getId()) == r) return false;
+                if(solutionRoom.get(j) == r) return false;
             }
         }
         return true;
@@ -197,7 +198,7 @@ public class GreedySolver1 implements Solver {
             }
             courseGroupId.add(id);
             mCourseGroup2ClassSegments.get(id).add(cs);
-            log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id);
+            //log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id);
         }
         for(String id: courseGroupId){
             int duration = 0;
@@ -240,24 +241,25 @@ public class GreedySolver1 implements Solver {
         //}
         solutionSlot = new HashMap<>();
         solutionRoom = new HashMap<>();
-        for(ClassSegment cs: classSegments){
-            solutionSlot.put(cs.getId(),-1);
+        for(ClassSegment cs: I.getClassSegments()){
             solutionRoom.put(cs.getId(),-1);
+            solutionSlot.put(cs.getId(),-1);
         }
         List<ClassSegment> sortedClassSegments = new ArrayList<>();
         Map<String, Integer> mCourseGroup2Pointer = new HashMap<>();
         for(String c: courseGroupId) mCourseGroup2Pointer.put(c,0);
         //boolean[] scheduled = new boolean[classSegments.length];
+        Map<Integer, Boolean> scheduled = new HashMap<>();
         //for(int i = 0; i < classSegments.length; i++){
         //    scheduled[i] = false;
         //}
-        Map<Integer, Boolean> scheduled = new HashMap<>();
-        for(ClassSegment cs: classSegments){
+        for(ClassSegment cs: I.getClassSegments())
             scheduled.put(cs.getId(),false);
-        }
+
         for(int i = 0; i < classSegments.size(); i++){
             ClassSegment cs = classSegments.get(i);
             if(cs.getDomainRooms().size() == 1 && cs.getDomainTimeSlots().size() == 1){
+                //scheduled[cs.getId()] = true;
                 scheduled.put(cs.getId(),true);
                 sortedClassSegments.add(cs);
             }
@@ -269,8 +271,11 @@ public class GreedySolver1 implements Solver {
                 if(idx < mCourseGroup2ClassSegments.get(c).size()){
                     ClassSegment cs = mCourseGroup2ClassSegments.get(c).get(idx);
                     mCourseGroup2Pointer.put(c,idx+1);
-                    if(!scheduled.get(cs.getId())) {
+                    //if(!scheduled[cs.getId()]) {
+                    if(!scheduled.get(cs.getId())==true) {
+
                         sortedClassSegments.add(cs);
+                        //scheduled[cs.getId()] = true;
                         scheduled.put(cs.getId(),true);
                     }
                     finished = false; break;
@@ -278,19 +283,30 @@ public class GreedySolver1 implements Solver {
             }
             if(finished) break;
         }
-        log.info("solve, after sorting, sortedClassSegments: ");
-        for(int i = 0; i < sortedClassSegments.size(); i++)
-            log.info("sortedClassSegments[" + i + "] = " + sortedClassSegments.get(i));
+        //log.info("solve, after sorting, sortedClassSegments: ");
+        //for(int i = 0; i < sortedClassSegments.size(); i++)
+        //    log.info("sortedClassSegments[" + i + "] = " + sortedClassSegments.get(i));
 
         for(int i = 0;i < sortedClassSegments.size(); i++){
             ClassSegment cs = sortedClassSegments.get(i);
+            if(cs.isScheduled){
+                if(cs.getDomainRooms().size() != 1 || cs.getDomainRooms().size() != 1){
+                    log.info("solve: BUG?? class " + cs.getClassId() + " is scheduled but domain time-slot and room is not singleton");
+                }
+                {
+                    int timeSlot = cs.getDomainTimeSlots().get(0);
+                    int room = cs.getDomainRooms().get(0);
+                    assignTimeSlotRoom(cs, timeSlot, room);
+                }
+                continue;
+            }
             // find a time slot and room for the class-segment cs
             //String courseGroup = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
             String courseGroup = cs.hashCourseGroup();
             int maxTeacher = I.getMaxTeacherOfCourses()[cs.getCourseIndex()];// get max number of teacher in charge of the course courseIndex
             // try first the time-slot for the courseGroup
             int selectTimeSlot = mCourseGroup2TimeSlot.get(courseGroup);
-            log.info("solve, scan sorted class-segments, consider " + cs.getId() + ", courseGroup = " + courseGroup + " selectedTimeSlot = " + selectTimeSlot);
+            log.info("solve, scan sorted class-segments, consider " + cs.getId() + ", courseGroup = " + courseGroup + " selectedTimeSlot = " + selectTimeSlot + " cs = " + cs.toString());
             int selectedRoom = -1;
 
             if(checkTimeSlot(i,selectTimeSlot,sortedClassSegments)){
@@ -304,13 +320,14 @@ public class GreedySolver1 implements Solver {
             if(selectedRoom != -1) {
                 //solutionSlot[cs.getId()] = selectTimeSlot;
                 //solutionRoom[cs.getId()] = selectedRoom;
-                //log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
-                assignTimeSlotRoom(cs.getId(),selectTimeSlot,selectedRoom);
+                log.info("solve, found a timeslot from course and a room: assign time-slot[" + cs.getId() + "] " + selectTimeSlot + " room[" + cs.getId() + "] = " + selectedRoom);
+                assignTimeSlotRoom(cs,selectTimeSlot,selectedRoom);
             }else{
+                log.info("solve, not found a timeslot from course and a room, try to find another time-slot and room");
                 // try to find another time-slot and room for class-segment i
                 int maxScore = -1;
-                log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() +
-                        " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
+                //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() +
+                //        " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
                 for(int timeslot: cs.getDomainTimeSlots())if(timeslot != selectTimeSlot){
                     for(int room: cs.getDomainRooms()){
                         if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
@@ -326,19 +343,25 @@ public class GreedySolver1 implements Solver {
                     //solutionSlot[cs.getId()] = selectTimeSlot;
                     //solutionRoom[cs.getId()] = selectedRoom;
                     //log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
-                    assignTimeSlotRoom(cs.getId(),selectTimeSlot,selectedRoom);
+                    assignTimeSlotRoom(cs,selectTimeSlot,selectedRoom);
                 }else{
                     log.info("solve CANNOT find solution for class-segment[" + i + "], id = " + cs.getId() + " classId = " + cs.getClassId());
                 }
             }
         }
     }
-    private void assignTimeSlotRoom(int csi, int timeSlot, int room){
+    private void assignTimeSlotRoom(ClassSegment cs, int timeSlot, int room){
         //solutionSlot[csi] = timeSlot;
         //solutionRoom[csi] = room;
-        solutionSlot.put(csi,timeSlot);
-        solutionRoom.put(csi,room);
-        log.info("assignTimeSlotRoom[" + csi + "], time-slot = " + timeSlot + ", room = " + room);
+        solutionSlot.put(cs.getId(),timeSlot);
+        solutionRoom.put(cs.getId(),room);
+        // update room occupation
+        //ClassSegment cs = classSegments.get(csi);
+        for(int s = 0; s < cs.getDuration()-1; s++){
+            int sl = timeSlot + s;
+            I.getRoomOccupations()[room].add(sl);
+        }
+        log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room);
         foundSolution = true;
     }
     private int computeScoreTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments) {
@@ -349,16 +372,21 @@ public class GreedySolver1 implements Solver {
         //for(int j = 0; j < courseQty.length; j++) courseQty[j] = 0;
         String cgi = hashCourseGroup(csi.getCourseIndex(),csi.getGroupIds());
         HashMap<String, Integer> mCourseGroup2NumberClass = new HashMap<>();
+        //for(String cg: relatedCourseGroups[i]) mCourseGroup2NumberClass.put(cg,0);
         for(String cg: relatedCourseGroups.get(csi.getId())) mCourseGroup2NumberClass.put(cg,0);
+
         int di = csi.getDuration();
         for(int j = 0; j < i; j++){
             ClassSegment csj = sortedClassSegments.get(j);
+            //int tsj = solutionSlot[csj.getId()];
             int tsj = solutionSlot.get(csj.getId());
+
             int dj = csj.getDuration();
             String cgj = hashCourseGroup(csj.getCourseIndex(),csj.getGroupIds());
             if(!Util.overLap(timeSlot,di,tsj,dj)){
                 //if(relatedCourseGroups[i].contains(cgj) && !cgi.equals(cgj)){
                 if(relatedCourseGroups.get(csi.getId()).contains(cgj) && !cgi.equals(cgj)){
+
                     if(mCourseGroup2NumberClass.get(cgj)==null)
                         mCourseGroup2NumberClass.put(cgj,1);
                     else
@@ -367,6 +395,7 @@ public class GreedySolver1 implements Solver {
             }
         }
         int score = 1;
+        //for(String cg: relatedCourseGroups[i]){
         for(String cg: relatedCourseGroups.get(csi.getId())){
             score =score * mCourseGroup2NumberClass.get(cg);
         }
@@ -375,7 +404,10 @@ public class GreedySolver1 implements Solver {
     private boolean checkTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments){
         int DEBUG_ID = -1;
         for(int s: I.getRoomOccupations()[room]){
-            if(s == timeSlot) return false;
+            if(s == timeSlot){
+                //log.info("checkTimeSlotRoom(" + i + "," + timeSlot + "," + room + ") --> return false as slot " + s +  " occupied");
+                return false;
+            }
         }
         // check if the class-segment i can be assigned to timeSlot
         ClassSegment csi = sortedClassSegments.get(i);
@@ -386,9 +418,11 @@ public class GreedySolver1 implements Solver {
         for(int j = 0; j < i; j++){
             ClassSegment csj = sortedClassSegments.get(j);
             int dj = sortedClassSegments.get(j).getDuration();
+            //int timeSlotJ = solutionSlot[csj.getId()];
+            //int roomJ = solutionRoom[csj.getId()];
             int timeSlotJ = solutionSlot.get(csj.getId());
             int roomJ = solutionRoom.get(csj.getId());
-            log.info("checkTimeSlotRoom(slot " + timeSlot + ", room " + room + ": compare with class " + csj.getId() + " timeslot = " + timeSlotJ + " room = " + roomJ);
+            //log.info("checkTimeSlotRoom(slot " + timeSlot + ", room " + room + ": compare with class " + csj.getId() + " timeslot = " + timeSlotJ + " room = " + roomJ);
             if(Util.overLap(timeSlot,di,timeSlotJ,dj)){
                 //if(conflictClassSegment[csi.getId()].contains(csj.getId())){
                 if(conflictClassSegment.get(csi.getId()).contains(csj.getId())){
@@ -400,7 +434,7 @@ public class GreedySolver1 implements Solver {
                 if(csj.getCourseIndex()==csi.getCourseIndex()){
                     teachers++;
                 }
-                log.info("checkTimeSlotRoom(slot " + timeSlot + ", room " + room + ": compare with class " + csj.getId() + " timeslot = " + timeSlotJ + " room = " + roomJ + " Overlap -> check room!!");
+                //log.info("checkTimeSlotRoom(slot " + timeSlot + ", room " + room + ": compare with class " + csj.getId() + " timeslot = " + timeSlotJ + " room = " + roomJ + " Overlap -> check room!!");
 
                 if(room == roomJ){
                     if(csi.getId() == DEBUG_ID){
@@ -427,8 +461,10 @@ public class GreedySolver1 implements Solver {
         for(int j = 0; j < i; j++){
             ClassSegment csj = sortedClassSegments.get(j);
             int dj = sortedClassSegments.get(j).getDuration();
+            //int timeSlotJ = solutionSlot[sortedClassSegments.get(j).getId()];
             int timeSlotJ = solutionSlot.get(sortedClassSegments.get(j).getId());
             if(Util.overLap(timeSlot,di,timeSlotJ,dj)){
+                //if(conflictClassSegment[csi.getId()].contains(csj.getId())){
                 if(conflictClassSegment.get(csi.getId()).contains(csj.getId())){
                     return false;
                 }
@@ -449,7 +485,7 @@ public class GreedySolver1 implements Solver {
         return foundSolution;
     }
 
-    @Override
+        @Override
     public Map<Integer, Integer> getMapSolutionSlot() {
         return solutionSlot;
     }

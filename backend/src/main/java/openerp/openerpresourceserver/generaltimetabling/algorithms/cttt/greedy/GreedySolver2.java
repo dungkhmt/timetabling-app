@@ -6,26 +6,26 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoomOneGroup;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 @Log4j2
 public class GreedySolver2 implements Solver {
     MapDataScheduleTimeSlotRoom I;
-    int[] solutionSlot;// solutionSlot[i] is the start time-slot assigned to class-segment i
-    int[] solutionRoom; // solutionRoom[i] is the room assigned to class-segment i
+    //int[] solutionSlot;// solutionSlot[i] is the start time-slot assigned to class-segment i
+    Map<Integer, Integer> solutionSlot;
+    //int[] solutionRoom; // solutionRoom[i] is the room assigned to class-segment i
+    Map<Integer, Integer> solutionRoom;
     HashSet<Integer>[] conflictClassSegment;// conflictClassSegment[i] is the list of class-segment conflict with class segment i
     List<Integer> unScheduledClassSegment;
     boolean foundSolution;
     public GreedySolver2(MapDataScheduleTimeSlotRoom I){
 
         this.I = I;
-        conflictClassSegment = new HashSet[I.getNbClassSegments()];
-        for(int i = 0; i < I.getNbClassSegments(); i++){
+        conflictClassSegment = new HashSet[I.getClassSegments().size()];
+        for(int i = 0; i < I.getClassSegments().size(); i++){
             conflictClassSegment[i] = new HashSet();
         }
         for(Integer[] p: I.getConflict()){
@@ -41,37 +41,40 @@ public class GreedySolver2 implements Solver {
     private boolean check(int i, int s, int r){
         // check and return true if slot s and room r can be assigned to class segment i without violating constraintsa
         // explore all class segment j before i (have been assigned slot and room)
-        int duration_i = I.getNbSlots()[i];
+        int duration_i = I.getClassSegments().get(i).getDuration();
         int startSlot_i = s;
 
         for(int j = 0; j <= i-1; j++){
-            int duration_j = I.getNbSlots()[j];
-            int startSlot_j = solutionSlot[j];
-            if(i == 4)log.info("check(" + i + "," + s + "," + r + " compare class-segment " + j + " having start_slot_j = " + startSlot_j + " duration_j = " + duration_j + " room " + solutionRoom[j]);
+            ClassSegment csj = I.getClassSegments().get(j);
+            int duration_j = csj.getDuration();
+            int startSlot_j = solutionSlot.get(csj.getId());
+            if(i == 4)log.info("check(" + i + "," + s + "," + r + " compare class-segment " + j + " having start_slot_j = " + startSlot_j + " duration_j = " + duration_j + " room " + solutionRoom.get(csj.getId()));
             if(conflictClassSegment[i].contains(j)){// class segments i and j conflict
                 if(overLap(startSlot_i,duration_i,startSlot_j,duration_j))
                     return false;
             }
             if(overLap(startSlot_i, duration_i,startSlot_j,duration_j)){
-                if(solutionRoom[j] == r) return false;
+                if(solutionRoom.get(csj.getId()) == r) return false;
             }
         }
         return true;
     }
-    public int[] getSolutionSlot(){ return solutionSlot;}
-    public int[] getSolutionRoom(){ return solutionRoom;}
+
 
     public void greedy3() {
         unScheduledClassSegment = new ArrayList<>();
-        for (int i = 0; i < I.getNbClassSegments(); i++) {
+        for (int i = 0; i < I.getClassSegments().size(); i++) {
+            ClassSegment csi = I.getClassSegments().get(i);
             boolean foundSlotRoom = false;
             Integer bestRoom = null;
             int minExcessCapacity = Integer.MAX_VALUE;
-            for (int s : I.getDomains()[i]) { // Iterate over available time slots
+            //for (int s : I.getDomains()[i]) { // Iterate over available time slots
+            for (int s : I.getDomains()[csi.getId()]) { // Iterate over available time slots
                 if (foundSlotRoom) break;
-                for (int r : I.getRooms()[i]) { // Iterate over rooms in priority order
+                //for (int r : I.getRooms()[i]) { // Iterate over rooms in priority order
+                for (int r : I.getRooms()[csi.getId()]) { // Iterate over rooms in priority order
                     if (foundSlotRoom) break;
-                    int excessCapacity = I.getRoomCapacity()[r] - I.getNbStudents()[i];
+                    int excessCapacity = I.getRoomCapacity()[r] - I.getClassSegments().get(i).getNbStudents();
                     if (excessCapacity >= 0 && check(i, s, r)) {
                         // If it's the first valid room or a better fit, update bestRoom
                         if (excessCapacity < minExcessCapacity) {
@@ -80,8 +83,10 @@ public class GreedySolver2 implements Solver {
                         }
                         // If we find a perfect fit (excessCapacity == 0), assign immediately
                         if (excessCapacity == 0) {
-                            solutionSlot[i] = s;
-                            solutionRoom[i] = r;
+                            //solutionSlot[i] = s;
+                            //solutionRoom[i] = r;
+                            solutionSlot.put(csi.getId(),s);
+                            solutionRoom.put(csi.getId(),r);
                             foundSlotRoom = true;
                             break;
                         }
@@ -89,8 +94,10 @@ public class GreedySolver2 implements Solver {
                 }
                 // If no perfect fit was found, assign the best available room
                 if (!foundSlotRoom && bestRoom != null) {
-                    solutionSlot[i] = s;
-                    solutionRoom[i] = bestRoom;
+                    //solutionSlot[i] = s;
+                    //solutionRoom[i] = bestRoom;
+                    solutionSlot.put(csi.getId(),s);
+                    solutionRoom.put(csi.getId(),bestRoom);
                     foundSlotRoom = true;
                 }
             }
@@ -106,7 +113,8 @@ public class GreedySolver2 implements Solver {
         // Try to make use of the rooms that have not been assigned first
         unScheduledClassSegment = new ArrayList<>();
         HashSet<Integer> usedRooms = new HashSet<>(); // Track rooms that have been assigned at any time
-        for (int i = 0; i < I.getNbClassSegments(); i++) {
+        for (int i = 0; i < I.getClassSegments().size(); i++) {
+            ClassSegment cs = I.getClassSegments().get(i);
             boolean foundSlotRoom = false;
             for (int s : I.getDomains()[i]) { // Iterate over possible time slots
                 if (foundSlotRoom) break;
@@ -115,8 +123,10 @@ public class GreedySolver2 implements Solver {
                     if (usedRooms.contains(r)) continue;
                     if (!usedRooms.contains(r) && check(i, s, r)) {
                         // Found a room that hasn't been assigned to any segment yet
-                        solutionSlot[i] = s;
-                        solutionRoom[i] = r;
+                        //solutionSlot[i] = s;
+                        //solutionRoom[i] = r;
+                        solutionSlot.put(cs.getId(),s);
+                        solutionRoom.put(cs.getId(),r);
                         usedRooms.add(r); // Mark this room as used
                         foundSlotRoom = true;
                     }
@@ -125,8 +135,10 @@ public class GreedySolver2 implements Solver {
                 if (!foundSlotRoom) {
                     for (int r : I.getRooms()[i]) {
                         if (check(i, s, r)) {
-                            solutionSlot[i] = s;
-                            solutionRoom[i] = r;
+                            //solutionSlot[i] = s;
+                            //solutionRoom[i] = r;
+                            solutionSlot.put(cs.getId(),s);
+                            solutionRoom.put(cs.getId(),r);
                             foundSlotRoom = true;
                             break; // Stop once we find a valid room
                         }
@@ -141,7 +153,8 @@ public class GreedySolver2 implements Solver {
     }
     public void simpleGreedy(){
         unScheduledClassSegment = new ArrayList<>();
-        for(int i = 0; i < I.getNbClassSegments(); i++){
+        for(int i = 0; i < I.getClassSegments().size(); i++){
+            ClassSegment cs = I.getClassSegments().get(i);
             // try to find a first-fit time-slot and room for class segment i
             log.info("simpleGreedy, start plan for class-segment " + i + ": list time-slots = " + I.getDomains()[i]);
             boolean foundSlotRoom = false;
@@ -150,8 +163,11 @@ public class GreedySolver2 implements Solver {
                 for(int r: I.getRooms()[i]){
                     if(foundSlotRoom) break;
                     if(check(i,s,r)){
-                        solutionSlot[i]= s; solutionRoom[i] = r; foundSlotRoom = true;
-                        log.info("simpleGreedy, slot[" + i + "] = " + s + ", duration = " + I.getNbSlots()[i] + ", room[" + i + "] = ");
+                        //solutionSlot[i]= s; solutionRoom[i] = r; foundSlotRoom = true;
+                        solutionSlot.put(cs.getId(),s);
+                        solutionRoom.put(cs.getId(),r); foundSlotRoom = true;
+
+                        log.info("simpleGreedy, slot[" + i + "] = " + s + ", duration = " + cs.getDuration() + ", room[" + i + "] = ");
                     }
                 }
             }
@@ -164,9 +180,20 @@ public class GreedySolver2 implements Solver {
     public boolean hasSolution(){
         return foundSolution;
     }
+
+    @Override
+    public Map<Integer, Integer> getMapSolutionSlot() {
+        return solutionSlot;
+    }
+
+    @Override
+    public Map<Integer, Integer> getMapSolutionRoom() {
+        return solutionRoom;
+    }
+
     public void solve(){
-        for(int i = 0; i < I.getNbClassSegments(); i++){
-            System.out.println("class-segment " + i + ": nbSlot = " + I.getNbSlots()[i] + ", nbStudents = " + I.getNbStudents()[i]);
+        for(int i = 0; i < I.getClassSegments().size(); i++){
+            System.out.println("class-segment " + i + ": nbSlot = " + I.getClassSegments().get(i).getDuration() + ", nbStudents = " + I.getClassSegments().get(i).getNbStudents());
             System.out.print("list of start time-slot for class-segment " + i + ": ");
             for(int s: I.getDomains()[i]) System.out.print(s + ", ");
             System.out.println();
@@ -177,10 +204,15 @@ public class GreedySolver2 implements Solver {
         for(Integer[] p: I.getConflict()){
             System.out.println("Conflict between class-segment " + p[0] + " and " + p[1]);
         }
-        solutionSlot = new int[I.getNbClassSegments()];
-        solutionRoom = new int[I.getNbClassSegments()];
-        for(int i = 0; i < I.getNbClassSegments(); i++){
-            solutionRoom[i] = -1; solutionSlot[i] = -1; // NOT ASSIGNED/SCHEDULED
+        //solutionSlot = new int[I.getClassSegments().length];
+        //solutionRoom = new int[I.getClassSegments().length];
+        solutionRoom = new HashMap<>();
+        solutionSlot = new HashMap<>();
+        for(int i = 0; i < I.getClassSegments().size(); i++){
+            ClassSegment cs = I.getClassSegments().get(i);
+            //solutionRoom[i] = -1; solutionSlot[i] = -1; // NOT ASSIGNED/SCHEDULED
+            solutionSlot.put(cs.getId(),-1);
+            solutionRoom.put(cs.getId(),-1);
         }
 //        simpleGreedy();
         greedy2();
@@ -191,9 +223,10 @@ public class GreedySolver2 implements Solver {
         System.out.print("Unschedueld class-segments: ");
         for(int i: unScheduledClassSegment) System.out.print(i + ", ");
         System.out.println();
-        for(int i = 0; i < I.getNbClassSegments(); i++){
-            if(solutionSlot[i] > -1){
-                System.out.println("class-segment[" + i + "] slot = " + solutionSlot[i] + " number students = " + I.getNbStudents()[i] + " room = " + solutionRoom[i] + " room capacity = " + I.getRoomCapacity()[solutionRoom[i]]);
+        for(int i = 0; i < I.getClassSegments().size(); i++){
+            ClassSegment cs = I.getClassSegments().get(i);
+            if(solutionSlot.get(cs.getId()) > -1){
+                System.out.println("class-segment[" + i + "] slot = " + solutionSlot.get(cs.getId()) + " number students = " + cs.getNbStudents() + " room = " + solutionRoom.get(cs.getId()) + " room capacity = " + I.getRoomCapacity()[solutionRoom.get(cs.getId())]);
             }
         }
     }

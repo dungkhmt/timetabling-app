@@ -23,6 +23,7 @@ public class ClassSegment {
     public int nbStudents;
     public List<Integer> domainTimeSlots;
     public List<Integer> domainRooms;
+    public boolean isScheduled;
     // additional and temp data for debugging (to be removed later)
     public String courseCode;
     public String groupNames;
@@ -37,6 +38,9 @@ public class ClassSegment {
     }
     public String toString(){
         String s = "ClassSegment[" + id + "], classId = " + classId;
+        s = s + " courseIndex " + courseIndex + "(" + courseCode + ") ";
+        s = s + " groups ";
+        for(int g: getGroupIds()) s = s + g + ",";
         s = s + " domain timeslot = ";
         for(int v: domainTimeSlots) s = s + v + ", ";
         s = s + " domain room = ";

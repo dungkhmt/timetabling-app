@@ -36,13 +36,13 @@ public class CourseNotOverlapBackTrackingSolver {
 
         int idx = -1;
         for(String c: courses){
-            System.out.println("Solver: course " + c);
+            //System.out.println("Solver: course " + c);
             idx++;
             arrCourses[idx] = c;
             mCourseId2Index.put(c,idx);
             domain[idx] = mCourse2Domain.get(c);
             duration[idx] = mCourse2Duration.get(c);
-            System.out.println("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
+            //System.out.println("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
             conflict[idx] = new HashSet();
         }
         for(int i = 0; i < nbCourses; i++){
