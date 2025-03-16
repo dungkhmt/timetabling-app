@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms;
 
 import lombok.extern.log4j.Log4j2;
+import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
 
 import java.util.*;
@@ -54,7 +55,7 @@ public class Util {
         }
         return res;
     }
-    public static List<Integer> generateSlots(String daySeq, String slotSeq, String crew, int duration){
+    public static List<Integer> generateSlots(int maxDayScheduled,String slotPriorityStrategy, String daySeq, String slotSeq, String crew, int duration){
         int startCrew = 0; int endCrew = 1;
         if(crew != null){
             int fKIP = crew.equals("S") ? 0 : 1;
@@ -65,7 +66,7 @@ public class Util {
         //if(sd == null || sd.length == 0) return null;
         Set<Integer> allDays = new HashSet();
         Set<Integer> allSlots = new HashSet();
-        for(int d = 2; d <= 8; d++) allDays.add(d);
+        for(int d = 2; d <= maxDayScheduled; d++) allDays.add(d);
         for(int sl = 1; sl <= Constant.slotPerCrew;sl++) allSlots.add(sl);
 
         List<Integer> days = new ArrayList();
@@ -78,10 +79,18 @@ public class Util {
                 }
             }
         }
-        for(int di: allDays){
-            if(!days.contains(di)) days.add(di);
-        }
+        //for(int di: allDays){
+        //    if(!days.contains(di)) days.add(di);
+        //}
         List<Integer> slots = new ArrayList();
+        if(slotPriorityStrategy.equals(Constants.PRIORITY_SLOT_EARLEST)){
+            int sl = 1;
+            slots.add(sl);
+        }else if(slotPriorityStrategy.equals(Constants.PRIORITY_SLOT_LATEST)){
+            int sl = Constant.slotPerCrew - duration + 1;
+            slots.add(sl);
+        }
+        /*
         if(slotSeq != null) {
             String[] ss = slotSeq.split(",");
             if (ss != null && ss.length > 0) {
@@ -91,17 +100,29 @@ public class Util {
                 }
             }
         }
+        */
+
         //log.info("mapData, slots = " + slots);
-        for(int si: allSlots){
-            if(!slots.contains(si)) slots.add(si);
-        }
-        //log.info("mapData, allSlots = "  + allSlots + " -> slots = " + slots + ", days = " + days);
+        //for(int si: allSlots){
+        //    if(!slots.contains(si)) slots.add(si);
+        //}
+        log.info("mapData, allSlots = "  + allSlots + " -> slots = " + slots + ", days = " + days);
 
         List<Integer> res = new ArrayList<>();
-        for(int d: days){
-            for(int fKIP = startCrew; fKIP <= endCrew; fKIP++) {
-                for (int s : slots) if(s + duration - 1 <= Constant.slotPerCrew){
 
+        for(int fKIP = startCrew; fKIP <= endCrew; fKIP++) {
+            for (int s : slots) if(s + duration - 1 <= Constant.slotPerCrew){
+                for(int d: days){
+                    int start = Constant.slotPerCrew * 2 * (d - 2)
+                            + Constant.slotPerCrew * fKIP + s;
+
+                    //log.info("mapData,d = " + d + ", s = " + s + ", duration = " + duration + " -> start = " + start);
+                    res.add(start);
+                }
+            }
+            for (int s : allSlots) if(!slots.contains(s)
+                    && s + duration - 1 <= Constant.slotPerCrew){
+                for(int d: days){
                     int start = Constant.slotPerCrew * 2 * (d - 2)
                             + Constant.slotPerCrew * fKIP + s;
 
@@ -110,6 +131,31 @@ public class Util {
                 }
             }
         }
+
+        // add additional weekend days
+        for(int fKIP = startCrew; fKIP <= endCrew; fKIP++) {
+            for (int s : slots) if(s + duration - 1 <= Constant.slotPerCrew){
+                for(int d: allDays)if(!days.contains(d)){
+                    int start = Constant.slotPerCrew * 2 * (d - 2)
+                            + Constant.slotPerCrew * fKIP + s;
+
+                    //log.info("mapData,d = " + d + ", s = " + s + ", duration = " + duration + " -> start = " + start);
+                    res.add(start);
+                }
+            }
+            for (int s : allSlots) if(!slots.contains(s)
+                    && s + duration - 1 <= Constant.slotPerCrew){
+                for(int d: allDays)if(!days.contains(d)){
+                    int start = Constant.slotPerCrew * 2 * (d - 2)
+                            + Constant.slotPerCrew * fKIP + s;
+
+                    //log.info("mapData,d = " + d + ", s = " + s + ", duration = " + duration + " -> start = " + start);
+                    res.add(start);
+                }
+            }
+        }
+
+
 
         return res;
     }

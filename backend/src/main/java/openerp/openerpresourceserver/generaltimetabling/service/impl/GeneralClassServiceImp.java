@@ -15,10 +15,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.Genera
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
@@ -50,6 +47,9 @@ public class GeneralClassServiceImp implements GeneralClassService {
     private RoomReservationRepo roomReservationRepo;
 
     private ClassroomRepo classroomRepo;
+
+    @Autowired
+    private TimeTablingConfigParamsRepo timeTablingConfigParamsRepo;
 
     @Autowired
     private TimeTablingRoomRepo roomRepo;
@@ -475,9 +475,20 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
     @Transactional
     @Override
-    public List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm) {
+    public List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule) {
 
-        log.info("autoScheduleTimeSlotRoom START....");
+        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule);
+        List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
+        /*
+        for(TimeTablingConfigParams p: params){
+            if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
+                p.setValue(maxDaySchedule);
+            }else{
+
+            }
+        }
+        */
+        
         //List<GeneralClass> foundClasses = gcoRepo.findAllBySemester(semester);
         List<GeneralClass> foundClasses = gcoRepo.findAllByIdIn(classIds);
         List<GeneralClass> allClassesOfSemester = gcoRepo.findAllBySemester(semester);
@@ -497,12 +508,12 @@ public class GeneralClassServiceImp implements GeneralClassService {
             }
 
         }
-        V2ClassScheduler optimizer = new V2ClassScheduler();
+        V2ClassScheduler optimizer = new V2ClassScheduler(params);
         List<Classroom> rooms = classroomRepo.findAll();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         List<Group> groups = groupRepo.findAll();
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
-        List<GeneralClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoom(foundClasses,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm);
+        List<GeneralClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoom(foundClasses,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
 
         /*Save the scheduled timeslot of the classes*/
         gcoRepo.saveAll(autoScheduleClasses);

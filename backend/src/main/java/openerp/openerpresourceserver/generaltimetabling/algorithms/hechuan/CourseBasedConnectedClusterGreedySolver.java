@@ -27,6 +27,7 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
     // output data structures
     List<Integer> unScheduledClassSegment;
     boolean foundSolution;
+    int timeLimit;
 
     class Course{
         String courseCode;
@@ -225,7 +226,7 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
             }
         }
         CourseNotOverlapBackTrackingSolver CNOBS = new CourseNotOverlapBackTrackingSolver(courseGroupId,mCourseGroup2Domain,mCourseGroup2Duration, mCourseGroup2ConflictCourseGroups);
-        CNOBS.solve();
+        CNOBS.solve(timeLimit);
         if(!CNOBS.hasSolution()){
             log.info("solve, CNOBS cannot find any solution!!!");
             return;
@@ -506,6 +507,11 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
     @Override
     public Map<Integer, Integer> getMapSolutionRoom() {
         return solutionRoom;
+    }
+
+    @Override
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
     }
 
     @Override

@@ -20,6 +20,8 @@ public class CourseNotOverlapBackTrackingSolver {
     int[] sol;
     Map<String, Integer> solutionMap;
     boolean found;
+    long timeLimit = 10000;// 10 seconds by default
+    long t0;// starting time point;
     public CourseNotOverlapBackTrackingSolver(Set<String> courses, Map<String, List<Integer>> mCourse2Domain, Map<String, Integer> mCourse2Duration,Map<String, List<String>> mCourseGroup2ConflictCourseGroups){
         this.courses = courses;
         this.mCourse2Domain = mCourse2Domain;
@@ -29,11 +31,12 @@ public class CourseNotOverlapBackTrackingSolver {
         duration = new int[nbCourses];
         this.mCourseGroup2ConflictCourseGroups = mCourseGroup2ConflictCourseGroups;
     }
-    public void solve(){
+    public void solve(int timeLimit){
+        this.timeLimit = timeLimit;
         arrCourses = new String[nbCourses];
         mCourseId2Index = new HashMap<>();
         conflict = new Set[nbCourses];
-
+        log.info("solve, nbCourses = " + nbCourses);
         int idx = -1;
         for(String c: courses){
             //System.out.println("Solver: course " + c);
@@ -42,7 +45,7 @@ public class CourseNotOverlapBackTrackingSolver {
             mCourseId2Index.put(c,idx);
             domain[idx] = mCourse2Domain.get(c);
             duration[idx] = mCourse2Duration.get(c);
-            //System.out.println("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
+            log.info("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
             conflict[idx] = new HashSet();
         }
         for(int i = 0; i < nbCourses; i++){
@@ -55,6 +58,7 @@ public class CourseNotOverlapBackTrackingSolver {
         sol = new int[nbCourses];
         found = false;
         solutionMap = new HashMap();
+        t0 = System.currentTimeMillis();
         tryValue(0);
         if(found){
             for(int i = 0; i < nbCourses; i++){
@@ -80,6 +84,8 @@ public class CourseNotOverlapBackTrackingSolver {
         for(int i = 0; i < nbCourses; i++) sol[i] = x[i];
     }
     private void tryValue(int k){
+        long t = System.currentTimeMillis() - t0;
+        if(t > timeLimit) return;
         if(found) return;
         //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " start");
         // try value for x[k]: start time-slot for course k

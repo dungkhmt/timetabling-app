@@ -174,7 +174,7 @@ public class GeneralClassController {
     }
     @PostMapping("/auto-schedule-timeslot-room")
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
-        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getSemester(),I.getClassIds(),I.getTimeLimit(),I.getAlgorithm()));
+        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getSemester(),I.getClassIds(),I.getTimeLimit(),I.getAlgorithm(),I.getMaxDaySchedule()));
     }
     @PostMapping("/auto-schedule-time")
     public ResponseEntity<List<GeneralClass>> requestAutoScheduleTime(

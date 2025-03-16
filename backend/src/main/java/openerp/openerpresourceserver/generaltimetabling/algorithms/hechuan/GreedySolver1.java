@@ -224,7 +224,7 @@ public class GreedySolver1 implements Solver {
             }
         }
         CourseNotOverlapBackTrackingSolver CNOBS = new CourseNotOverlapBackTrackingSolver(courseGroupId,mCourseGroup2Domain,mCourseGroup2Duration, mCourseGroup2ConflictCourseGroups);
-        CNOBS.solve();
+        CNOBS.solve(10000);
         if(!CNOBS.hasSolution()){
             log.info("solve, CNOBS cannot find any solution!!!");
             return;
@@ -457,6 +457,11 @@ public class GreedySolver1 implements Solver {
     @Override
     public Map<Integer, Integer> getMapSolutionRoom() {
         return solutionRoom;
+    }
+
+    @Override
+    public void setTimeLimit(int timeLimit) {
+        // todo
     }
 
     @Override

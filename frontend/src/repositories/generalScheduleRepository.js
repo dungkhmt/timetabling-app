@@ -65,7 +65,7 @@ export const generalScheduleRepository = {
     );
   },
 
-  autoScheduleSelected: async (classIds, timeLimit, semester, algorithm) => {
+  autoScheduleSelected: async (classIds, timeLimit, semester, algorithm,maxDaySchedule) => {
     return await request(
       "post",
       "/general-classes/auto-schedule-timeslot-room",
@@ -75,7 +75,8 @@ export const generalScheduleRepository = {
         classIds,
         timeLimit,
         semester,
-        algorithm
+        algorithm,
+        maxDaySchedule
       }
     );
   },

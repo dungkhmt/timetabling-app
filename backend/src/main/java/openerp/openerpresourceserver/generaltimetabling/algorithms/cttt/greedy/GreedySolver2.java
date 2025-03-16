@@ -191,6 +191,11 @@ public class GreedySolver2 implements Solver {
         return solutionRoom;
     }
 
+    @Override
+    public void setTimeLimit(int timeLimit) {
+        // TODO
+    }
+
     public void solve(){
         for(int i = 0; i < I.getClassSegments().size(); i++){
             System.out.println("class-segment " + i + ": nbSlot = " + I.getClassSegments().get(i).getDuration() + ", nbStudents = " + I.getClassSegments().get(i).getNbStudents());

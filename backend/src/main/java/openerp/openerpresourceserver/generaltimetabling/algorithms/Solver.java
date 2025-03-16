@@ -9,5 +9,6 @@ public interface Solver {
     //public int[] getSolutionRoom();
     public Map<Integer, Integer> getMapSolutionSlot();
     public Map<Integer, Integer> getMapSolutionRoom();
+    public void setTimeLimit(int timeLimit);
     public void printSolution();
 }

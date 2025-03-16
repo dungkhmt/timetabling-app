@@ -22,6 +22,8 @@ const GeneralScheduleScreen = () => {
   const [viewTab, setViewTab] = useState(0);
   const [openResetConfirm, setOpenResetConfirm] = useState(false);
 
+  const days = [6,7,8,5,4,3,2];
+
   const handleConfirmReset = () => {
     handlers.handleResetTimeTabling();
     setOpenResetConfirm(false);
@@ -127,6 +129,36 @@ const GeneralScheduleScreen = () => {
                       </MenuItem>
                     ))}
                   </Select>
+
+                </FormControl>
+
+                <FormControl
+                  sx={{
+                    minWidth: 200,
+                    "& .MuiInputBase-root": { height: "40px" },
+                  }}
+                  size="small"
+                  disabled={states.isAlgorithmsLoading}
+                >
+                  <InputLabel id="algorithm-select-label">
+                    Chọn ngày muộn nhất
+                  </InputLabel>
+                  <Select
+                    labelId="algorithm-select-label"
+                    id="max-day-schedule-select"
+                    value={states.maxDaySchedule}
+                    onChange={(e) =>
+                      setters.setMaxDaySchedule(e.target.value)
+                    }
+                    label="Chọn ngày muộn nhất"
+                  >
+                    {days.map((day, index) => (
+                      <MenuItem key={index} value={days}>
+                        {day}
+                      </MenuItem>
+                    ))}
+                  </Select>
+
                 </FormControl>
               </div>
             </Paper>
@@ -335,6 +367,7 @@ const GeneralScheduleScreen = () => {
           setTimeLimit={setters.setSelectedTimeLimit}
           submit={handlers.handleAutoScheduleSelected}
           selectedAlgorithm={states.selectedAlgorithm}
+          maxDaySchedule={states.maxDaySchedule}
         />
       </div>
 

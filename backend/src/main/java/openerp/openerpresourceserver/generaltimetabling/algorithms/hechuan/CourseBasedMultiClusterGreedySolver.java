@@ -17,6 +17,7 @@ public class CourseBasedMultiClusterGreedySolver implements Solver {
     Map<Integer, Integer> solutionSlot;
     Map<Integer, Integer> solutionRoom;
     boolean foundSolution;
+    int timeLimit = 10000;// 10 seconds by defalut
     public CourseBasedMultiClusterGreedySolver(MapDataScheduleTimeSlotRoom I){
         this.I = I;
     }
@@ -68,6 +69,7 @@ public class CourseBasedMultiClusterGreedySolver implements Solver {
             );
 
             CourseBasedConnectedClusterGreedySolver solver = new CourseBasedConnectedClusterGreedySolver(IC);
+            solver.timeLimit = timeLimit;
             solver.solve();
             if(solver.hasSolution()){
                 foundSolution = true;
@@ -106,6 +108,11 @@ public class CourseBasedMultiClusterGreedySolver implements Solver {
     @Override
     public Map<Integer, Integer> getMapSolutionRoom() {
         return solutionRoom;
+    }
+
+    @Override
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
     }
 
 

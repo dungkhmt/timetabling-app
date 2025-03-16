@@ -9,6 +9,7 @@ const AutoScheduleDialog = ({
   open,
   closeDialog,
   selectedAlgorithm, 
+  maxDaySchedule
 }) => {
   return (
     <Dialog open={open} onClose={closeDialog}>

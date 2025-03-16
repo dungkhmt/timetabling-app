@@ -20,6 +20,8 @@ export const useGeneralSchedule = () => {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("");
   const [isAlgorithmsLoading, setIsAlgorithmsLoading] = useState(false);
 
+  const [maxDaySchedule, setMaxDaySchedule] = useState(6);
+
   // Data states
   const [classes, setClasses] = useState([]);
   const [classesNoSchedule, setClassesNoSchedule] = useState([]);
@@ -495,7 +497,8 @@ export const useGeneralSchedule = () => {
         cleanClassIds,
         selectedTimeLimit,
         selectedSemester.semester,
-        selectedAlgorithm
+        selectedAlgorithm,
+        //maxDaySchedule
       );
       await fetchClasses();
       setOpenSelectedDialog(false);
@@ -692,6 +695,7 @@ export const useGeneralSchedule = () => {
       isDeletingByIds,
       algorithms,
       selectedAlgorithm,
+      maxDaySchedule,
       isAlgorithmsLoading,
     },
     setters: {
@@ -710,6 +714,7 @@ export const useGeneralSchedule = () => {
       setOpenSelectedDialog,
       setSelectedTimeLimit,
       setSelectedAlgorithm,
+      setMaxDaySchedule,
     },
     handlers: {
       handleResetTimeTabling,
