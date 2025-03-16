@@ -39,13 +39,13 @@ export const wms2Service = {
   getSalesOrdersApproved: (page, limit) => {
     return request("get", `/sale-order/get-approved?page=${page}&limit=${limit}`);
   }, 
-  getOutBoundsOrder: (orderId) => {
-    return request("get", `/out-bound-order/details/${orderId}`);
+  getOutBoundsOrder: (orderId, page, limit) => {
+    return request("get", `/shipment/outbound/order/${orderId}?page=${page}&limit=${limit}`);
   },
   getMoreInventoryItems: (page, limit, orderId) => {
     return request("get", `/inventory-item/for-order/${orderId}?page=${page}&limit=${limit}`);
   }, 
   createOutBoundOrder : (data) => {
-    return request("post", "/inventory-item/outbound/create", null, null, data);
+    return request("post", "/shipment/outbound/create", null, null, data);
   }
 };

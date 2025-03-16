@@ -4,13 +4,7 @@ package openerp.openerpresourceserver.wms.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
@@ -21,8 +15,11 @@ import lombok.*;
 @Entity
 @Table(name = "wms2_order_item")
 public class OrderItem extends BaseEntity {
-    @EmbeddedId
-    private OrderItemPK id;
+    @Id
+    private String id;
+
+    @Column(name = "order_item_seq_id", length = 10)
+    private String orderItemSeqId;
 
     @MapsId("orderId")
     @ManyToOne

@@ -7,6 +7,8 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.*;
 import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
+import openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator;
+import org.hibernate.annotations.GenericGenerator;
 
 @Getter
 @Setter
@@ -18,14 +20,45 @@ import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
 public class OrderHeader extends BaseEntity {
     @Id
     @Column(name = "id", length = 40)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_order_header_sequences")
+    @GenericGenerator(
+            name = "wms2_order_header_sequences",
+            strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
+            parameters = {
+                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "ORD"),
+                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
+                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_order_header_sequences")
+            })
     private String id;
 
     @Column(name = "order_type_id", length = 40)
     private String orderTypeId;
 
+    @Column(name = "order_date")
     private LocalDateTime orderDate;
 
     private String status;
+
+    @Column(name = "order_name")
+    private String orderName;
+
+    @Column(name = "delivery_before_date")
+    private LocalDateTime deliveryBeforeDate;
+
+    @Column(name = "delivery_after_date")
+    private LocalDateTime deliveryAfterDate;
+
+    @Column(name = "note")
+    private String note;
+
+    @Column(name = "priority")
+    private Integer priority;
+
+    @Column(name = "delivery_address")
+    private String deliveryAddress;
+
+    @Column(name = "delivery_phone")
+    private String deliveryPhone;
 
     @ManyToOne
     @JoinColumn(name = "from_supplier_id")

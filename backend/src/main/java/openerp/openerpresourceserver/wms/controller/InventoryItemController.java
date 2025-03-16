@@ -3,13 +3,9 @@ package openerp.openerpresourceserver.wms.controller;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
-import openerp.openerpresourceserver.wms.dto.saleOrder.CreateOutBounndReq;
 import openerp.openerpresourceserver.wms.dto.saleOrder.InventoryItemForOrderRes;
-import openerp.openerpresourceserver.wms.entity.InventoryItem;
 import openerp.openerpresourceserver.wms.service.InventoryItemService;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RequiredArgsConstructor
 @RequestMapping("/inventory-item")
@@ -24,9 +20,5 @@ public class InventoryItemController {
         return inventoryItemService.getInventoryItems(page, limit, orderId);
     }
 
-    @PostMapping("/outbound/create")
-    public ApiResponse<Void> createOutboundSaleOrder(@RequestBody CreateOutBounndReq saleOrder, Principal principal) {
-        return inventoryItemService.createOutboundSaleOrder(saleOrder, principal.getName());
-    }
 
 }

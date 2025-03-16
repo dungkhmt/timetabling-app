@@ -43,18 +43,19 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
     fetchOrderData();
   }, [id]);
 
-  const getOutBoundsOrderApi = async (id) => {
+  const getOutBoundsOrderApi = async (id, page, limit) => {
     try {
-      const res = await getOrderDetails(id);
+      const res = await getOutBoundsOrder(id, page, limit);
       if ( !res || res.code !== 200) {
-        toast.error("Lỗi khi tải thông tin đơn hàng : " + res?.message);
+        toast.error("Lỗi khi tải thông tin phiếu xuất : " + res?.message);
         return;
       }
+
+      return res.data;
       
-      setOrderData(res.data);
     } catch (error) {
-      console.error("Error fetching order: ", error);
-      toast.error("Không thể tải thông tin đơn hàng");
+      console.error("Error fetching outbound order: ", error);
+      toast.error("Không thể tải thông tin phiếu xuất");
     }
   };
 
@@ -82,7 +83,6 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
 
   const value = {
     orderData,
-    getOutBoundsOrder,
     getOutBoundsOrderApi,
     createOutBoundOrder,
     createOutBoundOrderApi,

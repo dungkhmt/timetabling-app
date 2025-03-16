@@ -26,10 +26,15 @@ public class BaseEntity {
     public void prePersist() {
         createdStamp = LocalDateTime.now();
         lastUpdatedStamp = LocalDateTime.now();
+        customPrePersist();
     }
 
     @PreUpdate
     public void preUpdate() {
         lastUpdatedStamp = LocalDateTime.now();
+    }
+
+    protected void customPrePersist() {
+
     }
 }

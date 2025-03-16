@@ -18,8 +18,8 @@ import { useApprovedOrderDetail } from "../context/OrderDetailContext";
 import OutboundFormFields from "./outbound/OutboundFormFields";
 import OutboundProductTable from "./outbound/OutboundProductTable";
 
-const CreateOutboundDialog = ({ open, onClose, orderData }) => {
-  const { getMoreInventoryItemsApi, createOutBoundOrderApi } = useApprovedOrderDetail();
+const CreateOutboundDialog = ({ open, onClose }) => {
+  const { getMoreInventoryItemsApi, createOutBoundOrderApi, orderData } = useApprovedOrderDetail();
   const [inventoryItems, setInventoryItems] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);

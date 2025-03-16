@@ -12,10 +12,11 @@ const OutBoundList = () => {
   const [outBounData, setOutBoundData] = useState(null);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
 
+  console.log("Order data:", orderData);
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await getOutBoundsOrderApi();
+        const response = await getOutBoundsOrderApi(orderData.id, 0,10);
         console.log("API response:", response);
         setOutBoundData(response?.data ?? null);
       } catch (error) {
@@ -24,7 +25,7 @@ const OutBoundList = () => {
     };
     
     fetchData();
-  }, [getOutBoundsOrderApi]);
+  }, [orderData.id]);
 
   const handleCloseDialog = (shouldRefresh = false) => {
     console.log("Dialog closing with refresh:", shouldRefresh);
@@ -33,7 +34,7 @@ const OutBoundList = () => {
     if (shouldRefresh) {
       const refreshData = async () => {
         try {
-          const response = await getOutBoundsOrderApi();
+          const response = await getOutBoundsOrderApi(orderData.id, 0, 10);
           setOutBoundData(response?.data ?? null);
         } catch (error) {
           console.error("Error refreshing data:", error);
@@ -42,9 +43,6 @@ const OutBoundList = () => {
       refreshData();
     }
   };
-
-  console.log("Current dialog state:", openCreateDialog);
-  console.log("Order data:", orderData);
 
   const handleCreateClick = () => {
     console.log("Create button clicked");
@@ -107,7 +105,7 @@ const OutBoundList = () => {
         </Button>
       </Stack>
       
-      <OutBoundTable items={outBounData.items} />
+      <OutBoundTable items={outBounData} />
       
       <CreateOutboundDialog
         open={openCreateDialog}

@@ -49,12 +49,6 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .createdByUser(userLogin)
                 .build();
 
-        if ((request.getId() == null || request.getId().isEmpty())) {
-            orderHeader.setId(CommonUtil.getUUID());
-
-        } else {
-            orderHeader.setId(request.getId());
-        }
         AtomicInteger increment = new AtomicInteger(0);
         var orderItems = request.getOrderItems()
                 .stream()
@@ -66,10 +60,8 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                             .product(product)
                             .quantity(orderItem.getQuantity())
                             .amount(product.getWholeSalePrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
-                            .id(OrderItemPK.builder()
-                                    .orderId(orderHeader.getId())
-                                    .orderItemSeqId(CommonUtil.getSequenceId("ORDITEM", 4, increment.incrementAndGet())) // Tăng dần đúng cách
-                                    .build())
+                            .id(CommonUtil.getUUID())
+                            .orderItemSeqId(CommonUtil.getSequenceId("ORDITM",5, increment.incrementAndGet()))
                             .build();
                 })
                 .toList();
@@ -95,8 +87,8 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .stream()
                 .map(orderItem -> {
                     var orderItemRes = OrderProductRes.builder()
-                            .id(orderItem.getId().getOrderId())
-                            .orderItemSeqId(orderItem.getId().getOrderItemSeqId())
+                            .id(orderItem.getId())
+                            .orderItemSeqId(orderItem.getOrderItemSeqId())
                         .productId(orderItem.getProduct().getId())
                         .quantity(orderItem.getQuantity())
                         .amount(orderItem.getAmount())

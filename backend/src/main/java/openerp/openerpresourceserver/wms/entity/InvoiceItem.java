@@ -1,19 +1,24 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
-import lombok.Data;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
 
 @Data
 @Entity
 @Table(name = "wms2_invoice_item")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class InvoiceItem {
-    @EmbeddedId
-    private InvoiceItemPK id;
+    @Id
+    private String id;
+
+    @Column(name = "invoice_item_seq_id", length = 10)
+    private String invoiceItemSeqId;
 
     @MapsId("invoiceId")
     @ManyToOne

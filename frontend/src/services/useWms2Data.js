@@ -130,9 +130,9 @@ export const useWms2Data = () => {
       }
     }
 
-    const getOutBoundsOrder = async (id) => {
+    const getOutBoundsOrder = async (id, page, limit) => {
       try {
-        const response = await wms2Service.getOutBoundsOrder(id);
+        const response = await wms2Service.getOutBoundsOrder(id, page, limit);
         return response.data;
       } catch (error) {
         console.error("Error fetching order details:", error);
@@ -176,6 +176,7 @@ export const useWms2Data = () => {
       getSalesOrders,
       getSalesOrdersApproved,
       createOutBoundOrder,
-      getMoreInventoryItems
+      getMoreInventoryItems,
+      getOutBoundsOrder
    };
 };

@@ -10,27 +10,22 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.*;
 
 @Data
 @Entity
 @Table(name = "wms2_order_item_billing")
-public class OrderItemBilling {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class OrderItemBilling extends BaseEntity {
     @Id
     @Column(name = "id", length = 40)
     private String id;
 
-    @Column(name = "order_id", length = 40)
-    private String orderId;
 
-    @Column(name = "order_item_seq_id", length = 10)
-    private String orderItemSeqId;
-
-    @Column(name = "invoice_id", length = 40)
-    private String invoiceId;
-
-    @Column(name = "invoice_item_seq_id", length = 10)
-    private String invoiceItemSeqId;
 
     @ManyToOne
     @JoinColumns({
@@ -60,6 +55,4 @@ public class OrderItemBilling {
     @Column(name = "amount", precision = 25, scale = 5)
     private BigDecimal amount;
 
-    @Column(name = "created_stamp")
-    private LocalDateTime createdStamp;
 }
