@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentSolver;
 
@@ -22,6 +23,25 @@ public class CourseBasedMultiClusterGreedySolver implements Solver {
 
     public String name(){
         return "CourseBasedMultiClusterGreedySolver";
+    }
+    public boolean checkTimeRoom(){
+        for(int i = 0; i < I.getClassSegments().size(); i++){
+            ClassSegment csi = I.getClassSegments().get(i);
+            if(solutionRoom.get(csi.getId())==null) continue;
+            for(int j = i+1; j < I.getClassSegments().size(); j++){
+                ClassSegment csj = I.getClassSegments().get(j);
+                if(solutionRoom.get(csj.getId())==null) continue;
+                int si = solutionSlot.get(csi.getId());
+                int sj = solutionSlot.get(csj.getId());
+                if(Util.overLap(si,csi.getDuration(),sj,csj.getDuration())){
+                    if(solutionRoom.get(csi.getId())==solutionRoom.get(csj.getId())){
+                        log.info("check EXCEPTION class " + csi.getClassId() + " slot " + si + " duration " + csi.getDuration() + " and " + csj.getClassId() + " slot " + sj + " duration " + csj.getDuration() + " same room " + solutionRoom.get(csi.getId()));
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
     @Override
     public void solve() {
@@ -61,6 +81,11 @@ public class CourseBasedMultiClusterGreedySolver implements Solver {
                         //I.getRoomOccupations()[room].add(sl);
                     }
                     log.info("solve, Cluster " + cs.getGroupNames() + " SET solutionSlot.put(" + cs.getId() + "," + slot + ") solutionRoom.put(" + cs.getId() + "," + room + ")");
+                }
+                if(!checkTimeRoom()){
+                    log.info("Post check time-slot and room conflict FAILED???"); break;
+                }else{
+                    log.info("Post check time-slot and room conflict PASS");
                 }
             }else{
 

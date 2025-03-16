@@ -6,6 +6,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldEx
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdatePlanClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
@@ -57,7 +58,12 @@ public class PlanGeneralClassController {
     public ResponseEntity<List<GeneralClass>> requestMakeMultipleClasses(@RequestBody BulkMakeGeneralClassRequest request) {
         return ResponseEntity.ok(planClassService.makeMultipleClasses(request));
     }
-
+    @PostMapping("/generate-classes-from-plan")
+    public ResponseEntity<?> generateClassesFromPlan(Principal principal, @RequestBody ModelInputGenerateClassesFromPlan I){
+        log.info("generate-classes-from-plan, semester = " + I.getSemester());
+        List<GeneralClass> classes = planClassService.generateClassesFromPlan(I);
+        return ResponseEntity.ok().body(classes);
+    }
     @GetMapping("/")
     public ResponseEntity<List<PlanGeneralClass>> requestGetPlanClasses(@RequestParam("semester") String semester) {
         return ResponseEntity.ok(planClassService.getAllClasses(semester));

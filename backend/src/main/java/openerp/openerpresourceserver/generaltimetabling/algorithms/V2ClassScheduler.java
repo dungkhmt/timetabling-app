@@ -53,20 +53,21 @@ public class V2ClassScheduler {
     }
 
     public MapDataScheduleTimeSlotRoomWrapper mapData(List<GeneralClass> classes, List<Classroom> rooms, Map<String, List<RoomReservation>> mId2RoomReservation, List<TimeTablingCourse> ttcourses, List<Group> groups,List<ClassGroup> classGroups){
-            //log.info("mapData, number classes = " + classes.size());
+            log.info("mapData, number classes = " + classes.size());
             int n = 0;
             Map<Integer, GeneralClass> mClassSegment2Class = new HashMap();
+            Map<Integer, RoomReservation> mClassSegment2RoomReservation = new HashMap<>();
             for (int i = 0; i < classes.size(); i++) {
                 GeneralClass gc = classes.get(i);
-                //log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode());
+                log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode());
                 if (gc.getTimeSlots() != null) {
                     n += gc.getTimeSlots().size();
                     for(RoomReservation rr: gc.getTimeSlots()) {
-                        //log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " startSlot = " + rr.getStartTime() + " endSlot = " + rr.getEndTime() + " room = " + rr.getRoom());
+                        log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " startSlot = " + rr.getStartTime() + " endSlot = " + rr.getEndTime() + " room = " + rr.getRoom());
                     }
                 }
             }
-            //log.info("mapData, n = " + n);
+            log.info("mapData, n = " + n);
             Map<Long, Group> mId2Group = new HashMap<>();
             for(Group g: groups){
                 mId2Group.put(g.getId(),g);
@@ -206,6 +207,7 @@ public class V2ClassScheduler {
                             log.info("mapData, BUG classId " + gc.getId() + " did not assigned to any group???");
                         }
                         mClassSegment2Class.put(idx, gc);
+                        mClassSegment2RoomReservation.put(idx,rr);
                         indexOfClass[idx] = i;
                         relatedGroups[idx] = mClassId2GroupIndex.get(gc.getId());
                         //log.info("mapData, courseIndex of course " + gc.getCourse() + " = " + mCourseCode2Index.get(gc.getCourse()));
@@ -328,9 +330,10 @@ public class V2ClassScheduler {
         List<ClassSegment> listClassSegments = new ArrayList<>();
         for(int i = 0;i < classSegments.length; i++)
             listClassSegments.add(classSegments[i]);
+        log.info("mapData, classSegments.length = " + classSegments.length + " listClassSegments.sz = " + listClassSegments.size());
         MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments);
 
-        MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class);
+        MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation);
 
         //data.print();
         return DW;
@@ -343,6 +346,7 @@ public class V2ClassScheduler {
         //}
         MapDataScheduleTimeSlotRoomWrapper D = mapData(classes, rooms,mId2RoomReservations,ttcourses,groups,classGroups);
         MapDataScheduleTimeSlotRoom data = D.data;
+        log.info("autoScheduleTimeSlotRoom, mapData, data has " + data.getClassSegments().size() + " class-segments");
         //data.print();
         Gson gson = new Gson();
         String json = gson.toJson(data);
@@ -399,11 +403,11 @@ public class V2ClassScheduler {
 
             log.info("FOUND SOLUTION");
             solver.printSolution();
-            for (int i = 0; i < classes.size(); i++) {
-                GeneralClass gClass = classes.get(i);
-                gClass.getTimeSlots().forEach(rr -> rr.setGeneralClass(null));
-                gClass.getTimeSlots().clear();
-            }
+            //for (int i = 0; i < classes.size(); i++) {
+            //    GeneralClass gClass = classes.get(i);
+            //    gClass.getTimeSlots().forEach(rr -> rr.setGeneralClass(null));
+            //    gClass.getTimeSlots().clear();
+            //}
 
             for (int i = 0; i < data.getClassSegments().size(); i++) {
                 ClassSegment cs = data.getClassSegments().get(i);
@@ -411,7 +415,7 @@ public class V2ClassScheduler {
                 //int t1 = solution[i] - day * Constant.slotPerCrew*2;//12;
                 if(solution.get(cs.getId())==null){
                     log.info("autoScheduleTimeSlotRoom, CANNOT find time-slot for class " + cs.getId() + "???");
-                    //continue;
+                    continue;
                 }
                 int day = solution.get(cs.getId()) / (Constant.slotPerCrew*2);//12;
                 int t1 = solution.get(cs.getId()) - day * Constant.slotPerCrew*2;//12;
@@ -425,15 +429,20 @@ public class V2ClassScheduler {
 
                 GeneralClass gClass = D.getMClassSegment2Class().get(i);
                 int duration = data.getClassSegments().get(i).getDuration();
-                RoomReservation newRoomReservation = new RoomReservation(gClass.getCrew(), tietBD, tietBD + duration - 1, day + 2, null);
+                //RoomReservation newRoomReservation = new RoomReservation(gClass.getCrew(), tietBD, tietBD + duration - 1, day + 2, null);
+                RoomReservation roomReservation = D.getMClassSegment2RoomReservation().get(i);
+                roomReservation.setStartTime(tietBD);
+                roomReservation.setEndTime(tietBD + duration -1);
+                roomReservation.setWeekday(day + 2);
                 //newRoomReservation.setDuration(data.getNbSlots()[i]);
-                newRoomReservation.setDuration(duration);
-                newRoomReservation.setGeneralClass(gClass);
-                gClass.getTimeSlots().add(newRoomReservation);
+                //newRoomReservation.setDuration(duration);
+                //newRoomReservation.setGeneralClass(gClass);
+                //gClass.getTimeSlots().add(newRoomReservation);
 
                 int idxRoom = solver.getMapSolutionRoom().get(cs.getId());
                 if(idxRoom > -1) {
-                    newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
+                    //newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
+                    roomReservation.setRoom(rooms.get(idxRoom).getClassroom());
                 }
                 //log.info("class[" + i + "] is assigned to slot " + solution[i] + "(" + day + "," + K + "," + tietBD + "), room = " + idxRoom + " - " + newRoomReservation.getRoom());
             }

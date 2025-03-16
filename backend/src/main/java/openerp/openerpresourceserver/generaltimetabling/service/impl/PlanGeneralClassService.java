@@ -9,6 +9,7 @@ import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtra
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValidator;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
@@ -34,7 +35,10 @@ public class PlanGeneralClassService {
     private PlanGeneralClassRepository planGeneralClassRepository;
     private AcademicWeekRepo academicWeekRepo;
     private ClassGroupRepo classGroupRepo;
-    
+
+    @Autowired
+    private RoomReservationRepo roomReservationRepo;
+
     @Autowired
     private GroupRepo groupRepo;
 
@@ -194,6 +198,52 @@ public class PlanGeneralClassService {
         updateGeneralClass.setLearningWeeks(generalClass.getLearningWeeks());
         updateGeneralClass.setClassCode(generalClass.getClassCode());
         return generalClassRepository.save(updateGeneralClass);
+    }
+    public List<GeneralClass> generateClassesFromPlan(ModelInputGenerateClassesFromPlan I){
+        List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
+        for(GeneralClass gc: classes){
+            log.info("generateClassesFromPlan, consider class " + gc.getId() + "/" + classes.size());
+            List<RoomReservation> rrs = new ArrayList<>();
+            RoomReservation rr = new RoomReservation();
+            rr.setCrew(gc.getCrew());
+            rr.setDuration(gc.getDuration());
+            rr.setGeneralClass(gc);
+            rr = roomReservationRepo.save(rr);
+
+            rrs.add(rr);
+            //gc.setTimeSlots(rrs);
+            //gc = generalClassRepository.save(gc);
+        }
+        /*
+        List<PlanGeneralClass> plan = planGeneralClassRepository.findAllBySemester(I.getSemester());
+        List<GeneralClass> classes = new ArrayList<>();
+        for(PlanGeneralClass pl: plan){
+            for(int i = 1; i <= pl.getNumberOfClasses();i++) {
+                MakeGeneralClassRequest r = new MakeGeneralClassRequest();
+                r.setNbClasses(pl.getNumberOfClasses());
+                r.setWeekType(pl.getWeekType());
+                r.setId(pl.getId());
+                r.setProgramName(pl.getProgramName());
+                r.setCrew(pl.getCrew());
+                r.setWeekType(pl.getWeekType());
+                r.setLectureExerciseMaxQuantity(pl.getLectureExerciseMaxQuantity());
+                r.setLectureMaxQuantity(pl.getLectureMaxQuantity());
+                r.setExerciseMaxQuantity(pl.getExerciseMaxQuantity());
+                r.setModuleName(pl.getModuleName());
+                r.setSemester(pl.getSemester());
+                r.setLearningWeeks(pl.getLearningWeeks());
+                r.setModuleCode(pl.getModuleCode());
+                r.setModuleName(pl.getModuleName());
+                r.setDuration(pl.getDuration());
+                r.setQuantityMax(pl.getQuantityMax());
+                r.setMass(pl.getMass());
+
+            }
+
+        }
+
+         */
+        return classes;
     }
 
     public List<GeneralClass> makeMultipleClasses(BulkMakeGeneralClassRequest request) {

@@ -357,11 +357,17 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
         solutionRoom.put(cs.getId(),room);
         // update room occupation
         //ClassSegment cs = classSegments.get(csi);
-        for(int s = 0; s < cs.getDuration()-1; s++){
+        String os = "";
+        for(int r: I.getRoomOccupations()[room]) os = os + r + ",";
+        log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room + " occupied by slots " + os);
+
+        for(int s = 0; s <= cs.getDuration()-1; s++){
             int sl = timeSlot + s;
             I.getRoomOccupations()[room].add(sl);
+            os = os + sl + ",";
+            log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room
+            + " roomOccupation[" + room + "].add(" + sl + ") -> " + os);
         }
-        log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room);
         foundSolution = true;
     }
     private int computeScoreTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments) {
@@ -402,22 +408,29 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
         return score;
     }
     private boolean checkTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments){
-        int DEBUG_ID = -1;
+        int DEBUG_ID = 29;
+        ClassSegment csi = sortedClassSegments.get(i);
+        if(csi.getId() == DEBUG_ID) log.info("checkTimeSlotRoom(" + csi.getId() + "," + timeSlot+"," + room + ")");
         for(int s: I.getRoomOccupations()[room]){
-            if(s == timeSlot){
-                //log.info("checkTimeSlotRoom(" + i + "," + timeSlot + "," + room + ") --> return false as slot " + s +  " occupied");
-                return false;
+            for(int j = 0; j < csi.getDuration(); j++) {
+                int sl = timeSlot + j;// check all time-slot of the duration
+                if (s == sl) {
+                    if (csi.getId() == DEBUG_ID)
+                        log.info("checkTimeSlotRoom(" + csi.getId() + "," + timeSlot + "," + room + ")" +
+                                " --> return false as slot " + s + " occupied");
+                    return false;
+                }
             }
         }
         // check if the class-segment i can be assigned to timeSlot
-        ClassSegment csi = sortedClassSegments.get(i);
+
         int maxTeacher = I.getMaxTeacherOfCourses()[csi.getCourseIndex()];
-        int di = sortedClassSegments.get(i).getDuration();
+        int di = csi.getDuration();
         // explore class-segment scheduled
         int teachers = 0;
         for(int j = 0; j < i; j++){
             ClassSegment csj = sortedClassSegments.get(j);
-            int dj = sortedClassSegments.get(j).getDuration();
+            int dj = csj.getDuration();
             //int timeSlotJ = solutionSlot[csj.getId()];
             //int roomJ = solutionRoom[csj.getId()];
             int timeSlotJ = solutionSlot.get(csj.getId());

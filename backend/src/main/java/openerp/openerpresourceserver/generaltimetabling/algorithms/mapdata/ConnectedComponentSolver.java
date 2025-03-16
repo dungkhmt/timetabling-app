@@ -1,10 +1,12 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+@Log4j2
 public class ConnectedComponentSolver {
 
     List<ClassSegment> classSegments;
@@ -13,6 +15,7 @@ public class ConnectedComponentSolver {
     Map<Integer, List<Integer>> mGroupIndex2ClassSegmentIndex;
     boolean[] visited;
     private void dfs(int c, List<ClassSegment> CC){
+        //log.info("dfs(" + c + ")");
         visited[c] = true; CC.add(classSegments.get(c));
         for(int ci: A[c]){
             if(!visited[ci]){
@@ -22,7 +25,7 @@ public class ConnectedComponentSolver {
     }
     public List<List<ClassSegment>> computeConnectedComponent(List<ClassSegment> classSegments){
         this.classSegments = classSegments;
-
+        log.info("computeConnectedComponent: nbClassSegments = " + classSegments.size());
         mGroupIndex2ClassSegmentIndex = new HashMap<>();
         for(int i = 0; i < classSegments.size(); i++){
             ClassSegment c = classSegments.get(i);
@@ -53,6 +56,7 @@ public class ConnectedComponentSolver {
         for(int i = 0; i < classSegments.size(); i++){
             if(!visited[i]){
                 List<ClassSegment> CC = new ArrayList<>();
+                log.info("Start a new CC from [" + i + "]" + classSegments.get(i).getClassId());
                 dfs(i,CC);
                 connectedClassSegments.add(CC);
             }

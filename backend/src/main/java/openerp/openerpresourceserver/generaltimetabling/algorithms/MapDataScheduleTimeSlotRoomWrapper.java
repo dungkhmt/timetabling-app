@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 
 import java.util.Map;
 
@@ -15,4 +16,5 @@ import java.util.Map;
 public class MapDataScheduleTimeSlotRoomWrapper {
     MapDataScheduleTimeSlotRoom data;
     Map<Integer, GeneralClass> mClassSegment2Class;
+    Map<Integer, RoomReservation> mClassSegment2RoomReservation;
 }

@@ -81,6 +81,33 @@ const GeneralPlanClassOpenScreen = () => {
     }
   };
 
+  function handleGenerateClassesFromPlan(){
+    let body = {
+      semester: selectedSemester.semester,
+    };
+    setImportLoading(true);
+    request(
+      "post",
+      `/plan-general-classes/generate-classes-from-plan`,
+      (res) => {
+        toast.success("Sinh lớp thành công!");
+        console.log(res?.data);
+        getPlanClass();
+        setImportLoading(false);
+      },
+      (err) => {
+        if (err.response.status === 410) {
+          toast.error(err.response.data);
+        } else {
+          toast.error("Có lỗi khi sinh lop");
+        }
+
+        console.log(err);
+      },
+      body
+    );
+   
+  }
   function clearPlan() {
     let body = {
       semesterId: selectedSemester.semester,
@@ -168,6 +195,18 @@ const GeneralPlanClassOpenScreen = () => {
             >
               Xóa các lớp đã chọn ({selectedRows.length})
             </Button>
+            <Button
+              variant="contained"
+              color="error"
+              
+              onClick={handleGenerateClassesFromPlan}
+              sx={{
+                textTransform: "none",
+              }}
+            >
+              Sinh lop
+            </Button>
+            
             <div id="delete-selected-container"></div>
           </div>
           <div className="flex flex-row gap-2 justify-end">
