@@ -21,7 +21,6 @@ public class OrderItem extends BaseEntity {
     @Column(name = "order_item_seq_id", length = 10)
     private String orderItemSeqId;
 
-    @MapsId("orderId")
     @ManyToOne
     @JoinColumn(name = "order_id")
     private OrderHeader order;

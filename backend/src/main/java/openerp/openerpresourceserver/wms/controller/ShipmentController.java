@@ -29,7 +29,7 @@ public class ShipmentController {
         return shipmentService.getOutBoundByOrder(orderId, page, limit);
     }
 
-    @GetMapping("/outbound/{shipmentId}")
+    @GetMapping("/{shipmentId}")
     public ApiResponse<OutBoundDetailRes> outboundOrder(@PathVariable String shipmentId) {
         return shipmentService.getOutBoundDetail(shipmentId);
     }

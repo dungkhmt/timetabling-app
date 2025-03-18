@@ -143,8 +143,7 @@ export const useWms2Data = () => {
 
     const createOutBoundOrder = async (data) => {
       try {
-        const response = await wms2Service.createOutBoundOrder(data);
-        return response.data;
+        const res = await wms2Service.createOutBoundOrder(data);
       } catch (error) {
         console.error("Error creating out bound order:", error);
         toast.error("Không thể tạo đơn hàng xuất kho");
@@ -159,6 +158,17 @@ export const useWms2Data = () => {
       } catch (error) {
         console.error("Error fetching facilities:", error);
         toast.error("Không thể tải danh sách kho hàng");
+        return { data: {} };
+      }
+    }
+
+    const getOutBoundDetail = async (shipmentId) => {
+      try {
+        const response = await wms2Service.getOutBoundDetail(shipmentId);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching outbound detail:", error);
+        toast.error("Không thể tải thông tin phiếu xuất");
         return { data: {} };
       }
     }
@@ -177,6 +187,7 @@ export const useWms2Data = () => {
       getSalesOrdersApproved,
       createOutBoundOrder,
       getMoreInventoryItems,
-      getOutBoundsOrder
+      getOutBoundsOrder,
+      getOutBoundDetail,
    };
 };

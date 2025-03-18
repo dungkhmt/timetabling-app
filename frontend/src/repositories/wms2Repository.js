@@ -47,5 +47,8 @@ export const wms2Service = {
   }, 
   createOutBoundOrder : (data) => {
     return request("post", "/shipment/outbound/create", null, null, data);
+  }, 
+  getOutBoundDetail: (shipmentId) => {
+    return request("get", `/shipment/${shipmentId}`);
   }
 };

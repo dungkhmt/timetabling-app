@@ -72,8 +72,9 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
 
   const createOutBoundOrderApi = async (data) => {
     try {
-      const response = await createOutBoundOrder(data);
-      return response.data;
+      const res = await createOutBoundOrder(data);
+      if(res && res.code === 201)
+        toast.success("Tạo đơn hàng xuất kho thành công!");
     } catch (error) {
       console.error("Error creating out bound order:", error);
       toast.error("Không thể tạo phiếu xuất");

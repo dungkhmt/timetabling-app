@@ -76,6 +76,7 @@ public class ShipmentServiceImpl implements ShipmentService {
                     .quantity(product.getQuantity())
                     .product(productEntity)
                     .shipment(shipment)
+                    .orderItem(orderItem)
                     .id(CommonUtil.getUUID())
                     .build();
 
@@ -135,6 +136,7 @@ public class ShipmentServiceImpl implements ShipmentService {
                         .productId(inventoryItemDetail.getProduct().getId())
                         .productName(inventoryItemDetail.getProduct().getName())
                         .quantity(inventoryItemDetail.getQuantity())
+                        .requestedQuantity(inventoryItemDetail.getOrderItem().getQuantity())
                         .wholeSalePrice(inventoryItemDetail.getProduct().getWholeSalePrice())
                         .unit(inventoryItemDetail.getProduct().getUnit())
                         .build()

@@ -20,15 +20,15 @@ import org.hibernate.annotations.GenericGenerator;
 @AllArgsConstructor
 public class Shipment extends BaseEntity {
     @Id
-    @Column(name = "id", length = 40)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_shipment_sequences")
     @GenericGenerator(
             name = "wms2_shipment_sequences",
             strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
             parameters = {
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "ORD"),
+                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "SHM"),
                     @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_shipment_sequences")
+                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_shipment_sequences"),
+                    @org.hibernate.annotations.Parameter(name = "increment_size", value = "1") // Fix lỗi
             })
     private String id;
 

@@ -12,6 +12,7 @@ import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,6 +25,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final UserLoginRepo userLoginRepo;
     private final InventoryItemDetailRepo inventoryItemDetailRepo;
     private final InventoryItemRepo inventoryItemRepo;
+    private final OrderItemBillingRepo orderItemBillingRepo;
 
     @Override
     public ApiResponse<Void> exportShipment(String shipmentId, String name) {
@@ -47,6 +49,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                         .build();
 
         var newInvoiceItems = new ArrayList<InvoiceItem>();
+        var newOrderItemBillings = new ArrayList<OrderItemBilling>();
 
         AtomicInteger index = new AtomicInteger(0);
 
@@ -65,8 +68,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .shipment(shipment)
                     .product(inventoryItemDetail.getProduct())
                     .quantity(inventoryItemDetail.getQuantity())
+                    .amount(inventoryItemDetail.getProduct().getWholeSalePrice().multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())))
                     .build();
+            newOrderItemBillings.add(orderItemBilling);
         }
+
+        invoiceRepo.save(newInvoice);
+        invoiceItemRepo.saveAll(newInvoiceItems);
+        orderItemBillingRepo.saveAll(newOrderItemBillings);
 
 
 
