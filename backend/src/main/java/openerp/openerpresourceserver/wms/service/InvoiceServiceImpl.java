@@ -11,6 +11,7 @@ import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final OrderItemBillingRepo orderItemBillingRepo;
 
     @Override
+    @Transactional
     public ApiResponse<Void> exportShipment(String shipmentId, String name) {
         var shipment = shipmentRepo.findById(shipmentId)
                 .orElseThrow(() -> new DataNotFoundException("Shipment not found with id: " + shipmentId));
@@ -42,7 +44,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         //Create Invoice here
         var newInvoice = Invoice.builder()
-                .id(CommonUtil.getUUID())
                 .createdByUser(userLoginRepo.findById(name).orElseThrow(()
                         -> new DataNotFoundException("User not found with name: " + name)))
                 .toCustomer(shipment.getToCustomer())

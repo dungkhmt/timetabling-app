@@ -28,17 +28,11 @@ public class OrderItemBilling extends BaseEntity {
 
 
     @ManyToOne
-    @JoinColumns({
-            @JoinColumn(name = "order_id", referencedColumnName = "order_id", insertable = false, updatable = false),
-            @JoinColumn(name = "order_item_seq_id", referencedColumnName = "order_item_seq_id", insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "order_item_id")
     private OrderItem orderItem;
 
     @ManyToOne
-    @JoinColumns({
-            @JoinColumn(name = "invoice_id", referencedColumnName = "invoice_id", insertable = false, updatable = false),
-            @JoinColumn(name = "invoice_item_seq_id", referencedColumnName = "invoice_item_seq_id", insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "invoice_item_id")
     private InvoiceItem invoiceItem;
 
     @ManyToOne

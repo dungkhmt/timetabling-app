@@ -20,7 +20,6 @@ public class InvoiceItem {
     @Column(name = "invoice_item_seq_id", length = 10)
     private String invoiceItemSeqId;
 
-    @MapsId("invoiceId")
     @ManyToOne
     @JoinColumn(name = "invoice_id")
     private Invoice invoice;

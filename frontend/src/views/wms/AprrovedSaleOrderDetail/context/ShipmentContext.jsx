@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useWms2Data } from 'services/useWms2Data';
-
+import { useParams } from 'react-router-dom';
 // Tạo context
 const ShipmentContext = createContext();
 
@@ -9,27 +8,42 @@ const ShipmentContext = createContext();
 export const ShipmentProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-    const {getOutBoundDetail} = useWms2Data();
+  const { getOutBoundDetail, exportShipment } = useWms2Data();
+  const [outboundData, setOutboundData] = useState(null);
+  const { shipmentId } = useParams(); // Lấy ID từ URL
 
-  // API để lấy chi tiết phiếu xuất
-  const getOutBoundDetailApi = async (shipmentId) => {
+  // Fetch dữ liệu
+  const fetchData = async () => {
     try {
       const response = await getOutBoundDetail(shipmentId);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching outbound detail:", error);
-      setError("Không thể tải thông tin phiếu xuất");
-      return { data: {} };
+      setOutboundData(response.data);
+    } catch (err) {
+      console.error("Failed to fetch outbound detail:", err);
     }
+  };
+
+  const exportShipmentApi = async (shipmentId) => {
+    try {
+      debugger;
+      const res = await exportShipment(shipmentId);
+    } catch (err) {
+      console.error("Failed to export shipment:", err);
     }
-    
- 
+  }
+
+  // Load dữ liệu khi component mount
+  useEffect(() => {
+    if (shipmentId) {
+      fetchData();
+    }
+  }, [shipmentId]);
 
   // Context value
   const value = {
     loading,
     error,
-    getOutBoundDetailApi,
+    outboundData,
+    exportShipmentApi
   };
 
   return (

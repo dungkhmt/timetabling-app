@@ -8,7 +8,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import { useShipment } from "../context/ShipmentContext";
 
 const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
-  const { processOutbound, cancelOutbound, loading } = useShipment();
+  const { loading, exportShipmentApi } = useShipment();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
 
   // Kiểm tra trạng thái để hiển thị các nút phù hợp
@@ -19,11 +19,10 @@ const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
   // Xử lý xác nhận hành động
   const handleConfirmAction = async () => {
     try {
+      debugger;
       if (confirmDialog.type === "ship") {
-        await processOutbound(shipmentId, "SHIPPED");
-      } else if (confirmDialog.type === "cancel") {
-        await cancelOutbound(shipmentId);
-      }
+        await exportShipmentApi(shipmentId);
+      } 
       setConfirmDialog({ open: false, type: null });
       if (onActionComplete) onActionComplete();
     } catch (error) {

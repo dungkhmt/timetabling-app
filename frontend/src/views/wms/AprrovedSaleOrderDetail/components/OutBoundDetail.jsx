@@ -15,30 +15,8 @@ import { ShipmentProvider, useShipment } from "../context/ShipmentContext";
 
 const OutBoundDetailContent = () => {
   const { shipmentId } = useParams(); // Lấy ID từ URL
-  const { getOutBoundDetailApi, loading, error } = useShipment();
-  const [outboundData, setOutboundData] = useState(null);
-
-  // Fetch dữ liệu
-  const fetchData = async () => {
-    try {
-      const response = await getOutBoundDetailApi(shipmentId);
-      setOutboundData(response);
-    } catch (err) {
-      console.error("Failed to fetch outbound detail:", err);
-    }
-  };
-
-  // Load dữ liệu khi component mount
-  useEffect(() => {
-    if (shipmentId) {
-      fetchData();
-    }
-  }, [shipmentId]);
-
-  // Xử lý sau khi hoàn thành hành động
-  const handleActionComplete = () => {
-    fetchData(); // Load lại dữ liệu
-  };
+  const { outboundData, loading, error } = useShipment();
+  console.log(outboundData);
 
   // Hiển thị loading
   if (loading && !outboundData) {
@@ -87,7 +65,7 @@ const OutBoundDetailContent = () => {
         <OutBoundDetailActions
           shipmentId={outboundData.id}
           status={outboundData.statusId}
-          onActionComplete={handleActionComplete}
+          onActionComplete={() => {}}
         />
       </Stack>
 

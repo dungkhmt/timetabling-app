@@ -172,6 +172,17 @@ export const useWms2Data = () => {
         return { data: {} };
       }
     }
+
+    const exportShipment = async (shipmentId) => {
+      try {
+        const res = await wms2Service.exportShipment(shipmentId);
+        console.log(res);
+        if(res && res.code === 200) toast.success("Xuất phiếu xuất thành công!");
+      } catch (error) {
+        console.error("Failed to export shipment:", error);
+        toast.error("Không thể xuất phiếu xuất");
+      }
+    }
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -189,5 +200,6 @@ export const useWms2Data = () => {
       getMoreInventoryItems,
       getOutBoundsOrder,
       getOutBoundDetail,
+      exportShipment
    };
 };
