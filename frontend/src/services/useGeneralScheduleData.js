@@ -493,12 +493,13 @@ export const useGeneralSchedule = () => {
     const cleanClassIds = selectedRows.map((id) => id.split("-")[0]);
 
     try {
+
       await generalScheduleRepository.autoScheduleSelected(
         cleanClassIds,
         selectedTimeLimit,
         selectedSemester.semester,
         selectedAlgorithm,
-        //maxDaySchedule
+        maxDaySchedule
       );
       await fetchClasses();
       setOpenSelectedDialog(false);
@@ -521,6 +522,7 @@ export const useGeneralSchedule = () => {
     selectedSemester,
     fetchClasses,
     selectedAlgorithm,
+    maxDaySchedule,
   ]);
 
   // Update classes group
@@ -663,7 +665,6 @@ export const useGeneralSchedule = () => {
     }
   }, []);
 
-  // Maintain the same return interface for compatibility
   return {
     states: {
       selectedSemester,

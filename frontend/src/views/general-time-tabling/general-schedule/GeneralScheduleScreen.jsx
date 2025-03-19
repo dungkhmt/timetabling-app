@@ -15,14 +15,37 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { FormControl, InputLabel, Select, MenuItem, Box } from "@mui/material";
-import { FilterList, Assessment } from "@mui/icons-material";
+import { FilterList, Assessment, Clear } from "@mui/icons-material";
 
 const GeneralScheduleScreen = () => {
   const { states, setters, handlers } = useGeneralSchedule();
   const [viewTab, setViewTab] = useState(0);
   const [openResetConfirm, setOpenResetConfirm] = useState(false);
+  const [isMaxDayHovered, setIsMaxDayHovered] = useState(false);
 
-  const days = [6,7,8,5,4,3,2];
+  const days = [2, 3, 4, 5, 6, 7, 8];
+
+  // Function to map day numbers to Vietnamese day names
+  const getDayName = (day) => {
+    switch (day) {
+      case 2:
+        return "Thứ 2";
+      case 3:
+        return "Thứ 3";
+      case 4:
+        return "Thứ 4";
+      case 5:
+        return "Thứ 5";
+      case 6:
+        return "Thứ 6";
+      case 7:
+        return "Thứ 7";
+      case 8:
+        return "Chủ nhật";
+      default:
+        return `Ngày ${day}`;
+    }
+  };
 
   const handleConfirmReset = () => {
     handlers.handleResetTimeTabling();
@@ -129,7 +152,6 @@ const GeneralScheduleScreen = () => {
                       </MenuItem>
                     ))}
                   </Select>
-
                 </FormControl>
 
                 <FormControl
@@ -139,26 +161,55 @@ const GeneralScheduleScreen = () => {
                   }}
                   size="small"
                   disabled={states.isAlgorithmsLoading}
+                  onMouseEnter={() => setIsMaxDayHovered(true)}
+                  onMouseLeave={() => setIsMaxDayHovered(false)}
                 >
-                  <InputLabel id="algorithm-select-label">
+                  <InputLabel id="max-day-schedule-label">
                     Chọn ngày muộn nhất
                   </InputLabel>
                   <Select
-                    labelId="algorithm-select-label"
+                    labelId="max-day-schedule-label"
                     id="max-day-schedule-select"
-                    value={states.maxDaySchedule}
+                    value={states.maxDaySchedule || ""}
                     onChange={(e) =>
-                      setters.setMaxDaySchedule(e.target.value)
+                      setters.setMaxDaySchedule(e.target.value || null)
                     }
                     label="Chọn ngày muộn nhất"
+                    renderValue={(selected) =>
+                      selected ? getDayName(selected) : "Không chọn"
+                    }
+                    endAdornment={
+                      states.maxDaySchedule &&
+                      isMaxDayHovered && (
+                        <Button
+                          sx={{
+                            position: "absolute",
+                            right: 36,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            minWidth: "auto",
+                            p: 0.5,
+                            borderRadius: "50%",
+                            width: "22px",
+                            height: "22px",
+                            color: "gray",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setters.setMaxDaySchedule(null);
+                          }}
+                        >
+                          <Clear fontSize="small" />
+                        </Button>
+                      )
+                    }
                   >
-                    {days.map((day, index) => (
-                      <MenuItem key={index} value={days}>
-                        {day}
+                    {days.map((day) => (
+                      <MenuItem key={day} value={day}>
+                        {getDayName(day)}
                       </MenuItem>
                     ))}
                   </Select>
-
                 </FormControl>
               </div>
             </Paper>
@@ -365,9 +416,9 @@ const GeneralScheduleScreen = () => {
           closeDialog={() => setters.setOpenSelectedDialog(false)}
           timeLimit={states.selectedTimeLimit}
           setTimeLimit={setters.setSelectedTimeLimit}
-          submit={handlers.handleAutoScheduleSelected}
+          submit={handlers.handleAutoScheduleSelected} // Already includes maxDaySchedule
           selectedAlgorithm={states.selectedAlgorithm}
-          maxDaySchedule={states.maxDaySchedule}
+          maxDaySchedule={states.maxDaySchedule} // Pass maxDaySchedule to the dialog
         />
       </div>
 
