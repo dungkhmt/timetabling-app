@@ -12,6 +12,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCrea
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
@@ -323,5 +324,78 @@ public class PlanGeneralClassService {
         if (foundClass == null) throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
         planGeneralClassRepository.deleteById(planClassId);
         return foundClass;
+    }
+
+    public PlanGeneralClass createSingleClass(CreateSingleClassOpenRequest planClass) {
+        log.info("Validating and creating single class: {}", planClass);
+
+        // Validate the input
+        if (planClass.getModuleCode() == null || planClass.getModuleCode().isEmpty()) {
+            log.error("Validation failed: Module code is empty");
+            throw new InvalidFieldException("Mã học phần không được để trống!");
+        }
+        if (planClass.getModuleName() == null || planClass.getModuleName().isEmpty()) {
+            log.error("Validation failed: Module name is empty");
+            throw new InvalidFieldException("Tên học phần không được để trống!");
+        }
+        if (planClass.getMass() == null || planClass.getMass().isEmpty()) {
+            log.error("Validation failed: Mass is empty");
+            throw new InvalidFieldException("Mã lớp không được để trống!");
+        }
+        if (planClass.getSemester() == null || planClass.getSemester().isEmpty()) {
+            log.error("Validation failed: Semester is empty");
+            throw new InvalidFieldException("Kỳ học không được để trống!");
+        }
+
+        // Set default values if they're null
+        if (planClass.getNumberOfClasses() == null) {
+            planClass.setNumberOfClasses(1);
+        }
+
+        // Save the PlanGeneralClass entity first
+        PlanGeneralClass savedClass = new PlanGeneralClass();
+        savedClass.setModuleCode(planClass.getModuleCode());
+        savedClass.setModuleName(planClass.getModuleName());
+        savedClass.setMass(planClass.getMass());
+        savedClass.setSemester(planClass.getSemester());
+        savedClass.setNumberOfClasses(planClass.getNumberOfClasses());
+        savedClass.setCreatedStamp(planClass.getCreatedStamp());
+        savedClass.setCrew(planClass.getCrew());
+        savedClass.setLearningWeeks(planClass.getLearningWeeks());
+        savedClass.setDuration(planClass.getDuration());
+        savedClass.setClassType(planClass.getClassType());
+        savedClass.setPromotion(planClass.getPromotion());
+        savedClass.setQuantityMax(planClass.getQuantityMax());
+        savedClass.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+        savedClass.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+        savedClass.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+        savedClass.setWeekType(planClass.getWeekType());
+        savedClass.setProgramName(planClass.getProgramName());
+        savedClass = planGeneralClassRepository.save(savedClass);
+
+        log.info("PlanGeneralClass successfully saved: {}", savedClass);
+
+        // Process MakeGeneralClassRequest for each class
+        for (int i = 1; i <= planClass.getNumberOfClasses(); i++) {
+            MakeGeneralClassRequest req = new MakeGeneralClassRequest();
+            req.setId(savedClass.getId());
+            req.setNbClasses(planClass.getNumberOfClasses());
+            req.setClassType(planClass.getClassType());
+            req.setDuration(planClass.getDuration());
+            req.setCrew(planClass.getCrew());
+            req.setMass(planClass.getMass());
+            req.setLearningWeeks(planClass.getLearningWeeks());
+            req.setModuleCode(planClass.getModuleCode());
+            req.setSemester(planClass.getSemester());
+            req.setModuleName(planClass.getModuleName());
+            req.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+            req.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+            req.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+            req.setProgramName(planClass.getProgramName());
+            req.setWeekType(planClass.getWeekType());
+            makeClass(req, planClass.getGroupId());
+        }
+
+        return savedClass;
     }
 }

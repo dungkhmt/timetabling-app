@@ -30,7 +30,7 @@ public class PlanGeneralClass {
     private Integer lectureExerciseMaxQuantity;
     private String learningWeeks;
     private String crew;
-    private String weekType;
+    private String weekType; // Ensures this field is in the model
     private int duration;
     private Date createdStamp;
     private String promotion;
