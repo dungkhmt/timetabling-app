@@ -241,7 +241,7 @@ public class V2ClassScheduler {
                         if(mClassId2ListGroupIds.get(gc.getId()) != null) {
                             for (Long gId : mClassId2ListGroupIds.get(gc.getId())) {
                                 String cg = hashCourseGroup(gc.getModuleCode(), gId);
-                                nbIns[i] = mCourseGroup2NumberClasses.get(cg);
+                                nbIns[idx] = mCourseGroup2NumberClasses.get(cg);
                             }
                         }else{
                             log.info("mapData, BUG classId " + gc.getId() + " did not assigned to any group???");
@@ -512,6 +512,7 @@ public class V2ClassScheduler {
 
                 int K = t1 / Constant.slotPerCrew;//6; // kip
                 int tietBD = t1 - Constant.slotPerCrew * K;
+                if(tietBD == 0) tietBD = Constant.slotPerCrew;
                 log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", t1 = " + t1 + " kip = " + K + ", tietDB = " + tietBD);
 
 
