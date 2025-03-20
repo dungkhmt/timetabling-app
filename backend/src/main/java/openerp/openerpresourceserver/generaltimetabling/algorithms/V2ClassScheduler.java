@@ -288,17 +288,17 @@ public class V2ClassScheduler {
                             log.info("mapData, class-segment " + idx + " was scheduled -> D[" + idx + "] = " + D[idx].toString());
                         } else {
                             if(gr != null){
-                                List<Integer> L = Util.generateSlots(MAX_DAY_SCHEDULED,Constants.PRIORITY_SLOT_LATEST,gr.getDaySeq(),gr.getSlotSeq(),gc.getCrew(),d[i]);
+                                List<Integer> L = Util.generateSlots(MAX_DAY_SCHEDULED,Constants.PRIORITY_SLOT_LATEST,gr.getDaySeq(),gr.getSlotSeq(),gc.getCrew(),d[idx]);
                                 //log.info("mapData, compute D[" + i + "], daySeq = " + gr.getDaySeq() + ", slotSeq = " + gr.getSlotSeq() + ", crew = " + gc.getCrew() + " got L= " + L);
                                 TimeTablingCourse crs = mId2Course.get(gc.getCourse());
                                 List<Integer> LP = new ArrayList<>();
                                 if(crs != null){
-                                    LP = Util.toIntList(crs.getSlotPriority(),d[i]);
+                                    LP = Util.toIntList(crs.getSlotPriority(),d[idx]);
                                 }
                                 D[idx] = Util.shift(L,LP);
-                                log.info("mapData, group not null -> compute D[" + idx + "], LP = " + LP +", D = " + D);
+                                log.info("mapData, class code " + gc.getClassCode() + " group not null -> compute D[" + idx + "], LP = " + LP.toString() +", D[" + idx + "] = " + D[idx].toString());
                             }else{
-                                D[idx] = Util.generateSLotSequence(gc.getCrew(),d[i]);
+                                D[idx] = Util.generateSLotSequence(gc.getCrew(),d[idx]);
                                 log.info("mapData, group EQUAL null -> D[" + idx + "].sz = " + D[idx].size());
                             }
                         }
