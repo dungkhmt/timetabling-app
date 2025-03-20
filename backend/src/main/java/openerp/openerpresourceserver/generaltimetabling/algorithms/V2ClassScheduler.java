@@ -69,15 +69,15 @@ public class V2ClassScheduler {
             Map<Integer, RoomReservation> mClassSegment2RoomReservation = new HashMap<>();
             for (int i = 0; i < classes.size(); i++) {
                 GeneralClass gc = classes.get(i);
-                //log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode());
+                log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " number roomReservations = " + gc.getTimeSlots().size());
                 if (gc.getTimeSlots() != null) {
                     n += gc.getTimeSlots().size();
-                    //for(RoomReservation rr: gc.getTimeSlots()) {
-                    //    log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " startSlot = " + rr.getStartTime() + " endSlot = " + rr.getEndTime() + " room = " + rr.getRoom());
-                    //}
+                    for(RoomReservation rr: gc.getTimeSlots()) {
+                        log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " startSlot = " + rr.getStartTime() + " endSlot = " + rr.getEndTime() + " room = " + rr.getRoom() + " duration = " + rr.getDuration());
+                    }
                 }
             }
-            //log.info("mapData, n = " + n);
+            log.info("mapData, n = " + n);
             Map<Long, Group> mId2Group = new HashMap<>();
             for(Group g: groups){
                 mId2Group.put(g.getId(),g);
@@ -270,18 +270,18 @@ public class V2ClassScheduler {
                                 D[i] = Util.generateSLotSequence(gc.getCrew(),d[i]);
                             }
                         }
-                        roomPriority[i] = new ArrayList<>();
+                        roomPriority[idx] = new ArrayList<>();
                         if(rr.getRoom() != null){
                             if(mRoom2Index.get(rr.getRoom())!=null){
                                 int ri = mRoom2Index.get(rr.getRoom());
-                                roomPriority[i].add(ri);
+                                roomPriority[idx].add(ri);
                             }
                         }else{
                             for(int r = 0; r < roomCapacity.length; r++){
-                                roomPriority[i].add(r);
+                                roomPriority[idx].add(r);
                             }
                         }
-
+                        log.info("mapData, roomPriority[" + idx + "].sz = " + roomPriority[i].size());
                         classSegments[idx] = new ClassSegment(idx, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName());
 
                     }
@@ -338,8 +338,10 @@ public class V2ClassScheduler {
 
         //MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,n,d,courseIndex,maxTeacherOfCourse,cls,groupId,relatedGroups,parentClassId,vol,conflict,D,roomPriority,roomOccupation,classSegments);
         List<ClassSegment> listClassSegments = new ArrayList<>();
-        for(int i = 0;i < classSegments.length; i++)
+        for(int i = 0;i < classSegments.length; i++) {
             listClassSegments.add(classSegments[i]);
+            log.info("mapData collect class-segment[" + i + "]: " + classSegments[i]);
+        }
         //log.info("mapData, classSegments.length = " + classSegments.length + " listClassSegments.sz = " + listClassSegments.size());
         MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments);
 

@@ -10,6 +10,7 @@ import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValid
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
@@ -198,6 +199,10 @@ public class PlanGeneralClassService {
         updateGeneralClass.setLearningWeeks(generalClass.getLearningWeeks());
         updateGeneralClass.setClassCode(generalClass.getClassCode());
         return generalClassRepository.save(updateGeneralClass);
+    }
+    public int generateClassSegmentFromClass(ModelInputGenerateClassSegmentFromClass I){
+        List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
+        return classes.size();
     }
     public List<GeneralClass> generateClassesFromPlan(ModelInputGenerateClassesFromPlan I){
         List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());

@@ -479,7 +479,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule);
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
-        /*
+
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
                 p.setValue(maxDaySchedule);
@@ -487,8 +487,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
             }
         }
-        */
-        
+
+
         //List<GeneralClass> foundClasses = gcoRepo.findAllBySemester(semester);
         List<GeneralClass> foundClasses = gcoRepo.findAllByIdIn(classIds);
         List<GeneralClass> allClassesOfSemester = gcoRepo.findAllBySemester(semester);

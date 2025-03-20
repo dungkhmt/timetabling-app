@@ -7,6 +7,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdatePlanClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
@@ -57,6 +58,11 @@ public class PlanGeneralClassController {
     @PostMapping("/make-multiple-classes")
     public ResponseEntity<List<GeneralClass>> requestMakeMultipleClasses(@RequestBody BulkMakeGeneralClassRequest request) {
         return ResponseEntity.ok(planClassService.makeMultipleClasses(request));
+    }
+    @PostMapping("/generate-class-segment-from-classes")
+    public ResponseEntity<?> generateClassSegmentFromClass(Principal principal, @RequestBody ModelInputGenerateClassSegmentFromClass I){
+        int cnt = planClassService.generateClassSegmentFromClass(I);
+        return ResponseEntity.ok().body(cnt);
     }
     @PostMapping("/generate-classes-from-plan")
     public ResponseEntity<?> generateClassesFromPlan(Principal principal, @RequestBody ModelInputGenerateClassesFromPlan I){
