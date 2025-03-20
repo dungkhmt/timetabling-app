@@ -7,6 +7,7 @@ import InputFileUpload from "../general-upload/components/InputFileUpload";
 import ClassOpenPlanTable from "./components/ClassOpenPlanTable";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoComplete";
+import AddNewClassDialog from "./components/AddNewClassDialog"; // Add this import
 
 const GeneralPlanClassOpenScreen = () => {
   const [selectedSemester, setSelectedSemester] = useState(null);
@@ -15,8 +16,9 @@ const GeneralPlanClassOpenScreen = () => {
   const [isOpenDialog, setOpenDialog] = useState(false);
   const [isImportLoading, setImportLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [openNewClassDialog, setOpenNewClassDialog] = useState(false); // Add this state
 
-    const { states, setters, handlers } = useGeneralSchedule();
+  const { states, setters, handlers } = useGeneralSchedule();
   
   function getPlanClass() {
     request(
@@ -175,6 +177,17 @@ const GeneralPlanClassOpenScreen = () => {
           <div className="flex flex-row gap-2 justify-end">
             <Button
               color="primary"
+              disabled={selectedSemester === null || !states.selectedGroup}
+              variant="contained"
+              onClick={() => setOpenNewClassDialog(true)}
+              sx={{
+                textTransform: "none",
+              }}
+            >
+              Tạo mới
+            </Button>
+            <Button
+              color="primary"
               disabled={selectedSemester === null}
               variant="contained"
               onClick={clearPlan}
@@ -228,6 +241,17 @@ const GeneralPlanClassOpenScreen = () => {
         setClasses={setPlanClasses}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
+      />
+      
+      {/* Add New Class Dialog */}
+      <AddNewClassDialog 
+        open={openNewClassDialog}
+        onClose={() => setOpenNewClassDialog(false)}
+        semester={selectedSemester}
+        onSuccess={(newClass) => {
+          setPlanClasses([...planClasses, newClass]);
+          toast.success("Tạo lớp mới thành công!");
+        }}
       />
     </div>
   );
