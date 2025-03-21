@@ -9,11 +9,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ClassGroupSummary;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomReservationDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ResetScheduleRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
@@ -227,5 +225,13 @@ public class GeneralClassController {
     ) {
         gService.deleteRoomReservation(generalClassId, roomReservationId);
         return ResponseEntity.ok("Xóa lớp thành công");
+    }
+
+    @PostMapping("/compute-class-cluster")
+    public ResponseEntity<?> computeClassCluster(Principal principal, @RequestBody ModelInputComputeClassCluster I){
+        log.info("computeClassCluster, semester = " + I.getSemester());
+        int cnt = gService.computeClassCluster(I);
+        log.info("computeClassCluster, semester = " + I.getSemester() + " result cnt = " + cnt);
+        return ResponseEntity.ok().body(cnt);
     }
 }

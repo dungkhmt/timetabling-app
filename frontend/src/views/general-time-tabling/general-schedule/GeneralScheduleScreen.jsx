@@ -275,7 +275,7 @@ const GeneralScheduleScreen = () => {
                   }}
                 >
                   Xóa lịch học TKB
-                </Button>
+                </Button>                
                 <Button
                   disabled={
                     !states.selectedSemester || states.isAutoSaveLoading

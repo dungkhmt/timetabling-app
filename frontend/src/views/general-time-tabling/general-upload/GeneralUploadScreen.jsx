@@ -6,7 +6,7 @@ import { Button } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import GeneralUploadTable from "./components/GeneralUploadTable";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
-
+import { request } from "../../../api";
 const GeneralUploadScreen = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -34,6 +34,25 @@ const GeneralUploadScreen = () => {
     }
   } = useGeneralSchedule();
 
+  function handleComputeClusters(){
+    let body = {
+      semester: selectedSemester.semester
+    };
+
+    request(
+      "post",
+      "/general-classes/compute-class-cluster",
+      (res) => {
+        console.log('compute cluster returned ',res.data);
+      },
+      {
+        onError: (e) => {
+          
+        }
+      },
+      body
+    );
+  }
   const handleSelectionChange = (newSelection) => {
     setSelectedIds(newSelection);
     setSelectedRows(newSelection);
@@ -111,6 +130,22 @@ const GeneralUploadScreen = () => {
                 
               >
                 Xóa danh sách theo kỳ
+              </Button>
+
+              <Button
+                startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                sx={{ 
+                  width: 220,
+                  textTransform: 'none',
+                  fontSize: '16px'
+                }}
+                disabled={isDeletingBySemester || !selectedSemester}
+                onClick={handleComputeClusters}
+                variant="contained"
+                color="error"
+                
+              >
+                Phân cụm
               </Button>
             </div>
           </div>

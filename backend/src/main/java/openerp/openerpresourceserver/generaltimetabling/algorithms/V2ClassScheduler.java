@@ -12,6 +12,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.cttt.greedy.G
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.CourseBasedMultiClusterGreedySolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.GreedySolver1;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentRoomReservationSolver;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidClassStudentQuantityException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
@@ -419,6 +420,7 @@ public class V2ClassScheduler {
         //data.print();
         return DW;
     }
+
 
     public List<GeneralClass> autoScheduleTimeSlotRoom(List<GeneralClass> classes,
                                                        List<Classroom> rooms, Map<String,
