@@ -276,6 +276,7 @@ const GeneralScheduleScreen = () => {
                 >
                   Xóa lịch học TKB
                 </Button>                
+                {/*
                 <Button
                   disabled={
                     !states.selectedSemester || states.isAutoSaveLoading
@@ -299,6 +300,8 @@ const GeneralScheduleScreen = () => {
                 >
                   Tự động xếp TKB
                 </Button>
+                */}
+                {/*
                 <Button
                   disabled={
                     !states.selectedSemester || states.isAutoSaveLoading
@@ -322,6 +325,7 @@ const GeneralScheduleScreen = () => {
                 >
                   Tự động xếp phòng
                 </Button>
+                */}
                 <Button
                   disabled={
                     states.selectedRows.length === 0 || states.isAutoSaveLoading
