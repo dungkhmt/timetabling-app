@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
@@ -49,4 +50,6 @@ public interface GeneralClassService {
     GeneralClass addRoomReservation(Long generalClassId, Long parentId, Integer duration);
 
     void deleteRoomReservation(Long generalClassId, Long roomReservationId);
+
+    int computeClassCluster(ModelInputComputeClassCluster I);
 }

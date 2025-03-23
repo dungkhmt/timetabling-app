@@ -7,10 +7,12 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdatePlanClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.ClearPlanClassInputModel;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.service.impl.PlanGeneralClassService;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Date;
 import java.util.List;
 
 @Log4j2
@@ -57,6 +60,11 @@ public class PlanGeneralClassController {
     @PostMapping("/make-multiple-classes")
     public ResponseEntity<List<GeneralClass>> requestMakeMultipleClasses(@RequestBody BulkMakeGeneralClassRequest request) {
         return ResponseEntity.ok(planClassService.makeMultipleClasses(request));
+    }
+    @PostMapping("/generate-class-segment-from-classes")
+    public ResponseEntity<?> generateClassSegmentFromClass(Principal principal, @RequestBody ModelInputGenerateClassSegmentFromClass I){
+        int cnt = planClassService.generateClassSegmentFromClass(I);
+        return ResponseEntity.ok().body(cnt);
     }
     @PostMapping("/generate-classes-from-plan")
     public ResponseEntity<?> generateClassesFromPlan(Principal principal, @RequestBody ModelInputGenerateClassesFromPlan I){
@@ -100,5 +108,24 @@ public class PlanGeneralClassController {
     @DeleteMapping("/")
     public ResponseEntity<PlanGeneralClass> requestDeletePlanClass(@RequestParam("planClassId") Long planClassId) {
         return ResponseEntity.ok(planClassService.deleteClassById(planClassId));
+    }
+
+    @PostMapping("/create-single")
+    public ResponseEntity<PlanGeneralClass> createSingleClass(@RequestBody CreateSingleClassOpenRequest planClass) {
+        log.info("Received request to create single class: {}", planClass);
+        try {
+            if (planClass.getCreatedStamp() == null) {
+                planClass.setCreatedStamp(new Date());
+            }
+            PlanGeneralClass createdClass = planClassService.createSingleClass(planClass);
+            log.info("Successfully created class: {}", createdClass);
+            return ResponseEntity.ok(createdClass); // Ensure the saved entity is returned
+        } catch (InvalidFieldException e) {
+            log.error("InvalidFieldException: {}", e.getErrorMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while creating single class: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(null);
+        }
     }
 }

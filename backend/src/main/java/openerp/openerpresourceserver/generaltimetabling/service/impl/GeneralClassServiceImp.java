@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.V2ClassScheduler;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentRoomReservationSolver;
 import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
 import openerp.openerpresourceserver.generaltimetabling.exception.MinimumTimeSlotPerClassException;
@@ -12,10 +13,13 @@ import openerp.openerpresourceserver.generaltimetabling.helper.ClassTimeComparat
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.mapper.RoomOccupationMapper;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.ClusterClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
@@ -63,6 +67,14 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Autowired
     private ClassGroupRepo classGroupRepo;
 
+    @Autowired
+    private ClusterRepo clusterRepo;
+
+    @Autowired
+    private ClusterClassRepo clusterClassRepo;
+
+    @Autowired
+    private PlanGeneralClassRepository planGeneralClassRepository;
 
     @Override
     public ModelResponseGeneralClass getClassDetailWithSubClasses(Long classId) {
@@ -479,7 +491,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule);
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
-        /*
+
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
                 p.setValue(maxDaySchedule);
@@ -487,8 +499,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
             }
         }
-        */
-        
+
+
         //List<GeneralClass> foundClasses = gcoRepo.findAllBySemester(semester);
         List<GeneralClass> foundClasses = gcoRepo.findAllByIdIn(classIds);
         List<GeneralClass> allClassesOfSemester = gcoRepo.findAllBySemester(semester);
@@ -752,5 +764,66 @@ public class GeneralClassServiceImp implements GeneralClassService {
         foundGeneralClass.getTimeSlots().remove(foundRoomReservation);
         foundRoomReservation.setGeneralClass(null);
         gcoRepo.save(foundGeneralClass);
+    }
+
+    @Transactional
+    @Override
+    public int computeClassCluster(ModelInputComputeClassCluster I) {
+        List<GeneralClass> classes = gcoRepo.findAllBySemester(I.getSemester());
+        List<Long> classIds = new ArrayList<>();
+        for(GeneralClass gc: classes) classIds.add(gc.getId());
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
+        List<Group> groups = groupRepo.findAll();
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
+        for(ClassGroup cg: classGroups){
+            if(mClassId2GroupIds.get(cg.getClassId())==null)
+                mClassId2GroupIds.put(cg.getClassId(),new ArrayList<>());
+            mClassId2GroupIds.get(cg.getClassId()).add(cg.getGroupId());
+        }
+
+        //List<RoomReservation> roomReservations = roomReservationRepo.findAllByGeneralClassIn(classes);
+        ConnectedComponentRoomReservationSolver ccSolver = new ConnectedComponentRoomReservationSolver();
+        List<List<GeneralClass>> clusters = ccSolver.computeRoomReservationCluster(classes,classGroups);
+
+        List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        for(Cluster c: oldClusters){
+            clusterRepo.delete(c);
+        }
+        for(List<GeneralClass> cluster: clusters){
+            // create a new cluster
+            String clusterName = "";
+            Set<String> names = new HashSet<>();
+            for(GeneralClass gc: cluster){
+                Long classId = gc.getId();
+                List<Long> gids = mClassId2GroupIds.get(classId);
+                for(Long gId: gids){
+                    Group g = mId2Group.get(gId);
+                    names.add(g.getGroupName());
+                }
+            }
+            int cnt = 0;
+            for(String n: names){
+                cnt++;
+                clusterName = clusterName + n;
+                if(cnt < names.size()) clusterName = clusterName + ", ";
+            }
+            Long nextId = planGeneralClassRepository.getNextReferenceValue();
+            Cluster newCluster = new Cluster();
+            newCluster.setId(nextId);
+            newCluster.setName(clusterName);
+            newCluster.setSemester(I.getSemester());
+            newCluster = clusterRepo.save(newCluster);
+
+            for(GeneralClass gc: cluster){
+                ClusterClass clusterClass = new ClusterClass();
+                clusterClass.setClusterId(nextId);
+                clusterClass.setClassId(gc.getId());
+
+                clusterClass = clusterClassRepo.save(clusterClass);
+            }
+        }
+        return clusters.size();
     }
 }

@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useGroupData } from "services/useGroupData";
-import { Button } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import GroupToolbar from "./components/GroupToolbar";
 import DeleteConfirmDialog from "./components/DeleteConfirmDialog";
 import ManageGroupScreen from "./components/ManageGroupScreen";
 import GroupDetailsDialog from "./components/GroupDetailsDialog";
 import SimpleCreateGroupDialog from "./components/SimpleCreateGroupDialog";
+
+function removeDiacritics(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
 export default function ClassGroupList() {
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -17,12 +21,17 @@ export default function ClassGroupList() {
   const [selectedDetailId, setSelectedDetailId] = useState(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedParentGroup, setSelectedParentGroup] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { allGroups: groups, isLoading, deleteGroupById } = useGroupData();
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
+
+  const filteredGroups = groups.filter((group) =>
+    removeDiacritics(group.groupName.toLowerCase()).includes(removeDiacritics(searchTerm.toLowerCase()))
+  );
 
   const columns = [
     {
@@ -67,9 +76,9 @@ export default function ClassGroupList() {
   const handleEdit = (group) => {
     setSelectedGroup({
       ...group,
-      id: group.groupId, // Use the original group ID for API
+      id: group.groupId,
     });
-    setManageDialogOpen(true); // Open ManageGroupScreen instead
+    setManageDialogOpen(true);
     console.log(group)
   };
 
@@ -91,31 +100,37 @@ export default function ClassGroupList() {
   };
 
   const handleRowClick = (params, event) => {
-    setSelectedDetailId(params.row.id); // Use groupId instead of id
-    setSelectedParentGroup(params.row.groupName); // Store the parent group name
+    setSelectedDetailId(params.row.id);
+    setSelectedParentGroup(params.row.groupName);
     setDetailDialogOpen(true);
   };
 
   return (
     <div style={{ height: 500, width: "100%" }}>
+      <div className="flex justify-end gap-4 mb-4 items-center">
+        <TextField
+          label="Tìm kiếm theo tên nhóm"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-[300px]"
+        />
+        <GroupToolbar onAdd={() => setDialogOpen(true)} />
+      </div>
       <DataGrid
         loading={isLoading}
-        getRowId={(row) => row.index} // Use index as unique row identifier
-        rows={groups.map((group, index) => ({
+        getRowId={(row) => row.index}
+        rows={filteredGroups.map((group, index) => ({
           ...group,
-          groupId: group.id, // Store original group ID
-          index: index + 1, // Use index for unique row identification
-          id: group.id, // Keep original ID
+          groupId: group.id,
+          index: index + 1,
+          id: group.id,
         }))}
         disableColumnSelector
         disableDensitySelector
         columns={columns}
         pageSize={10}
-        components={{
-          Toolbar: () => (
-            <GroupToolbar onAdd={() => setDialogOpen(true)} />
-          ),
-        }}
         onRowDoubleClick={handleRowClick}
       />
 
