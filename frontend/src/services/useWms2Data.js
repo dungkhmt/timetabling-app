@@ -183,6 +183,17 @@ export const useWms2Data = () => {
         toast.error("Không thể xuất phiếu xuất");
       }
     }
+
+    const getSalesOrdersForExport = async (page, limit) => {
+      try {
+        const response = await wms2Service.getSalesOrdersForExport(page, limit);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching sales orders for export:", error);
+        toast.error("Không thể tải danh sách đơn hàng");
+        return { data: {} };
+      }
+    }
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -200,6 +211,7 @@ export const useWms2Data = () => {
       getMoreInventoryItems,
       getOutBoundsOrder,
       getOutBoundDetail,
-      exportShipment
+      exportShipment,
+      getSalesOrdersForExport
    };
 };

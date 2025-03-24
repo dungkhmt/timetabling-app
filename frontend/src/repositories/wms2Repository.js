@@ -53,5 +53,8 @@ export const wms2Service = {
   },
   exportShipment: (shipmentId) => {
     return request("put", `/invoice/export/${shipmentId}` , null, null, null);
+  }, 
+  getSalesOrdersForExport: (page, limit) => {
+    return request("get", `/sale-order/export?page=${page}&limit=${limit}`);
   }
 };

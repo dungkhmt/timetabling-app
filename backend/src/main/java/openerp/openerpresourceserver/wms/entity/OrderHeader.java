@@ -37,7 +37,11 @@ public class OrderHeader extends BaseEntity {
     @Column(name = "order_date")
     private LocalDateTime orderDate;
 
+    @Column(name = "status")
     private String status;
+
+    @Column(name="sale_channel_id")
+    private String saleChannelId;
 
     @Column(name = "order_name")
     private String orderName;

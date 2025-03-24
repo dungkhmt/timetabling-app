@@ -15,6 +15,7 @@ const OrderItemsTable = ({ items }) => {
   console.log("Items in OrderItemsTable: ", items);
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  console.log("items: ", items);
 
   return (
     <TableContainer component={Paper}>

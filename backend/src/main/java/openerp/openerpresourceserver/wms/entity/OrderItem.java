@@ -40,10 +40,13 @@ public class OrderItem extends BaseEntity {
 
     @Column(name = "unit", length = 100)
     private String unit;
+
     @Column(name = "price", precision = 25, scale = 5)
     private BigDecimal price;
+
     @Column(name = "discount", precision = 25, scale = 5)
     private BigDecimal discount;
+
     @Column(name = "tax", precision = 25, scale = 5)
     private BigDecimal tax;
 

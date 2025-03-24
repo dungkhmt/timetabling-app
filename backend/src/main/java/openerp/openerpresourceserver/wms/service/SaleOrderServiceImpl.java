@@ -1,23 +1,24 @@
 package openerp.openerpresourceserver.wms.service;
 
-import jakarta.transaction.Transactional;
+import com.google.common.util.concurrent.AtomicDouble;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
-import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.saleOrder.*;
 import openerp.openerpresourceserver.wms.entity.*;
-import openerp.openerpresourceserver.wms.entity.Shipment;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.repository.*;
+import openerp.openerpresourceserver.wms.repository.specification.SaleOrderSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -46,7 +47,14 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .createdByUser(userCreated)
                 .toCustomer(toCustomer)
                 .facility(facility)
+                .saleChannelId(request.getSaleChannel())
+                .orderName(request.getSaleOrderName())
+                .deliveryAddress(request.getDeliveryAddress())
+                .deliveryAfterDate(request.getDeliveryAfterDate())
+                .deliveryBeforeDate(request.getDeliveryBeforeDate())
+                .note(request.getNote())
                 .createdByUser(userLogin)
+                .deliveryPhone(request.getDeliveryPhone())
                 .build();
 
         AtomicInteger increment = new AtomicInteger(0);
@@ -59,9 +67,11 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                             .order(orderHeader)
                             .product(product)
                             .quantity(orderItem.getQuantity())
-                            .amount(product.getWholeSalePrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
+                            .amount(orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
                             .id(CommonUtil.getUUID())
                             .orderItemSeqId(CommonUtil.getSequenceId("ORDITM",5, increment.incrementAndGet()))
+                            .price(orderItem.getPrice())
+                            .unit(orderItem.getUnit())
                             .build();
                 })
                 .toList();
@@ -132,9 +142,11 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     }
 
     @Override
-    public ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, Map<String, Object> filters) {
-        var pageable = PageRequest.of(page, size);
-        var orderHeaders = orderHeaderRepo.findAll(pageable);
+    public ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, SaleOrderGetListFilter filters) {
+        var pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdStamp"));
+
+        var saleOrderSpec = new SaleOrderSpecification(filters);
+        var orderHeaders = orderHeaderRepo.findAll(saleOrderSpec ,pageable);
 
         var orderListRes = orderHeaders
                 .stream()
@@ -197,6 +209,51 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                         .build())
                 .build();
 
+    }
+
+    @Override
+    public ApiResponse<Pagination<OrderListExportedRes>> exportSaleOrders(int page, int limit) {
+        var pageable = PageRequest.of(page-1, limit);
+        var orderHeaders = orderHeaderRepo.findAll(pageable);
+
+        var orderListExportedResponses = orderHeaders
+                .stream()
+                .map(orderHeader -> {
+                    AtomicInteger totalQuantity = new AtomicInteger(0);
+                    AtomicDouble totalAmount = new AtomicDouble(0);
+
+                    orderHeader.getOrderItems().forEach(orderItem -> {
+                        totalQuantity.addAndGet(orderItem.getQuantity());
+                        totalAmount.addAndGet(orderItem.getAmount().doubleValue());
+                    });
+
+                    return OrderListExportedRes.builder()
+                            .id(orderHeader.getId())
+                            .customerName(orderHeader.getToCustomer().getName())
+                            .createdStamp(orderHeader.getCreatedStamp())
+                            .status(orderHeader.getStatus())
+                            .customerId(orderHeader.getToCustomer().getId())
+                            .orderName(orderHeader.getOrderName())
+                            .deliveryAddress(orderHeader.getDeliveryAddress())
+                            .deliveryPhone(orderHeader.getDeliveryPhone())
+                            .deliveryAfterDate(orderHeader.getDeliveryAfterDate())
+                            .saleChannelId(orderHeader.getSaleChannelId())
+                            .totalQuantity(totalQuantity.get()) // Gán tổng số lượng
+                            .totalAmount(BigDecimal.valueOf(totalAmount.get())) // Gán tổng tiền
+                            .build();
+                })
+                .toList();
+        return ApiResponse.<Pagination<OrderListExportedRes>>builder()
+                .code(200)
+                .message("Get all sale orders to export successfully")
+                .data(Pagination.<OrderListExportedRes>builder()
+                        .page(page)
+                        .size(limit)
+                        .data(orderListExportedResponses)
+                        .totalElements(orderHeaders.getTotalElements())
+                        .totalPages(orderHeaders.getTotalPages())
+                        .build())
+                .build();
     }
 
 }

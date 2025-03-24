@@ -485,10 +485,32 @@ public class GeneralClassServiceImp implements GeneralClassService {
         return null;
     }
 
+    private void synchronizeCourses(){
+        List<GeneralClass> cls = gcoRepo.findAll();
+        Set<String> courseCodes = new HashSet<>();
+        Map<String, String> mCourseCode2Name = new HashMap<>();
+        for(GeneralClass gc: cls){
+            String courseCode = gc.getModuleCode();
+            courseCodes.add(courseCode);
+            mCourseCode2Name.put(courseCode,gc.getModuleName());
+        }
+        for(String courseCode: courseCodes){
+            TimeTablingCourse course = timeTablingCourseRepo.findById(courseCode).orElse(null);
+            if(course == null) {
+                String courseName = mCourseCode2Name.get(courseCode);
+                course = new TimeTablingCourse();
+                course.setId(courseCode);
+                course.setName(courseName);
+                course.setMaxTeacherInCharge(50);
+                timeTablingCourseRepo.save(course);
+                log.info("synchronizeCourses save " + courseCode + "," + courseName);
+            }
+        }
+    }
     @Transactional
     @Override
     public List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule) {
-
+        //synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule);
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
 

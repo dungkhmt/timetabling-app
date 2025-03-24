@@ -23,7 +23,7 @@ const CreateSaleOrder = () => {
     customerId: "",
     userCreatedId: "wms_director",
     deliveryDate: new Date().toISOString().split('T')[0],
-    invoiceNumber: "",
+    invoiceNumber: null,
     discountType: "",
     discountValue: 0,
     priceList: "",

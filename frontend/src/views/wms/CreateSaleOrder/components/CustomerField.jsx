@@ -28,8 +28,6 @@ const CustomerField = () => {
       setSalesOrder(prev => ({ 
         ...prev, 
         customerId: customer.id,
-        deliveryAddress: customer.address || "",
-        deliveryPhone: customer.phone || "",
       }));
     }
   };

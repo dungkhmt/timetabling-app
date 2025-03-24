@@ -45,15 +45,19 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     class CourseGroup{
         String hashCode;
         int courseIndex = -1;
+        int type = -1;
+        int instanceIndex = -1;
         List<Integer> groupIndex = new ArrayList<>();
         public CourseGroup(String hashCode)
         {
             this.hashCode = hashCode;
             String[] s = hashCode.split("-");
-            if(s == null || s.length < 2) return;
+            if(s == null || s.length < 4) return;
             try {
                 courseIndex = Integer.valueOf(s[0]);
-                s = s[1].split(",");
+                type = Integer.valueOf(s[1]);
+                instanceIndex = Integer.valueOf(s[2]);
+                s = s[3].split(",");
                 if(s == null || s.length < 1) return;
                 for(String si: s){
                     int gi = Integer.valueOf(si);
@@ -167,7 +171,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         }
         return true;
     }
-
+    /*
     private String hashCourseGroup(int courseIndex, List<Integer> groupIndex){
         String code = courseIndex + "-";
         for(int j = 0; j < groupIndex.size(); j++){
@@ -177,6 +181,8 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         }
         return code;
     }
+
+     */
     @Override
     public void solve() {
         log.info("solve START....");
@@ -185,6 +191,9 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         Map<String, List<Integer>> mCourseGroup2Domain = new HashMap<>();
         Map<String, Integer> mCourseGroup2Duration = new HashMap<>();
         Map<String, List<String>> mCourseGroup2ConflictCourseGroups = new HashMap<>();
+
+        Map<Integer, List<ClassSegment>> mCourseCode2ClassSegments = new HashMap<>();
+
         //for(int i = 0; i < I.getNbClassSegments(); i++){
         //    String id = hashCourseGroup(I.getCourseIndex()[i],I.getRelatedGroupId()[i]);
         //    courseGroupId.add(id);
@@ -198,8 +207,15 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             }
             courseGroupId.add(id);
             mCourseGroup2ClassSegments.get(id).add(cs);
+
+            if(mCourseCode2ClassSegments.get(cs.getCourseIndex())==null)
+                mCourseCode2ClassSegments.put(cs.getCourseIndex(),new ArrayList<>());
+            mCourseCode2ClassSegments.get(cs.getCourseIndex()).add(cs);
             //log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id);
         }
+
+
+
         for(String id: courseGroupId){
             int duration = 0;
             List<Integer> domain = null;
@@ -376,7 +392,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         // not overlap with class-segment i (to be assigned to time-slot timeSlot)
         //int[] courseQty = new int[I.getMaxTeacherOfCourses().length];
         //for(int j = 0; j < courseQty.length; j++) courseQty[j] = 0;
-        String cgi = hashCourseGroup(csi.getCourseIndex(),csi.getGroupIds());
+        String cgi = csi.hashCourseGroup();//hashCourseGroup(csi.getCourseIndex(),csi.getGroupIds());
         HashMap<String, Integer> mCourseGroup2NumberClass = new HashMap<>();
         //for(String cg: relatedCourseGroups[i]) mCourseGroup2NumberClass.put(cg,0);
         for(String cg: relatedCourseGroups.get(csi.getId())) mCourseGroup2NumberClass.put(cg,0);
@@ -388,7 +404,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             int tsj = solutionSlot.get(csj.getId());
 
             int dj = csj.getDuration();
-            String cgj = hashCourseGroup(csj.getCourseIndex(),csj.getGroupIds());
+            String cgj = csj.hashCourseGroup();//hashCourseGroup(csj.getCourseIndex(),csj.getGroupIds());
             if(!Util.overLap(timeSlot,di,tsj,dj)){
                 //if(relatedCourseGroups[i].contains(cgj) && !cgi.equals(cgj)){
                 if(relatedCourseGroups.get(csi.getId()).contains(cgj) && !cgi.equals(cgj)){

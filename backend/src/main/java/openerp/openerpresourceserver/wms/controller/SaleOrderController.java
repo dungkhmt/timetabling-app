@@ -3,14 +3,15 @@ package openerp.openerpresourceserver.wms.controller;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.saleOrder.CreateSaleOrderReq;
+import openerp.openerpresourceserver.wms.dto.saleOrder.OrderListExportedRes;
 import openerp.openerpresourceserver.wms.dto.saleOrder.OrderListRes;
 import openerp.openerpresourceserver.wms.dto.saleOrder.SalesOrderDetailRes;
 import openerp.openerpresourceserver.wms.service.SaleOrderService;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/sale-order")
@@ -34,7 +35,7 @@ public class SaleOrderController {
     }
 
     @PostMapping("/get-all")
-    public ApiResponse<Pagination<OrderListRes>>  getAllSaleOrders(@RequestParam int page, @RequestParam int limit, @RequestBody Map<String, Object> filters) {
+    public ApiResponse<Pagination<OrderListRes>>  getAllSaleOrders(@RequestParam int page, @RequestParam int limit, @RequestBody SaleOrderGetListFilter filters) {
         return saleOrderService.getAllSaleOrders(page, limit, filters);
     }
 
@@ -42,6 +43,12 @@ public class SaleOrderController {
     @GetMapping("/get-approved")
     public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(@RequestParam int page, @RequestParam int limit) {
         return saleOrderService.getApprovedSaleOrders(page, limit);
+    }
+
+    @GetMapping("/export")
+    public ApiResponse<Pagination<OrderListExportedRes>> exportSaleOrders(@RequestParam(defaultValue = "1") int page
+            , @RequestParam(defaultValue = "100") int limit) {
+        return saleOrderService.exportSaleOrders(page, limit);
     }
 
 

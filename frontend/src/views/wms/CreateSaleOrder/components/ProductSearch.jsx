@@ -207,6 +207,8 @@ const ProductSearch = () => {
       const newItem = {
         productId: product.id,
         quantity: 1,
+        price: product.wholeSalePrice,
+        unit: product.unit
       };
       setSalesOrder(prev => ({ 
         ...prev, 

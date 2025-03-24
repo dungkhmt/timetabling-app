@@ -1,31 +1,65 @@
-import React from 'react';
-import { Box, Grid, TextField, Select, MenuItem, FormControl, Typography } from "@mui/material";
+import React from "react";
+import {
+  Box,
+  Grid,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  Typography,
+} from "@mui/material";
 
 import { useOrderForm } from "../context/OrderFormContext";
 import FacilityField from "./FacilityField";
 import CustomerField from "./CustomerField";
-import RequireField from 'views/wms/common/components/RequireField';
-
+import RequireField from "views/wms/common/components/RequireField";
+import { SALE_CHANNELS } from "views/wms/common/constants/constants";
 const BasicInfoForm = () => {
   const { salesOrder, setSalesOrder } = useOrderForm();
   const [discountTypes] = React.useState(["PERCENT", "FIXED"]);
-  const [orderPurposes] = React.useState(["SALES", "SAMPLE", "GIFT", "REPLACEMENT"]);
+  const [orderPurposes] = React.useState([
+    "SALES",
+    "SAMPLE",
+    "GIFT",
+    "REPLACEMENT",
+  ]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setSalesOrder(prev => ({ ...prev, [name]: value }));
+    setSalesOrder((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
     <Box sx={{ mb: 3 }}>
       <Grid container spacing={2}>
+        
+      <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Kênh bán hàng: <RequireField />
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+        <Select
+          name="saleChannel"
+          value={salesOrder.saleChannel}
+          onChange={handleInputChange}
+          fullWidth
+          size="small"
+        >
+          {Object.keys(SALE_CHANNELS).map((channel) => (
+            <MenuItem key={channel} value={channel}>
+              {SALE_CHANNELS[channel]}
+            </MenuItem>
+          ))}
+        </Select>
+        </Grid>
         <FacilityField />
 
         <CustomerField />
 
         <Grid item xs={4}>
           <Typography variant="body1" sx={{ pt: 1 }}>
-            Giao sau ngày: <RequireField />
+            Ngày giao dự kiến: <RequireField />
           </Typography>
         </Grid>
         <Grid item xs={8}>
@@ -46,8 +80,8 @@ const BasicInfoForm = () => {
           </Typography>
         </Grid>
         <Grid item xs={8}>
-          <TextField 
-            fullWidth 
+          <TextField
+            fullWidth
             size="small"
             name="invoiceNumber"
             value={salesOrder.invoiceNumber}
@@ -94,7 +128,7 @@ const BasicInfoForm = () => {
           />
         </Grid>
 
-        <Grid item xs={4}>
+        {/* <Grid item xs={4}>
           <Typography variant="body1" sx={{ pt: 1 }}>
             Mục đích đơn hàng:
           </Typography>
@@ -108,14 +142,18 @@ const BasicInfoForm = () => {
             >
               {orderPurposes.map((purpose) => (
                 <MenuItem key={purpose} value={purpose}>
-                  {purpose === "SALES" ? "Bán hàng" : 
-                   purpose === "SAMPLE" ? "Mẫu" : 
-                   purpose === "GIFT" ? "Quà tặng" : "Thay thế"}
+                  {purpose === "SALES"
+                    ? "Bán hàng"
+                    : purpose === "SAMPLE"
+                    ? "Mẫu"
+                    : purpose === "GIFT"
+                    ? "Quà tặng"
+                    : "Thay thế"}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-        </Grid>
+        </Grid> */}
       </Grid>
     </Box>
   );

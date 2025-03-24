@@ -14,6 +14,10 @@ import java.util.Set;
 @NoArgsConstructor
 public class ClassSegment {
     public int id;
+    public int type; // 0 class cha (lop LT); 1 class con (lop BT)
+    public int instanceIndex;// index (0,1,2,..) of the current class-segment in the corresponding general_class
+                            // 0 means that class-segment is unique (no split) in the corresponding general_class
+                            // 1,2,... current class-segment is real child (splited from general_class)
     public Long classId;
     public Long parentClassId;// id lop LT cua lop BT hien tai
     public List<Integer> groupIds;
@@ -29,7 +33,7 @@ public class ClassSegment {
     public String groupNames;
 
     public String hashCourseGroup(){
-        String s = courseIndex + "-";
+        String s = courseIndex + "-" + type + "-" + instanceIndex + "-";
         for(int j = 0; j < groupIds.size(); j++){
             s = s + groupIds.get(j);
             if(j < groupIds.size()-1) s = s + ",";

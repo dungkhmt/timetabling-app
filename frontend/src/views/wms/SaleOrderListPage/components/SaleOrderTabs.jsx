@@ -1,14 +1,13 @@
 import React from "react";
 import { Tabs, Tab } from "@mui/material";
-
+import { SALE_ORDER_TABS } from "views/wms/common/constants/constants";
 const SaleOrderTabs = ({ value, onChange }) => {
+
   return (
     <Tabs value={value} onChange={onChange} sx={{ mt: 2 }}>
-      <Tab label="Tất cả" />
-      <Tab label="Chưa xử lý giao hàng" />
-      <Tab label="Chờ lấy hàng" />
-      <Tab label="Đang giao hàng" />
-      <Tab label="Chưa thanh toán" />
+      {SALE_ORDER_TABS.map((tab) => (
+        <Tab key={tab.value} label={tab.label} value={tab.value} />
+      ))}
     </Tabs>
   );
 };

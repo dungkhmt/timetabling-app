@@ -1,9 +1,9 @@
 import React from 'react';
 import { Typography, Button, Stack } from '@mui/material';
-import { Add, Refresh } from '@mui/icons-material';
+import { Add, ImportExport, Refresh } from '@mui/icons-material';
 import { useHistory, useLocation } from 'react-router-dom';
 
-const SaleOrderHeader = ({ onRefresh }) => {
+const SaleOrderHeader = ({ onRefresh, onExport }) => {
   const history = useHistory();
   const location = useLocation();
 
@@ -28,6 +28,13 @@ const SaleOrderHeader = ({ onRefresh }) => {
           onClick={onRefresh}
         >
           Làm mới
+        </Button>
+        <Button 
+          variant="outlined" 
+          startIcon={<ImportExport />} 
+          onClick={onExport}
+        >
+          Xuất file
         </Button>
         <Button 
           variant="contained" 

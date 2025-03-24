@@ -21,7 +21,13 @@ public class OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolve
     public OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver(MapDataScheduleTimeSlotRoom I){
         this.I = I;
     }
+    public String name(){
+        return "OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver";
+    }
     public void testPrint(){
+        for(int i = 0; i < I.getClassSegments().size(); i++){
+            log.info("testPrint class-segment[" + i + "]: " + I.getClassSegments().get(i));
+        }
         ClassSegment cs = I.getClassSegments().get(0);
         for(int slotIndex: cs.getDomainTimeSlots()){
             DaySessionSlot dss = new DaySessionSlot(slotIndex);
@@ -31,7 +37,8 @@ public class OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolve
     @Override
     public void solve() {
         // TODO by ChauTT
-        log.info("solve start... number of class-segments = " + I.getClassSegments().size());
+
+        log.info(name() + "::solve start... number of class-segments = " + I.getClassSegments().size());
         testPrint();
         solutionRoom = new HashMap<>();
         solutionSlot = new HashMap<>();

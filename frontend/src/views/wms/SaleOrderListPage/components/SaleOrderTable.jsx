@@ -12,7 +12,7 @@ import {
   Button,
 } from "@mui/material";
 import { useHistory, useLocation } from "react-router-dom";
-
+import { SALE_ORDER_STATUSES } from "views/wms/common/constants/constants";
 const getStatusColor = (status) => {
   switch (status) {
     case "CREATED":
@@ -29,22 +29,7 @@ const getStatusColor = (status) => {
   }
 };
 
-const getStatusLabel = (status) => {
-  switch (status) {
-    case "CREATED":
-      return "Chưa xử lý giao hàng";
-    case "APPROVED":
-      return "Đã duyệt";
-    case "REJECTED":
-      return "Từ chối";
-    case "CANCELED":
-      return "Đã hủy";
-    case "SHIPPING":
-      return "Đang giao hàng";
-    default:
-      return status;
-  }
-};
+
 
 const SaleOrderTable = ({
   orders,
@@ -96,7 +81,7 @@ const SaleOrderTable = ({
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={getStatusLabel(order.status)}
+                    label={SALE_ORDER_STATUSES[order.status] || "Không xác định"}
                     color={getStatusColor(order.status)}
                     variant="outlined"
                     size="small"
