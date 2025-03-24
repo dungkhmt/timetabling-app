@@ -236,6 +236,13 @@ public class V2ClassScheduler {
                 //log.info("mapData, gc[" + i + "] crew = " + gc.getCrew());
                 if (gc.getTimeSlots() != null) {
                     for (int j = 0; j < gc.getTimeSlots().size(); j++) {
+                        int type = 0;
+                        if(gc.getParentClassId()!=null) type = 1; // child class (vd: lop BT)
+                        int instanceIndex = 0;
+                        if(gc.getTimeSlots().size() > 1){
+                            instanceIndex = j+1;// 1, 2, .. correspond splited class-segment
+                                                // 0 means no split
+                        }
                         RoomReservation rr = gc.getTimeSlots().get(j);
                         idx++; // new class-segment (RoomReservation)
                         nbSplits[idx] = gc.getTimeSlots().size();
@@ -352,7 +359,7 @@ public class V2ClassScheduler {
 
 
                         log.info("mapData, roomPriority[" + idx + "/" + n + "].sz = " + roomPriority[idx].size() + " domain timeSlots.sz = " + D[idx].size());
-                        classSegments[idx] = new ClassSegment(idx, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName());
+                        classSegments[idx] = new ClassSegment(idx, type,instanceIndex, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName());
 
                     }
                 }
@@ -467,6 +474,7 @@ public class V2ClassScheduler {
         */
         //CourseNotOverlapBackTrackingSolver solver = new CourseNotOverlapBackTrackingSolver(courses,mCourse2Domain,mCourse2Duration);
         //GreedySolver solver = new GreedySolver(data);
+        /*
         Solver solver = null;
         if(algorithm.equals(Constants.ONE_CLASS_PER_COURSE_GREEDY_FIRST_FIT))
             solver = new GreedySolver(data);
@@ -477,7 +485,9 @@ public class V2ClassScheduler {
         else if(algorithm.equals(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1))
             //solver = new GreedySolver1(data);
             solver = new CourseBasedMultiClusterGreedySolver(data);
-
+        */
+        MultiClusterSolver solver = new MultiClusterSolver(data);
+        solver.oneClusterAlgorithm = algorithm;
         solver.setTimeLimit(timeLimit);
 
         solver.solve();
