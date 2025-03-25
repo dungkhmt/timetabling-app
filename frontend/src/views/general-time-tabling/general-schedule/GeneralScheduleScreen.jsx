@@ -2,11 +2,12 @@ import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import AutoScheduleDialog from "./components/AutoScheduleDialog";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoComplete";
+import GeneralClusterAutoComplete from "../common-components/GeneralClusterAutoComplete";
 import { Button, Tabs, Tab, Chip, Divider, Paper } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
 import RoomOccupationScreen from "../room-occupation/RoomOccupationScreen";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogActions,
@@ -22,6 +23,8 @@ const GeneralScheduleScreen = () => {
   const [viewTab, setViewTab] = useState(0);
   const [openResetConfirm, setOpenResetConfirm] = useState(false);
   const [isMaxDayHovered, setIsMaxDayHovered] = useState(false);
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [filteredClasses, setFilteredClasses] = useState([]);
 
   const days = [2, 3, 4, 5, 6, 7, 8];
 
@@ -47,6 +50,22 @@ const GeneralScheduleScreen = () => {
     }
   };
 
+  // xóa option chọn nhóm khi chọn cụm và xóa chọn cum khi chọn nhóm
+  useEffect(() => {
+    const filterClassesByCluster = async () => {
+      if (selectedCluster) {
+        setters.setSelectedGroup(null);
+        
+        const clusterClasses = await handlers.getClassesByCluster(selectedCluster.id);
+        setFilteredClasses(clusterClasses);
+      } else {
+        setFilteredClasses(states.classes);
+      }
+    };
+    
+    filterClassesByCluster();
+  }, [selectedCluster, states.classes]);
+
   const handleConfirmReset = () => {
     handlers.handleResetTimeTabling();
     setOpenResetConfirm(false);
@@ -55,11 +74,15 @@ const GeneralScheduleScreen = () => {
   const isSchedulingInProgress =
     states.isAutoSaveLoading || states.isTimeScheduleLoading || states.loading;
 
-  // Filter unscheduled classes (where room is null)
   const unscheduledClasses = useMemo(() => {
+    if (selectedCluster) {
+      return filteredClasses.filter((cls) => cls.room === null);
+    }
     if (!states.classes || states.classes.length === 0) return [];
     return states.classes.filter((cls) => cls.room === null);
-  }, [states.classes]);
+  }, [states.classes, filteredClasses, selectedCluster]);
+
+  const displayClasses = selectedCluster ? filteredClasses : states.classes;
 
   return (
     <div className="flex flex-col gap-3">
@@ -85,7 +108,7 @@ const GeneralScheduleScreen = () => {
                 <span>Tất cả lớp học</span>
                 <Chip
                   size="small"
-                  label={states.classes?.length || 0}
+                  label={displayClasses?.length || 0}
                   color="default"
                 />
               </div>
@@ -112,20 +135,31 @@ const GeneralScheduleScreen = () => {
               <div className="flex gap-3 items-center flex-wrap">
                 <GeneralSemesterAutoComplete
                   selectedSemester={states.selectedSemester}
-                  setSelectedSemester={setters.setSelectedSemester}
+                  setSelectedSemester={(semester) => {
+                    setters.setSelectedSemester(semester);
+                    // Clear cluster selection when semester changes
+                    setSelectedCluster(null);
+                  }}
                   sx={{
                     minWidth: 200,
                     "& .MuiInputBase-root": { height: "40px" },
                   }}
                 />
+
                 <GeneralGroupAutoComplete
                   selectedGroup={states.selectedGroup}
-                  setSelectedGroup={setters.setSelectedGroup}
+                  setSelectedGroup={(group) => {
+                    setters.setSelectedGroup(group);
+                    // Clear cluster selection when group changes
+                    setSelectedCluster(null);
+                  }}
                   sx={{
                     minWidth: 200,
                     "& .MuiInputBase-root": { height: "40px" },
                   }}
+                  disabled={selectedCluster !== null}
                 />
+
                 <FormControl
                   sx={{
                     minWidth: 200,
@@ -215,140 +249,101 @@ const GeneralScheduleScreen = () => {
             </Paper>
 
             <div className="sticky top-0 z-10 bg-white py-3 mt-3 border-b">
-              <div className="flex justify-end gap-2">
-                {states.selectedRows.length > 0 ? (
-                  <div className="flex-grow flex items-center px-3 bg-blue-50 rounded">
-                    <span className="text-blue-700">
-                      {states.selectedRows.length} lớp được chọn
-                    </span>
-                  </div>
-                ) : null}
-
-                <Button
-                  disabled={
-                    states.selectedSemester === null ||
-                    states.isExportExcelLoading
-                  }
-                  startIcon={
-                    states.isExportExcelLoading ? (
-                      <FacebookCircularProgress size={20} />
-                    ) : null
-                  }
-                  variant="contained"
-                  color="success"
-                  onClick={() =>
-                    handlers.handleExportTimeTabling(
-                      states.selectedSemester?.semester,
-                      true // includeBorders parameter
-                    )
-                  }
+              <div className="flex justify-between gap-2">
+                <GeneralClusterAutoComplete
+                  selectedCluster={selectedCluster}
+                  setSelectedCluster={setSelectedCluster}
+                  selectedSemester={states.selectedSemester}
                   sx={{
-                    minWidth: "100px",
-                    height: "40px",
-                    padding: "8px 16px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    boxShadow: 1,
+                    minWidth: 200,
+                    "& .MuiInputBase-root": { height: "40px" },
                   }}
-                >
-                  Xuất File Excel
-                </Button>
-                <Button
-                  disabled={
-                    states.selectedRows.length === 0 || states.isResetLoading
-                  }
-                  startIcon={
-                    states.isResetLoading ? (
-                      <FacebookCircularProgress size={20} />
-                    ) : null
-                  }
-                  variant="contained"
-                  color="error"
-                  onClick={() => setOpenResetConfirm(true)}
-                  sx={{
-                    minWidth: "150px",
-                    height: "40px",
-                    padding: "8px 16px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    boxShadow: 1,
-                  }}
-                >
-                  Xóa lịch học TKB
-                </Button>                
-                {/*
-                <Button
-                  disabled={
-                    !states.selectedSemester || states.isAutoSaveLoading
-                  }
-                  startIcon={
-                    states.isAutoSaveLoading ? (
-                      <FacebookCircularProgress size={20} />
-                    ) : null
-                  }
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setters.setOpenTimeslotDialog(true)}
-                  sx={{
-                    minWidth: "160px",
-                    height: "40px",
-                    padding: "8px 16px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    boxShadow: 1,
-                  }}
-                >
-                  Tự động xếp TKB
-                </Button>
-                */}
-                {/*
-                <Button
-                  disabled={
-                    !states.selectedSemester || states.isAutoSaveLoading
-                  }
-                  startIcon={
-                    states.isTimeScheduleLoading ? (
-                      <FacebookCircularProgress size={20} />
-                    ) : null
-                  }
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setters.setOpenClassroomDialog(true)}
-                  sx={{
-                    minWidth: "160px",
-                    height: "40px",
-                    padding: "8px 16px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    boxShadow: 1,
-                  }}
-                >
-                  Tự động xếp phòng
-                </Button>
-                */}
-                <Button
-                  disabled={
-                    states.selectedRows.length === 0 || states.isAutoSaveLoading
-                  }
-                  startIcon={
-                    states.isAutoSaveLoading ? (
-                      <FacebookCircularProgress size={20} />
-                    ) : null
-                  }
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setters.setOpenSelectedDialog(true)}
-                  sx={{
-                    minWidth: "200px",
-                    height: "40px",
-                    padding: "8px 16px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    boxShadow: 1,
-                  }}
-                >
-                  Xếp lịch lớp đã chọn
-                </Button>
+                />
+                <div className="flex md:flex-row flex-col justify-end gap-2">
+                  {states.selectedRows.length > 0 ? (
+                    <div className="flex-grow flex items-center px-3 bg-blue-50 rounded">
+                      <span className="text-blue-700">
+                        {states.selectedRows.length} lớp được chọn
+                      </span>
+                    </div>
+                  ) : null}
+  
+                  <Button
+                    disabled={
+                      states.selectedSemester === null ||
+                      states.isExportExcelLoading
+                    }
+                    startIcon={
+                      states.isExportExcelLoading ? (
+                        <FacebookCircularProgress size={20} />
+                      ) : null
+                    }
+                    variant="contained"
+                    color="success"
+                    onClick={() =>
+                      handlers.handleExportTimeTabling(
+                        states.selectedSemester?.semester,
+                        true // includeBorders parameter
+                      )
+                    }
+                    sx={{
+                      minWidth: "100px",
+                      height: "40px",
+                      padding: "8px 16px",
+                      fontWeight: 500,
+                      textTransform: "none",
+                      boxShadow: 1,
+                    }}
+                  >
+                    Xuất File Excel
+                  </Button>
+                  <Button
+                    disabled={
+                      states.selectedRows.length === 0 || states.isResetLoading
+                    }
+                    startIcon={
+                      states.isResetLoading ? (
+                        <FacebookCircularProgress size={20} />
+                      ) : null
+                    }
+                    variant="contained"
+                    color="error"
+                    onClick={() => setOpenResetConfirm(true)}
+                    sx={{
+                      minWidth: "150px",
+                      height: "40px",
+                      padding: "8px 16px",
+                      fontWeight: 500,
+                      textTransform: "none",
+                      boxShadow: 1,
+                    }}
+                  >
+                    Xóa lịch học TKB
+                  </Button>
+                  <Button
+                    disabled={
+                      states.selectedRows.length === 0 || states.isAutoSaveLoading
+                    }
+                    startIcon={
+                      states.isAutoSaveLoading ? (
+                        <FacebookCircularProgress size={20} />
+                      ) : null
+                    }
+                    variant="contained"
+                    color="primary"
+                    onClick={() => setters.setOpenSelectedDialog(true)}
+                    sx={{
+                      minWidth: "200px",
+                      height: "40px",
+                      padding: "8px 16px",
+                      fontWeight: 500,
+                      textTransform: "none",
+                      boxShadow: 1,
+                    }}
+                  >
+                    Xếp lịch lớp đã chọn
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -372,7 +367,7 @@ const GeneralScheduleScreen = () => {
             {viewTab === 0 && (
               <TimeTable
                 selectedSemester={states.selectedSemester}
-                classes={states.classes}
+                classes={displayClasses}
                 selectedGroup={states.selectedGroup}
                 onSaveSuccess={handlers.handleRefreshClasses}
                 loading={states.loading || isSchedulingInProgress}

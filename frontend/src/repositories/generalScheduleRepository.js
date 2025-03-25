@@ -272,4 +272,30 @@ export const generalScheduleRepository = {
       throw error;
     }
   },
+
+  getClassesByCluster: async (clusterId) => {
+    try {
+      const response = await request(
+        "get",
+        `/general-classes/get-by-cluster/${clusterId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Fetch classes by cluster error:", error);
+      throw error;
+    }
+  },
+
+  getClustersBySemester: async (semester) => {
+    try {
+      const response = await request(
+        "get",
+        `/general-classes/get-clusters-by-semester?semester=${semester}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Fetch clusters by semester error:", error);
+      throw error;
+    }
+  },
 };

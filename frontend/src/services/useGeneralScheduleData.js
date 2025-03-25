@@ -50,6 +50,73 @@ export const useGeneralSchedule = () => {
     }
   }, [selectedSemester, selectedGroup]);
 
+  // Helper function to process class data
+  const processClassData = (data) => {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+  
+    let generalClasses = [];
+    data.forEach((classObj) => {
+      const usedDuration =
+        classObj.timeSlots?.reduce((total, slot) => {
+          return total + (slot.duration || 0);
+        }, 0) || 0;
+  
+      const remainingDuration = classObj.duration - usedDuration;
+  
+      // Handle child classes (time slots)
+      if (classObj.timeSlots && classObj.timeSlots.length > 0) {
+        classObj.timeSlots.forEach((timeSlot, index) => {
+          if (timeSlot.duration !== null) {
+            const cloneObj = JSON.parse(
+              JSON.stringify({
+                ...classObj,
+                ...timeSlot,
+                classCode: classObj.classCode,
+                roomReservationId: timeSlot.id,
+                id: classObj.id + `-${index + 1}`,
+                crew: classObj.crew,
+                duration: timeSlot.duration,
+                isChild: true,
+                parentId: classObj.id,
+              })
+            );
+            delete cloneObj.timeSlots;
+            generalClasses.push(cloneObj);
+          }
+        });
+      }
+  
+      if (remainingDuration > 0 || !classObj.timeSlots?.length) {
+        generalClasses.push({
+          ...classObj,
+          generalClassId: String(
+            classObj.generalClassId || classObj.id || ""
+          ),
+          duration: remainingDuration,
+          isParent: true,
+        });
+      }
+    });
+  
+    generalClasses.sort((a, b) => {
+      const parentIdA = a.parentId || a.id;
+      const parentIdB = b.parentId || b.id;
+  
+      if (parentIdA !== parentIdB) {
+        return parentIdA - parentIdB;
+      }
+  
+      if (a.isParent && !b.isParent) return -1;
+      if (!a.isParent && b.isParent) return 1;
+  
+      return 0;
+    });
+  
+    return generalClasses;
+  };
+
   // Fetch classes
   const fetchClasses = useCallback(async () => {
     if (!selectedSemester?.semester) return;
@@ -63,72 +130,8 @@ export const useGeneralSchedule = () => {
         selectedGroup?.groupName
       );
 
-      // Process data like the select function in previous implementation
-      if (!Array.isArray(data)) {
-        setClasses([]);
-        return;
-      }
-
-      let generalClasses = [];
-      data.forEach((classObj) => {
-        const usedDuration =
-          classObj.timeSlots?.reduce((total, slot) => {
-            return total + (slot.duration || 0);
-          }, 0) || 0;
-
-        const remainingDuration = classObj.duration - usedDuration;
-
-        // Handle child classes (time slots)
-        if (classObj.timeSlots && classObj.timeSlots.length > 0) {
-          // Only add valid child classes (with duration not null)
-          classObj.timeSlots.forEach((timeSlot, index) => {
-            if (timeSlot.duration !== null) {
-              const cloneObj = JSON.parse(
-                JSON.stringify({
-                  ...classObj,
-                  ...timeSlot,
-                  classCode: classObj.classCode,
-                  roomReservationId: timeSlot.id,
-                  id: classObj.id + `-${index + 1}`,
-                  crew: classObj.crew,
-                  duration: timeSlot.duration,
-                  isChild: true,
-                  parentId: classObj.id,
-                })
-              );
-              delete cloneObj.timeSlots;
-              generalClasses.push(cloneObj);
-            }
-          });
-        }
-
-        if (remainingDuration > 0 || !classObj.timeSlots?.length) {
-          generalClasses.push({
-            ...classObj,
-            generalClassId: String(
-              classObj.generalClassId || classObj.id || ""
-            ),
-            duration: remainingDuration,
-            isParent: true,
-          });
-        }
-      });
-
-      generalClasses.sort((a, b) => {
-        const parentIdA = a.parentId || a.id;
-        const parentIdB = b.parentId || b.id;
-
-        if (parentIdA !== parentIdB) {
-          return parentIdA - parentIdB;
-        }
-
-        if (a.isParent && !b.isParent) return -1;
-        if (!a.isParent && b.isParent) return 1;
-
-        return 0;
-      });
-
-      setClasses(generalClasses);
+      const processedClasses = processClassData(data);
+      setClasses(processedClasses);
     } catch (error) {
       console.error("Error fetching classes:", error);
       toast.error("Không thể tải danh sách lớp!");
@@ -665,6 +668,45 @@ export const useGeneralSchedule = () => {
     }
   }, []);
 
+  const getClassesByCluster = useCallback(async (clusterId) => {
+    if (!clusterId) {
+      toast.error("Cluster ID is required!");
+      return [];
+    }
+  
+    setLoading(true);
+  
+    try {
+      const data = await generalScheduleRepository.getClassesByCluster(clusterId);
+      return processClassData(data);
+    } catch (error) {
+      toast.error("Không thể tải danh sách lớp theo cụm!");
+      console.error("Failed to fetch classes by cluster", error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getClustersBySemester = useCallback(async (semester) => {
+    if (!semester) {
+      toast.error("Học kỳ không được để trống!");
+      return [];
+    }
+    
+    setLoading(true);
+    try {
+      const data = await generalScheduleRepository.getClustersBySemester(semester);
+      return data;
+    } catch (error) {
+      toast.error("Không thể tải danh sách cụm theo học kỳ!");
+      console.error("Failed to fetch clusters by semester", error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     states: {
       selectedSemester,
@@ -737,6 +779,8 @@ export const useGeneralSchedule = () => {
       uploadFile,
       deleteBySemester,
       fetchAlgorithms,
+      getClassesByCluster,
+      getClustersBySemester,
     },
   };
 };

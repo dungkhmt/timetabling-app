@@ -12,8 +12,10 @@ import openerp.openerpresourceserver.generaltimetabling.exception.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
@@ -34,6 +36,7 @@ public class GeneralClassController {
     private GeneralClassService gService;
     private ExcelService excelService;
     private ClassGroupService classGroupService;
+    private ClusterRepo clusterRepo;
     @ExceptionHandler(ConflictScheduleException.class)
     public ResponseEntity resolveScheduleConflict(ConflictScheduleException e) {
         return ResponseEntity.status(410).body(e.getCustomMessage());
@@ -234,5 +237,17 @@ public class GeneralClassController {
         int cnt = gService.computeClassCluster(I);
         log.info("computeClassCluster, semester = " + I.getSemester() + " result cnt = " + cnt);
         return ResponseEntity.ok().body(cnt);
+    }
+
+    @GetMapping("/get-by-cluster/{clusterId}")
+    public ResponseEntity<List<GeneralClassDto>> getGeneralClassesByCluster(@PathVariable Long clusterId) {
+        List<GeneralClassDto> classes = gService.getGeneralClassByCluster(clusterId);
+        return ResponseEntity.ok(classes);
+    }
+
+    @GetMapping("/get-clusters-by-semester")
+    public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("semester") String semester) {
+        List<Cluster> clusters = clusterRepo.findAllBySemester(semester);
+        return ResponseEntity.ok(clusters);
     }
 }
