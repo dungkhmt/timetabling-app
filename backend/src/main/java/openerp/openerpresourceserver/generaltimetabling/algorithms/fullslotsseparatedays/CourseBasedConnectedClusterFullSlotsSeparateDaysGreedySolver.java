@@ -381,6 +381,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             }
         }
         CourseNotOverlapBackTrackingSolver CNOBS = new CourseNotOverlapBackTrackingSolver(courseGroupId,mCourseGroup2Domain,mCourseGroup2Duration, mCourseGroup2ConflictCourseGroups);
+        CNOBS.findFirstSolution = false;// find the best solution
         CNOBS.solve(timeLimit);
         if(!CNOBS.hasSolution()){
             log.info("solve, CNOBS cannot find any solution!!!");

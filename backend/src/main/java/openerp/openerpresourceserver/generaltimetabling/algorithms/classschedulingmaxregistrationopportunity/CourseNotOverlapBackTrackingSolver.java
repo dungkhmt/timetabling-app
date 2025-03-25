@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity;
 
 import lombok.extern.log4j.Log4j2;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
 
 import java.util.*;
 
@@ -18,8 +19,12 @@ public class CourseNotOverlapBackTrackingSolver {
     int[] duration;
     int[] x;
     int[] sol;
+    int[] bestSol;
+    int bestSessionUsed;// number of day-sessions occupied is minimal (first objective)
+    int bestDistance; // min distance between day-session used is maximal (second objective)
     Map<String, Integer> solutionMap;
     boolean found;
+    public boolean findFirstSolution = false;
     long timeLimit = 10000;// 10 seconds by default
     long t0;// starting time point;
     public CourseNotOverlapBackTrackingSolver(Set<String> courses, Map<String, List<Integer>> mCourse2Domain, Map<String, Integer> mCourse2Duration,Map<String, List<String>> mCourseGroup2ConflictCourseGroups){
@@ -38,6 +43,7 @@ public class CourseNotOverlapBackTrackingSolver {
         conflict = new Set[nbCourses];
         log.info("solve, nbCourses = " + nbCourses);
         int idx = -1;
+        bestSessionUsed = 100000000; bestDistance = 0; bestSol = null;
         for(String c: courses){
             //System.out.println("Solver: course " + c);
             idx++;
@@ -83,15 +89,32 @@ public class CourseNotOverlapBackTrackingSolver {
         return true;
     }
     private void solution(){
-        if(found) return;
+        if(findFirstSolution && found) return;
         found = true;
-        for(int i = 0; i < nbCourses; i++) sol[i] = x[i];
+        Set<Integer> daySessions = new HashSet<>();
+        for(int i = 0; i < nbCourses; i++){
+            DaySessionSlot dss = new DaySessionSlot(x[i]);
+            int ds = dss.day*2 + dss.session;
+            daySessions.add(ds);
+        }
+        int minD = 100000;
+        for(int s1: daySessions)
+            for(int s2: daySessions) if(s1 < s2){
+                if(minD > s2 - s1) minD = s2 - s1;
+            }
+        if(daySessions.size() < bestSessionUsed ||
+        daySessions.size() == bestSessionUsed && minD > bestDistance) {
+            bestSessionUsed = daySessions.size();
+            bestDistance = minD;
+            log.info("update bestSessionUsed = " + bestSessionUsed + " bestDistance = " + bestDistance);
+            for (int i = 0; i < nbCourses; i++) sol[i] = x[i];
+        }
     }
     private void tryValue(int k){
         long t = System.currentTimeMillis() - t0;
         //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " t = " + t + " timeLimit = " + timeLimit);
         if(t > timeLimit) return;
-        if(found) return;
+        if(findFirstSolution) if(found) return;
         //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + ", Domain = " + domain[k].size() + " start");
         // try value for x[k]: start time-slot for course k
         for(int v: domain[k]){
