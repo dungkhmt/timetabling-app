@@ -39,6 +39,9 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .shipmentTypeId(ShipmentType.OUTBOUND.name())
                 .toCustomer(orderHeader.getToCustomer())
                 .order(orderHeader)
+                .shipmentName(req.getShipmentName())
+                .note(req.getNote())
+                .expectedDeliveryDate(req.getExpectedDeliveryDate())
                 .createdByUser(userLoginRepo.findById(name).orElseThrow(
                         () -> new DataNotFoundException("User not found with id: " + name)
                 ))
@@ -151,6 +154,8 @@ public class ShipmentServiceImpl implements ShipmentService {
                         .shipmentName(shipment.getShipmentName())
                         .customerName(shipment.getToCustomer().getName())
                         .statusId(shipment.getShipmentStatusId())
+                        .createdStamp(shipment.getCreatedStamp())
+                        .expectedDeliveryDate(shipment.getExpectedDeliveryDate())
                         .products(products)
                         .build())
                 .build();

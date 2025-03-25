@@ -86,7 +86,7 @@ const SaleOrderListPage = () => {
   // Handle tab change
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-    setFilters(prev => ({ ...prev, status: newValue }));
+    setFilters(prev => ({ ...prev, status: newValue == "ALL" ? null : newValue }));
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
   };
 

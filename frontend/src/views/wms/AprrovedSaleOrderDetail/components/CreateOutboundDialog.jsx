@@ -17,9 +17,11 @@ import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useApprovedOrderDetail } from "../context/OrderDetailContext";
 import OutboundFormFields from "./outbound/OutboundFormFields";
 import OutboundProductTable from "./outbound/OutboundProductTable";
+import { useOrderDetail } from "views/wms/SaleOrderDetail/context/OrderDetailContext";
 
 const CreateOutboundDialog = ({ open, onClose }) => {
-  const { getMoreInventoryItemsApi, createOutBoundOrderApi, orderData } = useApprovedOrderDetail();
+  const { getMoreInventoryItemsApi, createOutBoundOrderApi } = useApprovedOrderDetail();
+  const { orderData } = useOrderDetail();
   const [inventoryItems, setInventoryItems] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,8 @@ const CreateOutboundDialog = ({ open, onClose }) => {
     id: "",
     orderId: "",
     note: "",
+    shipmentName: "",
+    expectedDeliveryDate: null,
     products: [],
   });
 
@@ -60,6 +64,8 @@ const CreateOutboundDialog = ({ open, onClose }) => {
         id: "",
         orderId: orderData.id,
         note: "",
+        shipmentName: "",
+        expectedDeliveryDate: null,
         products: initialProducts,
       });
       setErrors({});

@@ -3,11 +3,13 @@ import { Box, Typography, Stack, useTheme, useMediaQuery, Button } from "@mui/ma
 import { useApprovedOrderDetail } from "../context/OrderDetailContext";
 import OutBoundTable from "./OutBoundTable";
 import CreateOutboundDialog from "./CreateOutboundDialog";
+import { useOrderDetail } from "views/wms/SaleOrderDetail/context/OrderDetailContext";
 
 const OutBoundList = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { getOutBoundsOrderApi, orderData } = useApprovedOrderDetail();
+  const { getOutBoundsOrderApi } = useApprovedOrderDetail();
+  const {orderData} = useOrderDetail();
 
   const [outBounData, setOutBoundData] = useState(null);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);

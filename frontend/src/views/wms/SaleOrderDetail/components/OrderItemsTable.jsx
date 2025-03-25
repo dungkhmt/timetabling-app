@@ -34,17 +34,17 @@ const OrderItemsTable = ({ items }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.stt}>
-              <TableCell>{item.stt}</TableCell>
+          {items.map((item, index) => (
+            <TableRow key={item.id}>
+              <TableCell>{index + 1}</TableCell>
               <TableCell>{item.id}</TableCell>
-              <TableCell>{item.name}</TableCell>
+              <TableCell>{item.productName}</TableCell>
               <TableCell>{item.unit}</TableCell>
               <TableCell>{item.quantity}</TableCell>
               <TableCell>{item.price}</TableCell>
               <TableCell>{item.preBefore}</TableCell>
               <TableCell>{item.preAfter}</TableCell>
-              <TableCell>{item.total}</TableCell>
+              <TableCell>{item.amount}</TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.entity;
 
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -47,10 +48,10 @@ public class OrderHeader extends BaseEntity {
     private String orderName;
 
     @Column(name = "delivery_before_date")
-    private LocalDateTime deliveryBeforeDate;
+    private LocalDate deliveryBeforeDate;
 
     @Column(name = "delivery_after_date")
-    private LocalDateTime deliveryAfterDate;
+    private LocalDate deliveryAfterDate;
 
     @Column(name = "note")
     private String note;

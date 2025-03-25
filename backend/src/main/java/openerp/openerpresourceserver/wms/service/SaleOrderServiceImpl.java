@@ -93,6 +93,8 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
 
         var orderItems = orderHeader.getOrderItems();
+        AtomicInteger totalQuantity = new AtomicInteger(0);
+        AtomicDouble totalAmount = new AtomicDouble(0);
         var orderItemResponses = orderItems
                 .stream()
                 .map(orderItem -> {
@@ -100,6 +102,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                             .id(orderItem.getId())
                             .orderItemSeqId(orderItem.getOrderItemSeqId())
                         .productId(orderItem.getProduct().getId())
+                        .productName(orderItem.getProduct().getName())
                         .quantity(orderItem.getQuantity())
                         .amount(orderItem.getAmount())
                         .build();
@@ -107,6 +110,9 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                     orderItemRes.setPrice(orderItem.getPrice());
                     orderItemRes.setDiscount(orderItem.getDiscount());
                     orderItemRes.setTax(orderItem.getTax());
+                    orderItemRes.setAmount(orderItem.getAmount());
+                    totalAmount.addAndGet(orderItem.getQuantity());
+                    totalAmount.addAndGet(orderItem.getAmount().doubleValue());
                     return orderItemRes;
                 })
                 .toList();
@@ -115,11 +121,19 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .message("Success")
                 .data(SalesOrderDetailRes.builder()
                         .id(orderHeader.getId())
-                        .customer(orderHeader.getToCustomer().getName())
-                        .facility(orderHeader.getFacility().getName())
+                        .customerName(orderHeader.getToCustomer().getName())
+                        .facilityName(orderHeader.getFacility().getName())
                         .createdByUser(orderHeader.getCreatedByUser().getFullName())
                         .createdStamp(orderHeader.getCreatedStamp())
+                        .status(orderHeader.getStatus())
+                        .note(orderHeader.getNote())
+                        .deliveryAddress(orderHeader.getDeliveryAddress())
+                        .deliveryAfterDate(orderHeader.getDeliveryAfterDate())
+                        .priority(orderHeader.getPriority())
+                        .totalAmount(BigDecimal.valueOf(totalAmount.get()))
+                        .totalQuantity(totalQuantity.get())
                         .orderItems(orderItemResponses)
+
                         .build())
                 .build();
     }

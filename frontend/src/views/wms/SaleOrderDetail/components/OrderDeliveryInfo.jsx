@@ -11,9 +11,10 @@ const OrderDeliveryInfo = () => {
     { label: "Địa chỉ", value: orderData.deliveryAddress },
     { label: "Số Điện Thoại", value: orderData.deliveryPhone },
     { label: "Độ ưu tiên", value: orderData.priority },
-    { label: "Ngày giao hàng", value: orderData.deliveryDate },
-    { label: "Ngày tạo đơn", value: orderData.createdDate },
-    { label: "Ghi chú", value: orderData.notes },
+    { label: "Ngày giao hàng dự kiến", value: orderData.deliveryAfterDate },
+    { label: "Tổng giá trị đơn", value: orderData.totalAmount },
+    {label: "Tổng số lượng sản phẩm bán: ", value: orderData.totalQuantity},
+    { label: "Ghi chú", value: orderData.note },
   ];
 
   return <InfoCard items={deliveryInfoItems} />;

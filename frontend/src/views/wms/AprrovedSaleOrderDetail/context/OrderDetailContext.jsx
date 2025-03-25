@@ -10,39 +10,8 @@ const ApprovedOrderDetailContext = createContext();
 export const ApprovedOrderDetailProvider = ({ children }) => {
   const { id } = useParams();
   const navigate = useHistory();
-  const { getOrderDetails, getOutBoundsOrder, getMoreInventoryItems, createOutBoundOrder  } = useWms2Data();
+  const { getOutBoundsOrder, getMoreInventoryItems, createOutBoundOrder  } = useWms2Data();
   
-  const [orderData, setOrderData] = useState(null);
-  // const [loading, setLoading] = useState(true);
-
-  // Fetch order data
-  useEffect(() => {
-    const fetchOrderData = async () => {
-      if (!id) {
-        // setLoading(false);
-        return;
-      }
-
-      // setLoading(true);
-      try {
-        const res = await getOrderDetails(id);
-        if ( !res || res.code != 200) {
-          toast.error("Lỗi khi tải thông tin đơn hàng :" + res?.message);
-          return;
-        }
-        
-        setOrderData(res.data);
-      } catch (error) {
-        console.error("Error fetching order:", error);
-        toast.error("Không thể tải thông tin đơn hàng");
-      } finally {
-        // setLoading(false);
-      }
-    };
-
-    fetchOrderData();
-  }, [id]);
-
   const getOutBoundsOrderApi = async (id, page, limit) => {
     try {
       const res = await getOutBoundsOrder(id, page, limit);
@@ -83,7 +52,6 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
   }
 
   const value = {
-    orderData,
     getOutBoundsOrderApi,
     createOutBoundOrder,
     createOutBoundOrderApi,

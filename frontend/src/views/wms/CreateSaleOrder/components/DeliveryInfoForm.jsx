@@ -114,8 +114,8 @@ const DeliveryInfoForm = () => {
           <TextareaAutosize
             minRows={3} 
             maxRows={6}
-            name="notes"
-            value={salesOrder.notes}
+            name="note"
+            value={salesOrder.note}
             onChange={handleInputChange}
             style={{ 
               width: "100%", 

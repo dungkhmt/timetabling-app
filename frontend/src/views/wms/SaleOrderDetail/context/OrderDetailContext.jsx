@@ -26,7 +26,6 @@ export const OrderDetailProvider = ({ children }) => {
       try {
         const res = await getOrderDetails(id);
         if ( !res || res.code != 200) {
-          debugger;
           toast.error("Lỗi khi tải thông tin đơn hàng :" + res?.message);
           return;
         }

@@ -2,6 +2,8 @@ package openerp.openerpresourceserver.wms.dto.saleOrder;
 
 import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,17 +14,19 @@ import java.util.List;
 @Builder
 public class SalesOrderDetailRes {
     private String id;
-    private Integer numberOfInvoice;
+    private Integer numberOfInvoices;
     private String status;
-    private String saleChannel;
-    private String facility;
-    private String customer;
+    private String saleChannelId;
+    private String facilityName;
+    private String customerName;
     private String createdByUser;
     private String deliveryAddress;
     private String deliveryPhone;
     private LocalDateTime createdStamp;
-    private LocalDateTime deliveryAfterDate;
+    private LocalDate deliveryAfterDate;
     private String note;
     private Integer priority;
+    private BigDecimal totalAmount;
+    private Integer totalQuantity;
     private List<OrderProductRes> orderItems;
 }

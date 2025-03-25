@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,6 +25,6 @@ public class OrderListExportedRes {
     private String customerId;
     private String deliveryAddress;
     private String deliveryPhone;
-    private LocalDateTime deliveryAfterDate;
+    private LocalDate deliveryAfterDate;
     private String note;
 }

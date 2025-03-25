@@ -1,25 +1,25 @@
 import React, { memo } from "react";
 import { Box, Typography, Paper, Chip, Divider, Grid } from "@mui/material";
-import EventIcon from '@mui/icons-material/Event';
-import PersonIcon from '@mui/icons-material/Person';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import WarehouseIcon from '@mui/icons-material/Warehouse';
-import NoteIcon from '@mui/icons-material/Note';
+import EventIcon from "@mui/icons-material/Event";
+import PersonIcon from "@mui/icons-material/Person";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import WarehouseIcon from "@mui/icons-material/Warehouse";
+import NoteIcon from "@mui/icons-material/Note";
 
 // Component hiển thị một mục thông tin
 const InfoItem = memo(({ icon, label, value, isTitle = false }) => {
   const valueDisplay = value || "-";
-  
+
   return (
-    <Box sx={{ mb: 1, display: 'flex', alignItems: 'flex-start' }}>
-      {icon && <Box sx={{ mr: 1, color: 'primary.main', mt: 0.3 }}>{icon}</Box>}
+    <Box sx={{ mb: 1, display: "flex", alignItems: "flex-start" }}>
+      {icon && <Box sx={{ mr: 1, color: "primary.main", mt: 0.3 }}>{icon}</Box>}
       <Box>
         <Typography variant="body2" color="text.secondary" component="span">
           {label}:
         </Typography>{" "}
-        <Typography 
-          variant={isTitle ? "subtitle1" : "body2"} 
-          component="span" 
+        <Typography
+          variant={isTitle ? "subtitle1" : "body2"}
+          component="span"
           fontWeight={isTitle ? "bold" : "regular"}
         >
           {valueDisplay}
@@ -56,17 +56,18 @@ const StatusChip = memo(({ status }) => {
   }
 
   return (
-    <Chip 
-      label={label} 
-      color={color} 
-      variant="outlined" 
-      size="small" 
-      sx={{ fontWeight: 'medium' }}
+    <Chip
+      label={label}
+      color={color}
+      variant="outlined"
+      size="small"
+      sx={{ fontWeight: "medium" }}
     />
   );
 });
 
 const OutBoundDetailInfo = ({ data }) => {
+  console.log("Data ", data);
   if (!data) return null;
 
   return (
@@ -74,68 +75,63 @@ const OutBoundDetailInfo = ({ data }) => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Box mb={2}>
-            <InfoItem 
+            <InfoItem
               icon={<LocalShippingIcon fontSize="small" />}
-              label="Mã phiếu xuất" 
-              value={data.id} 
-              isTitle={true} 
+              label="Mã phiếu xuất"
+              value={data.id}
+              isTitle={true}
             />
             <Box display="flex" alignItems="center" sx={{ mt: 1 }}>
-              <Typography variant="body2" sx={{ mr: 1 }}>Trạng thái:</Typography>
+              <Typography variant="body2" sx={{ mr: 1 }}>
+                Trạng thái:
+              </Typography>
               <StatusChip status={data.statusId} />
             </Box>
           </Box>
-          
+
           <Divider sx={{ my: 2 }} />
-          
-          <InfoItem 
+
+          <InfoItem  label="Tên phiếu" value={data.shipmentName} />
+          <InfoItem
             icon={<PersonIcon fontSize="small" />}
-            label="Khách hàng" 
-            value={data.customerName} 
+            label="Khách hàng"
+            value={data.customerName}
           />
-          <InfoItem 
-            label="Loại phiếu" 
-            value={data.shipmentType === "OUTBOUND" ? "Phiếu xuất hàng bán" : data.shipmentType} 
-          />
-          <InfoItem 
-            label="Tên phiếu" 
-            value={data.shipmentName} 
-          />
-          <InfoItem 
+
+          <InfoItem
             icon={<EventIcon fontSize="small" />}
-            label="Ngày tạo" 
-            value={data.createdAt && new Date(data.createdAt).toLocaleDateString('vi-VN')} 
+            label="Ngày tạo"
+            value={
+              data.createdStamp &&
+              new Date(data.createdStamp).toLocaleDateString("vi-VN")
+            }
           />
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Box mb={2}>
-            <InfoItem 
+            <InfoItem
               icon={<WarehouseIcon fontSize="small" />}
-              label="Kho xuất" 
+              label="Kho xuất"
               value={data.warehouseName || "Chưa xác định"}
             />
-            <InfoItem 
-              label="Địa chỉ kho" 
-              value={data.warehouseAddress} 
-            />
+            <InfoItem label="Địa chỉ kho" value={data.warehouseAddress} />
           </Box>
-          
+
           <Divider sx={{ my: 2 }} />
-          
-          <InfoItem 
+
+          <InfoItem
             icon={<EventIcon fontSize="small" />}
-            label="Ngày giao hàng" 
-            value={data.deliveryDate && new Date(data.deliveryDate).toLocaleDateString('vi-VN')} 
+            label="Ngày xuất kho dự kiến"
+            value={
+              data.expectedDeliveryDate &&
+              new Date(data.expectedDeliveryDate).toLocaleDateString("vi-VN")
+            }
           />
-          <InfoItem 
-            label="Ngày xuất kho"
-            value={data.shippedDate && new Date(data.shippedDate).toLocaleDateString('vi-VN')} 
-          />
-          <InfoItem 
+          <InfoItem
             icon={<NoteIcon fontSize="small" />}
-            label="Ghi chú" 
-            value={data.note} 
+            label="Ghi chú"
+            value={data.note}
           />
         </Grid>
       </Grid>

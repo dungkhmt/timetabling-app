@@ -15,7 +15,7 @@ import { ShipmentProvider, useShipment } from "../context/ShipmentContext";
 
 const OutBoundDetailContent = () => {
   const { shipmentId } = useParams(); // Lấy ID từ URL
-  const { outboundData, loading, error } = useShipment();
+  const { outboundData, loading, error, fetchData } = useShipment();
   console.log(outboundData);
 
   // Hiển thị loading
@@ -65,7 +65,9 @@ const OutBoundDetailContent = () => {
         <OutBoundDetailActions
           shipmentId={outboundData.id}
           status={outboundData.statusId}
-          onActionComplete={() => {}}
+          onActionComplete={() => {
+            fetchData(shipmentId);
+          }}
         />
       </Stack>
 

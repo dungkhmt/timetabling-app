@@ -66,8 +66,8 @@ const BasicInfoForm = () => {
           <TextField
             fullWidth
             type="date"
-            name="deliveryDate"
-            value={salesOrder.deliveryDate}
+            name="deliveryAfterDate"
+            value={salesOrder.deliveryAfterDate}
             onChange={handleInputChange}
             size="small"
             InputLabelProps={{ shrink: true }}

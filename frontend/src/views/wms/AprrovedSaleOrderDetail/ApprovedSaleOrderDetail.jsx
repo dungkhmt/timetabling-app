@@ -9,17 +9,16 @@ import OutBoundList from "./components/OutBoundList";
 import OrderBasicInfo from "../SaleOrderDetail/components/OrderBasicInfo";
 import OrderDeliveryInfo from "../SaleOrderDetail/components/OrderDeliveryInfo";
 import OrderItemsList from "../SaleOrderDetail/components/OrderItemsList";
-import { OrderDetailProvider } from "../SaleOrderDetail/context/OrderDetailContext";
+import { OrderDetailProvider, useOrderDetail } from "../SaleOrderDetail/context/OrderDetailContext";
 
 const approveOrderLabels = [
   "Tổng quan",
   "Thanh toán",
-  "Đơn hàng",
   "Phiếu xuất",
 ];
 const SaleOrderDetailContent = () => {
   const [tabValue, setTabValue] = useState(0);
-  const { loading, orderData } = useApprovedOrderDetail();
+  const { loading, orderData } = useOrderDetail();
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -58,7 +57,7 @@ const SaleOrderDetailContent = () => {
         labels={approveOrderLabels}
       />
 
-      {tabValue === 3 && (
+      {tabValue === 2 && (
         // this is the part showing created oubound order
         <OutBoundList />
       )}

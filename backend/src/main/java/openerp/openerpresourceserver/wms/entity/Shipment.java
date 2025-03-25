@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.wms.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
@@ -41,6 +42,9 @@ public class Shipment extends BaseEntity {
     @Column(name = "shipment_status_id", length = 40)
     private String shipmentStatusId;
 
+    @Column(name = "note")
+    private String note;
+
     @ManyToOne
     @JoinColumn(name = "from_supplier_id")
     private Supplier fromSupplier;
@@ -49,6 +53,8 @@ public class Shipment extends BaseEntity {
     @JoinColumn(name = "to_customer_id")
     private Customer toCustomer;
 
+    @Column(name = "expected_delivery_date")
+    private LocalDate expectedDeliveryDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id")

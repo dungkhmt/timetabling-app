@@ -22,7 +22,7 @@ const CreateSaleOrder = () => {
     facilityId: "",
     customerId: "",
     userCreatedId: "wms_director",
-    deliveryDate: new Date().toISOString().split('T')[0],
+    deliveryAfterDate: null,
     invoiceNumber: null,
     discountType: "",
     discountValue: 0,
@@ -32,7 +32,7 @@ const CreateSaleOrder = () => {
     shippingMethod: "",
     shippingCarrier: "",
     orderPurpose: "SALES",
-    notes: "",
+    note: "",
     requireVatInvoice: false,
     orderItems: []
   });
@@ -54,7 +54,7 @@ const CreateSaleOrder = () => {
       toast.warning("Vui lòng chọn khách hàng");
       return;
     }
-    if (!salesOrder.deliveryDate) {
+    if (!salesOrder.deliveryAfterDate) {
       toast.warning("Vui lòng chọn ngày giao hàng");
       return;
     }
