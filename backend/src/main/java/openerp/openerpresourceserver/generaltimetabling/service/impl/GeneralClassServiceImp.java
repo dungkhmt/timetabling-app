@@ -848,4 +848,69 @@ public class GeneralClassServiceImp implements GeneralClassService {
         }
         return clusters.size();
     }
+
+    @Override
+    public List<GeneralClassDto> getGeneralClassByCluster(Long clusterId) {
+        // Find all ClusterClass relationships with the given clusterId
+        List<ClusterClass> clusterClasses = clusterClassRepo.findAllByClusterId(clusterId);
+        
+        if (clusterClasses.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // Extract class IDs from the relationships
+        List<Long> classIds = clusterClasses.stream()
+                .map(ClusterClass::getClassId)
+                .collect(Collectors.toList());
+        
+        // Find all GeneralClass entities with these IDs
+        List<GeneralClass> generalClasses = gcoRepo.findAllByIdIn(classIds);
+        
+        // Find ClassGroup entities for these classes
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
+        
+        // Get group information
+        List<Long> groupIds = classGroups.stream()
+                .map(ClassGroup::getGroupId)
+                .distinct()
+                .toList();
+        
+        Map<Long, String> groupNameMap = groupRepo.findAllById(groupIds)
+                .stream()
+                .collect(Collectors.toMap(Group::getId, Group::getGroupName));
+        
+        Map<Long, List<String>> classGroupMap = classGroups.stream()
+                .collect(Collectors.groupingBy(
+                        ClassGroup::getClassId,
+                        Collectors.mapping(cg -> groupNameMap.getOrDefault(cg.getGroupId(), "Unknown"), Collectors.toList())
+                ));
+        
+        // Convert GeneralClass entities to GeneralClassDto objects
+        return generalClasses.stream()
+                .map(gc -> GeneralClassDto.builder()
+                        .id(gc.getId())
+                        .quantity(gc.getQuantity())
+                        .quantityMax(gc.getQuantityMax())
+                        .moduleCode(gc.getModuleCode())
+                        .moduleName(gc.getModuleName())
+                        .classType(gc.getClassType())
+                        .classCode(gc.getClassCode())
+                        .semester(gc.getSemester())
+                        .studyClass(gc.getStudyClass())
+                        .mass(gc.getMass())
+                        .state(gc.getState())
+                        .crew(gc.getCrew())
+                        .openBatch(gc.getOpenBatch())
+                        .course(gc.getCourse())
+                        .refClassId(gc.getRefClassId())
+                        .parentClassId(gc.getParentClassId())
+                        .duration(gc.getDuration())
+                        .groupName(gc.getGroupName())
+                        .listGroupName(classGroupMap.getOrDefault(gc.getId(), List.of()))
+                        .timeSlots(gc.getTimeSlots())
+                        .learningWeeks(gc.getLearningWeeks())
+                        .foreignLecturer(gc.getForeignLecturer())
+                        .build()
+                ).toList();
+    }
 }

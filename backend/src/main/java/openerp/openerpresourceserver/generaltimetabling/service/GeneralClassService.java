@@ -38,8 +38,8 @@ public interface GeneralClassService {
     List<GeneralClass> autoScheduleGroup(String semester, String groupName, int timeLimit);
 
     List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule);
-    List<GeneralClass> autoSchedule(String semester, int timeLimit);
 
+    List<GeneralClass> autoSchedule(String semester, int timeLimit);
 
     List<GeneralClass> autoScheduleRoom(String semester, String groupName, int timeLimit);
 
@@ -52,4 +52,6 @@ public interface GeneralClassService {
     void deleteRoomReservation(Long generalClassId, Long roomReservationId);
 
     int computeClassCluster(ModelInputComputeClassCluster I);
+
+    List<GeneralClassDto> getGeneralClassByCluster(Long clusterId);
 }

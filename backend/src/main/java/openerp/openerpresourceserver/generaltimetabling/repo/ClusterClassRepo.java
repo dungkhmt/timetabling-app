@@ -4,6 +4,8 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.composite.C
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.ClusterClass;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ClusterClassRepo extends JpaRepository<ClusterClass, CompositeClusterClassId> {
+import java.util.List;
 
+public interface ClusterClassRepo extends JpaRepository<ClusterClass, CompositeClusterClassId> {
+    List<ClusterClass> findAllByClusterId(Long clusterId);
 }
