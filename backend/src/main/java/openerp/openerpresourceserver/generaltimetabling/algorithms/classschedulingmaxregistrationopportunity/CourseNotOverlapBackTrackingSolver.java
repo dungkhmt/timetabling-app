@@ -32,7 +32,7 @@ public class CourseNotOverlapBackTrackingSolver {
         this.mCourseGroup2ConflictCourseGroups = mCourseGroup2ConflictCourseGroups;
     }
     public void solve(int timeLimit){
-        this.timeLimit = timeLimit;
+        this.timeLimit = timeLimit*1000; // convert into millis seconds;
         arrCourses = new String[nbCourses];
         mCourseId2Index = new HashMap<>();
         conflict = new Set[nbCourses];
@@ -45,7 +45,7 @@ public class CourseNotOverlapBackTrackingSolver {
             mCourseId2Index.put(c,idx);
             domain[idx] = mCourse2Domain.get(c);
             duration[idx] = mCourse2Duration.get(c);
-            log.info("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
+            //log.info("Solver: course " + c + " duration " + duration[idx] + " domain = " + domain[idx].toString());
             conflict[idx] = new HashSet();
         }
         for(int i = 0; i < nbCourses; i++){
@@ -53,6 +53,10 @@ public class CourseNotOverlapBackTrackingSolver {
                 int j = mCourseId2Index.get(ci);
                 conflict[i].add(j);
             }
+        }
+        for(idx = 0; idx < nbCourses; idx++){
+            String c = arrCourses[idx];
+            log.info("Solver: course " + c + " duration " + duration[idx] + ", conflict = " + conflict[idx] + ", domain = " + domain[idx].toString());
         }
         x = new int[nbCourses];
         sol = new int[nbCourses];
@@ -85,9 +89,10 @@ public class CourseNotOverlapBackTrackingSolver {
     }
     private void tryValue(int k){
         long t = System.currentTimeMillis() - t0;
+        //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " t = " + t + " timeLimit = " + timeLimit);
         if(t > timeLimit) return;
         if(found) return;
-        //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " start");
+        //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + ", Domain = " + domain[k].size() + " start");
         // try value for x[k]: start time-slot for course k
         for(int v: domain[k]){
             //log.info("tryValue(" + k + "), courseCode " + arrCourses[k] + " consider v = " + v);

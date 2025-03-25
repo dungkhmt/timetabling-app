@@ -55,6 +55,27 @@ public class Util {
         }
         return res;
     }
+    public static List<Integer> generateSlotsFromEarliest(int maxDayScheduled, int slotPerSession, String crew, int duration){
+        int startCrew = 0; int endCrew = 1;
+        if(crew != null){
+            int fKIP = crew.equals("S") ? 0 : 1;
+            startCrew = fKIP; endCrew = fKIP;
+        }
+        log.info("generateSlotsFromEarliest, maxDayScheduled = " + maxDayScheduled + " slotPerSession = " + slotPerSession + " duration = " + duration + "startSession = " + startCrew + " endSession = " + endCrew);
+        List<Integer> res = new ArrayList<>();
+        for(int d = 2; d <= maxDayScheduled; d++){
+            for(int fKIP = startCrew; fKIP <= endCrew; fKIP++) {
+                for(int s = 1; s <= slotPerSession; s++) if(s + duration - 1 <= slotPerSession){
+                    int start = slotPerSession * 2 * (d - 2)
+                            + slotPerSession * fKIP + s;
+
+                    //log.info("mapData,d = " + d + ", s = " + s + ", duration = " + duration + " -> start = " + start);
+                    res.add(start);
+                }
+            }
+        }
+        return res;
+    }
     public static List<Integer> generateSlots(int maxDayScheduled,String slotPriorityStrategy, String daySeq, String slotSeq, String crew, int duration){
         int startCrew = 0; int endCrew = 1;
         if(crew != null){

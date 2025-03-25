@@ -203,6 +203,14 @@ public class PlanGeneralClassService {
     }
     public int generateClassSegmentFromClass(ModelInputGenerateClassSegmentFromClass I){
         List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
+        for(GeneralClass gc: classes){
+            RoomReservation rr = new RoomReservation();
+            rr.setDuration(gc.getDuration());
+            rr.setGeneralClass(gc);
+            rr.setCrew(gc.getCrew());
+            rr = roomReservationRepo.save(rr);
+            log.info("generateClassSegmentFromClass, save roomReservation " + rr.getId() + " for class " + gc.getId() + " course " + gc.getModuleCode());
+        }
         return classes.size();
     }
     public List<GeneralClass> generateClassesFromPlan(ModelInputGenerateClassesFromPlan I){

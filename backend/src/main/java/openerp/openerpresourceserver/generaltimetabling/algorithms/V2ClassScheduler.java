@@ -37,11 +37,14 @@ public class V2ClassScheduler {
     private List<TimeTablingConfigParams> params;
     private int MAX_DAY_SCHEDULED = 7;
 
+    private AlgorithmConfigParams algoParams = new AlgorithmConfigParams();
+
     public V2ClassScheduler(List<TimeTablingConfigParams> params){
         this.params = params;
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
                 MAX_DAY_SCHEDULED = (int)p.getValue();
+                algoParams.MAX_DAY_SCHEDULED = MAX_DAY_SCHEDULED;
             }else{
 
             }
@@ -296,15 +299,19 @@ public class V2ClassScheduler {
                             log.info("mapData, class-segment " + idx + " was scheduled -> D[" + idx + "] = " + D[idx].toString());
                         } else {
                             if(gr != null){
-                                List<Integer> L = Util.generateSlots(MAX_DAY_SCHEDULED,Constants.PRIORITY_SLOT_LATEST,gr.getDaySeq(),gr.getSlotSeq(),gc.getCrew(),d[idx]);
-                                //log.info("mapData, compute D[" + i + "], daySeq = " + gr.getDaySeq() + ", slotSeq = " + gr.getSlotSeq() + ", crew = " + gc.getCrew() + " got L= " + L);
-                                TimeTablingCourse crs = mId2Course.get(gc.getCourse());
-                                List<Integer> LP = new ArrayList<>();
-                                if(crs != null){
-                                    LP = Util.toIntList(crs.getSlotPriority(),d[idx]);
+                                if(algoParams.TIME_SLOT_ORDER.equals(AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_EARLIEST)){
+                                    D[idx] = Util.generateSlotsFromEarliest(algoParams.MAX_DAY_SCHEDULED,algoParams.SLOT_PER_SESSION,gc.getCrew(),d[idx]);
+                                }else if(algoParams.TIME_SLOT_ORDER.equals(AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_PRIORITY_SETTINGS)){
+                                    List<Integer> L = Util.generateSlots(algoParams.MAX_DAY_SCHEDULED, Constants.PRIORITY_SLOT_LATEST, gr.getDaySeq(), gr.getSlotSeq(), gc.getCrew(), d[idx]);
+                                    //log.info("mapData, compute D[" + i + "], daySeq = " + gr.getDaySeq() + ", slotSeq = " + gr.getSlotSeq() + ", crew = " + gc.getCrew() + " got L= " + L);
+                                    TimeTablingCourse crs = mId2Course.get(gc.getCourse());
+                                    List<Integer> LP = new ArrayList<>();
+                                    if (crs != null) {
+                                        LP = Util.toIntList(crs.getSlotPriority(), d[idx]);
+                                    }
+                                    D[idx] = Util.shift(L, LP);
+                                    log.info("mapData, class code " + gc.getClassCode() + " group not null -> compute D[" + idx + "], LP = " + LP.toString() + ", D[" + idx + "] = " + D[idx].toString());
                                 }
-                                D[idx] = Util.shift(L,LP);
-                                log.info("mapData, class code " + gc.getClassCode() + " group not null -> compute D[" + idx + "], LP = " + LP.toString() +", D[" + idx + "] = " + D[idx].toString());
                             }else{
                                 D[idx] = Util.generateSLotSequence(gc.getCrew(),d[idx]);
                                 log.info("mapData, group EQUAL null -> D[" + idx + "].sz = " + D[idx].size());
@@ -440,6 +447,9 @@ public class V2ClassScheduler {
         //for(int i = 0; i < rooms.size(); i++){
         //    log.info("autoScheduleTimeSlotRoom, room[" + i + "] = " + rooms.get(i).getClassroom());
         //}
+
+        //algoParams.TIME_SLOT_ORDER = AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_PRIORITY_SETTINGS;
+
         MapDataScheduleTimeSlotRoomWrapper D = mapData(classes, rooms,mId2RoomReservations,ttcourses,groups,classGroups);
         MapDataScheduleTimeSlotRoom data = D.data;
         log.info("autoScheduleTimeSlotRoom, mapData, data has " + data.getClassSegments().size() + " class-segments");
@@ -519,13 +529,17 @@ public class V2ClassScheduler {
                     log.info("autoScheduleTimeSlotRoom, CANNOT find time-slot for class " + cs.getId() + "???");
                     continue;
                 }
-                int day = solution.get(cs.getId()) / (Constant.slotPerCrew*2);//12;
-                int t1 = solution.get(cs.getId()) - day * Constant.slotPerCrew*2;//12;
 
-                int K = t1 / Constant.slotPerCrew;//6; // kip
-                int tietBD = t1 - Constant.slotPerCrew * K;
-                if(tietBD == 0) tietBD = Constant.slotPerCrew;
-                log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", t1 = " + t1 + " kip = " + K + ", tietDB = " + tietBD);
+                //int day = solution.get(cs.getId()) / (Constant.slotPerCrew*2);//12;
+                //int t1 = solution.get(cs.getId()) - day * Constant.slotPerCrew*2;//12;
+                //int K = t1 / Constant.slotPerCrew;//6; // kip
+                //int tietBD = t1 - Constant.slotPerCrew * K;
+                //if(tietBD == 0) tietBD = Constant.slotPerCrew;
+                DaySessionSlot dss = new DaySessionSlot(solution.get(cs.getId()));
+                int day = dss.day;
+                int K = dss.session;
+                int tietBD = dss.slot;
+                log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", kip = " + K + ", tietDB = " + tietBD);
 
 
                 //GeneralClass gClass = classes.get(scheduleMap.get(i));
@@ -536,7 +550,9 @@ public class V2ClassScheduler {
                 RoomReservation roomReservation = D.getMClassSegment2RoomReservation().get(i);
                 roomReservation.setStartTime(tietBD);
                 roomReservation.setEndTime(tietBD + duration -1);
-                roomReservation.setWeekday(day + 2);
+                //roomReservation.setWeekday(day + 2);
+                roomReservation.setWeekday(day);
+                if(K == 0) roomReservation.setCrew("S"); else roomReservation.setCrew("C");
                 //newRoomReservation.setDuration(data.getNbSlots()[i]);
                 //newRoomReservation.setDuration(duration);
                 //newRoomReservation.setGeneralClass(gClass);

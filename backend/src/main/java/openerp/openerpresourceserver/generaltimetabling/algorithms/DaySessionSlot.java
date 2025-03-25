@@ -17,6 +17,16 @@ public class DaySessionSlot {
         slot += 1; // (tiet 1, 2, 3, 4, 5, 6)
         day = day + 2; // (2: monday; 3:tuesday; 4: wednesday)
     }
+
+    public DaySessionSlot(int day, int session, int slot) {
+        this.day = day;
+        this.session = session;
+        this.slot = slot;
+    }
+
+    public int hash(){
+        return (day-2)*Constant.slotPerCrew*2 + session*Constant.slotPerCrew + slot;
+    }
     public String toString(){
         String s = "day " + day + (session == 0 ? " Morning " : " Afternoon ") + " - slot " + slot;
 

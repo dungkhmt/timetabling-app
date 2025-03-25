@@ -1,11 +1,14 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotsseparatedays;
 
 import lombok.extern.log4j.Log4j2;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity.CourseNotOverlapBackTrackingSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import org.aspectj.weaver.patterns.ConcreteCflowPointcut;
 
 import java.util.*;
 
@@ -183,6 +186,143 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     }
 
      */
+    class SlotRoom{
+        int slot;
+        int room;
+
+        public SlotRoom(int slot, int room) {
+            this.slot = slot;
+            this.room = room;
+        }
+    }
+    private SlotRoom selectMaxScoreSlotRoom(int i, List<ClassSegment> classInGroup, List<ClassSegment> sortedClassSegments){
+        int maxScore = -1;
+        ClassSegment cs = sortedClassSegments.get(i);
+        SlotRoom sr = null;
+        //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() +
+        //        " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
+        HashSet<Integer> slotUsedInGroup = new HashSet<>();
+        for(ClassSegment csi: classInGroup){
+            if(solutionSlot.get(csi.getId())!=null && solutionSlot.get(csi.getId()) > -1){
+                int s = solutionSlot.get(csi.getId());
+                for(int d = 0; d <= csi.getDuration()-1; d++){
+                    slotUsedInGroup.add(s + d);
+                }
+            }
+        }
+        // try FIRST with separate slot from class-segment in the same group
+        for(int timeslot: cs.getDomainTimeSlots())if(!slotUsedInGroup.contains(timeslot)){
+            for(int room: cs.getDomainRooms()){
+                if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
+                    int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
+                    //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
+                    if(score > maxScore){
+                        maxScore = score;
+                        sr = new SlotRoom(timeslot,room);
+                    }
+                }
+            }
+        }
+        // SECOND: try all possible time slots
+        if(sr == null){
+            for(int timeslot: cs.getDomainTimeSlots()){
+                for(int room: cs.getDomainRooms()){
+                    if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
+                        int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
+                        //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
+                        if(score > maxScore){
+                            maxScore = score;
+                            sr = new SlotRoom(timeslot,room);
+                        }
+                    }
+                }
+            }
+        }
+        return sr;
+    }
+    private SlotRoom findSlotRoom(int i, List<ClassSegment> classInGroup, List<ClassSegment> sortedClassSegments,Map<String, Integer> mCourseGroup2TimeSlot){
+        // find an appropriate slot-room for class-segment i in the list sortedClassSegment (sortedClassSegment[i])
+        // classInGroup is the list of class-segments in the same course-group
+
+        ClassSegment cs = sortedClassSegments.get(i);
+        String courseGroup = cs.hashCourseGroup();
+        log.info("findSlotRoom for class-segment[" + i + "], id = " + cs.getId() + ", course-group = " + courseGroup + ", classInGroup.sz = " + classInGroup.size());
+
+        Set<Integer> slots = new HashSet<>();
+        // collects slots of scheduled classes in the course-group
+        for(ClassSegment csi: classInGroup){
+            if(solutionSlot.get(csi.getId())!=null && solutionSlot.get(csi.getId()) > -1) {
+                slots.add(solutionSlot.get(csi.getId()));
+                log.info("findSlotRoom for class-segment[" + i + "], id = " + cs.getId() +
+                        ", course-group = " + courseGroup + ", classInGroup.sz = "
+                        + classInGroup.size() + " csi " + csi.getId() + " scheduled to slot " + solutionSlot.get(csi.getId()));
+
+            }
+        }
+        log.info("findSlotRoom for class-segment[" + i + "], id = " + cs.getId() +
+                ", course-group = " + courseGroup + ", classInGroup.sz = "
+                + classInGroup.size() + " slots = " + slots.size());
+
+        if(slots.size() == 0){// no class-segment of the group is scheduled
+            int selectedSlot = mCourseGroup2TimeSlot.get(courseGroup);
+            log.info("findSlotRoom for class-segment[" + i + "], id = " + cs.getId() +
+                    ", course-group = " + courseGroup + ", slots = 0 => select slot of course-group " + selectedSlot);
+            for(int room: cs.getDomainRooms()){
+                if(checkTimeSlotRoom(i,selectedSlot,room,sortedClassSegments)){
+                    SlotRoom sr = new SlotRoom(selectedSlot,room);
+                    return sr;
+                }
+            }
+        }
+        List<Integer> aSlots = new ArrayList<>();
+        for(int e: slots) aSlots.add(e); Collections.sort(aSlots);
+        int selectedSlot = -1;
+        int selecetdRoom = -1;
+        SlotRoom sr = null;
+        // FIRST: try to find predecessor or successor time-slot in the same day-session (ngay-kip)
+        for(int e: aSlots){
+            DaySessionSlot dss = new DaySessionSlot(e);
+            int ns = e - cs.getDuration();// previous slot in the same session-day
+            if(ns >= 1 && cs.getDomainTimeSlots().contains(ns)
+                    && !slots.contains(ns)){
+                DaySessionSlot ndss = new DaySessionSlot(ns);
+                if(ndss.day == dss.day && ndss.session == dss.session) {
+                    if(checkTimeSlot(i,ns,sortedClassSegments)) {
+                        for(int room: cs.getDomainRooms()) {
+                            if(checkTimeSlotRoom(i,ns,room,sortedClassSegments)) {
+                                //selectedSlot = ns; selecetdRoom = room;
+                                sr = new SlotRoom(ns,room);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if(sr != null) break;
+
+            ns = e + cs.getDuration();// successor slot in the same session-day
+            if(cs.getDomainTimeSlots().contains(ns) && !slots.contains(ns)){
+                DaySessionSlot ndss = new DaySessionSlot(ns);
+                if(ndss.day == dss.day && ndss.session == dss.session) {
+                    if(checkTimeSlot(i,ns,sortedClassSegments)) {
+                        for(int room: cs.getDomainRooms()) {
+                            if(checkTimeSlotRoom(i,ns,room,sortedClassSegments)) {
+                                //selectedSlot = ns; selecetdRoom = room;
+                                sr = new SlotRoom(ns,room);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if(sr != null) break;
+        }
+        if(sr != null) return sr;
+
+        // SECOND: Try to find time-slot, room maximizing score (registration possibility)
+        sr = selectMaxScoreSlotRoom(i,classInGroup,sortedClassSegments);
+        return sr;
+    }
     @Override
     public void solve() {
         log.info("solve START....");
@@ -248,7 +388,9 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         }
         Map<String, Integer> mCourseGroup2TimeSlot = CNOBS.getSolutionMap();
         for(String cg: mCourseGroup2TimeSlot.keySet()){
-            log.info("solve, CNOBS returnd course-group " + cg + " scheduled to time-slot " + mCourseGroup2TimeSlot.get(cg));
+            int slot = mCourseGroup2TimeSlot.get(cg);
+            DaySessionSlot dss = new DaySessionSlot(slot);
+            log.info("solve, CNOBS returnd course-group " + cg + ", duration " + mCourseGroup2Duration.get(cg) + " scheduled to time-slot " + slot + " (" + dss + ")");
         }
         //solutionRoom = new int[classSegments.length];
         //solutionSlot = new int[classSegments.length];
@@ -319,70 +461,34 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             // find a time slot and room for the class-segment cs
             //String courseGroup = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
             String courseGroup = cs.hashCourseGroup();
-            int maxTeacher = I.getMaxTeacherOfCourses()[cs.getCourseIndex()];// get max number of teacher in charge of the course courseIndex
-            // try first the time-slot for the courseGroup
-            int selectTimeSlot = mCourseGroup2TimeSlot.get(courseGroup);
-            log.info("solve, scan sorted class-segments, consider " + cs.getId() + ", courseGroup = " + courseGroup + " selectedTimeSlot = " + selectTimeSlot + " cs = " + cs.toString());
-            int selectedRoom = -1;
-
-            if(checkTimeSlot(i,selectTimeSlot,sortedClassSegments)){
-                for(int room: cs.getDomainRooms()){
-                    if(checkTimeSlotRoom(i,selectTimeSlot,room,sortedClassSegments)){
-                        selectedRoom = room; break;
-                    }
-                }
-            }
-
-            if(selectedRoom != -1) {
-                //solutionSlot[cs.getId()] = selectTimeSlot;
-                //solutionRoom[cs.getId()] = selectedRoom;
-                log.info("solve, found a timeslot from course and a room: assign time-slot[" + cs.getId() + "] " + selectTimeSlot + " room[" + cs.getId() + "] = " + selectedRoom);
-                assignTimeSlotRoom(cs,selectTimeSlot,selectedRoom);
+            List<ClassSegment> classInGroup = mCourseGroup2ClassSegments.get(courseGroup);
+            SlotRoom sr = findSlotRoom(i,classInGroup,sortedClassSegments,mCourseGroup2TimeSlot);
+            if(sr == null){
+                log.info("solve: Cannot find a (time-slot, room) for class segment " + cs.getId());
             }else{
-                log.info("solve, not found a timeslot from course and a room, try to find another time-slot and room");
-                // try to find another time-slot and room for class-segment i
-                int maxScore = -1;
-                //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() +
-                //        " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
-                for(int timeslot: cs.getDomainTimeSlots())if(timeslot != selectTimeSlot){
-                    for(int room: cs.getDomainRooms()){
-                        if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
-                            int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
-                            //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
-                            if(score > maxScore){
-                                maxScore = score; selectedRoom = room; selectTimeSlot = timeslot;
-                            }
-                        }
-                    }
-                }
-                if(maxScore > -1){
-                    //solutionSlot[cs.getId()] = selectTimeSlot;
-                    //solutionRoom[cs.getId()] = selectedRoom;
-                    //log.info("solve, assign time-slot[" + cs.getId() + "] " + selectedRoom + " room[" + cs.getId() + "] = " + selectedRoom);
-                    assignTimeSlotRoom(cs,selectTimeSlot,selectedRoom);
-                }else{
-                    log.info("solve CANNOT find solution for class-segment[" + i + "], id = " + cs.getId() + " classId = " + cs.getClassId());
-                }
+                assignTimeSlotRoom(cs,sr.slot,sr.room);
+                log.info("solve: assign class-segment " + cs.getId() + " to slot " + sr.slot + ", room " + sr.room);
             }
         }
     }
     private void assignTimeSlotRoom(ClassSegment cs, int timeSlot, int room){
         //solutionSlot[csi] = timeSlot;
         //solutionRoom[csi] = room;
+
         solutionSlot.put(cs.getId(),timeSlot);
         solutionRoom.put(cs.getId(),room);
         // update room occupation
         //ClassSegment cs = classSegments.get(csi);
         String os = "";
         for(int r: I.getRoomOccupations()[room]) os = os + r + ",";
-        log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room + " occupied by slots " + os);
+        //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room + " occupied by slots " + os);
 
         for(int s = 0; s <= cs.getDuration()-1; s++){
             int sl = timeSlot + s;
             I.getRoomOccupations()[room].add(sl);
             os = os + sl + ",";
-            log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room
-            + " roomOccupation[" + room + "].add(" + sl + ") -> " + os);
+            //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room
+           // + " roomOccupation[" + room + "].add(" + sl + ") -> " + os);
         }
         foundSolution = true;
     }
