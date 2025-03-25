@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Checkbox } from "@mui/material";
 import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
+import useDebounce from "hooks/useDebounce";
 import {
   Autocomplete,
   Box,
@@ -34,6 +35,7 @@ const TimeTable = ({
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300); // 300ms delay
   const [open, setOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [page, setPage] = useState(0);
@@ -67,60 +69,45 @@ const TimeTable = ({
 
   useEffect(() => {
     if (classes && classes.length > 0) {
-      const transformedClassDetails = classes
-        .map((cls) => ({
-          weekDay: cls.weekday,
-          roomReservationId: cls.roomReservationId,
-          code: cls.classCode,
-          crew: cls.crew,
-          batch: cls.course,
-          room: cls.room,
-          timetable: {
-            [convertWeekdayToDay(cls.weekday)]: {
-              id: cls.classCode,
-              room: cls.room,
-              startTime: cls.startTime,
-              endTime: cls.endTime,
-            },
+      const transformedClassDetails = classes.map((cls) => ({
+        weekDay: cls.weekday,
+        roomReservationId: cls.roomReservationId,
+        code: cls.classCode,
+        crew: cls.crew,
+        batch: cls.course,
+        room: cls.room,
+        timetable: cls.startTime && cls.endTime ? {
+          [convertWeekdayToDay(cls.weekday)]: {
+            id: cls.classCode,
+            room: cls.room,
+            startTime: cls.startTime,
+            endTime: cls.endTime,
           },
-          studyClass: cls.studyClass,
-          listGroupName: cls.listGroupName, // Ensure listGroupName is mapped from API response
-          learningWeeks: cls.learningWeeks,
-          moduleCode: cls.moduleCode,
-          moduleName: cls.moduleName,
-          quantityMax: cls.quantityMax,
-          classType: cls.classType,
-          mass: cls.mass,
-          duration: cls.duration,
-          generalClassId: String(cls.id || ""),
-          parentId: cls.parentClassId,
-        }))
-        .sort((a, b) => {
-          if (a.code === b.code) {
-            // Safely handle splitting by checking if generalClassId exists and contains "-"
-            const getIdNumber = (str) => {
-              if (!str || !str.includes("-")) return parseInt(str, 10);
-              return parseInt(str.split("-")[0], 10);
-            };
-
-            const idA = getIdNumber(a.generalClassId);
-            const idB = getIdNumber(b.generalClassId);
-
-            return idB - idA;
-          }
-          return parseInt(a.code, 10) - parseInt(b.code, 10);
-        });
+        } : null, // Nếu không có startTime hoặc endTime, bỏ qua timetable
+        studyClass: cls.studyClass,
+        listGroupName: cls.listGroupName,
+        learningWeeks: cls.learningWeeks,
+        moduleCode: cls.moduleCode,
+        moduleName: cls.moduleName,
+        quantityMax: cls.quantityMax,
+        classType: cls.classType,
+        mass: cls.mass,
+        duration: cls.duration,
+        generalClassId: String(cls.id || ""),
+        parentId: cls.parentClassId,
+      }));
       setClassDetails(transformedClassDetails);
       setFilteredClassDetails(transformedClassDetails);
     }
   }, [classes]);
 
+  // Use debounced search term for filtering
   useEffect(() => {
-    if (searchTerm.trim() === "") {
+    if (debouncedSearchTerm.trim() === "") {
       setFilteredClassDetails(classDetails);
       setPage(0);
     } else {
-      const lowercasedTerm = searchTerm.toLowerCase();
+      const lowercasedTerm = debouncedSearchTerm.toLowerCase();
       const filtered = classDetails.filter((cls) => {
         return (
           (cls.code && cls.code.toLowerCase().includes(lowercasedTerm)) ||
@@ -139,7 +126,7 @@ const TimeTable = ({
       setFilteredClassDetails(filtered);
       setPage(0);
     }
-  }, [searchTerm, classDetails]);
+  }, [debouncedSearchTerm, classDetails]);
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const periods = [1, 2, 3, 4, 5, 6];
@@ -191,7 +178,6 @@ const TimeTable = ({
         return;
       }
 
-      console.log("Selected class:", selectedClassForSlot);
 
       await handlers.handleAddTimeSlot({
         generalClassId: selectedClassForSlot.generalClassId,
@@ -236,79 +222,88 @@ const TimeTable = ({
     }));
   };
 
-  const renderCellContent = (classIndex, day, period) => {
-    const classInfo = classDetails[classIndex]?.timetable?.[day];
+const renderCellContent = (classIndex, day, period) => {
+  // Tính toán index thực từ index hiện tại và trang hiện tại
+  const actualIndex = page * rowsPerPage + classIndex;
+  
+  const classInfo = filteredClassDetails[actualIndex];
+  const timetable = classInfo?.timetable?.[day];
+  
+  if (!timetable || !timetable.startTime || !timetable.endTime) {
+    // Không có startTime hoặc endTime, hiển thị ô trống
+    return (
+      <td
+        key={`${actualIndex}-${day}-${period}`}
+        style={{ width: "70px" }}
+        className="border border-gray-400 text-center cursor-pointer px-1"
+        onClick={() => handleRowClick(actualIndex, day, period)}
+      ></td>
+    );
+  }
+  
+  if (period < timetable.startTime || period > timetable.endTime) {
+    // Không nằm trong khoảng thời gian của lớp, hiển thị ô trống
+    return (
+      <td
+        key={`${actualIndex}-${day}-${period}`}
+        style={{ width: "70px" }}
+        className="border border-gray-400 text-center cursor-pointer px-1"
+        onClick={() => handleRowClick(actualIndex, day, period)}
+      ></td>
+    );
+  }
 
-    if (!classInfo) {
-      return (
-        <td
-          key={`${classIndex}-${day}-${period}`}
-          style={{ width: "40px" }}
-          className="border border-gray-400 text-center cursor-pointer px-1"
-          onClick={() => handleRowClick(classIndex, day, period)}
-        ></td>
-      );
-    }
-
-    if (period === classInfo.startTime) {
-      const colSpan = classInfo.endTime - classInfo.startTime + 1;
-
-      return (
-        <td
-          key={`${classIndex}-${day}-${period}`}
-          colSpan={colSpan}
-          className="border border-gray-400 bg-yellow-400 text-center cursor-pointer px-1"
-          style={{ width: `${40 * colSpan}px` }}
-          onClick={() => handleRowClick(classIndex, day, period)}
-        >
-          <span className="text-[14px]">{classInfo.room}</span>
-        </td>
-      );
-    }
-
-    if (period > classInfo.startTime && period <= classInfo.endTime) {
-      return null;
-    }
+  if (period === timetable.startTime) {
+    const colSpan = timetable.endTime - timetable.startTime + 1;
 
     return (
       <td
-        key={`${classIndex}-${day}-${period}`}
-        style={{ width: "40px" }}
+        key={`${actualIndex}-${day}-${period}`}
+        colSpan={colSpan}
         className="border border-gray-400 text-center cursor-pointer px-1"
-        onClick={() => handleRowClick(classIndex, day, period)}
-      ></td>
+        style={{ 
+          width: `${70 * colSpan}px`, 
+          backgroundColor: "#FFD700", 
+        }}
+        onClick={() => handleRowClick(actualIndex, day, period)}
+      >
+        <span className="text-[14px]">{timetable.room}</span>
+      </td>
     );
-  };
+  }
+
+  return null; 
+};
+
+const handleRowClick = (classIndex, day, period) => {
+  const classInfo = filteredClassDetails[classIndex]?.timetable?.[day];
+
+  if (classInfo) {
+    setSelectedClass({
+      roomReservationId: Number(filteredClassDetails[classIndex].roomReservationId),
+      room: filteredClassDetails[classIndex].room,
+      startTime: period,
+      endTime: Number(classInfo.endTime),
+      weekday: Number(filteredClassDetails[classIndex].weekDay),
+      code: filteredClassDetails[classIndex].code,
+      numberOfPeriods: filteredClassDetails[classIndex].duration,
+    });
+  } else {
+    setSelectedClass({
+      roomReservationId: Number(filteredClassDetails[classIndex].roomReservationId),
+      room: filteredClassDetails[classIndex].room,
+      startTime: period,
+      endTime: undefined,
+      weekday: days.indexOf(day) + 2,
+      code: filteredClassDetails[classIndex].code,
+      numberOfPeriods: filteredClassDetails[classIndex].duration,
+    });
+  }
+  setOpen(true);
+};
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
-  };
-
-  const handleRowClick = (classIndex, day, period) => {
-    const classInfo = classDetails[classIndex]?.timetable?.[day];
-
-    if (classInfo) {
-      setSelectedClass({
-        roomReservationId: Number(classDetails[classIndex].roomReservationId),
-        room: classDetails[classIndex].room,
-        startTime: period,
-        endTime: Number(classInfo.endTime),
-        weekday: Number(classDetails[classIndex].weekDay),
-        code: classDetails[classIndex].code,
-        numberOfPeriods: classDetails[classIndex].duration,
-      });
-    } else {
-      setSelectedClass({
-        roomReservationId: Number(classDetails[classIndex].roomReservationId),
-        room: classDetails[classIndex].room,
-        startTime: period,
-        endTime: undefined,
-        weekday: days.indexOf(day) + 2,
-        code: classDetails[classIndex].code,
-        numberOfPeriods: classDetails[classIndex].duration,
-      });
-    }
-    setOpen(true);
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -567,14 +562,14 @@ const TimeTable = ({
                 <th
                   key={day}
                   colSpan={6}
-                  className="border border-gray-400 p-2 text-center min-w-32"
+                  className="border border-gray-400 p-2 text-center min-w-40"
                 >
                   {day}
                 </th>
               ))}
             </tr>
             <tr>
-              <td></td> {/* Empty cell for checkbox column */}
+              <td></td> 
               <td
                 colSpan={
                   Object.values(columnVisibility).filter(Boolean).length +
@@ -587,6 +582,7 @@ const TimeTable = ({
                   <td
                     key={`${day}-${period}`}
                     className="border border-gray-400 text-center"
+                    style={{ width: "60px", padding: "4px" }}
                   >
                     {period}
                   </td>
@@ -752,7 +748,7 @@ const TimeTable = ({
                     <td
                       key={`${day}-${period}`}
                       className="border border-gray-400 text-center"
-                      style={{ width: "40px", padding: "4px" }}
+                      style={{ width: "60px", padding: "4px" }} // Increased width from 40px to 60px
                     >
                       {period}
                     </td>
