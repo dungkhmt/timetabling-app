@@ -103,5 +103,10 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
         return res;
 
     }
+
+    @Override
+    public List<RoomOccupation> getRoomOccupationsBySemesterAndWeekIndexOriginal(String semester, int weekIndex) {
+        return roomOccupationRepo.findAllBySemesterAndWeekIndex(semester, weekIndex);
+    }
 }
 
