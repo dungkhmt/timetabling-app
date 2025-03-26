@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAcademicWeeks } from "services/useAcademicWeeksData";
 import GeneralSemesterAutoComplete from "views/general-time-tabling/common-components/GeneralSemesterAutoComplete";
 import AddWeekAcademicSemesterDialog from "./components/AddWeekAcademicSemesterDialog";
-import { Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import WeekAcademicTable from "./components/WeekAcademicTable";
 
 const WeekAcademicScreen = () => {
@@ -13,7 +13,8 @@ const WeekAcademicScreen = () => {
     weeks, 
     isLoading, 
     deleteWeeks, 
-    isDeleting 
+    isDeleting,
+    refetch 
   } = useAcademicWeeks(selectedSemester?.semester);
 
   const handleDeleteAcademicWeeks = async () => {
@@ -22,38 +23,58 @@ const WeekAcademicScreen = () => {
   };
 
   return (
-    <div className="flex flex-col justify-end gap-2 items-end">
-      <GeneralSemesterAutoComplete
-        selectedSemester={selectedSemester}
-        setSelectedSemester={setSelectedSemester}
-      />
+    <div className="flex flex-col justify-end gap-6 items-end">
+      <Box
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h5">Danh sách tuần học</Typography>
+      </Box>
       <AddWeekAcademicSemesterDialog
         open={isOpenWeekDialog}
         setUpdateSelectedSemester={setSelectedSemester}
         setOpen={setOpenWeekDialog}
+        refetch={refetch}
       />
-      <div className="flex gap-2 ">
+      <div className="flex gap-2 justify-between w-full">
         {isDeleting && <FacebookCircularProgress />}
-
-        <Button
-          variant="contained"
-          sx={{ width: "200px" }}
-          color="error"
-          disabled={isDeleting || selectedSemester === null}
-          onClick={handleDeleteAcademicWeeks}
-        >
-          Xóa danh sách tuần học của kì
-        </Button>
-        <Button
-          disabled={isLoading}
-          sx={{ width: "200px" }}
-          variant="contained"
-          onClick={() => {
-            setOpenWeekDialog(true);
-          }}
-        >
-          Thêm danh sách tuần học
-        </Button>
+        <GeneralSemesterAutoComplete
+          selectedSemester={selectedSemester}
+          setSelectedSemester={setSelectedSemester}
+        />
+        <div className="flex gap-2">
+          <Button
+            variant="contained"
+            sx={{
+              width: "200px",
+              textTransform: "none",
+              fontSize: "16px",
+            }}
+            color="error"
+            disabled={isDeleting || selectedSemester === null}
+            onClick={handleDeleteAcademicWeeks}
+          >
+            Xóa tuần học của kì
+          </Button>
+          <Button
+            disabled={isLoading}
+            sx={{
+              width: "220px",
+              textTransform: "none",
+              fontSize: "16px",
+            }}
+            variant="contained"
+            onClick={() => {
+              setOpenWeekDialog(true);
+            }}
+          >
+            Thêm danh sách tuần học
+          </Button>
+        </div>
       </div>
       <WeekAcademicTable
         isLoading={isLoading}
