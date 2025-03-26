@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
+import GeneralClusterAutoComplete from "../common-components/GeneralClusterAutoComplete";
 import InputFileUpload from "./components/InputFileUpload";
 import { Button } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
@@ -11,6 +12,8 @@ const GeneralUploadScreen = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isUserEditing, setIsUserEditing] = useState(false);
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [filteredClasses, setFilteredClasses] = useState([]);
   
   const { 
     states,
@@ -30,7 +33,8 @@ const GeneralUploadScreen = () => {
     handlers: {
       handleDeleteBySemester,
       handleUploadFile,
-      handleDeleteByIds
+      handleDeleteByIds,
+      getClassesByCluster
     }
   } = useGeneralSchedule();
 
@@ -85,14 +89,41 @@ const GeneralUploadScreen = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const filterClassesByCluster = async () => {
+      if (selectedCluster) {
+        const clusterClasses = await getClassesByCluster(selectedCluster.id);
+        setFilteredClasses(clusterClasses);
+      } else {
+        setFilteredClasses(classesNoSchedule);
+      }
+    };
+    
+    filterClassesByCluster();
+  }, [selectedCluster, classesNoSchedule, getClassesByCluster]);
+
   return (
     <LoadingProvider>
       <div className="flex flex-col gap-2">
         <div className="flex flex-row gap-2 justify-between">
-          <GeneralSemesterAutoComplete
-            selectedSemester={selectedSemester}
-            setSelectedSemester={setSelectedSemester}
-          />
+          <div className="flex gap-2">
+            <GeneralSemesterAutoComplete
+              selectedSemester={selectedSemester}
+              setSelectedSemester={(semester) => {
+                setSelectedSemester(semester);
+                setSelectedCluster(null); 
+              }}
+            />
+            <GeneralClusterAutoComplete
+              selectedCluster={selectedCluster}
+              setSelectedCluster={setSelectedCluster}
+              selectedSemester={selectedSemester}
+              sx={{
+                minWidth: 200,
+                "& .MuiInputBase-root": { height: "40px" },
+              }}
+            />
+          </div>
           <div className="flex flex-col gap-2 items-end">
             <InputFileUpload
               isUploading={isUploading}
@@ -152,7 +183,7 @@ const GeneralUploadScreen = () => {
         </div>
         <GeneralUploadTable 
           setClasses={setClassesNoSchedule}
-          classes={classesNoSchedule} 
+          classes={selectedCluster ? filteredClasses : classesNoSchedule} 
           dataLoading={isClassesNoScheduleLoading}
           onSelectionChange={handleSelectionChange} 
           selectedIds={selectedIds}
