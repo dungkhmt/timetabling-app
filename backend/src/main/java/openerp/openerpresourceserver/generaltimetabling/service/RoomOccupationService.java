@@ -20,6 +20,4 @@ public interface RoomOccupationService {
     List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex);
 
     List<Classroom> getRoomsNotOccupiedBySemesterAndWeekDayCrewStartAndEndSLot(String semester, String crew, int week, int day, int startSlot, int endSlot);
-
-    List<RoomOccupation> getRoomOccupationsBySemesterAndWeekIndexOriginal(String semester, int weekIndex);
 }
