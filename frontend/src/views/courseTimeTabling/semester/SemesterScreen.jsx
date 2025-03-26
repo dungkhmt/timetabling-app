@@ -2,11 +2,19 @@ import { useState } from "react";
 import { useSemesterData } from "services/useSemesterData";
 import { getColumns } from "./utils/gridColumns";
 import { DataGrid } from "@mui/x-data-grid";
-import { DataGridTitle, DataGridToolbar } from "./components/DataGridComponents";
-import { CreateEditDialog, DeleteConfirmDialog } from "./components/SemesterDialogs";
+import {
+  DataGridTitle,
+  DataGridToolbar,
+} from "./components/DataGridComponents";
+import {
+  CreateEditDialog,
+  DeleteConfirmDialog,
+} from "./components/SemesterDialogs";
+import { Box, Typography } from "@mui/material";
 
 export default function SemesterScreen() {
-  const { semesters, isLoading, deleteSemester, isDeleting } = useSemesterData();
+  const { semesters, isLoading, deleteSemester, isDeleting } =
+    useSemesterData();
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -43,21 +51,24 @@ export default function SemesterScreen() {
 
   return (
     <div style={{ height: "500px", width: "100%" }}>
+      <Box
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h5">Danh sách kỳ học</Typography>
+      </Box>
+      <DataGridToolbar
+        isDialogOpen={isDialogOpen}
+        handleCreate={handleCreate}
+        handleCloseDialog={() => setDialogOpen(false)}
+        selectedSemester={selectedSemester}
+      />
       <DataGrid
         loading={isLoading}
-        components={{
-          Toolbar: () => (
-            <>
-              <DataGridTitle />
-              <DataGridToolbar
-                isDialogOpen={isDialogOpen}
-                handleCreate={handleCreate}
-                handleCloseDialog={() => setDialogOpen(false)}
-                selectedSemester={selectedSemester}
-              />
-            </>
-          ),
-        }}
         rows={semesters}
         columns={columns}
         pageSize={10}

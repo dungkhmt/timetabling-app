@@ -56,7 +56,7 @@ class OpenerpResourceServerApplicationTests {
 
     @Test
     void printROExportRo() {
-        excelHelper.convertRoomOccupationToExcel(roomOccupationRepo.findAllBySemesterAndWeekIndex("20232", 2));
+        // excelHelper.convertRoomOccupationToExcel(roomOccupationRepo.findAllBySemesterAndWeekIndex("20232", 2));
     }
 
 }

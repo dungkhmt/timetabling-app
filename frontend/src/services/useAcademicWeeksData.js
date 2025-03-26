@@ -1,8 +1,10 @@
-import { useQuery, useMutation } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { academicWeekServices } from "repositories/academicWeekRepository";
 
 export const useAcademicWeeks = (selectedSemester) => {
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error, refetch } = useQuery(
     ['academicWeeks', selectedSemester],
     () => academicWeekServices.getAcademicWeeks(selectedSemester),
@@ -15,7 +17,7 @@ export const useAcademicWeeks = (selectedSemester) => {
 
   const deleteMutation = useMutation(academicWeekServices.deleteAcademicWeeks, {
     onSuccess: () => {
-      refetch();
+      queryClient.invalidateQueries(['academicWeeks', selectedSemester]);
       toast.success('Xóa danh sách tuần học thành công!');
     },
     onError: () => {
@@ -24,8 +26,9 @@ export const useAcademicWeeks = (selectedSemester) => {
   });
 
   const createMutation = useMutation(academicWeekServices.createAcademicWeeks, {
-    onSuccess: () => {
-      refetch();
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries(['academicWeeks', variables.semester]);
+      await queryClient.refetchQueries(['academicWeeks', variables.semester]);
       toast.success('Tạo danh sách tuần thành công!');
     },
     onError: () => {

@@ -3,12 +3,11 @@ import CreateNewSemester from "../CreateNewSemesterScreen";
 
 
 export const DataGridToolbar = ({ isDialogOpen, handleCreate, handleCloseDialog, selectedSemester }) => (
-  <div>
+  <div className="mb-[16px]">
     <div style={{ display: "flex", gap: 16, justifyContent: "flex-end" }}>
       <Button
         variant="outlined"
         color="primary"
-        style={{ marginRight: "8px" }}
         onClick={handleCreate}
       >
         Thêm mới
