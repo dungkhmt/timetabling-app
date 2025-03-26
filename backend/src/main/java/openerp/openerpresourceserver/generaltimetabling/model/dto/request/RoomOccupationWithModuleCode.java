@@ -1,23 +1,16 @@
-package openerp.openerpresourceserver.generaltimetabling.model.entity.occupation;
+package openerp.openerpresourceserver.generaltimetabling.model.dto.request;
 
-import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Getter
 @Setter
-@Table(name = "timetabling_room_occupations")
-public class RoomOccupation {
+public class RoomOccupationWithModuleCode {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -32,11 +25,11 @@ public class RoomOccupation {
     private String crew;
     private Integer dayIndex;
     private Integer weekIndex;
-
+    private String moduleCode;
     private String status;
 
-    public RoomOccupation( String classRoom,  String classCode, Integer startPeriod, Integer endPeriod,
-            String crew, Integer dayIndex, Integer weekIndex, String status, String semester) {
+    public RoomOccupationWithModuleCode( String classRoom,  String classCode, Integer startPeriod, Integer endPeriod,
+                           String crew, Integer dayIndex, Integer weekIndex, String status, String semester, String moduleCode) {
         this.classRoom = classRoom;
         this.classCode = classCode;
         this.startPeriod = startPeriod;
@@ -46,6 +39,7 @@ public class RoomOccupation {
         this.weekIndex = weekIndex;
         this.status = status;
         this.semester = semester;
+        this.moduleCode = moduleCode;
     }
 
     @Override

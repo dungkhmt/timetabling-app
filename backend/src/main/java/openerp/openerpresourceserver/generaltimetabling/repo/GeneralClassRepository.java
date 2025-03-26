@@ -44,4 +44,7 @@ public interface GeneralClassRepository extends JpaRepository<GeneralClass, Long
 
     @Transactional
     void deleteAllBySemester(String semester);
+
+    @Query("SELECT gc FROM GeneralClass gc WHERE gc.classCode = :classCode")
+    List<GeneralClass> findByClassCode(@Param("classCode") String classCode);
 }
