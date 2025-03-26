@@ -5,14 +5,16 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import GeneralSemesterAutoComplete from "views/general-time-tabling/common-components/GeneralSemesterAutoComplete";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
+import dayjs from "dayjs";
 
 const AddWeekAcademicSemesterDialog = ({
   open,
   setOpen,
   setUpdateSelectedSemester,
+  refetch
 }) => {
   const [numberOfWeeks, setNumOfWeeks] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(dayjs());
   const [selectedSemester, setSelectedSemester] = useState(null);
   const { createWeeks, isCreating } = useAcademicWeeks();
 
@@ -23,10 +25,11 @@ const AddWeekAcademicSemesterDialog = ({
   const handleSubmit = async () => {
     await createWeeks({
       semester: selectedSemester.semester,
-      startDate: formatDateToString(startDate),
+      startDate: formatDateToString(startDate.toDate()),
       numberOfWeeks: Number(numberOfWeeks),
     });
     setUpdateSelectedSemester(selectedSemester);
+    await refetch();
     handleClose();
   };
 
@@ -35,7 +38,6 @@ const AddWeekAcademicSemesterDialog = ({
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
 
-    // Pad single digits with leading zero
     const formattedDay = String(day).padStart(2, "0");
     const formattedMonth = String(month).padStart(2, "0");
 
@@ -44,7 +46,7 @@ const AddWeekAcademicSemesterDialog = ({
 
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Tạo danh sách tuần</DialogTitle>
+      <DialogTitle>Tạo tuần học</DialogTitle>
       <DialogContent dividers={true}>
         <div className="flex gap-2 flex-col py-2">
           <GeneralSemesterAutoComplete
@@ -57,17 +59,14 @@ const AddWeekAcademicSemesterDialog = ({
               setNumOfWeeks(e.target.value);
             }}
             label={"Nhập số tuần"}
+            type="number"
           />
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              renderInput={(props) => (
-                <TextField {...props} value={startDate} />
-              )}
               label="Chọn ngày bắt đầu kỳ học"
               value={startDate}
               onChange={(newValue) => {
-                console.log(new Date(newValue)?.getDate());
-                setStartDate(new Date(newValue));
+                setStartDate(newValue);
               }}
             />
           </LocalizationProvider>
@@ -80,7 +79,8 @@ const AddWeekAcademicSemesterDialog = ({
           disabled={
             isCreating ||
             selectedSemester === null ||
-            Number.isInteger(numberOfWeeks)
+            !numberOfWeeks ||
+            isNaN(Number(numberOfWeeks))
           }
           onClick={handleSubmit}
           type="submit"
