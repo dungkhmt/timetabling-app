@@ -6,10 +6,13 @@ import java.util.HashSet;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.repo.AcademicWeekRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.GeneralClassRepository;
 import openerp.openerpresourceserver.generaltimetabling.repo.RoomOccupationRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.RoomOccupationService;
 import openerp.openerpresourceserver.generaltimetabling.helper.GeneralExcelHelper;
@@ -23,6 +26,7 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
     private AcademicWeekRepo academicWeekRepo;
     private GeneralExcelHelper excelHelper;
     private ClassroomRepo classroomRepo;
+    private GeneralClassRepository gRepo;
     @Override
     public List<RoomOccupation> getRoomOccupationsBySemester(String semester) {
         return roomOccupationRepo.findAllBySemester(semester);
@@ -39,14 +43,43 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
     }
 
     @Override
-    public ByteArrayInputStream exportExcel(String semester, int week) {
-        return excelHelper.convertRoomOccupationToExcel(roomOccupationRepo.findAllBySemesterAndWeekIndex(semester, week));
+    public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex) {
+        List<RoomOccupation> roomOccupations = roomOccupationRepo.findAllBySemesterAndWeekIndex(semester,weekIndex);
+        List<RoomOccupationWithModuleCode> roomOccupationsWithModuleCode = new ArrayList<>();
+        for(RoomOccupation roomOccupation: roomOccupations){
+            String classCode = roomOccupation.getClassCode();
+            List<GeneralClass> generalClasses = gRepo.findByClassCode(classCode);
+            
+            String moduleCode = null;
+            if (!generalClasses.isEmpty()) {
+                GeneralClass firstGeneralClass = generalClasses.get(0);
+                moduleCode = firstGeneralClass.getModuleCode();
+            }
+
+            RoomOccupationWithModuleCode roomOcc = new RoomOccupationWithModuleCode(
+                roomOccupation.getClassRoom(),
+                roomOccupation.getClassCode(),
+                roomOccupation.getStartPeriod(),
+                roomOccupation.getEndPeriod(),
+                roomOccupation.getCrew(),
+                roomOccupation.getDayIndex(),
+                roomOccupation.getWeekIndex(),
+                roomOccupation.getStatus(),
+                roomOccupation.getSemester(),
+                moduleCode
+            );
+            roomOcc.setId(roomOccupation.getId());
+            roomOccupationsWithModuleCode.add(roomOcc);
+        }
+        return roomOccupationsWithModuleCode;
     }
 
     @Override
-    public List<RoomOccupation> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex) {
-        return roomOccupationRepo.findAllBySemesterAndWeekIndex(semester,weekIndex);
+    public ByteArrayInputStream exportExcel(String semester, int week) {
+        List<RoomOccupationWithModuleCode> roomOccupations = getRoomOccupationsBySemesterAndWeekIndex(semester, week);
+        return excelHelper.convertRoomOccupationToExcel(roomOccupations);
     }
+
 
     @Override
     public List<Classroom> getRoomsNotOccupiedBySemesterAndWeekDayCrewStartAndEndSLot(String semester, String crew, int week, int day, int startSlot, int endSlot) {
@@ -70,8 +103,5 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
         return res;
 
     }
-
-
-
 }
 

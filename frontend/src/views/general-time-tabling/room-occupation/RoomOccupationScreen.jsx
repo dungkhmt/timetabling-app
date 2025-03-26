@@ -55,9 +55,9 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
     const cells = Array(42).fill(null);
     if (!periods) return cells;
     
-    periods.forEach(({ start, duration, classCode }) => {
+    periods.forEach(({ start, duration, classCode, moduleCode }) => {
       if (start < 0 || start >= 42) return;
-      cells[start] = { colSpan: duration, classCode };
+      cells[start] = { colSpan: duration, classCode, moduleCode };
       for (let i = 1; i < duration; i++) {
         if (start + i < 42) {
           cells[start + i] = { hidden: true };
@@ -81,7 +81,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
     const dayText = day === 8 ? 'CN' : `Thứ ${day}`;
     const periodStart = (index % 6) + 1;
     const periodEnd = ((index + cell.colSpan - 1) % 6) + 1;
-    const title = `${cell.classCode}: ${dayText}/${periodStart}-${periodEnd}`;
+    const title = `${cell.classCode} - ${cell.moduleCode}: ${dayText}/${periodStart}-${periodEnd}`;
     
     const baseWidth = 40;
     const width = baseWidth * cell.colSpan;
@@ -98,7 +98,10 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
         }}
         className="cell bg-yellow-300 text-center overflow-hidden text-xs border border-slate-200"
       >
-        {cell.classCode}
+        <div className="flex flex-col items-center justify-center h-full">
+          <span>{cell.classCode}</span>
+          <span className="text-[10px] text-gray-700">{cell.moduleCode}</span>
+        </div>
       </td>
     );
   };

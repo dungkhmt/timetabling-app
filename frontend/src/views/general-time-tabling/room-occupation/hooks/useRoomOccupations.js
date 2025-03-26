@@ -44,6 +44,7 @@ const convertSchedule = (schedule) => {
 
     const {
       classRoom,
+      moduleCode,
       classCode,
       startPeriod,
       endPeriod,
@@ -52,8 +53,7 @@ const convertSchedule = (schedule) => {
       assigned,
     } = item;
 
-    // Skip invalid data
-    if (!classCode || !startPeriod || !endPeriod || !dayIndex || !crew) {
+    if (!classCode || !startPeriod || !endPeriod || !dayIndex || !crew || !moduleCode) {
       return;
     }
 
@@ -80,6 +80,7 @@ const convertSchedule = (schedule) => {
         duration,
         classCode,
         crew,
+        moduleCode
       });
     }
   });
@@ -111,6 +112,7 @@ const convertSchedule = (schedule) => {
       `/room-occupation/?semester=${semester}&weekIndex=${selectedWeek.weekIndex}`,
       (res) => {
         try {
+          console.log(res);
           const convertedData = convertSchedule(res.data);
           setData(convertedData);
           console.log('Converted data:', convertedData);

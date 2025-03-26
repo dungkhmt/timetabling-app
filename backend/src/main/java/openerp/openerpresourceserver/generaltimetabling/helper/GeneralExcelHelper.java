@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.*;
 
 import lombok.extern.log4j.Log4j2;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.OccupationClassPeriod;
@@ -213,21 +214,23 @@ public class GeneralExcelHelper {
     }
 
 
-    public static ByteArrayInputStream convertRoomOccupationToExcel(List<RoomOccupation> rooms) {
+    public static ByteArrayInputStream convertRoomOccupationToExcel(List<RoomOccupationWithModuleCode> rooms) {
         /*Init the data to map*/
         HashMap<String, List<OccupationClassPeriod>> periodMap = new HashMap<>();
         HashMap<OccupationClassPeriod, List<OccupationClassPeriod>> conflictMap = new HashMap<>();
-        for(RoomOccupation room : rooms) {
+        for(RoomOccupationWithModuleCode room : rooms) {
             if (room.getStartPeriod() == null || room.getEndPeriod() == null || 
                 room.getDayIndex() == null || room.getClassRoom() == null) {
                 continue;
             }
             
             String classRoom = room.getClassRoom();
+            String moduleCode = room.getModuleCode();
+            String displayText = room.getClassCode() + (moduleCode != null ? " (" + moduleCode + ")" : "");
             long crewPeriod = "S".equals(room.getCrew()) ? 0 : 6;
             long startPeriodIndex = room.getStartPeriod().intValue() + 12L * (room.getDayIndex().intValue()-2) + crewPeriod;
             long endPeriodIndex = room.getEndPeriod().intValue() + 12L * (room.getDayIndex().intValue()-2) + crewPeriod;
-            OccupationClassPeriod period = new OccupationClassPeriod(startPeriodIndex, endPeriodIndex, room.getClassCode(), classRoom);
+            OccupationClassPeriod period = new OccupationClassPeriod(startPeriodIndex, endPeriodIndex, displayText, classRoom);
             if(periodMap.get(classRoom) == null) {
                 List<OccupationClassPeriod> initList = new ArrayList<>();
                 initList.add(period);
@@ -240,9 +243,6 @@ public class GeneralExcelHelper {
                 conflictMap.put(period, initList);
             }
         }
-
-
-
 
         /*Handle Excel write*/
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {

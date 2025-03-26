@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.generaltimetabling.controller.occupation;
 import java.util.List;
 
 import openerp.openerpresourceserver.generaltimetabling.model.GetEmptyRoomsRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -47,7 +48,7 @@ public class RoomOccupationController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<RoomOccupation>> requestGetRoomOccupationsBySemesterAndWeekIndex(@RequestParam("semester")String semester, @RequestParam("weekIndex") int weekIndex) {
+    public ResponseEntity<List<RoomOccupationWithModuleCode>> requestGetRoomOccupationsBySemesterAndWeekIndex(@RequestParam("semester")String semester, @RequestParam("weekIndex") int weekIndex) {
         return ResponseEntity.ok(roomOccupationService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
     }
     
