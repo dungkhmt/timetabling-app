@@ -3,6 +3,8 @@ package openerp.openerpresourceserver.generaltimetabling.service.impl;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.ClassSegmentPartitionConfigForSummerSemester;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.V2ClassScheduler;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentRoomReservationSolver;
 import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
@@ -12,6 +14,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.helper.ClassTimeComparator;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.mapper.RoomOccupationMapper;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
@@ -97,6 +100,32 @@ public class GeneralClassServiceImp implements GeneralClassService {
         List<GeneralClass> generalClasses = (groupName == null || groupName.isEmpty())
                 ? gcoRepo.findAllBySemester(semester)
                 : gcoRepo.findAllBySemesterAndGroupName(semester, groupName);
+        /*
+        // temporarily fixed by PQD: return list of general classes appearing in the gourpName
+        List<GeneralClass> generalClassesOfSemester = gcoRepo.findAllBySemester(semester);
+        log.info("getGeneralClassDtos, generalClassesOfSemester.sz = " + generalClassesOfSemester.size());
+        Optional<Group> groups = groupRepo.findByGroupName(groupName);
+        Long gId = null;
+        if(groups.isPresent()){Group g = groups.get(); gId = g.getId(); }
+
+        log.info("getGeneralClassDtos, groupName = " + groupName + " gId = " + gId);
+
+        List<ClassGroup> CG = classGroupRepo.findAllByGroupId(gId);
+        log.info("getGeneralClassDtos, groupName = " + groupName + " gId = " + gId + " CG.sz = " + CG.size());
+
+        Set<Long> selectedClassIds = new HashSet<>();
+        for(ClassGroup cg: CG) selectedClassIds.add(cg.getClassId());
+        log.info("getGeneralClassDtos, selectedClasIds.sz = " + selectedClassIds.size());
+
+        List<GeneralClass> generalClasses = new ArrayList<>();
+        for(GeneralClass gc: generalClassesOfSemester){
+            if(selectedClassIds.contains(gc.getId())){
+                generalClasses.add(gc);
+            }
+        }
+
+        // end of fixed by PQD
+        */
 
         List<Long> classIds = generalClasses.stream().map(GeneralClass::getId).toList();
 
@@ -510,7 +539,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Transactional
     @Override
     public List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule) {
-        //synchronizeCourses();
+        synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule);
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
 
@@ -912,5 +941,284 @@ public class GeneralClassServiceImp implements GeneralClassService {
                         .foreignLecturer(gc.getForeignLecturer())
                         .build()
                 ).toList();
+    }
+
+    @Transactional
+    private void createClassSegment(GeneralClass gc, List<Integer> seqSlots){
+        log.info("createClassSegments, classId " + gc.getId() + ", crew " + gc.getCrew() + "  course "
+                + gc.getModuleCode() + " type " + gc.getClassType() + " slots = " + seqSlots);
+
+
+        /*
+        List<RoomReservation> rr = roomReservationRepo.findAllByGeneralClass(gc);
+        //roomReservationRepo.deleteAll(rr);
+        for(RoomReservation ri: rr){
+            roomReservationRepo.deleteById(ri.getId());
+            //roomReservationRepo.flush();
+            log.info("createClassSegments, delete room_reservation id = " + ri.getId());
+        }
+        */
+        gc.getTimeSlots().clear();
+        for(int s: seqSlots){
+            RoomReservation r = new RoomReservation();
+            r.setGeneralClass(gc);
+            r.setCrew(gc.getCrew());
+            r.setDuration(s);
+            //r = roomReservationRepo.save(r);
+            //gc.getTimeSlots().add(r);
+            gc.addTimeSlot(r);
+            log.info("createClassSegments, classId " + gc.getId() + ", crew " + gc.getCrew() + "  course "
+                    + gc.getModuleCode() + " type " + gc.getClassType() + " slots = " + seqSlots
+                    + " add slot " + s + " gc.timeSlots.sz = " + gc.getTimeSlots().size());
+        }
+        gc = gcoRepo.save(gc);
+    }
+    private void createClassSegmentsOfASession(List<GeneralClass> LS,
+                                            List<List<Integer>> PLT,
+                                            List<List<Integer>> PBT,
+                                            List<List<Integer>> PLTBT){
+        // consider morning classes first
+        List<GeneralClass> LLT = new ArrayList<>();
+        List<GeneralClass> LBT = new ArrayList<>();
+        List<GeneralClass> LLTBT = new ArrayList<>();
+        for(GeneralClass gc: LS){
+            if(gc.getClassType().equals("LT")) LLT.add(gc);
+            else if(gc.getClassType().equals("BT")) LBT.add(gc);
+            else if(gc.getClassType().equals("LT+BT")) LLTBT.add(gc);
+        }
+        // apply round robin
+        int idx = 0;
+
+        for(GeneralClass gc: LLT){
+            if(PLT != null && PLT.size() > 0){
+                List<Integer> seqSlots = PLT.get(idx);
+                // create a.size class-segment for class gc
+                if(seqSlots.size() > 1){
+                    createClassSegment(gc,seqSlots);
+                }
+                idx += 1;
+                if(idx >= PLT.size()) idx = 0;
+            }
+        }
+        idx = 0;
+        for(GeneralClass gc: LBT){
+            if(PBT != null && PBT.size() > 0){
+                List<Integer> seqSlots = PBT.get(idx);
+                // create a.size class-segment for class gc
+                if(seqSlots.size() > 1){
+                    createClassSegment(gc,seqSlots);
+                }
+                idx += 1;
+                if(idx >= PBT.size()) idx = 0;
+            }
+        }
+        idx = 0;
+        for(GeneralClass gc: LLTBT){
+            if(PLTBT != null && PLTBT.size() > 0){
+                List<Integer> seqSlots = PLTBT.get(idx);
+                // create a.size class-segment for class gc
+                if(seqSlots.size() > 1){
+                    createClassSegment(gc,seqSlots);
+                }
+                idx += 1;
+                if(idx >= PLTBT.size()) idx = 0;
+            }
+        }
+    }
+    @Transactional
+    @Override
+    public List<RoomReservation> createClassSegment(ModelInputCreateClassSegment I) {
+        List<GeneralClass> cls = gcoRepo.findAllBySemester(I.getSemester());
+        ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
+
+        List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
+        Map<String, List<GeneralClass>> mCourseCode2Class = new HashMap<>();
+        for(GeneralClass gc: cls){
+            String courseCode = gc.getModuleCode();
+            if(mCourseCode2Class.get(courseCode)==null)
+                mCourseCode2Class.put(courseCode,new ArrayList<>());
+            mCourseCode2Class.get(courseCode).add(gc);
+        }
+        Map<String, List<List<Integer>>> mCourseCodeLT2Partitions = new HashMap<>();
+        Map<String, List<List<Integer>>> mCourseCodeBT2Partitions = new HashMap<>();
+        Map<String, List<List<Integer>>> mCourseCodeLTBT2Partitions = new HashMap<>();
+        for(TimeTablingCourse c: courses){
+            if(c.getPartitionLtForSummerSemester()!=null) {
+                List<List<Integer>> L1 = Util.extractPartition(c.getPartitionLtForSummerSemester());
+                mCourseCodeLT2Partitions.put(c.getId(), L1);
+            }
+            if(c.getPartitionBtForSummerSemester()!=null) {
+                List<List<Integer>> L1 = Util.extractPartition(c.getPartitionBtForSummerSemester());
+                mCourseCodeBT2Partitions.put(c.getId(), L1);
+            }
+            if(c.getPartitionLtBtForSummerSemester()!=null) {
+                List<List<Integer>> L1 = Util.extractPartition(c.getPartitionLtBtForSummerSemester());
+                mCourseCodeLTBT2Partitions.put(c.getId(), L1);
+            }
+        }
+
+        for(String courseCode: mCourseCode2Class.keySet()){
+            List<GeneralClass> L = mCourseCode2Class.get(courseCode);
+            List<GeneralClass> LS = new ArrayList<>();
+            List<GeneralClass> LC = new ArrayList<>();
+            for(GeneralClass gc: L){
+                if(gc.getCrew().equals("S")) LS.add(gc);
+                else if(gc.getCrew().equals("C")) LC.add(gc);
+            }
+            // consider morning classes first
+            List<GeneralClass> LLT = new ArrayList<>();
+            List<GeneralClass> LBT = new ArrayList<>();
+            List<GeneralClass> LLTBT = new ArrayList<>();
+            for(GeneralClass gc: L){
+                if(gc.getClassType().equals("LT")) LLT.add(gc);
+                else if(gc.getClassType().equals("BT")) LBT.add(gc);
+                else if(gc.getClassType().equals("LT+BT")) LLTBT.add(gc);
+            }
+
+            List<List<Integer>> PLT = mCourseCodeLT2Partitions.get(courseCode);
+            List<List<Integer>> PBT = mCourseCodeBT2Partitions.get(courseCode);
+            List<List<Integer>> PLTBT = mCourseCodeLTBT2Partitions.get(courseCode);
+            // if not configured in DataBase, then use hardcode config
+            if(PLT == null){
+                if(LLT != null && LLT.size() >= 1){
+                    GeneralClass gc = LLT.get(0);
+                    if(P.partitions.get(gc.getDuration())!=null)
+                        PLT = P.partitions.get(gc.getDuration());
+                }
+            }
+            if(PBT == null){
+                if(LBT != null && LBT.size() >= 1){
+                    GeneralClass gc = LBT.get(0);
+                    if(P.partitions.get(gc.getDuration())!=null)
+                        PBT = P.partitions.get(gc.getDuration());
+                }
+            }
+            if(PLTBT == null){
+                if(LLTBT != null && LLTBT.size() >= 1){
+                    GeneralClass gc = LLTBT.get(0);
+                    if(P.partitions.get(gc.getDuration())!=null)
+                        PLTBT = P.partitions.get(gc.getDuration());
+                }
+            }
+            log.info("createClassSegment, for course " + courseCode + " morning sz = " + LS.size());
+            createClassSegmentsOfASession(LS,PLT,PBT,PLTBT);
+            log.info("createClassSegment, for course " + courseCode + " afternoon sz = " + LC.size());
+            createClassSegmentsOfASession(LC,PLT,PBT,PLTBT);
+            /*
+            int idx = 0;
+            for(GeneralClass gc: LLT){
+                if(PLT != null && PLT.size() > 0){
+                    List<Integer> seqSlots = PLT.get(idx);
+                    // create a.size class-segment for class gc
+                    if(seqSlots.size() > 1){
+                        createClassSegment(gc,seqSlots);
+                    }
+                    idx += 1;
+                    if(idx >= PLT.size()) idx = 0;
+                }
+            }
+            idx = 0;
+            for(GeneralClass gc: LBT){
+                if(PBT != null && PBT.size() > 0){
+                    List<Integer> seqSlots = PBT.get(idx);
+                    // create a.size class-segment for class gc
+                    if(seqSlots.size() > 1){
+                        createClassSegment(gc,seqSlots);
+                    }
+                    idx += 1;
+                    if(idx >= PBT.size()) idx = 0;
+                }
+            }
+            idx = 0;
+            for(GeneralClass gc: LLTBT){
+                if(PLTBT != null && PLTBT.size() > 0){
+                    List<Integer> seqSlots = PLTBT.get(idx);
+                    // create a.size class-segment for class gc
+                    if(seqSlots.size() > 1){
+                        createClassSegment(gc,seqSlots);
+                    }
+                    idx += 1;
+                    if(idx >= PLTBT.size()) idx = 0;
+                }
+            }
+
+            // consider àternoon classes first
+            LLT = new ArrayList<>();
+            LBT = new ArrayList<>();
+            LLTBT = new ArrayList<>();
+            for(GeneralClass gc: LC){
+                if(gc.getClassType().equals("LT")) LLT.add(gc);
+                else if(gc.getClassType().equals("BT")) LBT.add(gc);
+                else if(gc.getClassType().equals("LT+BT")) LLTBT.add(gc);
+            }
+            // apply round robin
+            PLT = mCourseCodeLT2Partitions.get(courseCode);
+            PBT = mCourseCodeBT2Partitions.get(courseCode);
+            PLTBT = mCourseCodeLTBT2Partitions.get(courseCode);
+            // if not configured in DataBase, then use hardcode config
+            if(PLT == null){
+                if(LLT != null && LLT.size() >= 1){
+                    GeneralClass gc = LLT.get(0);
+                    if(P.partitions.get(gc.getDuration())!=null)
+                        PLT = P.partitions.get(gc.getDuration());
+                }
+            }
+            if(PBT == null){
+                if(LBT != null && LBT.size() >= 1){
+                    GeneralClass gc = LBT.get(0);
+                    if(P.partitions.get(gc.getDuration())!=null)
+                        PBT = P.partitions.get(gc.getDuration());
+                }
+            }
+            if(PLTBT == null){
+                if(LLTBT != null && LLTBT.size() >= 1){
+                    GeneralClass gc = LLTBT.get(0);
+                    if(P.partitions.get(gc.getDuration())!=null)
+                        PLTBT = P.partitions.get(gc.getDuration());
+                }
+            }
+            idx = 0;
+            for(GeneralClass gc: LLT){
+                if(PLT != null && PLT.size() > 0){
+                    List<Integer> seqSlots = PLT.get(idx);
+                    // create a.size class-segment for class gc
+                    if(seqSlots.size() > 1){
+                        createClassSegment(gc,seqSlots);
+                    }
+                    idx += 1;
+                    if(idx >= PLT.size()) idx = 0;
+                }
+            }
+            idx = 0;
+            for(GeneralClass gc: LBT){
+                if(PBT != null && PBT.size() > 0){
+                    List<Integer> seqSlots = PBT.get(idx);
+                    // create a.size class-segment for class gc
+                    if(seqSlots.size() > 1){
+                        createClassSegment(gc,seqSlots);
+                    }
+                    idx += 1;
+                    if(idx >= PBT.size()) idx = 0;
+                }
+            }
+            idx = 0;
+            for(GeneralClass gc: LLTBT){
+                if(PLTBT != null && PLTBT.size() > 0){
+                    List<Integer> seqSlots = PLTBT.get(idx);
+                    // create a.size class-segment for class gc
+                    if(seqSlots.size() > 1){
+                        createClassSegment(gc,seqSlots);
+                    }
+                    idx += 1;
+                    if(idx >= PLTBT.size()) idx = 0;
+                }
+            }
+
+             */
+
+
+        }
+        return null;
+
     }
 }

@@ -38,6 +38,25 @@ const GeneralUploadScreen = () => {
     }
   } = useGeneralSchedule();
 
+  function handleCreateSegment(){
+    let body = {
+      semester: selectedSemester.semester
+    };
+
+    request(
+      "post",
+      "/general-classes/create-class-segments",
+      (res) => {
+        console.log('create class-segments returned ',res.data);
+      },
+      {
+        onError: (e) => {
+          
+        }
+      },
+      body
+    );
+  }
   function handleComputeClusters(){
     let body = {
       semester: selectedSemester.semester
@@ -178,6 +197,22 @@ const GeneralUploadScreen = () => {
               >
                 Phân cụm
               </Button>
+              <Button
+                startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                sx={{ 
+                  width: 220,
+                  textTransform: 'none',
+                  fontSize: '16px'
+                }}
+                disabled={isDeletingBySemester || !selectedSemester}
+                onClick={handleCreateSegment}
+                variant="contained"
+                color="error"
+                
+              >
+                Tạo ca học
+              </Button>
+              
             </div>
           </div>
         </div>

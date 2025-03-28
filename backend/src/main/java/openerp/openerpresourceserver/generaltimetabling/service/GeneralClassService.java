@@ -3,12 +3,14 @@ package openerp.openerpresourceserver.generaltimetabling.service;
 import java.io.InputStream;
 import java.util.List;
 
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,8 @@ public interface GeneralClassService {
     List<GeneralClassDto> getSubClasses(Long parentClassId);
 
     List<GeneralClassDto> getGeneralClassDtos(String semester, String groupName);
+
+
 
     public void deleteClassesBySemester(String semester);
 
@@ -54,4 +58,6 @@ public interface GeneralClassService {
     int computeClassCluster(ModelInputComputeClassCluster I);
 
     List<GeneralClassDto> getGeneralClassByCluster(Long clusterId);
+
+    List<RoomReservation> createClassSegment(ModelInputCreateClassSegment I);
 }

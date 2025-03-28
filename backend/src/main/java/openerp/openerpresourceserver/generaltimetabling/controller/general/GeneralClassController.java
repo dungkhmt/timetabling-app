@@ -9,10 +9,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
@@ -249,5 +251,11 @@ public class GeneralClassController {
     public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("semester") String semester) {
         List<Cluster> clusters = clusterRepo.findAllBySemester(semester);
         return ResponseEntity.ok(clusters);
+    }
+
+    @PostMapping("/create-class-segments")
+    public ResponseEntity<?> createClassSegments(Principal principal, @RequestBody ModelInputCreateClassSegment I){
+        List<RoomReservation> res = gService.createClassSegment(I);
+        return ResponseEntity.ok().body(res);
     }
 }

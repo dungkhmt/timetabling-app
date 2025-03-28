@@ -8,6 +8,21 @@ import java.util.*;
 @Log4j2
 public class Util {
 
+    public static List<List<Integer>> extractPartition(String st){
+        List<List<Integer>> L = new ArrayList<>();
+        String[] s = st.split("-");
+        if(s!=null){
+            for(String si: s){
+                List<Integer> Li = new ArrayList<>();
+                String[] sii = si.split(",");
+                if(sii != null && sii.length > 0){
+                    for(String siii: sii) Li.add(Integer.valueOf(siii));
+                }
+                L.add(Li);
+            }
+        }
+        return L;
+    }
     public static int intersect(List<Integer> L1, List<Integer> L2){
         int res = 0;
         for(Integer e: L1){

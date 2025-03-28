@@ -28,4 +28,14 @@ public class TimeTablingCourse {
 
     @Column(name = "max_teacher_in_charge")
     private Integer maxTeacherInCharge;
+
+    @Column(name="partition_lt_for_summer_semester")
+    private String partitionLtForSummerSemester;
+
+    @Column(name="partition_bt_for_summer_semester")
+    private String partitionBtForSummerSemester;
+
+    @Column(name="partition_lt_bt_for_summer_semester")
+    private String partitionLtBtForSummerSemester;
+
 }
