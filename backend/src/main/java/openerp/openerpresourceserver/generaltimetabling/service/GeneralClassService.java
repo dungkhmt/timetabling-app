@@ -29,7 +29,7 @@ public interface GeneralClassService {
 
     List<GeneralClassDto> getSubClasses(Long parentClassId);
 
-    List<GeneralClassDto> getGeneralClassDtos(String semester, String groupName);
+    List<GeneralClassDto> getGeneralClassDtos(String semester, Long groupId);
 
 
 

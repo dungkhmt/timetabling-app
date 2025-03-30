@@ -127,7 +127,7 @@ export const useGeneralSchedule = () => {
     try {
       const data = await generalScheduleRepository.getClasses(
         selectedSemester?.semester,
-        selectedGroup?.groupName
+        selectedGroup?.id
       );
 
       const processedClasses = processClassData(data);
@@ -150,7 +150,7 @@ export const useGeneralSchedule = () => {
     try {
       const data = await generalScheduleRepository.getClassesNoSchedule(
         selectedSemester?.semester,
-        selectedGroup?.groupName
+        selectedGroup?.id
       );
       setClassesNoSchedule(data || []);
     } catch (error) {
