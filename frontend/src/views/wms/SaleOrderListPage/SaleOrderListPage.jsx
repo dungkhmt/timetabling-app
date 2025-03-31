@@ -31,7 +31,7 @@ const SaleOrderListPage = () => {
   // This effect will fetch orders whenever filters or pagination changes
   useEffect(() => {
     fetchOrders();
-  }, [activeTab, pagination.page, pagination.size]);
+  }, [activeTab, pagination.page, pagination.size, filters.keyword]);
 
   const fetchOrders = async () => {
     setLoading(true);

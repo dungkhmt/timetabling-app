@@ -14,19 +14,19 @@ import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useOrderForm } from "../context/OrderFormContext";
 
 const ProductTable = () => {
-  const { salesOrder, setSalesOrder, entities } = useOrderForm();
+  const { order, setOrder, entities } = useOrderForm();
 
   const removeProductFromOrder = (productId) => {
-    const updatedItems = salesOrder.orderItems.filter(item => item.productId !== productId);
-    setSalesOrder(prev => ({ ...prev, orderItems: updatedItems }));
+    const updatedItems = order.orderItems.filter(item => item.productId !== productId);
+    setOrder(prev => ({ ...prev, orderItems: updatedItems }));
   };
 
   const updateProductQuantity = (productId, quantity) => {
     if (quantity <= 0) return;
-    const updatedItems = salesOrder.orderItems.map(item => 
+    const updatedItems = order.orderItems.map(item => 
       item.productId === productId ? { ...item, quantity: Number(quantity) } : item
     );
-    setSalesOrder(prev => ({ ...prev, orderItems: updatedItems }));
+    setOrder(prev => ({ ...prev, orderItems: updatedItems }));
   };
 
   const getProductDetails = (productId) => {
@@ -49,8 +49,8 @@ const ProductTable = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {salesOrder.orderItems.length > 0 ? (
-            salesOrder.orderItems.map((item, index) => {
+          {order.orderItems.length > 0 ? (
+            order.orderItems.map((item, index) => {
               const product = getProductDetails(item.productId);
               return (
                 <TableRow key={item.productId}>

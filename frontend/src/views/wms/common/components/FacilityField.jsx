@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { Grid, Typography } from "@mui/material";
-import RequireField from "../../common/components/RequireField";
+import RequireField from "./RequireField";
 import EntityAutocomplete from "./EntityAutocomplete";
 import { useEntityData } from "../hooks/useEntityData";
 import { useOrderForm } from "../context/OrderFormContext";
 
 const FacilityField = () => {
-  const { salesOrder, setSalesOrder, entities, setEntities } = useOrderForm();
+  const { order, setOrder, entities, setEntities } = useOrderForm();
   
   // Use the custom hook for facility data
   const { loading, handleScroll, handleDropdownOpen } = useEntityData('facilities', (newData) => {
@@ -25,10 +25,10 @@ const FacilityField = () => {
 
   // Set first facility as default when data is first loaded
   useEffect(() => {
-    if (entities.facilities.length > 0 && !salesOrder.facilityId) {
-      setSalesOrder(prev => ({ ...prev, facilityId: entities.facilities[0].id }));
+    if (entities.facilities.length > 0 && !order.facilityId) {
+      setOrder(prev => ({ ...prev, facilityId: entities.facilities[0].id }));
     }
-  }, [entities.facilities, salesOrder.facilityId, setSalesOrder]);
+  }, [entities.facilities, order.facilityId, setOrder]);
 
   return (
     <>
@@ -41,10 +41,10 @@ const FacilityField = () => {
         <EntityAutocomplete
           options={entities.facilities}
           getOptionLabel={(option) => `${option.id} - ${option.name || ''}`}
-          value={entities.facilities.find(f => f.id === salesOrder.facilityId) || null}
+          value={entities.facilities.find(f => f.id === order.facilityId) || null}
           onChange={(_, value) => {
             if (value) {
-              setSalesOrder(prev => ({ ...prev, facilityId: value.id }));
+              setOrder(prev => ({ ...prev, facilityId: value.id }));
             }
           }}
           onOpen={handleDropdownOpen}

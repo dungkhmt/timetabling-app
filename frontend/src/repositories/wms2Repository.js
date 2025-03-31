@@ -56,5 +56,10 @@ export const wms2Service = {
   }, 
   getSalesOrdersForExport: (page, limit) => {
     return request("get", `/sale-order/export?page=${page}&limit=${limit}`);
-  }
+  },
+  getMoreSuppliers: (page, limit) => {
+    return request("get", `/supplier/get-more?page=${page}&limit=${limit}`);
+  },
+  createPurchaseOrder: (purchaseOrderData) =>
+    request("post", "/purchase-order/create", null, null, purchaseOrderData),
 };

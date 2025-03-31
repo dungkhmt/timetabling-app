@@ -11,38 +11,42 @@ import {
   Checkbox,
   TextareaAutosize
 } from "@mui/material";
-import { useOrderForm } from "../context/OrderFormContext";
+import { useOrderForm } from "../../common/context/OrderFormContext";
+import RequireField from "../../common/components/RequireField";
 
 const DeliveryInfoForm = () => {
-  const { salesOrder, setSalesOrder } = useOrderForm();
+  const { order, setOrder } = useOrderForm();
   const [shippingMethods] = React.useState(["STANDARD", "EXPRESS", "ECONOMY"]);
   const [shippingCarriers] = React.useState(["VNPOST", "GHTK", "GHN", "VIETTEL"]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setSalesOrder(prev => ({ ...prev, [name]: value }));
+    setOrder(prev => ({ ...prev, [name]: value }));
   };
 
   const handleCheckboxChange = (e) => {
     const { name, checked } = e.target;
-    setSalesOrder(prev => ({ ...prev, [name]: checked }));
+    setOrder(prev => ({ ...prev, [name]: checked }));
   };
 
   return (
     <Box sx={{ mb: 3 }}>
       <Grid container spacing={2}>
+
         <Grid item xs={4}>
           <Typography variant="body1" sx={{ pt: 1 }}>
-            Địa chỉ nhận:{" "}
+            Giao sau ngày: <RequireField />
           </Typography>
         </Grid>
         <Grid item xs={8}>
           <TextField
-            fullWidth
-            size="small"
-            name="deliveryAddress"
-            value={salesOrder.deliveryAddress}
-            onChange={handleInputChange}
+              fullWidth
+              type="date"
+              name="deliveryAfterDate"
+              value={order.deliveryAfterDate}
+              onChange={handleInputChange}
+              size="small"
+              InputLabelProps={{ shrink: true }}
           />
         </Grid>
 
@@ -56,7 +60,7 @@ const DeliveryInfoForm = () => {
             fullWidth
             size="small"
             name="deliveryPhone"
-            value={salesOrder.deliveryPhone}
+            value={order.deliveryPhone}
             onChange={handleInputChange}
           />
         </Grid>
@@ -70,7 +74,7 @@ const DeliveryInfoForm = () => {
           <FormControl fullWidth size="small">
             <Select
               name="shippingMethod"
-              value={salesOrder.shippingMethod}
+              value={order.shippingMethod}
               onChange={handleInputChange}
             >
               <MenuItem value="">Chọn phương thức</MenuItem>
@@ -92,7 +96,7 @@ const DeliveryInfoForm = () => {
           <FormControl fullWidth size="small">
             <Select
               name="shippingCarrier"
-              value={salesOrder.shippingCarrier}
+              value={order.shippingCarrier}
               onChange={handleInputChange}
             >
               <MenuItem value="">Chọn đơn vị</MenuItem>
@@ -115,7 +119,7 @@ const DeliveryInfoForm = () => {
             minRows={3} 
             maxRows={6}
             name="note"
-            value={salesOrder.note}
+            value={order.note}
             onChange={handleInputChange}
             style={{ 
               width: "100%", 
@@ -138,7 +142,7 @@ const DeliveryInfoForm = () => {
             control={
               <Checkbox 
                 name="requireVatInvoice"
-                checked={salesOrder.requireVatInvoice}
+                checked={order.requireVatInvoice}
                 onChange={handleCheckboxChange}
               />
             }

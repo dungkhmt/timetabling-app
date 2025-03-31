@@ -7,7 +7,6 @@ import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.*;
-import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
 import openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator;
 import org.hibernate.annotations.GenericGenerator;
 

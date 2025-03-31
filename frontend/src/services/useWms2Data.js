@@ -18,6 +18,20 @@ export const useWms2Data = () => {
      },
    });
 
+   const createPurchaseOrderMutation = useMutation(wms2Service.createPurchaseOrder, {
+        onSuccess: (res) => {
+        const { data } = res;
+        console.log("Res :", res);
+        if(data && data.code ===201)
+        toast.success("Tạo đơn hàng thành công!");
+        else
+        toast.error("Có lỗi xảy ra khi tạo đơn hàng : "+data.message??'');
+        },
+        onError: (error) => {
+        toast.error(error.response?.data || "Có lỗi xảy ra khi tạo đơn hàng");
+        },
+  });
+
    // Tạo các hàm fetch data với tham số động thay vì useQuery
    const getMoreFacilities = async (page, limit) => {
      try {
@@ -194,9 +208,21 @@ export const useWms2Data = () => {
         return { data: {} };
       }
     }
+
+    const getMoreSuppliers = async (page, limit) => {
+      try {
+        const response = await wms2Service.getMoreSuppliers(page, limit);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching suppliers:", error);
+        toast.error("Không thể tải danh sách nhà cung cấp");
+        return { data: {} };
+      }
+    }
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
+        createPurchaseOrder: createPurchaseOrderMutation.mutateAsync,
      getMoreFacilities,
      getMoreProducts,
      getMoreCustomers,
@@ -212,6 +238,7 @@ export const useWms2Data = () => {
       getOutBoundsOrder,
       getOutBoundDetail,
       exportShipment,
-      getSalesOrdersForExport
+      getSalesOrdersForExport,
+       getMoreSuppliers
    };
 };
