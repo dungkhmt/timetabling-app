@@ -82,7 +82,7 @@ const TimetableList = ({
         <Box sx={{ width: '100%', mr: 1 }}>
           <LinearProgress 
             variant="determinate" 
-            value={params.value * 100} 
+            value={params.value < 10 ? 10 : params.value} 
             sx={{ 
               height: 8, 
               borderRadius: 5,
