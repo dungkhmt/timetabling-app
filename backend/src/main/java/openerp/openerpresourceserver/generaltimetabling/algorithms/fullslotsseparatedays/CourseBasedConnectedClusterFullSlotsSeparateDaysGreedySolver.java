@@ -531,7 +531,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         return score;
     }
     private boolean checkTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments){
-        int DEBUG_ID = 29;
+        int DEBUG_ID = -29;
         ClassSegment csi = sortedClassSegments.get(i);
         if(csi.getId() == DEBUG_ID) log.info("checkTimeSlotRoom(" + csi.getId() + "," + timeSlot+"," + room + ")");
         for(int s: I.getRoomOccupations()[room]){

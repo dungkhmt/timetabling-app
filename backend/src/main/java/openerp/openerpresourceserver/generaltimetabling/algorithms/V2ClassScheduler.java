@@ -13,6 +13,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.Cours
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.GreedySolver1;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentRoomReservationSolver;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolver;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidClassStudentQuantityException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
@@ -79,12 +80,12 @@ public class V2ClassScheduler {
             Map<Integer, RoomReservation> mClassSegment2RoomReservation = new HashMap<>();
             for (int i = 0; i < classes.size(); i++) {
                 GeneralClass gc = classes.get(i);
-                log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " number roomReservations = " + gc.getTimeSlots().size());
+                //log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " number roomReservations = " + gc.getTimeSlots().size());
                 if (gc.getTimeSlots() != null) {
                     n += gc.getTimeSlots().size();
-                    for(RoomReservation rr: gc.getTimeSlots()) {
-                        log.info("mapData, GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " startSlot = " + rr.getStartTime() + " endSlot = " + rr.getEndTime() + " room = " + rr.getRoom() + " duration = " + rr.getDuration());
-                    }
+                    //for(RoomReservation rr: gc.getTimeSlots()) {
+                    //    log.info("mapData, room_reservation.id = " + rr.getId() + " GeneralClass[" + i + "]: id = " + gc.getId() + " code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " startSlot = " + rr.getStartTime() + " endSlot = " + rr.getEndTime() + " room = " + rr.getRoom() + " duration = " + rr.getDuration());
+                   // }
                 }
             }
             log.info("mapData, n = " + n);
@@ -424,7 +425,7 @@ public class V2ClassScheduler {
         List<ClassSegment> listClassSegments = new ArrayList<>();
         for(int i = 0;i < classSegments.length; i++) {
             listClassSegments.add(classSegments[i]);
-            log.info("mapData collect class-segment[" + i + "]: " + classSegments[i]);
+            //log.info("mapData collect class-segment[" + i + "]: " + classSegments[i]);
         }
         //log.info("mapData, classSegments.length = " + classSegments.length + " listClassSegments.sz = " + listClassSegments.size());
         MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments);
@@ -496,8 +497,14 @@ public class V2ClassScheduler {
             //solver = new GreedySolver1(data);
             solver = new CourseBasedMultiClusterGreedySolver(data);
         */
-        MultiClusterSolver solver = new MultiClusterSolver(data);
-        solver.oneClusterAlgorithm = algorithm;
+        Solver solver = null;
+        if(algorithm.equals(Constants.SUMMER_SEMESTER)){
+            solver = new SummerSemesterSolver((data));
+        }else {
+            MultiClusterSolver msolver = new MultiClusterSolver(data);
+            msolver.oneClusterAlgorithm = algorithm;
+            solver = msolver;
+        }
         solver.setTimeLimit(timeLimit);
 
         solver.solve();
@@ -526,7 +533,7 @@ public class V2ClassScheduler {
                 //int day = solution[i] / (Constant.slotPerCrew*2);//12;
                 //int t1 = solution[i] - day * Constant.slotPerCrew*2;//12;
                 if(solution.get(cs.getId())==null){
-                    log.info("autoScheduleTimeSlotRoom, CANNOT find time-slot for class " + cs.getId() + "???");
+                    //log.info("autoScheduleTimeSlotRoom, CANNOT find time-slot for class " + cs.getId() + "???");
                     continue;
                 }
 
@@ -539,7 +546,7 @@ public class V2ClassScheduler {
                 int day = dss.day;
                 int K = dss.session;
                 int tietBD = dss.slot;
-                log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", kip = " + K + ", tietDB = " + tietBD);
+                //log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", kip = " + K + ", tietDB = " + tietBD);
 
 
                 //GeneralClass gClass = classes.get(scheduleMap.get(i));

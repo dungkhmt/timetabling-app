@@ -8,6 +8,7 @@ public class Constants {
 
     public static final String MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS = "MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS";
 
+    public static final String SUMMER_SEMESTER = "SUMMER_SEMESTER";
     public static final String PRIORITY_SLOT_EARLEST = "PRIORITY_SLOT_EARLEST";
     public static final String PRIORITY_SLOT_LATEST = "PRIORITY_SLOT_LATEST";
 }

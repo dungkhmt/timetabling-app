@@ -9,6 +9,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.Cours
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.CourseBasedMultiClusterGreedySolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentSolver;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolver;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 
 import java.util.HashMap;
@@ -77,6 +78,9 @@ public class MultiClusterSolver implements Solver {
                 oneClusterSolver = new CourseBasedConnectedClusterGreedySolver(IC);
             else if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS))
                 oneClusterSolver = new CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(IC);
+            else if(oneClusterAlgorithm.equals(Constants.SUMMER_SEMESTER)){
+                oneClusterSolver = new SummerSemesterSolver(IC);
+            }
 
             oneClusterSolver.setTimeLimit(timeLimit);
             oneClusterSolver.solve();

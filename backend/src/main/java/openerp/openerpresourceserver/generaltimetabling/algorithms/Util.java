@@ -8,6 +8,8 @@ import java.util.*;
 @Log4j2
 public class Util {
 
+
+
     public static List<List<Integer>> extractPartition(String st){
         List<List<Integer>> L = new ArrayList<>();
         String[] s = st.split("-");
@@ -76,7 +78,7 @@ public class Util {
             int fKIP = crew.equals("S") ? 0 : 1;
             startCrew = fKIP; endCrew = fKIP;
         }
-        log.info("generateSlotsFromEarliest, maxDayScheduled = " + maxDayScheduled + " slotPerSession = " + slotPerSession + " duration = " + duration + "startSession = " + startCrew + " endSession = " + endCrew);
+        //log.info("generateSlotsFromEarliest, maxDayScheduled = " + maxDayScheduled + " slotPerSession = " + slotPerSession + " duration = " + duration + "startSession = " + startCrew + " endSession = " + endCrew);
         List<Integer> res = new ArrayList<>();
         for(int d = 2; d <= maxDayScheduled; d++){
             for(int fKIP = startCrew; fKIP <= endCrew; fKIP++) {
