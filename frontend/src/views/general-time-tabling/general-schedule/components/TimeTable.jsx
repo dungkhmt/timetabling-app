@@ -235,7 +235,7 @@ const renderCellContent = (classIndex, day, period) => {
       <td
         key={`${actualIndex}-${day}-${period}`}
         style={{ width: "70px" }}
-        className="border border-gray-400 text-center cursor-pointer px-1"
+        className="border border-gray-300 text-center cursor-pointer px-1"
         onClick={() => handleRowClick(actualIndex, day, period)}
       ></td>
     );
@@ -247,7 +247,7 @@ const renderCellContent = (classIndex, day, period) => {
       <td
         key={`${actualIndex}-${day}-${period}`}
         style={{ width: "70px" }}
-        className="border border-gray-400 text-center cursor-pointer px-1"
+        className="border border-gray-300 text-center cursor-pointer px-1"
         onClick={() => handleRowClick(actualIndex, day, period)}
       ></td>
     );
@@ -260,7 +260,7 @@ const renderCellContent = (classIndex, day, period) => {
       <td
         key={`${actualIndex}-${day}-${period}`}
         colSpan={colSpan}
-        className="border border-gray-400 text-center cursor-pointer px-1"
+        className="border border-gray-300 text-center cursor-pointer px-1"
         style={{ 
           width: `${70 * colSpan}px`, 
           backgroundColor: "#FFD700", 
@@ -432,13 +432,13 @@ const handleRowClick = (classIndex, day, period) => {
 
       {loading ? (
         <table
-          className="overflow-x-auto flex items-center flex-col"
+          className="overflow-x-auto flex items-center flex-col border-separate border-spacing-0"
           style={{ flex: "1" }}
         >
-          <thead>
+          <thead className="sticky top-0 z-10 bg-white">
             <tr>
               <th
-                className="border border-gray-400 p-1"
+                className="border-[1px] border-solid border-gray-300 p-1"
                 style={{ width: "30px", minWidth: "30px" }}
               >
                 <Checkbox
@@ -456,7 +456,7 @@ const handleRowClick = (classIndex, day, period) => {
               </th>
               {columnVisibility.classCode && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "60px", minWidth: "60px" }}
                 >
                   Mã lớp
@@ -464,7 +464,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.studyClass && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "60px", minWidth: "60px" }}
                 >
                   Nhóm
@@ -472,7 +472,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.learningWeeks && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "45px", minWidth: "45px" }}
                 >
                   Tuần học
@@ -480,7 +480,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.moduleCode && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "70px", minWidth: "70px" }}
                 >
                   Mã học phần
@@ -488,7 +488,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.moduleName && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "100px", minWidth: "100px" }}
                 >
                   Tên học phần
@@ -496,7 +496,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.crew && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "40px", minWidth: "40px" }}
                 >
                   Kíp
@@ -504,7 +504,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.quantityMax && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "50px", minWidth: "50px" }}
                 >
                   SL MAX
@@ -512,7 +512,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.classType && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "60px", minWidth: "60px" }}
                 >
                   Loại lớp
@@ -520,7 +520,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.mass && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "60px", minWidth: "60px" }}
                 >
                   Thời lượng
@@ -528,7 +528,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.duration && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "50px", minWidth: "50px" }}
                 >
                   Số tiết
@@ -536,7 +536,7 @@ const handleRowClick = (classIndex, day, period) => {
               )}
               {columnVisibility.batch && (
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "50px", minWidth: "50px" }}
                 >
                   Khóa
@@ -545,13 +545,13 @@ const handleRowClick = (classIndex, day, period) => {
               {columnVisibility.actions && (
                 <>
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "35px", minWidth: "35px" }}
                   >
                     Thêm
                   </th>
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "35px", minWidth: "35px" }}
                   >
                     Xóa
@@ -562,26 +562,26 @@ const handleRowClick = (classIndex, day, period) => {
                 <th
                   key={day}
                   colSpan={6}
-                  className="border border-gray-400 p-2 text-center min-w-40"
+                  className="border-[1px] border-solid border-gray-300 p-2 text-center min-w-40"
                 >
                   {day}
                 </th>
               ))}
             </tr>
-            <tr>
-              <td></td> 
+            <tr className="bg-white">
+              <td className="border-[1px] border-solid border-gray-300"></td> 
               <td
                 colSpan={
                   Object.values(columnVisibility).filter(Boolean).length +
                   (columnVisibility.actions ? 1 : 0)
                 }
-                className="border"
+                className="border-[1px] border-solid border-gray-300"
               ></td>
               {days.flatMap((day) =>
                 periods.map((period) => (
                   <td
                     key={`${day}-${period}`}
-                    className="border border-gray-400 text-center"
+                    className="border-[1px] border-solid border-gray-300 text-center"
                     style={{ width: "60px", padding: "4px" }}
                   >
                     {period}
@@ -597,13 +597,13 @@ const handleRowClick = (classIndex, day, period) => {
       ) : (
         <div className="overflow-x-auto" style={{ flex: "1" }}>
           <table
-            className="min-w-full border-collapse"
+            className="min-w-full border-separate border-spacing-0"
             style={{ tableLayout: "auto" }}
           >
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white">
               <tr>
                 <th
-                  className="border border-gray-400 p-1"
+                  className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "30px", minWidth: "30px" }}
                 >
                   <Checkbox
@@ -621,7 +621,7 @@ const handleRowClick = (classIndex, day, period) => {
                 </th>
                 {columnVisibility.classCode && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "60px", minWidth: "60px" }}
                   >
                     Mã lớp
@@ -629,7 +629,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.studyClass && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "80px", minWidth: "80px" }}
                   >
                     Nhóm
@@ -637,7 +637,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.learningWeeks && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "45px", minWidth: "45px" }}
                   >
                     Tuần học
@@ -645,7 +645,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.moduleCode && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "70px", minWidth: "70px" }}
                   >
                     Mã học phần
@@ -653,7 +653,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.moduleName && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "100px", minWidth: "100px" }}
                   >
                     Tên học phần
@@ -661,7 +661,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.crew && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "40px", minWidth: "40px" }}
                   >
                     Kíp
@@ -669,7 +669,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.quantityMax && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "50px", minWidth: "50px" }}
                   >
                     SL MAX
@@ -677,7 +677,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.classType && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "60px", minWidth: "60px" }}
                   >
                     Loại lớp
@@ -685,7 +685,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.mass && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "60px", minWidth: "60px" }}
                   >
                     Thời lượng
@@ -693,7 +693,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.duration && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "50px", minWidth: "50px" }}
                   >
                     Số tiết
@@ -701,7 +701,7 @@ const handleRowClick = (classIndex, day, period) => {
                 )}
                 {columnVisibility.batch && (
                   <th
-                    className="border border-gray-400 p-1"
+                    className="border-[1px] border-solid border-gray-300 p-1"
                     style={{ width: "50px", minWidth: "50px" }}
                   >
                     Khóa
@@ -710,13 +710,13 @@ const handleRowClick = (classIndex, day, period) => {
                 {columnVisibility.actions && (
                   <>
                     <th
-                      className="border border-gray-400 p-1"
+                      className="border-[1px] border-solid border-gray-300 p-1"
                       style={{ width: "35px", minWidth: "35px" }}
                     >
                       Thêm
                     </th>
                     <th
-                      className="border border-gray-400 p-1"
+                      className="border-[1px] border-solid border-gray-300 p-1"
                       style={{ width: "35px", minWidth: "35px" }}
                     >
                       Xóa
@@ -727,27 +727,27 @@ const handleRowClick = (classIndex, day, period) => {
                   <th
                     key={day}
                     colSpan={6}
-                    className="border border-gray-400 p-2 text-center min-w-32"
+                    className="border-[1px] border-solid border-gray-300 p-2 text-center min-w-32"
                     style={{ padding: "8px 0" }}
                   >
                     {day}
                   </th>
                 ))}
               </tr>
-              <tr>
-                <td className="border border-gray-400"></td>
+              <tr className="bg-white">
+                <td className="border-[1px] border-solid border-gray-300"></td>
                 <td
                   colSpan={
                     Object.values(columnVisibility).filter(Boolean).length +
                     (columnVisibility.actions ? 1 : 0)
                   }
-                  className="border border-gray-400"
+                  className="border-[1px] border-solid border-gray-300"
                 ></td>
                 {days.flatMap((day) =>
                   periods.map((period) => (
                     <td
                       key={`${day}-${period}`}
-                      className="border border-gray-400 text-center"
+                      className="border-[1px] border-solid border-gray-300 text-center"
                       style={{ width: "60px", padding: "4px" }} // Increased width from 40px to 60px
                     >
                       {period}
@@ -816,7 +816,7 @@ const handleRowClick = (classIndex, day, period) => {
                         style={{ height: "40px" }} // Reduced row height from 52px
                         className={isItemSelected ? "bg-blue-50" : ""}
                       >
-                        <td className="border border-gray-400 text-center px-1">
+                        <td className="border border-gray-300 text-center px-1">
                           <Checkbox
                             checked={isItemSelected}
                             onChange={(event) =>
@@ -826,12 +826,12 @@ const handleRowClick = (classIndex, day, period) => {
                           />
                         </td>
                         {columnVisibility.classCode && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.code}
                           </td>
                         )}
                         {columnVisibility.studyClass && (
-                          <td className="border border-gray-400 text-center px-1 w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
+                          <td className="border border-gray-300 text-center px-1 w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
                             {showTooltip ? (
                               <Tooltip
                                 title={tooltipContent}
@@ -846,53 +846,53 @@ const handleRowClick = (classIndex, day, period) => {
                           </td>
                         )}
                         {columnVisibility.learningWeeks && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.learningWeeks}
                           </td>
                         )}
                         {columnVisibility.moduleCode && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.moduleCode}
                           </td>
                         )}
                         {columnVisibility.moduleName && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.moduleName}
                           </td>
                         )}
                         {columnVisibility.crew && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.crew}
                           </td>
                         )}
                         {columnVisibility.quantityMax && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.quantityMax}
                           </td>
                         )}
                         {columnVisibility.classType && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.classType}
                           </td>
                         )}
                         {columnVisibility.mass && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.mass}
                           </td>
                         )}
                         {columnVisibility.duration && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.duration}
                           </td>
                         )}
                         {columnVisibility.batch && (
-                          <td className="border border-gray-400 text-center px-1">
+                          <td className="border border-gray-300 text-center px-1">
                             {classDetail.batch}
                           </td>
                         )}
                         {columnVisibility.actions && (
                           <>
-                            <td className="border border-gray-400 text-center px-1">
+                            <td className="border border-gray-300 text-center px-1">
                               {!classDetail.timeSlots && (
                                 <Button
                                   onClick={() =>
@@ -913,7 +913,7 @@ const handleRowClick = (classIndex, day, period) => {
                                 </Button>
                               )}
                             </td>
-                            <td className="border border-gray-400 text-center px-1">
+                            <td className="border border-gray-300 text-center px-1">
                               {classDetail.roomReservationId && (
                                 <Button
                                   onClick={() =>
@@ -948,14 +948,14 @@ const handleRowClick = (classIndex, day, period) => {
                   })
               ) : (
                 <tr>
-                  <td className="border border-gray-400"></td>
+                  <td className="border border-gray-300"></td>
                   <td
                     colSpan={
                       Object.values(columnVisibility).filter(Boolean).length +
                       days.length * periods.length +
                       (columnVisibility.actions ? 1 : 0)
                     }
-                    className="border border-gray-400 text-center py-4"
+                    className="border border-gray-300 text-center py-4"
                   >
                     <div className="h-full ">Không có dữ liệu</div>
                   </td>

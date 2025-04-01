@@ -2,14 +2,15 @@ package openerp.openerpresourceserver.wms.dto.saleOrder;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import openerp.openerpresourceserver.wms.dto.OrderItemReq;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor
@@ -25,7 +26,7 @@ public class CreateSaleOrderReq {
     @NotBlank
     private String userCreatedId;
     private String saleOrderName;
-    private Integer numberOfInvoice;
+    private Integer numberOfInvoices;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate deliveryBeforeDate;
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -41,5 +42,6 @@ public class CreateSaleOrderReq {
     private String deliveryMethod;
     private String shippingCarrier;
     private Boolean isExportedInvoice;
+    @Size(min = 1, message = "At least one product is required")
     private List<OrderItemReq> orderItems;
 }

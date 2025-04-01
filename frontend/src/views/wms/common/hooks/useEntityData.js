@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { useWms2Data } from "services/useWms2Data";
 import { toast } from "react-toastify";
+import {entityTypes} from "../constants/constants";
 
 const PAGE_SIZE = 20;
 
 export const useEntityData = (entityType, onDataLoaded) => {
-  const { getMoreCustomers, getMoreFacilities, getMoreProducts } = useWms2Data();
+  const { getMoreCustomers, getMoreFacilities, getMoreProducts, getMoreSuppliers } = useWms2Data();
   const [state, setState] = useState({
     page: 0,
     hasMore: true,
@@ -26,19 +27,21 @@ export const useEntityData = (entityType, onDataLoaded) => {
   // Identify which fetch function to use based on entityType
   const getFetchFunction = useCallback(() => {
     switch(entityType) {
-      case 'facilities': return getMoreFacilities;
-      case 'customers': return getMoreCustomers;
-      case 'products': return getMoreProducts;
+      case entityTypes.FACILITIES: return getMoreFacilities;
+      case entityTypes.CUSTOMERS: return getMoreCustomers;
+      case entityTypes.PRODUCTS: return getMoreProducts;
+      case entityTypes.SUPPLIERS: return getMoreSuppliers; // Assuming suppliers use the same function as products
       default: throw new Error(`Unknown entity type: ${entityType}`);
     }
-  }, [entityType, getMoreCustomers, getMoreFacilities, getMoreProducts]);
+  }, [entityType, getMoreCustomers, getMoreFacilities, getMoreProducts, getMoreSuppliers]);
 
   // Display name for error messages
   const getEntityDisplayName = useCallback(() => {
     switch(entityType) {
-      case 'facilities': return 'kho hàng';
-      case 'customers': return 'khách hàng';
-      case 'products': return 'sản phẩm';
+      case entityTypes.FACILITIES: return 'kho hàng';
+      case entityTypes.CUSTOMERS: return 'khách hàng';
+      case entityTypes.PRODUCTS: return 'sản phẩm';
+      case entityTypes.SUPPLIERS: return 'nhà cung cấp';
       default: return entityType;
     }
   }, [entityType]);

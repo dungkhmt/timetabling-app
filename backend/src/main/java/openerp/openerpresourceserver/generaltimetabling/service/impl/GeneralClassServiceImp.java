@@ -96,36 +96,10 @@ public class GeneralClassServiceImp implements GeneralClassService {
     }
 
     @Override
-    public List<GeneralClassDto> getGeneralClassDtos(String semester, String groupName) {
-        List<GeneralClass> generalClasses = (groupName == null || groupName.isEmpty())
+    public List<GeneralClassDto> getGeneralClassDtos(String semester, Long groupId) {
+        List<GeneralClass> generalClasses = (groupId == null)
                 ? gcoRepo.findAllBySemester(semester)
-                : gcoRepo.findAllBySemesterAndGroupName(semester, groupName);
-        /*
-        // temporarily fixed by PQD: return list of general classes appearing in the gourpName
-        List<GeneralClass> generalClassesOfSemester = gcoRepo.findAllBySemester(semester);
-        log.info("getGeneralClassDtos, generalClassesOfSemester.sz = " + generalClassesOfSemester.size());
-        Optional<Group> groups = groupRepo.findByGroupName(groupName);
-        Long gId = null;
-        if(groups.isPresent()){Group g = groups.get(); gId = g.getId(); }
-
-        log.info("getGeneralClassDtos, groupName = " + groupName + " gId = " + gId);
-
-        List<ClassGroup> CG = classGroupRepo.findAllByGroupId(gId);
-        log.info("getGeneralClassDtos, groupName = " + groupName + " gId = " + gId + " CG.sz = " + CG.size());
-
-        Set<Long> selectedClassIds = new HashSet<>();
-        for(ClassGroup cg: CG) selectedClassIds.add(cg.getClassId());
-        log.info("getGeneralClassDtos, selectedClasIds.sz = " + selectedClassIds.size());
-
-        List<GeneralClass> generalClasses = new ArrayList<>();
-        for(GeneralClass gc: generalClassesOfSemester){
-            if(selectedClassIds.contains(gc.getId())){
-                generalClasses.add(gc);
-            }
-        }
-
-        // end of fixed by PQD
-        */
+                : gcoRepo.findAllBySemesterAndGroupId(semester, groupId);
 
         List<Long> classIds = generalClasses.stream().map(GeneralClass::getId).toList();
 

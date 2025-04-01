@@ -37,6 +37,12 @@ public interface GeneralClassRepository extends JpaRepository<GeneralClass, Long
 
     List<GeneralClass> findAllBySemesterAndGroupName(String semester, String groupName);
 
+    @Query(value = "SELECT gc.* FROM public.timetabling_general_classes gc " +
+            "INNER JOIN public.timetabling_class_group cg ON gc.id = cg.class_id " +
+            "WHERE gc.semester = :semester AND cg.group_id = :groupId",
+            nativeQuery = true)
+    List<GeneralClass> findAllBySemesterAndGroupId(@Param("semester") String semester, @Param("groupId") Long groupId);
+
     List<GeneralClass> findAllByIdIn(List<Long> ids);
 
     @Query("SELECT gc FROM GeneralClass gc WHERE gc.refClassId = :refClassId AND gc.semester = :semester")

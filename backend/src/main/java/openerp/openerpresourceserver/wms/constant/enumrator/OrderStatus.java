@@ -1,6 +1,6 @@
 package openerp.openerpresourceserver.wms.constant.enumrator;
 
-public enum SaleOrderStatus {
+public enum OrderStatus {
     DRAFT,
     CREATED,
     WAITING_FOR_APPROVAL,

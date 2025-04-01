@@ -163,3 +163,10 @@ export const SALE_ORDER_SCHEMA = [
     value: order => order.totalAmount
   }
 ];
+
+export const entityTypes = {
+    FACILITIES: "facilities",
+    CUSTOMERS: "customers",
+    PRODUCTS: "products",
+    SUPPLIERS: "suppliers",
+}

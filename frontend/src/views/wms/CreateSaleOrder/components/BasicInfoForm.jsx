@@ -9,13 +9,13 @@ import {
   Typography,
 } from "@mui/material";
 
-import { useOrderForm } from "../context/OrderFormContext";
-import FacilityField from "./FacilityField";
-import CustomerField from "./CustomerField";
+import { useOrderForm } from "../../common/context/OrderFormContext";
+import FacilityField from "../../common/components/FacilityField";
+import CustomerField from "../../common/components/CustomerField";
 import RequireField from "views/wms/common/components/RequireField";
 import { SALE_CHANNELS } from "views/wms/common/constants/constants";
 const BasicInfoForm = () => {
-  const { salesOrder, setSalesOrder } = useOrderForm();
+  const { order, setOrder } = useOrderForm();
   const [discountTypes] = React.useState(["PERCENT", "FIXED"]);
   const [orderPurposes] = React.useState([
     "SALES",
@@ -26,7 +26,7 @@ const BasicInfoForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setSalesOrder((prev) => ({ ...prev, [name]: value }));
+    setOrder((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -41,7 +41,7 @@ const BasicInfoForm = () => {
         <Grid item xs={8}>
         <Select
           name="saleChannel"
-          value={salesOrder.saleChannel}
+          value={order.saleChannel}
           onChange={handleInputChange}
           fullWidth
           size="small"
@@ -67,7 +67,7 @@ const BasicInfoForm = () => {
             fullWidth
             type="date"
             name="deliveryAfterDate"
-            value={salesOrder.deliveryAfterDate}
+            value={order.deliveryAfterDate}
             onChange={handleInputChange}
             size="small"
             InputLabelProps={{ shrink: true }}
@@ -83,8 +83,8 @@ const BasicInfoForm = () => {
           <TextField
             fullWidth
             size="small"
-            name="invoiceNumber"
-            value={salesOrder.invoiceNumber}
+            name="numberOfInvoices"
+            value={order.numberOfInvoices}
             onChange={handleInputChange}
           />
         </Grid>
@@ -98,7 +98,7 @@ const BasicInfoForm = () => {
           <FormControl fullWidth size="small">
             <Select
               name="discountType"
-              value={salesOrder.discountType}
+              value={order.discountType}
               onChange={handleInputChange}
             >
               <MenuItem value="">Không có</MenuItem>
@@ -121,10 +121,10 @@ const BasicInfoForm = () => {
             fullWidth
             size="small"
             name="discountValue"
-            value={salesOrder.discountValue}
+            value={order.discountValue}
             onChange={handleInputChange}
             type="number"
-            disabled={!salesOrder.discountType}
+            disabled={!order.discountType}
           />
         </Grid>
 
@@ -137,7 +137,7 @@ const BasicInfoForm = () => {
           <FormControl fullWidth size="small">
             <Select
               name="orderPurpose"
-              value={salesOrder.orderPurpose}
+              value={order.orderPurpose}
               onChange={handleInputChange}
             >
               {orderPurposes.map((purpose) => (

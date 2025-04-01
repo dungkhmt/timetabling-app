@@ -25,7 +25,6 @@ const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
   }, []);
 
   const handleSearchChange = (e) => {
-    if(e.key === 'Enter') 
     setFilters(prev => ({ ...prev, keyword: e.target.value }));
   };
 

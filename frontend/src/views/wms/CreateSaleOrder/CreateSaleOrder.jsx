@@ -7,23 +7,23 @@ import {
 } from "@mui/material";
 import { toast } from "react-toastify";
 import { useWms2Data } from "services/useWms2Data";
-import { OrderFormProvider } from "./context/OrderFormContext";
+import { OrderFormProvider } from "../common/context/OrderFormContext";
 import BasicInfoForm from "./components/BasicInfoForm";
 import DeliveryInfoForm from "./components/DeliveryInfoForm";
-import ProductSearch from "./components/ProductSearch";
-import ProductTable from "./components/ProductTable";
+import ProductSearch from "../common/components/ProductSearch";
+import ProductTable from "../common/components/ProductTable";
 
 const CreateSaleOrder = () => {
   const { createSalesOrder } = useWms2Data();
   
   // State for form data
-  const [salesOrder, setSalesOrder] = useState({
+  const [order, setOrder] = useState({
     id: null,
     facilityId: "",
     customerId: "",
     userCreatedId: "wms_director",
     deliveryAfterDate: null,
-    invoiceNumber: null,
+    numberOfInvoices: null,
     discountType: "",
     discountValue: 0,
     priceList: "",
@@ -46,28 +46,28 @@ const CreateSaleOrder = () => {
 
   const handleSubmit = () => {
     // Validate required fields
-    if (!salesOrder.facilityId) {
+    if (!order.facilityId) {
       toast.warning("Vui lòng chọn kho hàng");
       return;
     }
-    if (!salesOrder.customerId) {
+    if (!order.customerId) {
       toast.warning("Vui lòng chọn khách hàng");
       return;
     }
-    if (!salesOrder.deliveryAfterDate) {
+    if (!order.deliveryAfterDate) {
       toast.warning("Vui lòng chọn ngày giao hàng");
       return;
     }
-    if (salesOrder.orderItems.length === 0) {
+    if (order.orderItems.length === 0) {
       toast.warning("Vui lòng thêm sản phẩm vào đơn hàng");
       return;
     }
 
-    createSalesOrder(salesOrder);
+    createSalesOrder(order);
   };
 
   return (
-    <OrderFormProvider value={{ salesOrder, setSalesOrder, entities, setEntities }}>
+    <OrderFormProvider value={{ order, setOrder, entities, setEntities }}>
       <Box p={3}>
         <Typography sx={{fontWeight: 700}} variant="h5" gutterBottom>
           Tạo đơn hàng bán

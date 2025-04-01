@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.wms.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
@@ -20,7 +21,7 @@ public class SaleOrderController {
     private final SaleOrderService saleOrderService;
 
     @PostMapping("/create")
-    public ApiResponse<Void> createSaleOrder(@RequestBody CreateSaleOrderReq saleOrder, Principal principal) {
+    public ApiResponse<Void> createSaleOrder(@RequestBody @Valid CreateSaleOrderReq saleOrder, Principal principal) {
         return saleOrderService.createSaleOrder(saleOrder, principal.getName());
     }
 

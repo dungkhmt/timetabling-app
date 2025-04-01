@@ -1,12 +1,12 @@
 import React from 'react';
 import { Grid, Typography } from "@mui/material";
-import RequireField from "../../common/components/RequireField";
+import RequireField from "./RequireField";
 import EntityAutocomplete from "./EntityAutocomplete";
 import { useEntityData } from "../hooks/useEntityData";
 import { useOrderForm } from "../context/OrderFormContext";
 
 const CustomerField = () => {
-  const { salesOrder, setSalesOrder, entities, setEntities } = useOrderForm();
+  const { order, setOrder, entities, setEntities } = useOrderForm();
   
   // Use the custom hook for customer data
   const { loading, handleScroll, handleDropdownOpen } = useEntityData('customers', (newData) => {
@@ -25,7 +25,7 @@ const CustomerField = () => {
 
   const handleCustomerSelect = (_, customer) => {
     if (customer) {
-      setSalesOrder(prev => ({ 
+      setOrder(prev => ({ 
         ...prev, 
         customerId: customer.id,
       }));
@@ -43,7 +43,7 @@ const CustomerField = () => {
         <EntityAutocomplete
           options={entities.customers}
           getOptionLabel={(option) => `${option.id} - ${option.name || ''}`}
-          value={entities.customers.find(c => c.id === salesOrder.customerId) || null}
+          value={entities.customers.find(c => c.id === order.customerId) || null}
           onChange={handleCustomerSelect}
           onOpen={handleDropdownOpen}
           onScroll={handleScroll}

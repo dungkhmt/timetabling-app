@@ -10,8 +10,8 @@ const PAGE_SIZE = 20;
 
 const ProductSearch = () => {
   const { 
-    salesOrder, 
-    setSalesOrder, 
+    order, 
+    setOrder, 
     entities, 
     setEntities,
     productSearchState,
@@ -193,15 +193,15 @@ const ProductSearch = () => {
     if (!product) return;
     
     // Check if product already exists in order
-    const existingItem = salesOrder.orderItems.find(item => item.productId === product.id);
+    const existingItem = order.orderItems.find(item => item.productId === product.id);
     if (existingItem) {
       // Increment quantity if product already in order
-      const updatedItems = salesOrder.orderItems.map(item => 
+      const updatedItems = order.orderItems.map(item => 
         item.productId === product.id 
           ? { ...item, quantity: item.quantity + 1 } 
           : item
       );
-      setSalesOrder(prev => ({ ...prev, orderItems: updatedItems }));
+      setOrder(prev => ({ ...prev, orderItems: updatedItems }));
     } else {
       // Add new product to order
       const newItem = {
@@ -210,7 +210,7 @@ const ProductSearch = () => {
         price: product.wholeSalePrice,
         unit: product.unit
       };
-      setSalesOrder(prev => ({ 
+      setOrder(prev => ({ 
         ...prev, 
         orderItems: [...prev.orderItems, newItem] 
       }));

@@ -72,8 +72,8 @@ public class GeneralClassController {
     @GetMapping("/")
     public List<GeneralClassDto> requestGetClasses(
             @RequestParam("semester") String semester,
-            @RequestParam(value = "groupName", required = false) String groupName) {
-        return gService.getGeneralClassDtos(semester, groupName);
+            @RequestParam(value = "groupName", required = false) Long groupId) {
+        return gService.getGeneralClassDtos(semester, groupId);
     }
 
 

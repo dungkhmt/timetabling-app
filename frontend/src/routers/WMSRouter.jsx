@@ -1,6 +1,7 @@
 import { Route, Switch, useRouteMatch } from "react-router";
 import ApprovedSaleOrderDetail from "views/wms/AprrovedSaleOrderDetail/ApprovedSaleOrderDetail";
 import OutBoundDetail from "views/wms/AprrovedSaleOrderDetail/components/OutBoundDetail";
+import CreatePurchaseOrder from "views/wms/CreatePurchaseOrder/CreatePurchaseOrder";
 import CreateSaleOrder from "views/wms/CreateSaleOrder/CreateSaleOrder";
 import PurchaseOrder from "views/wms/purchaseorder";
 import SaleOrderListPage from "views/wms/SaleOrderListPage/SaleOrderListPage";
@@ -11,7 +12,7 @@ export default function WMSRouter() {
     <div>
       <Switch>
         <Route
-          component={PurchaseOrder}
+          component={CreatePurchaseOrder}
           exact
           path={`${path}/purchase/orders`}
         ></Route>

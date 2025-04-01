@@ -3,7 +3,7 @@ package openerp.openerpresourceserver.wms.service;
 import com.google.common.util.concurrent.AtomicDouble;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
-import openerp.openerpresourceserver.wms.constant.enumrator.SaleOrderStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
@@ -14,7 +14,6 @@ import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.SaleOrderSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -43,7 +42,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         // create order header
         var orderHeader = OrderHeader.builder()
                 .orderTypeId(OrderType.SALES_ORDER.name())
-                .status(SaleOrderStatus.CREATED.name())
+                .status(OrderStatus.CREATED.name())
                 .createdByUser(userCreated)
                 .toCustomer(toCustomer)
                 .facility(facility)
@@ -142,7 +141,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     public ApiResponse<Void> approveSaleOrder(String id, String name) {
         var orderHeader = orderHeaderRepo.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
-        orderHeader.setStatus(SaleOrderStatus.APPROVED.name());
+        orderHeader.setStatus(OrderStatus.APPROVED.name());
 
         var userApproved = userLoginRepo.findById(name)
                 .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name));
@@ -194,7 +193,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     @Override
     public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit) {
         var pageable = PageRequest.of(page, limit);
-        var orderHeaders = orderHeaderRepo.findAllByStatus(SaleOrderStatus.APPROVED.name(), pageable);
+        var orderHeaders = orderHeaderRepo.findAllByStatus(OrderStatus.APPROVED.name(), pageable);
 
         var orderListRes = orderHeaders
                 .stream()
