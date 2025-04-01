@@ -25,6 +25,16 @@ export const useExamTimetableData = (examPlanId = null, examTimetableId = null) 
     }
   );
 
+  const { data: timetableStatistic, isLoading: isLoadingStatistic, error: errorStatistic } = useQuery(
+    ['examTimetableStatistic', examTimetableId],
+    () => examTimetableService.getExamTimetablesStatisticById(examTimetableId),
+    {
+      // staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+      // cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
+      // enabled: !!examTimetableId,
+    }
+  );
+
   const createMutation = useMutation(examTimetableService.createExamTimetable, {
     onSuccess: () => {
       queryClient.invalidateQueries('examTimetables');
@@ -97,5 +107,23 @@ export const useExamTimetableData = (examPlanId = null, examTimetableId = null) 
     },
     isLoadingDetail,
     errorDetail,
+    statistics: timetableStatistic?.data || {
+      timeTableName: "",
+      totalClasses: 0,
+      assignedClasses: 0,
+      completionRate: 0,
+      smallRoomAssignments: 0,
+      totalExamDays: 0,
+      totalAvailableRooms: 0,
+      usedRoomsCount: 0,
+      sessionCollectionName: "",
+      sessionDistribution: [],
+      roomDistribution: [],
+      buildingDistribution: [],
+      groupAssignmentStats: [],
+      dailyDistribution: [],
+    },
+    isLoadingStatistic,
+    errorStatistic,
   };
 };

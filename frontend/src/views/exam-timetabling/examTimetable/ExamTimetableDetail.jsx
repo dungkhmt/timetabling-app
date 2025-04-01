@@ -20,7 +20,8 @@ import {
   School,
   Error,
   FileDownload,
-  AutoFixHigh // Added for auto-assign icon
+  AutoFixHigh, // Added for auto-assign icon
+  InsertChart
 } from '@mui/icons-material';
 import ClassesTable from './components/ClassAssignTable';
 import { format } from 'date-fns';
@@ -202,6 +203,10 @@ const TimetableDetailPage = () => {
     history.push(`/exam-time-tabling/exam-timetable/view/${id}`);
   };
 
+  const handleViewTimetableStatistics = () => {
+    history.push(`/exam-time-tabling/exam-timetable/statistic/${id}`);
+  };
+
   const handleRenameTimetable = async (name) => {
     const payload = {
       name,
@@ -263,6 +268,21 @@ const TimetableDetailPage = () => {
               onClick={handleViewTimetable}
             >
               Xem
+            </Button>
+
+            <Button 
+              variant="contained" 
+              color="secondary"
+              startIcon={<InsertChart />} 
+              size="small"
+              sx={{ 
+                mr: 1, 
+                backgroundColor: 'success.main', 
+                '&:hover': { backgroundColor: '#FFB74D' }
+              }}
+              onClick={handleViewTimetableStatistics}
+            >
+              Thống kê
             </Button>
 
             <Button 

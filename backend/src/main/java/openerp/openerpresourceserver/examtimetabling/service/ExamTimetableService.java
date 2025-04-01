@@ -22,10 +22,13 @@ import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.examtimetabling.dtos.DistributionItemDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.GroupAssignmentStatsDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO.DateDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO.SlotDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.TimetableStatisticsDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamPlan;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableSession;
@@ -261,5 +264,414 @@ public class ExamTimetableService {
         }
         
         return dates;
+    }
+
+    public TimetableStatisticsDTO generateStatistics(UUID timetableId) {
+        ExamTimetable timetable = examTimetableRepository.findById(timetableId)
+            .orElseThrow(() -> new RuntimeException("Timetable not found"));
+        
+        ExamPlan examPlan = examPlanRepository.findById(timetable.getExamPlanId())
+            .orElseThrow(() -> new RuntimeException("Exam plan not found"));
+            
+        ExamTimetableSessionCollection sessionCollection = null;
+        String sessionCollectionName = "Unknown";
+        if (timetable.getExamTimetableSessionCollectionId() != null) {
+            sessionCollection = sessionCollectionRepository
+                .findById(timetable.getExamTimetableSessionCollectionId())
+                .orElse(null);
+            if (sessionCollection != null) {
+                sessionCollectionName = sessionCollection.getName();
+            }
+        }
+        
+        long totalExamDays = 0;
+        if (examPlan.getStartTime() != null && examPlan.getEndTime() != null) {
+            LocalDate startDate = examPlan.getStartTime().toLocalDate();
+            LocalDate endDate = examPlan.getEndTime().toLocalDate();
+            
+            totalExamDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+            totalExamDays = totalExamDays - countWeekendDays(startDate, endDate);
+        }
+        
+        TimetableStatisticsDTO statistics = new TimetableStatisticsDTO();
+        statistics.setTimetableId(timetableId);
+        statistics.setTimetableName(timetable.getName());
+        statistics.setTotalExamDays(totalExamDays);
+        statistics.setSessionCollectionName(sessionCollectionName);
+        
+        // Calculate total rooms used
+        calculateTotalRoomsUsed(timetableId, statistics);
+        
+        // Calculate completion rate
+        calculateCompletionRate(timetableId, statistics);
+        
+        // Calculate session distribution
+        calculateSessionDistribution(timetableId, statistics);
+        
+        // Calculate room distribution
+        calculateRoomDistribution(timetableId, statistics);
+
+        // Calculate daily distribution
+        calculateDailyDistribution(timetableId, statistics);
+        
+        // Calculate small room assignments
+        calculateSmallRoomAssignments(timetableId, statistics);
+        
+        // Calculate building distribution
+        calculateBuildingDistribution(timetableId, statistics);
+        
+        // Calculate group assignment statistics
+        calculateGroupAssignmentStats(timetableId, statistics);
+        
+        return statistics;
+    }
+
+    private void calculateDailyDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = "SELECT " +
+                    "TO_CHAR(a.date, 'DD/MM/YYYY') as exam_date, " +
+                    "COUNT(a.id) as assignment_count " +
+                    "FROM exam_timetable_assignment a " +
+                    "WHERE a.exam_timetable_id = :timetableId " +
+                    "AND a.deleted_at IS NULL " +
+                    "AND a.room_id IS NOT NULL " +
+                    "AND a.date IS NOT NULL " +
+                    "GROUP BY a.date " +
+                    "ORDER BY a.date";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        List<Object[]> results = query.getResultList();
+        
+        List<DistributionItemDTO> dailyDistribution = new ArrayList<>();
+        
+        if (results.size() > 20) {
+            results.sort((a, b) -> Long.compare(
+                ((Number) b[1]).longValue(),
+                ((Number) a[1]).longValue()
+            ));
+            
+            long otherCount = 0;
+            
+            for (int i = 0; i < results.size(); i++) {
+                Object[] row = results.get(i);
+                if (i < 19) {
+                    dailyDistribution.add(new DistributionItemDTO(
+                        row[0].toString(),
+                        ((Number) row[1]).longValue()
+                    ));
+                } else {
+                    otherCount += ((Number) row[1]).longValue();
+                }
+            }
+            
+            if (otherCount > 0) {
+                dailyDistribution.add(new DistributionItemDTO("Other", otherCount));
+            }
+            
+            if (dailyDistribution.size() > 1) {
+                dailyDistribution.subList(0, dailyDistribution.size() - 1).sort((a, b) -> {
+                    try {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                        LocalDate dateA = LocalDate.parse(a.getName(), formatter);
+                        LocalDate dateB = LocalDate.parse(b.getName(), formatter);
+                        return dateA.compareTo(dateB);
+                    } catch (Exception e) {
+                        return a.getName().compareTo(b.getName());
+                    }
+                });
+            }
+        } else {
+            dailyDistribution = results.stream()
+                .map(row -> new DistributionItemDTO(
+                    row[0].toString(),
+                    ((Number) row[1]).longValue()
+                ))
+                .collect(Collectors.toList());
+        }
+        
+        statistics.setDailyDistribution(dailyDistribution);
+    }
+
+    private void calculateTotalRoomsUsed(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String totalRoomsSql = "SELECT COUNT(*) FROM exam_room";
+        Query totalRoomsQuery = entityManager.createNativeQuery(totalRoomsSql);
+        Number totalRoomsResult = (Number) totalRoomsQuery.getSingleResult();
+        long totalRooms = totalRoomsResult.longValue();
+        
+        String usedRoomsSql = "SELECT COUNT(DISTINCT room_id) " +
+                     "FROM exam_timetable_assignment " +
+                     "WHERE exam_timetable_id = :timetableId " +
+                     "AND deleted_at IS NULL " +
+                     "AND room_id IS NOT NULL";
+        
+        Query usedRoomsQuery = entityManager.createNativeQuery(usedRoomsSql);
+        usedRoomsQuery.setParameter("timetableId", timetableId);
+        
+        Number usedRoomsResult = (Number) usedRoomsQuery.getSingleResult();
+        long usedRooms = usedRoomsResult.longValue();
+        
+        statistics.setTotalAvailableRooms(totalRooms);
+        statistics.setUsedRoomsCount(usedRooms);
+    }
+
+    private int countWeekendDays(LocalDate startDate, LocalDate endDate) {
+        int weekendDays = 0;
+        LocalDate date = startDate;
+        
+        while (!date.isAfter(endDate)) {
+            if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                weekendDays++;
+            }
+            date = date.plusDays(1);
+        }
+        
+        return weekendDays;
+    }
+    
+    private void calculateCompletionRate(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = "SELECT " +
+                    "COUNT(*) as total, " +
+                    "COUNT(CASE WHEN room_id IS NOT NULL AND exam_session_id IS NOT NULL THEN 1 END) as assigned " +
+                    "FROM exam_timetable_assignment " +
+                    "WHERE exam_timetable_id = :timetableId AND deleted_at IS NULL";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        Object[] result = (Object[]) query.getSingleResult();
+        long total = ((Number) result[0]).longValue();
+        long assigned = ((Number) result[1]).longValue();
+        
+        double completionRate = total > 0 ? (double) assigned / total * 100 : 0;
+        statistics.setTotalClasses(total);
+        statistics.setAssignedClasses(assigned);
+        statistics.setCompletionRate(Math.round(completionRate * 100) / 100.0); 
+    }
+
+    private void calculateGroupAssignmentStats(UUID timetableId, TimetableStatisticsDTO statistics) {
+        // Get the basic statistics first
+        String basicStatsSql = "SELECT " +
+                    "c.description as group_name, " +
+                    "COUNT(a.id) as total_classes, " +
+                    "SUM(CASE WHEN a.room_id IS NOT NULL AND a.exam_session_id IS NOT NULL THEN 1 ELSE 0 END) as assigned_classes, " +
+                    "SUM(CASE WHEN a.room_id IS NULL OR a.exam_session_id IS NULL THEN 1 ELSE 0 END) as unassigned_classes " +
+                    "FROM exam_timetable_assignment a " +
+                    "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+                    "WHERE a.exam_timetable_id = :timetableId " +
+                    "AND a.deleted_at IS NULL " +
+                    "GROUP BY c.description " +
+                    "ORDER BY c.description";
+        
+        Query basicStatsQuery = entityManager.createNativeQuery(basicStatsSql);
+        basicStatsQuery.setParameter("timetableId", timetableId);
+        
+        List<Object[]> basicStatsResults = basicStatsQuery.getResultList();
+        
+        List<GroupAssignmentStatsDTO> groupStats = new ArrayList<>();
+        
+        for (Object[] row : basicStatsResults) {
+            String groupName = row[0] != null ? row[0].toString() : "Unknown";
+            long totalClasses = ((Number) row[1]).longValue();
+            long assignedClasses = ((Number) row[2]).longValue();
+            long unassignedClasses = ((Number) row[3]).longValue();
+            double completionRate = totalClasses > 0 ? (double) assignedClasses / totalClasses * 100 : 0;
+            
+            // Calculate average relax time between courses and days with multiple exams
+            double averageRelaxTime = 0;
+            int daysWithMultipleExams = 0;
+            
+            if (assignedClasses > 0) {
+                String courseDatesSql = "WITH RankedAssignments AS ( " +
+                                      "SELECT " +
+                                      "c.course_id, " +
+                                      "a.date, " +
+                                      "ROW_NUMBER() OVER (PARTITION BY c.course_id ORDER BY a.date) as rn " +
+                                      "FROM exam_timetable_assignment a " +
+                                      "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+                                      "WHERE a.exam_timetable_id = :timetableId " +
+                                      "AND c.description = :description " +
+                                      "AND a.date IS NOT NULL " +
+                                      "AND a.deleted_at IS NULL " +
+                                      ") " +
+                                      "SELECT course_id, date FROM RankedAssignments WHERE rn = 1 " +
+                                      "ORDER BY date";
+                                      
+                Query courseDatesQuery = entityManager.createNativeQuery(courseDatesSql);
+                courseDatesQuery.setParameter("timetableId", timetableId);
+                courseDatesQuery.setParameter("description", groupName);
+                
+                List<Object[]> courseDatesResults = courseDatesQuery.getResultList();
+                
+                // Calculate average relax time between different course exams
+                if (courseDatesResults.size() > 1) {
+                    List<Long> daysBetweenExams = new ArrayList<>();
+                    Map<LocalDate, Integer> examsPerDay = new HashMap<>();
+                    
+                    LocalDate previousDate = null;
+                    for (Object[] dateRow : courseDatesResults) {
+                        LocalDate examDate;
+                        
+                        if (dateRow[1] instanceof java.sql.Date) {
+                            examDate = ((java.sql.Date) dateRow[1]).toLocalDate();
+                        } else if (dateRow[1] instanceof LocalDate) {
+                            examDate = (LocalDate) dateRow[1];
+                        } else {
+                            continue;
+                        }
+                        
+                        examsPerDay.put(examDate, examsPerDay.getOrDefault(examDate, 0) + 1);
+                        
+                        if (previousDate != null) {
+                            long daysBetween = ChronoUnit.DAYS.between(previousDate, examDate);
+                            if (daysBetween > 0) { // Only count if on different days
+                                daysBetweenExams.add(daysBetween);
+                            }
+                        }
+                        previousDate = examDate;
+                    }
+                    
+                    if (!daysBetweenExams.isEmpty()) {
+                        averageRelaxTime = daysBetweenExams.stream().mapToLong(Long::longValue).average().orElse(0);
+                    }
+                    
+                    // Count days with multiple exams
+                    daysWithMultipleExams = (int) examsPerDay.values().stream().filter(count -> count > 1).count();
+                }
+            }
+            
+            groupStats.add(new GroupAssignmentStatsDTO(
+                groupName,
+                totalClasses,
+                assignedClasses,
+                unassignedClasses,
+                completionRate,
+                Math.round(averageRelaxTime * 100) / 100.0, 
+                daysWithMultipleExams
+            ));
+        }
+        
+        statistics.setGroupAssignmentStats(groupStats);
+    }
+    
+    private void calculateSessionDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = "SELECT " +
+                    "s.name as session_name, " +
+                    "COUNT(a.id) as assignment_count " +
+                    "FROM exam_timetable_assignment a " +
+                    "JOIN exam_timetable_session s ON a.exam_session_id = s.id " +
+                    "WHERE a.exam_timetable_id = :timetableId " +
+                    "AND a.deleted_at IS NULL " +
+                    "AND a.room_id IS NOT NULL " +
+                    "GROUP BY s.name " +
+                    "ORDER BY assignment_count DESC";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        List<Object[]> results = query.getResultList();
+        
+        List<DistributionItemDTO> sessionDistribution = results.stream()
+            .map(row -> new DistributionItemDTO(
+                row[0].toString(),
+                ((Number) row[1]).longValue()
+            ))
+            .collect(Collectors.toList());
+        
+        statistics.setSessionDistribution(sessionDistribution);
+    }
+    
+    private void calculateRoomDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = "SELECT " +
+                    "r.name as room_name, " +
+                    "COUNT(a.id) as assignment_count " +
+                    "FROM exam_timetable_assignment a " +
+                    "JOIN exam_room r ON a.room_id = r.id " +
+                    "WHERE a.exam_timetable_id = :timetableId " +
+                    "AND a.deleted_at IS NULL " +
+                    "GROUP BY r.name " +
+                    "ORDER BY assignment_count DESC";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        List<Object[]> results = query.getResultList();
+        
+        List<DistributionItemDTO> roomDistribution = new ArrayList<>();
+        
+        if (results.size() > 20) {
+            long otherCount = 0;
+            
+            for (int i = 0; i < results.size(); i++) {
+                Object[] row = results.get(i);
+                if (i < 19) {
+                    roomDistribution.add(new DistributionItemDTO(
+                        row[0].toString(),
+                        ((Number) row[1]).longValue()
+                    ));
+                } else {
+                    otherCount += ((Number) row[1]).longValue();
+                }
+            }
+            
+            if (otherCount > 0) {
+                roomDistribution.add(new DistributionItemDTO("Other", otherCount));
+            }
+        } else {
+            roomDistribution = results.stream()
+                .map(row -> new DistributionItemDTO(
+                    row[0].toString(),
+                    ((Number) row[1]).longValue()
+                ))
+                .collect(Collectors.toList());
+        }
+        
+        statistics.setRoomDistribution(roomDistribution);
+    }
+    
+    
+    private void calculateSmallRoomAssignments(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = "SELECT " +
+                    "COUNT(a.id) " +
+                    "FROM exam_timetable_assignment a " +
+                    "JOIN exam_room r ON a.room_id = r.id " +
+                    "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+                    "WHERE a.exam_timetable_id = :timetableId " +
+                    "AND a.deleted_at IS NULL " +
+                    "AND r.number_seat < c.number_students * 2";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        Number result = (Number) query.getSingleResult();
+        long smallRoomAssignments = result.longValue();
+        
+        statistics.setSmallRoomAssignments(smallRoomAssignments);
+    }
+    
+    private void calculateBuildingDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = "SELECT " +
+                    "SUBSTRING(r.name FROM 1 FOR POSITION('-' IN r.name) - 1) as building_name, " +
+                    "COUNT(a.id) as assignment_count " +
+                    "FROM exam_timetable_assignment a " +
+                    "JOIN exam_room r ON a.room_id = r.id " +
+                    "WHERE a.exam_timetable_id = :timetableId " +
+                    "AND a.deleted_at IS NULL " +
+                    "GROUP BY building_name " +
+                    "ORDER BY assignment_count DESC";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        List<Object[]> results = query.getResultList();
+        
+        List<DistributionItemDTO> buildingDistribution = results.stream()
+            .map(row -> new DistributionItemDTO(
+                row[0] != null ? row[0].toString() : "Unknown",
+                ((Number) row[1]).longValue()
+            ))
+            .collect(Collectors.toList());
+        
+        statistics.setBuildingDistribution(buildingDistribution);
     }
 }

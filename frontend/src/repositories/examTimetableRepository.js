@@ -5,7 +5,8 @@ const API_ENDPOINTS = {
   CREATE: "/exam-timetable/create",
   UPDATE: "/exam-timetable/update",
   DELETE: "/exam-timetable/delete",
-  GET_BY_ID: "/exam-timetable/detail"
+  GET_BY_ID: "/exam-timetable/detail",
+  GET_STATISTIC_BY_ID: "/exam-timetable/statistic"
 };
 
 class ExamTimetableService {
@@ -35,6 +36,10 @@ class ExamTimetableService {
 
   async getExamTimetableById(id) {
     return await request("get", `${API_ENDPOINTS.GET_BY_ID}/${id}`);
+  }
+
+  async getExamTimetablesStatisticById(id) {
+    return await request("get", `${API_ENDPOINTS.GET_STATISTIC_BY_ID}/${id}`);
   }
 
   async updateExamTimetableAssignment(data) {
