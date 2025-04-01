@@ -219,6 +219,29 @@ export const useWms2Data = () => {
         return { data: {} };
       }
     }
+
+    const getPurchaseOrders = async (page, limit, filters) => {
+      try {
+        const response = await wms2Service.getPurchaseOrders(page, limit, filters);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching purchase orders:", error);
+        toast.error("Không thể tải danh sách đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
+    const getPurchaseOrdersForExport = async (page, limit) => {
+      try {
+        const response = await wms2Service.getPurchaseOrdersForExport(page, limit);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching purchase orders for export:", error);
+        toast.error("Không thể tải dữ liệu xuất file");
+        return { data: {} };
+      }
+    }
+
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -239,6 +262,8 @@ export const useWms2Data = () => {
       getOutBoundDetail,
       exportShipment,
       getSalesOrdersForExport,
-       getMoreSuppliers
+       getMoreSuppliers,
+       getPurchaseOrders,
+       getPurchaseOrdersForExport
    };
 };

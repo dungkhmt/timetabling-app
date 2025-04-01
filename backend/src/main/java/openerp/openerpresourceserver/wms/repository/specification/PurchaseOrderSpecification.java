@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
+import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import org.springframework.data.jpa.domain.Specification;
@@ -19,8 +20,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SaleOrderSpecification implements Specification<OrderHeader> {
-    private SaleOrderGetListFilter filter;
+public class PurchaseOrderSpecification implements Specification<OrderHeader> {
+    private PurchaseOrderGetListFilter filter;
 
     @Override
     public Predicate toPredicate(Root<OrderHeader> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
@@ -28,10 +29,9 @@ public class SaleOrderSpecification implements Specification<OrderHeader> {
 
         String keyword = filter.getKeyword();
         String status = filter.getStatus();
-        List<String> saleChannelId = filter.getSaleChannelId();
         LocalDateTime startCreatedAt = filter.getStartCreatedAt();
         LocalDateTime endCreatedAt = filter.getEndCreatedAt();
-        String orderTypeId = OrderType.SALES_ORDER.name();
+        String orderTypeId = OrderType.PURCHASE_ORDER.name();
 
         if (keyword != null && !keyword.isEmpty()) {
             predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
@@ -41,9 +41,6 @@ public class SaleOrderSpecification implements Specification<OrderHeader> {
             predicates.add(criteriaBuilder.equal(root.get("status"), status));
         }
 
-        if (saleChannelId != null && !saleChannelId.isEmpty()) {
-            predicates.add(root.get("saleChannelId").in(saleChannelId));
-        }
 
         if (startCreatedAt != null) {
             predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdStamp"), startCreatedAt));
@@ -57,6 +54,5 @@ public class SaleOrderSpecification implements Specification<OrderHeader> {
             predicates.add(criteriaBuilder.equal(root.get("orderTypeId"), orderTypeId));
         }
         return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-
     }
 }

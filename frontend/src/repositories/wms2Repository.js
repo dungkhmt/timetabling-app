@@ -62,4 +62,7 @@ export const wms2Service = {
   },
   createPurchaseOrder: (purchaseOrderData) =>
     request("post", "/purchase-order/create", null, null, purchaseOrderData),
+  getPurchaseOrders : (page, limit, filters) => {
+    return request("post", `/purchase-order/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  }
 };

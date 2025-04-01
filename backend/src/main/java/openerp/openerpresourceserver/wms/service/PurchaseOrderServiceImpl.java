@@ -4,12 +4,17 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
+import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
+import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.CreatePurchaseOrderReq;
+import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderListRes;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.OrderItem;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.ObjectMapper;
 import openerp.openerpresourceserver.wms.repository.*;
+import openerp.openerpresourceserver.wms.repository.specification.PurchaseOrderSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
@@ -66,6 +71,39 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .code(201)
                 .message("Create purchase order successfully")
                 .build();
+
+
+    }
+
+    @Override
+    public ApiResponse<Pagination<PurchaseOrderListRes>> getAllPurchaseOrder(int page, int limit, PurchaseOrderGetListFilter filters) {
+        var pageReq = CommonUtil.getPageRequest(page-1, limit);
+        var specification = new PurchaseOrderSpecification(filters);
+        var purchaseOrders = orderHeaderRepo.findAll(specification, pageReq);
+        var purchaseOrderListRes = purchaseOrders.getContent().stream()
+                .map(purchaseOrder -> {
+                    var orderListRes = objectMapper.convertToDto(purchaseOrder, PurchaseOrderListRes.class);
+                    orderListRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
+                    orderListRes.setFacilityName(purchaseOrder.getFacility().getName());
+                    orderListRes.setCreatedByUserName(purchaseOrder.getCreatedByUser().getFullName());
+                    return orderListRes;
+                })
+                .toList();
+
+        var PagRes = Pagination.<PurchaseOrderListRes>builder()
+                .page(page)
+                .size(limit)
+                .totalPages(purchaseOrders.getTotalPages())
+                .totalElements(purchaseOrders.getTotalElements())
+                .data(purchaseOrderListRes)
+                .build();
+
+        return ApiResponse.<Pagination<PurchaseOrderListRes>>builder()
+                .code(200)
+                .message("Get all purchase order successfully")
+                .data(PagRes)
+                .build();
+
 
 
     }
