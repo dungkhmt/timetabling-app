@@ -242,6 +242,39 @@ export const useWms2Data = () => {
       }
     }
 
+    const getPurchaseOrderDetails = async (orderId) => {
+      try {
+        const response = await wms2Service.getPurchaseOrderDetails(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching purchase order details:", error);
+        toast.error("Không thể tải chi tiết đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
+    const updatePurchaseOrderStatus = async (orderId, status) => {
+      try {
+        const response = await wms2Service.updatePurchaseOrderStatus(orderId, status);
+        return response.data;
+      } catch (error) {
+        console.error("Error updating purchase order status:", error);
+        toast.error("Không thể cập nhật trạng thái đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
+    const approvePurchaseOrder = async (orderId) => {
+      try {
+        const response = await wms2Service.approvePurchaseOrder(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error approving purchase order:", error);
+        toast.error("Không thể duyệt đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -264,6 +297,9 @@ export const useWms2Data = () => {
       getSalesOrdersForExport,
        getMoreSuppliers,
        getPurchaseOrders,
-       getPurchaseOrdersForExport
+       getPurchaseOrdersForExport,
+       getPurchaseOrderDetails,
+         updatePurchaseOrderStatus,
+            approvePurchaseOrder,
    };
 };

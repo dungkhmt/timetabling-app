@@ -8,6 +8,7 @@ import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.CreatePurchaseOrderReq;
+import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderDetailRes;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderListRes;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.OrderItem;
@@ -16,6 +17,8 @@ import openerp.openerpresourceserver.wms.mapper.ObjectMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.PurchaseOrderSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -77,7 +80,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public ApiResponse<Pagination<PurchaseOrderListRes>> getAllPurchaseOrder(int page, int limit, PurchaseOrderGetListFilter filters) {
-        var pageReq = CommonUtil.getPageRequest(page-1, limit);
+        var pageReq = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdStamp"));
         var specification = new PurchaseOrderSpecification(filters);
         var purchaseOrders = orderHeaderRepo.findAll(specification, pageReq);
         var purchaseOrderListRes = purchaseOrders.getContent().stream()
@@ -106,5 +109,36 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
 
 
+    }
+
+    @Override
+    public ApiResponse<PurchaseOrderDetailRes> getPurchaseOrderDetail(String id) {
+        var purchaseOrder = orderHeaderRepo.findById(id).orElseThrow(
+                () -> new DataNotFoundException("Purchase order not found with id: " + id));
+
+        var purchaseOrderDetailRes = objectMapper.convertToDto(purchaseOrder, PurchaseOrderDetailRes.class);
+        purchaseOrderDetailRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
+        purchaseOrderDetailRes.setFacilityName(purchaseOrder.getFacility().getName());
+        purchaseOrderDetailRes.setCreatedByUser(purchaseOrder.getCreatedByUser().getFullName());
+        purchaseOrderDetailRes.setStatus(purchaseOrder.getStatus());
+        purchaseOrderDetailRes.setDeliveryAfterDate(purchaseOrder.getDeliveryAfterDate());
+        purchaseOrderDetailRes.setNote(purchaseOrder.getNote());
+
+
+        var orderItemList = purchaseOrder.getOrderItems().stream()
+                .map(orderItem -> {
+                    var orderItemRes = objectMapper.convertToDto(orderItem, openerp.openerpresourceserver.wms.dto.saleOrder.OrderProductRes.class);
+                    orderItemRes.setProductName(orderItem.getProduct().getName());
+                    orderItemRes.setProductId(orderItem.getProduct().getId());
+                    return orderItemRes;
+                })
+                .toList();
+        purchaseOrderDetailRes.setOrderItems(orderItemList);
+
+        return ApiResponse.<PurchaseOrderDetailRes>builder()
+                .code(200)
+                .message("Get purchase order detail successfully")
+                .data(purchaseOrderDetailRes)
+                .build();
     }
 }

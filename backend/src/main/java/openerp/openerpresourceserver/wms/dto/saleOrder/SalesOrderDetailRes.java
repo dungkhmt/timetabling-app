@@ -15,6 +15,7 @@ import java.util.List;
 public class SalesOrderDetailRes {
     private String id;
     private Integer numberOfInvoices;
+    private String orderTypeId;
     private String status;
     private String saleChannelId;
     private String facilityName;

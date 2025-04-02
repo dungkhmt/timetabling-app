@@ -64,5 +64,14 @@ export const wms2Service = {
     request("post", "/purchase-order/create", null, null, purchaseOrderData),
   getPurchaseOrders : (page, limit, filters) => {
     return request("post", `/purchase-order/get-all?page=${page}&limit=${limit}`, null, null, filters);
-  }
+  },
+  getPurchaseOrderDetails: (orderId) => {
+    return request("get", `/purchase-order/details/${orderId}`);
+  },
+  updatePurchaseOrderStatus: (orderId, status) => {
+    return request("put", `/purchase-order/update-status/${orderId}`, null, null, {status});
+  },
+    approvePurchaseOrder: (orderId) => {
+        return request("put", `/purchase-order/approve/${orderId}`);
+    },
 };
