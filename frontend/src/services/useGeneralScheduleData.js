@@ -58,15 +58,8 @@ export const useGeneralSchedule = () => {
   
     let generalClasses = [];
     data.forEach((classObj) => {
-      const usedDuration =
-        classObj.timeSlots?.reduce((total, slot) => {
-          return total + (slot.duration || 0);
-        }, 0) || 0;
-  
-      const remainingDuration = classObj.duration - usedDuration;
-  
       // Handle child classes (time slots)
-      if (classObj.timeSlots && classObj.timeSlots.length > 0) {
+      if (classObj.timeSlots) {
         classObj.timeSlots.forEach((timeSlot, index) => {
           if (timeSlot.duration !== null) {
             const cloneObj = JSON.parse(
@@ -87,18 +80,8 @@ export const useGeneralSchedule = () => {
           }
         });
       }
-  
-      if (remainingDuration > 0 || !classObj.timeSlots?.length) {
-        generalClasses.push({
-          ...classObj,
-          generalClassId: String(
-            classObj.generalClassId || classObj.id || ""
-          ),
-          duration: remainingDuration,
-          isParent: true,
-        });
-      }
     });
+    console.log(generalClasses.length, "generalClasses.length");
   
     generalClasses.sort((a, b) => {
       const parentIdA = a.parentId || a.id;
@@ -107,9 +90,6 @@ export const useGeneralSchedule = () => {
       if (parentIdA !== parentIdB) {
         return parentIdA - parentIdB;
       }
-  
-      if (a.isParent && !b.isParent) return -1;
-      if (!a.isParent && b.isParent) return 1;
   
       return 0;
     });
