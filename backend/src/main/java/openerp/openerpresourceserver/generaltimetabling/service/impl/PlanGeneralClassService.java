@@ -224,6 +224,49 @@ public class PlanGeneralClassService {
 
         return newClasses;
     }
+    @Transactional
+    public List<TimeTablingClass> makeSubClassNew(ModelInputCreateSubClass request) {
+        TimeTablingClass parentClass = timeTablingClassRepo.findById(request.getFromParentClassId()).orElse(null);
+        if (parentClass == null) return Collections.emptyList();
+        List<ClassGroup> classGroup = classGroupRepo.findByClassId(request.getFromParentClassId());
+
+        List<TimeTablingClass> newClasses = new ArrayList<>();
+
+        for (int i = 0; i < request.getNumberClasses(); i++) {
+            TimeTablingClass newClass = new TimeTablingClass();
+            newClass.setParentClassId(parentClass.getId());
+            newClass.setRefClassId(parentClass.getRefClassId());
+            newClass.setSemester(parentClass.getSemester());
+            newClass.setModuleCode(parentClass.getModuleCode());
+            newClass.setClassCode(parentClass.getClassCode());
+            newClass.setModuleName(parentClass.getModuleName());
+            newClass.setMass(parentClass.getMass());
+            newClass.setCrew(parentClass.getCrew());
+            newClass.setQuantityMax(request.getNumberStudents());
+            newClass.setLearningWeeks(parentClass.getLearningWeeks());
+            newClass.setDuration(request.getDuration());
+            newClass.setGroupName(parentClass.getGroupName());
+
+            if (request.getClassType() != null && !request.getClassType().isEmpty()) {
+                newClass.setClassType(request.getClassType());
+            } else {
+                newClass.setClassType("LT+BT");
+            }
+
+            Long nextId = timeTablingClassRepo.getNextReferenceValue();
+            newClass.setId(nextId);
+
+            timeTablingClassRepo.save(newClass);
+
+            for (ClassGroup group : classGroup) {
+                ClassGroup newClassGroup = new ClassGroup(newClass.getId(), group.getGroupId());
+                classGroupRepo.save(newClassGroup);
+            }
+            newClasses.add(newClass);
+        }
+
+        return newClasses;
+    }
 
     public List<PlanGeneralClass> getAllClasses(String semester) {
         return planGeneralClassRepository.findAllBySemester(semester);

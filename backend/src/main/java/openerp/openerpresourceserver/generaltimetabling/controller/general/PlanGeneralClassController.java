@@ -15,6 +15,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.impl.PlanGeneralClassService;
 import org.aspectj.weaver.ast.Not;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,7 @@ import java.util.List;
 @AllArgsConstructor
 public class PlanGeneralClassController {
     private PlanGeneralClassService planClassService;
+    private TimeTablingClassService timeTablingClassService;
 
     @ExceptionHandler(InvalidFieldException.class)
     public ResponseEntity resolveInvalidFieldException(InvalidFieldException e) {
@@ -53,7 +55,9 @@ public class PlanGeneralClassController {
 
     @PostMapping("/make-subclass")
     public ResponseEntity<?> requestMakeSubClass(@RequestBody ModelInputCreateSubClass request) {
-        return ResponseEntity.ok(planClassService.makeSubClass(request));
+        //return ResponseEntity.ok(planClassService.makeSubClass(request));
+        return ResponseEntity.ok(planClassService.makeSubClassNew(request));
+
     }
 
 

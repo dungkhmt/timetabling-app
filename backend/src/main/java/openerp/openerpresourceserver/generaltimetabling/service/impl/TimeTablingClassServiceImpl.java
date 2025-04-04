@@ -255,7 +255,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         for(TimeTablingClassSegment cs: classSegments){
             if(mClassId2ClassSegments.get(cs.getClassId())==null)
                 mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
-            mClassId2ClassSegments.get(cs.getClass()).add(cs);
+            mClassId2ClassSegments.get(cs.getClassId()).add(cs);
         }
         return cls.stream()
                 .map(c -> ModelResponseTimeTablingClass.builder()
