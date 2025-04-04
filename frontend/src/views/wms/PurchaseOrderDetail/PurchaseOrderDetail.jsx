@@ -13,9 +13,10 @@ const orderLabels = [
   "Thông tin chung",
   "Thanh toán",
   "Sản phẩm",
+    "Phiếu nhập"
 ];
 
-const SaleOrderDetailContent = () => {
+const PurchaseOrderDetailContent = () => {
   return (
     <OrderDetailBase
       tabLabels={orderLabels}
@@ -28,12 +29,12 @@ const SaleOrderDetailContent = () => {
   );
 };
 
-const SaleOrderDetail = () => {
+const PurchaseOrderDetail = () => {
   return (
-    <OrderDetailProvider orderType={ORDER_TYPE_ID.SALES_ORDER}>
-      <SaleOrderDetailContent />
+    <OrderDetailProvider orderType={ORDER_TYPE_ID.PURCHASE_ORDER}>
+      <PurchaseOrderDetailContent />
     </OrderDetailProvider>
   );
 };
 
-export default SaleOrderDetail;
+export default PurchaseOrderDetail;

@@ -169,4 +169,81 @@ export const entityTypes = {
     CUSTOMERS: "customers",
     PRODUCTS: "products",
     SUPPLIERS: "suppliers",
+};
+
+export const PURCHASE_ORDER_STATUSES = {
+  DRAFT : "Nháp",
+  CREATED: "Đã tạo",
+  WAITING_FOR_APPROVAL: "Chờ duyệt",
+  APPROVED : "Đã duyệt",
+  DELIVERED: "Đã giao hàng",
+  CANCELLED : 'Đã hủy',
+  REJECTED : 'Từ chối',
+  COMPLETED : 'Hoàn thành',
+  SHIPPING : 'Đang giao hàng',
+};
+
+export const PURCHASE_ORDER_TABS = [
+  {
+    value: "ALL",
+    label: "Tất cả",
+  },
+  {
+    value: "CREATED",
+    label: "Mới tạo",
+  },
+  {
+    value: "WAITING_FOR_APPROVAL",
+    label: "Chờ duyệt",
+  },
+  {
+    value: "APPROVED",
+    label: "Đã duyệt",
+  },
+  {
+    value: "REJECTED",
+    label: "Từ chối",
+  },
+];
+
+// Schema cho xuất excel đơn hàng mua
+export const PURCHASE_ORDER_SCHEMA = [
+  {
+    column: 'Mã đơn hàng',
+    type: String,
+    value: order => order.id
+  },
+  {
+    column: 'Ngày tạo',
+    type: String,
+    value: order => new Date(order.createdStamp).toLocaleDateString("vi-VN")
+  },
+  {
+    column: 'Nhà cung cấp',
+    type: String,
+    value: order => order.supplierName || ''
+  },
+  {
+    column: 'Số lượng',
+    type: Number,
+    value: order => order.totalQuantity || 0
+  },
+  {
+    column: 'Thành tiền',
+    type: String,
+    value: order => new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(order.totalAmount)
+  },
+  {
+    column: 'Trạng thái',
+    type: String,
+    value: order => PURCHASE_ORDER_STATUSES[order.status] || 'Không xác định'
+  }
+];
+
+export const ORDER_TYPE_ID = {
+  SALES_ORDER: "SALES_ORDER",
+  PURCHASE_ORDER: "PURCHASE_ORDER",
 }

@@ -219,6 +219,62 @@ export const useWms2Data = () => {
         return { data: {} };
       }
     }
+
+    const getPurchaseOrders = async (page, limit, filters) => {
+      try {
+        const response = await wms2Service.getPurchaseOrders(page, limit, filters);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching purchase orders:", error);
+        toast.error("Không thể tải danh sách đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
+    const getPurchaseOrdersForExport = async (page, limit) => {
+      try {
+        const response = await wms2Service.getPurchaseOrdersForExport(page, limit);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching purchase orders for export:", error);
+        toast.error("Không thể tải dữ liệu xuất file");
+        return { data: {} };
+      }
+    }
+
+    const getPurchaseOrderDetails = async (orderId) => {
+      try {
+        const response = await wms2Service.getPurchaseOrderDetails(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching purchase order details:", error);
+        toast.error("Không thể tải chi tiết đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
+    const updatePurchaseOrderStatus = async (orderId, status) => {
+      try {
+        const response = await wms2Service.updatePurchaseOrderStatus(orderId, status);
+        return response.data;
+      } catch (error) {
+        console.error("Error updating purchase order status:", error);
+        toast.error("Không thể cập nhật trạng thái đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
+    const approvePurchaseOrder = async (orderId) => {
+      try {
+        const response = await wms2Service.approvePurchaseOrder(orderId);
+        return response.data;
+      } catch (error) {
+        console.error("Error approving purchase order:", error);
+        toast.error("Không thể duyệt đơn hàng mua");
+        return { data: {} };
+      }
+    }
+
    // Trả về các hàm thay vì dữ liệu
    return {
      createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -239,6 +295,11 @@ export const useWms2Data = () => {
       getOutBoundDetail,
       exportShipment,
       getSalesOrdersForExport,
-       getMoreSuppliers
+       getMoreSuppliers,
+       getPurchaseOrders,
+       getPurchaseOrdersForExport,
+       getPurchaseOrderDetails,
+         updatePurchaseOrderStatus,
+            approvePurchaseOrder,
    };
 };

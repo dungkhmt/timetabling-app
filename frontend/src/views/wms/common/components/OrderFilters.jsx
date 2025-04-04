@@ -12,15 +12,14 @@ import {
   Checkbox,
   ListItemText
 } from '@mui/material';
-import { SALE_CHANNELS } from 'views/wms/common/constants/constants';
+import { ORDER_TYPE_ID, SALE_CHANNELS } from 'views/wms/common/constants/constants';
 import dayjs from 'dayjs';
 
-const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
-  
+const OrderFilters = ({ filters, setFilters, onApplyFilters, type }) => {
   // Khởi tạo state ban đầu nếu chưa có
   useEffect(() => {
-    if (!filters.saleChannelId && filters.saleChannelId !== null) {
-      setFilters(prev => ({ ...prev, saleChannelId: [] }));
+    if (!filters.channelId && filters.channelId !== null) {
+      setFilters(prev => ({ ...prev, channelId: [] }));
     }
   }, []);
 
@@ -31,20 +30,16 @@ const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
   const handleChannelChange = (e) => {
     const { value } = e.target;
     
-    // Kiểm tra nếu "ALL" được chọn
     if (value.includes('ALL')) {
-      // Nếu chọn "Tất cả", đặt saleChannelId thành null
-      setFilters(prev => ({ ...prev, saleChannelId: null }));
+      setFilters(prev => ({ ...prev, channelId: null }));
     } 
     else {
-      // Ngược lại, gán danh sách các channel được chọn
-      setFilters(prev => ({ ...prev, saleChannelId: value }));
+      setFilters(prev => ({ ...prev, channelId: value }));
     }
   };
 
   const handleDateCreatedChange = (e) => {
     const value = e.target.value;
-
     
     let startDate, endDate;
     const now = dayjs();
@@ -71,7 +66,6 @@ const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
         endDate = null;
     }
 
-    // Định dạng ngày theo chuẩn LocalDateTime
     const formatToLocalDateTime = (dayjsDate) => {
       if (!dayjsDate) return null;
       return dayjsDate.format('YYYY-MM-DDTHH:mm:ss');
@@ -98,13 +92,16 @@ const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
   };
 
   // Kiểm tra nếu "Tất cả" được chọn
-  const isAllSelected = filters.saleChannelId === null;
+  const isAllSelected = filters.channelId === null;
 
   // Hàm lấy giá trị channels đã chọn
   const getChannelValue = () => {
     if (isAllSelected) return [];
-    return Array.isArray(filters.saleChannelId) ? filters.saleChannelId : [filters.saleChannelId];
+    return Array.isArray(filters.channelId) ? filters.channelId : [filters.channelId];
   };
+
+  // Chỉ hiển thị channel filter cho SALES_ORDER
+  const showChannelFilter = type === ORDER_TYPE_ID.SALES_ORDER;
 
   return (
     <Box display="flex" gap={2} mt={2} flexWrap="wrap" alignItems="center">
@@ -114,51 +111,53 @@ const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
         size="small"
         value={filters.keyword || ''}
         onChange={handleSearchChange}
-        placeholder="Mã đơn hàng, tên khách hàng..."
+        placeholder={type === ORDER_TYPE_ID.SALES_ORDER ? "Mã đơn hàng, tên khách hàng..." : "Mã đơn hàng, tên nhà cung cấp..."}
         sx={{ flexGrow: 1, minWidth: '200px' }}
       />
       
-      <FormControl size="small" sx={{ minWidth: 200 }}>
-        <InputLabel id="channel-select-label">Kênh bán hàng</InputLabel>
-        <Select
-          labelId="channel-select-label"
-          multiple
-          value={getChannelValue()}
-          onChange={handleChannelChange}
-          input={<OutlinedInput label="Kênh bán hàng" />}
-          renderValue={(selected) => {
-            if (isAllSelected) return <Chip label="Tất cả" size="small" />;
-            
-            return (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {selected.map((value) => (
-                  <Chip 
-                    key={value} 
-                    label={SALE_CHANNELS[value]} 
-                    size="small" 
-                  />
-                ))}
-              </Box>
-            );
-          }}
-          MenuProps={MenuProps}
-        >
-          <MenuItem value="ALL">
-            <Checkbox checked={isAllSelected} />
-            <ListItemText primary="Tất cả" />
-          </MenuItem>
-          
-          {Object.entries(SALE_CHANNELS).map(([channelId, label]) => (
-            <MenuItem key={channelId} value={channelId}>
-              <Checkbox 
-                checked={getChannelValue().includes(channelId)} 
-                disabled={isAllSelected}
-              />
-              <ListItemText primary={label} />
+      {/* Chỉ hiển thị channel filter nếu là SALES_ORDER */}
+      {showChannelFilter && (
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel id="channel-select-label">Kênh bán hàng</InputLabel>
+          <Select
+            labelId="channel-select-label"
+            multiple
+            value={getChannelValue()}
+            onChange={handleChannelChange}
+            input={<OutlinedInput label="Kênh bán hàng" />}
+            renderValue={(selected) => {
+              if (isAllSelected) return <Chip label="Tất cả" size="small" />;
+              
+              return (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => (
+                    <Chip 
+                      key={value} 
+                      label={SALE_CHANNELS[value]} 
+                      size="small" 
+                    />
+                  ))}
+                </Box>
+              );
+            }}
+            MenuProps={MenuProps}
+          >
+            <MenuItem value="ALL">
+              <Checkbox checked={isAllSelected} />
+              <ListItemText primary="Tất cả" />
             </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+            {Object.entries(SALE_CHANNELS).map(([channelId, label]) => (
+              <MenuItem key={channelId} value={channelId}>
+                <Checkbox 
+                  checked={getChannelValue().includes(channelId)} 
+                  disabled={isAllSelected}
+                />
+                <ListItemText primary={label} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
       
       <FormControl size="small" sx={{ minWidth: 150 }}>
         <InputLabel>Ngày tạo</InputLabel>
@@ -185,4 +184,4 @@ const SaleOrderFilters = ({ filters, setFilters, onApplyFilters }) => {
   );
 };
 
-export default SaleOrderFilters;
+export default OrderFilters;

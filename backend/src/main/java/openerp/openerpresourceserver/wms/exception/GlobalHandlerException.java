@@ -25,4 +25,13 @@ public class GlobalHandlerException {
                 message(e.getMessage()).
                 build();
     }
+
+    @ExceptionHandler(Exception.class)
+    public ApiResponse<Void> handleException(Exception e) {
+        log.error(e.getMessage());
+        return ApiResponse.<Void>
+                builder().code(500).
+                message("Internal server error").
+                build();
+    }
 }

@@ -5,9 +5,10 @@ import OrderHeader from "../common/components/OrderHeader";
 import OrderTabs from "../common/components/OrderTabs";
 import OrderFilters from "../common/components/OrderFilters";
 import OrderTable from "../common/components/OrderTable";
-import {ORDER_TYPE_ID, SALE_ORDER_SCHEMA, SALE_ORDER_TABS} from "../common/constants/constants";
-const SaleOrderListPage = () => {
-  const { getSalesOrders, getSalesOrdersForExport } = useWms2Data();
+import { PURCHASE_ORDER_SCHEMA, PURCHASE_ORDER_TABS, ORDER_TYPE_ID } from "../common/constants/constants";
+
+const PurchaseOrderListPage = () => {
+  const { getPurchaseOrders, getPurchaseOrdersForExport } = useWms2Data();
 
   const initialFilters = {
     keyword: "",
@@ -19,12 +20,12 @@ const SaleOrderListPage = () => {
 
   return (
     <OrderListBase
-      type= {ORDER_TYPE_ID.SALES_ORDER}
-      tabs={SALE_ORDER_TABS}
+      type= {ORDER_TYPE_ID.PURCHASE_ORDER}
+      tabs={PURCHASE_ORDER_TABS}
       filters={initialFilters}
-      schema={SALE_ORDER_SCHEMA}
-      getOrdersFunction={getSalesOrders}
-      getOrdersForExportFunction={getSalesOrdersForExport}
+      schema={PURCHASE_ORDER_SCHEMA}
+      getOrdersFunction={getPurchaseOrders}
+      getOrdersForExportFunction={getPurchaseOrdersForExport}
       Header={OrderHeader}
       Tabs={OrderTabs}
       Filters={OrderFilters}
@@ -33,4 +34,4 @@ const SaleOrderListPage = () => {
   );
 };
 
-export default SaleOrderListPage;
+export default PurchaseOrderListPage;

@@ -26,6 +26,7 @@ import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.TimetableStatisticsDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
 import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableAssignmentService;
@@ -55,6 +56,16 @@ public class ExamTimetableController {
             return ResponseEntity.ok(detail);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/statistic/{timetableId}")
+    public ResponseEntity<TimetableStatisticsDTO> getTimetableStatistics(@PathVariable UUID timetableId) {
+        try {
+            TimetableStatisticsDTO statistics = examTimetableService.generateStatistics(timetableId);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 

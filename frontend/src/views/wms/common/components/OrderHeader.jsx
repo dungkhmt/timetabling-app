@@ -3,12 +3,13 @@ import { Typography, Button, Stack } from '@mui/material';
 import { Add, ImportExport, Refresh } from '@mui/icons-material';
 import { useHistory, useLocation } from 'react-router-dom';
 
-const SaleOrderHeader = ({ onRefresh, onExport }) => {
+const OrderHeader = ({ onRefresh, onExport, type }) => {
   const history = useHistory();
   const location = useLocation();
+  const baseUrl = type === "sale" ? "/wms/sales" : "/wms/purchase";
 
   const handleCreateOrder = () => {
-    history.push(location.pathname + '/create');
+    history.push(`${baseUrl}/orders/create`);
   };
 
   return (
@@ -19,7 +20,7 @@ const SaleOrderHeader = ({ onRefresh, onExport }) => {
       justifyContent="space-between"
     >
       <Typography variant="h5" fontWeight="bold">
-        Danh sách đơn hàng
+        {type === "sale" ? "Danh sách đơn hàng bán" : "Danh sách đơn đặt hàng"}
       </Typography>
       <Stack direction="row" spacing={1}>
         <Button 
@@ -42,11 +43,11 @@ const SaleOrderHeader = ({ onRefresh, onExport }) => {
           startIcon={<Add />}
           onClick={handleCreateOrder}
         >
-          Tạo đơn hàng
+          {type === "sale" ? "Tạo đơn hàng" : "Tạo đơn đặt hàng"}
         </Button>
       </Stack>
     </Stack>
   );
 };
 
-export default SaleOrderHeader;
+export default OrderHeader;

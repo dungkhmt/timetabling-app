@@ -3,18 +3,28 @@ import ApprovedSaleOrderDetail from "views/wms/AprrovedSaleOrderDetail/ApprovedS
 import OutBoundDetail from "views/wms/AprrovedSaleOrderDetail/components/OutBoundDetail";
 import CreatePurchaseOrder from "views/wms/CreatePurchaseOrder/CreatePurchaseOrder";
 import CreateSaleOrder from "views/wms/CreateSaleOrder/CreateSaleOrder";
-import PurchaseOrder from "views/wms/purchaseorder";
 import SaleOrderListPage from "views/wms/SaleOrderListPage/SaleOrderListPage";
-
+import PurchaseOrderListPage from "../views/wms/PurchaseOrderListPage/PurchaseOrderListPage";
+import PurchaseOrderDetail from "../views/wms/PurchaseOrderDetail/PurchaseOrderDetail";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
     <div>
       <Switch>
         <Route
-          component={CreatePurchaseOrder}
+          component={PurchaseOrderListPage}
           exact
           path={`${path}/purchase/orders`}
+        ></Route>
+
+        <Route
+          component={PurchaseOrderDetail}
+          path={`${path}/purchase/orders/details/:id`}
+        ></Route>
+
+        <Route
+          component={CreatePurchaseOrder}
+          path={`${path}/purchase/orders/create`}
         ></Route>
 
         <Route

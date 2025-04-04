@@ -11,4 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface OrderHeaderRepo extends JpaRepository<OrderHeader, String>, JpaSpecificationExecutor<OrderHeader> {
 
     Page<OrderHeader> findAllByStatus(String name, PageRequest pageable);
+
+    Page<OrderHeader> findAllByOrderTypeId(PageRequest pageReq, String name);
+
 }
