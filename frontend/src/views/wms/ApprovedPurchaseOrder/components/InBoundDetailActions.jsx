@@ -7,7 +7,7 @@ import ReceiptIcon from "@mui/icons-material/Receipt";
 import PrintIcon from "@mui/icons-material/Print";
 import { useShipment } from "../../common/context/ShipmentContext";
 
-const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
+const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
   const { loading, exportShipmentApi } = useShipment();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
 
@@ -127,4 +127,4 @@ const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
   );
 };
 
-export default memo(OutBoundDetailActions);
+export default memo(InBoundDetailActions);

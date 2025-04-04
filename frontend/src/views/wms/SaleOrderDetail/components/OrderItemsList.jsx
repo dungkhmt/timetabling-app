@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography, Stack, useTheme, useMediaQuery } from "@mui/material";
-import { useOrderDetail } from "../context/OrderDetailContext";
+import { useOrderDetail } from "../../common/context/OrderDetailContext";
 import OrderItemsTable from "./OrderItemsTable";
 import OrderItemCard from "./OrderItemCard";
 import OrderSummary from "./OrderSummary";

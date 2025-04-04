@@ -15,12 +15,12 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useApprovedOrderDetail } from "../context/OrderDetailContext";
-import OutboundFormFields from "./outbound/OutboundFormFields";
-import OutboundProductTable from "./outbound/OutboundProductTable";
+import InBoundFormFields from "./inbound/InBoundFormFields";
+import InBoundProductTable from "./inbound/InBoundProductTable";
 import { useOrderDetail } from "views/wms/common/context/OrderDetailContext";
 
-const CreateOutboundDialog = ({ open, onClose }) => {
-  const { getMoreInventoryItemsApi, createOutBoundOrderApi } = useApprovedOrderDetail();
+const CreateInBoundDialog = ({ open, onClose }) => {
+  const { getMoreInventoryItemsApi, createInBoundOrderApi } = useApprovedOrderDetail();
   const { orderData } = useOrderDetail();
   const [inventoryItems, setInventoryItems] = useState([]);
   const [errors, setErrors] = useState({});
@@ -112,10 +112,10 @@ const CreateOutboundDialog = ({ open, onClose }) => {
 
     setLoading(true);
     try {
-      await createOutBoundOrderApi(formData, orderData.createdByUser);
+      await createInBoundOrderApi(formData);
       onClose(true);
     } catch (error) {
-      setErrors({ global: error.message || "Không thể tạo phiếu xuất" });
+      setErrors({ global: error.message || "Không thể tạo phiếu nhập" });
     } finally {
       setLoading(false);
     }
@@ -132,7 +132,7 @@ const CreateOutboundDialog = ({ open, onClose }) => {
       <DialogTitle sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box display="flex" alignItems="center">
           <WarehouseIcon sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h6">Tạo phiếu xuất kho</Typography>
+          <Typography variant="h6">Tạo phiếu nhập kho</Typography>
         </Box>
         <IconButton onClick={() => onClose(false)} size="small">
           <CloseIcon />
@@ -144,13 +144,13 @@ const CreateOutboundDialog = ({ open, onClose }) => {
           <Alert severity="error" sx={{ mb: 2 }}>{errors.global}</Alert>
         )}
         <Grid container spacing={2}>
-          <OutboundFormFields
+          <InBoundFormFields
             formData={formData}
             errors={errors}
             onChange={handleFormChange}
           />
           <Grid item xs={12}>
-            <OutboundProductTable
+            <InBoundProductTable
               orderItems={orderData?.orderItems || []}
               inventoryItems={inventoryItems}
               products={formData.products}
@@ -168,11 +168,11 @@ const CreateOutboundDialog = ({ open, onClose }) => {
           Hủy
         </Button>
         <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Đang tạo..." : "Tạo phiếu xuất"}
+          {loading ? "Đang tạo..." : "Tạo phiếu nhập"}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default CreateOutboundDialog;
+export default CreateInBoundDialog;

@@ -4,19 +4,19 @@ import {
   ApprovedOrderDetailProvider,
 } from "./context/OrderDetailContext";
 import CustomTabs from "../common/components/CustomTabs";
-import OutBoundList from "./components/OutBoundList";
-import OrderBasicInfo from "../SaleOrderDetail/components/OrderBasicInfo";
-import OrderDeliveryInfo from "../SaleOrderDetail/components/OrderDeliveryInfo";
-import OrderItemsList from "../SaleOrderDetail/components/OrderItemsList";
+import InBoundList from "./components/InBoundList";
 import { OrderDetailProvider, useOrderDetail } from "../common/context/OrderDetailContext";
 import {ORDER_TYPE_ID} from "../common/constants/constants";
+import OrderBasicInfo from "../common/components/OrderBasicInfo";
+import OrderDeliveryInfo from "../common/components/OrderDeliveryInfo";
+import OrderItemsList from "../common/components/OrderItemsList";
 
 const approveOrderLabels = [
   "Tổng quan",
   "Thanh toán",
-  "Phiếu xuất",
+  "Phiếu nhập",
 ];
-const SaleOrderDetailContent = () => {
+const PurchaseOrderDetailContent = () => {
   const [tabValue, setTabValue] = useState(0);
   const { loading, orderData } = useOrderDetail();
 
@@ -59,7 +59,7 @@ const SaleOrderDetailContent = () => {
 
       {tabValue === 2 && (
         // this is the part showing created oubound order
-        <OutBoundList />
+        <InBoundList />
       )}
       {tabValue === 0 && (
         <>
@@ -81,16 +81,16 @@ const SaleOrderDetailContent = () => {
   );
 };
 
-const ApprovedSaleOrderDetail = () => {
+const ApprovedPurchaseOrderDetail = () => {
   return (
 
-    <OrderDetailProvider orderType={ORDER_TYPE_ID.SALES_ORDER}>
+    <OrderDetailProvider orderType={ORDER_TYPE_ID.PURCHASE_ORDER}>
       <ApprovedOrderDetailProvider>
-        <SaleOrderDetailContent />
+        <PurchaseOrderDetailContent />
     </ApprovedOrderDetailProvider>
     </OrderDetailProvider>
 
   );
 };
 
-export default ApprovedSaleOrderDetail;
+export default ApprovedPurchaseOrderDetail;

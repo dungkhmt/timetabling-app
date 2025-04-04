@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Stack, useTheme, useMediaQuery, Button } from "@mui/material";
 import { useApprovedOrderDetail } from "../context/OrderDetailContext";
-import OutBoundTable from "./OutBoundTable";
-import CreateOutboundDialog from "./CreateOutboundDialog";
+import InBoundTable from "./InBoundTable";
+import CreateInBoundDialog from "./CreateInBoundDialog";
 import { useOrderDetail } from "views/wms/common/context/OrderDetailContext";
 
-const OutBoundList = () => {
+const InBoundList = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { getOutBoundsOrderApi } = useApprovedOrderDetail();
+  const { getInBoundsOrderApi } = useApprovedOrderDetail();
   const {orderData} = useOrderDetail();
 
-  const [outBounData, setOutBoundData] = useState(null);
+  const [InBoundData, setInBoundData] = useState(null);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
 
   console.log("Order data:", orderData);
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await getOutBoundsOrderApi(orderData.id, 0,10);
+        const response = await getInBoundsOrderApi(orderData.id, 0,10);
         console.log("API response:", response);
-        setOutBoundData(response?.data ?? null);
+        setInBoundData(response?.data ?? null);
       } catch (error) {
-        console.error("Error fetching outbound data:", error);
+        console.error("Error fetching inbound data:", error);
       }
     };
     
@@ -36,8 +36,8 @@ const OutBoundList = () => {
     if (shouldRefresh) {
       const refreshData = async () => {
         try {
-          const response = await getOutBoundsOrderApi(orderData.id, 0, 10);
-          setOutBoundData(response?.data ?? null);
+          const response = await getInBoundsOrderApi(orderData.id, 0, 10);
+          setInBoundData(response?.data ?? null);
         } catch (error) {
           console.error("Error refreshing data:", error);
         }
@@ -51,7 +51,7 @@ const OutBoundList = () => {
     setOpenCreateDialog(true);
   };
 
-  if (!outBounData) {
+  if (!InBoundData) {
     return (
       <Box>
         <Stack 
@@ -70,13 +70,13 @@ const OutBoundList = () => {
             color="primary"
             onClick={handleCreateClick}
           >
-            Tạo phiếu xuất
+            Tạo phiếu nhập
           </Button>
         </Stack>
 
         <Typography variant="body1" mt={3}>Không tìm thấy thông tin đơn hàng</Typography>
         
-        <CreateOutboundDialog
+        <CreateInBoundDialog
           open={openCreateDialog}
           onClose={handleCloseDialog}
           orderData={orderData}
@@ -103,13 +103,13 @@ const OutBoundList = () => {
           color="primary" 
           onClick={handleCreateClick}
         >
-          Tạo phiếu xuất
+          Tạo phiếu nhập
         </Button>
       </Stack>
       
-      <OutBoundTable items={outBounData} />
+      <InBoundTable items={InBoundData} />
       
-      <CreateOutboundDialog
+      <CreateInBoundDialog
         open={openCreateDialog}
         onClose={handleCloseDialog}
       />
@@ -117,4 +117,4 @@ const OutBoundList = () => {
   );
 };
 
-export default OutBoundList;
+export default InBoundList;

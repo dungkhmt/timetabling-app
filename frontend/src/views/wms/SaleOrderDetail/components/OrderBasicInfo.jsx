@@ -1,6 +1,6 @@
 import React from "react";
 import InfoCard from "../../common/components/InfoCard";
-import { useOrderDetail } from "../context/OrderDetailContext";
+import { useOrderDetail } from "../../common/context/OrderDetailContext";
 import dayjs from "dayjs";
 
 const OrderBasicInfo = () => {

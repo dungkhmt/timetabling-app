@@ -2,65 +2,42 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWms2Data } from 'services/useWms2Data';
 import { toast } from 'react-toastify';
-import { ORDER_TYPE_ID } from "../constants/constants";
+import {ORDER_TYPE_ID} from "../constants/constants";
 
 // Tạo context
 const OrderDetailContext = createContext();
 
-export const OrderDetailProvider = ({ children, orderType = ORDER_TYPE_ID.SALES_ORDER }) => {
+export const OrderDetailProvider = ({ children, orderType }) => {
   const { id } = useParams();
-  const history = useHistory();
-  const { 
-    getSalesOrderDetails, 
-    getPurchaseOrderDetails,
-    updateSalesOrderStatus, 
-    updatePurchaseOrderStatus,
-    approveSalesOrder,
-    approvePurchaseOrder
-  } = useWms2Data();
+  const navigate = useHistory();
+  const { getOrderDetails, updateStatusOrder, approveOrder, approvePurchaseOrder, getPurchaseOrderDetails,
+    updatePurchaseOrderStatus } = useWms2Data();
   
   const [orderData, setOrderData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Xác định API functions dựa trên orderType
-  const getDetailsFn = orderType === ORDER_TYPE_ID.SALES_ORDER 
-    ? getSalesOrderDetails 
-    : getPurchaseOrderDetails;
-    
-  const updateStatusFn = orderType === ORDER_TYPE_ID.SALES_ORDER 
-    ? updateSalesOrderStatus 
-    : updatePurchaseOrderStatus;
-    
-  const approveOrderFn = orderType === ORDER_TYPE_ID.SALES_ORDER 
-    ? approveSalesOrder 
-    : approvePurchaseOrder;
+  // const [loading, setLoading] = useState(true);
 
   // Fetch order data
   useEffect(() => {
     const fetchOrderData = async () => {
       if (!id) {
-        setLoading(false);
+        // setLoading(false);
         return;
       }
 
-      setLoading(true);
+      // setLoading(true);
       try {
-        const res = await getDetailsFn(id);
-        if (!res || res.code !== 200) {
-          toast.error("Lỗi khi tải thông tin đơn hàng: " + res?.message);
+        const res = await (orderType === ORDER_TYPE_ID.SALES_ORDER ? getOrderDetails(id) : getPurchaseOrderDetails(id));
+        if ( !res || res.code !== 200) {
+          toast.error("Lỗi khi tải thông tin đơn hàng :" + res?.message);
           return;
         }
         
-        // Thêm orderTypeId vào dữ liệu
-        setOrderData({
-          ...res.data,
-          orderTypeId: orderType
-        });
+        setOrderData(res.data);
       } catch (error) {
         console.error("Error fetching order:", error);
         toast.error("Không thể tải thông tin đơn hàng");
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
@@ -69,16 +46,17 @@ export const OrderDetailProvider = ({ children, orderType = ORDER_TYPE_ID.SALES_
 
   // Duyệt đơn hàng
   const approveOrderApi = async () => {
+    
     try {
-      setLoading(true);
-      const res = await approveOrderFn(id);
+      // setLoading(true);
+      const res = await (orderType === ORDER_TYPE_ID.SALES_ORDER ? approveOrder(id) : approvePurchaseOrder(id));
       
-      if (res && res.code === 200) {
+      if (res && res.code == 200) {
         toast.success("Đơn hàng đã được duyệt thành công!");
         // Cập nhật dữ liệu local sau khi duyệt thành công
         setOrderData(prev => ({
           ...prev,
-          status: "APPROVED"
+          status: "Đã duyệt"
         }));
       } else {
         const errorMsg = res?.message || "Không thể duyệt đơn hàng";
@@ -88,7 +66,7 @@ export const OrderDetailProvider = ({ children, orderType = ORDER_TYPE_ID.SALES_
       console.error("Error approving order:", error);
       toast.error("Không thể duyệt đơn hàng");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -97,15 +75,15 @@ export const OrderDetailProvider = ({ children, orderType = ORDER_TYPE_ID.SALES_
     if (!orderData || !orderData.id) return;
     
     try {
-      setLoading(true);
-      const result = await updateStatusFn(orderData.id, "CANCELED");
+      // setLoading(true);
+      const result = await updateStatusOrder(orderData.id, "CANCELED");
       
       if (result && result.success) {
         toast.success("Đơn hàng đã được hủy thành công!");
         // Cập nhật dữ liệu local sau khi hủy thành công
         setOrderData(prev => ({
           ...prev,
-          status: "CANCELED"
+          status: "Đã hủy"
         }));
       } else {
         const errorMsg = result?.message || "Không thể hủy đơn hàng";
@@ -115,27 +93,30 @@ export const OrderDetailProvider = ({ children, orderType = ORDER_TYPE_ID.SALES_
       console.error("Error cancelling order:", error);
       toast.error("Không thể hủy đơn hàng");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
   // Chuyển sang trang chỉnh sửa đơn hàng
   const editOrder = () => {
     if (!orderData || !orderData.id) return;
-    const editPath = orderType === ORDER_TYPE_ID.SALES_ORDER
-      ? `/wms/edit-sale-order/${orderData.id}`
-      : `/wms/edit-purchase-order/${orderData.id}`;
-    
-    history.push(editPath);
+    navigate(`/wms/edit-sales-order/${orderData.id}`);
+  };
+
+  // Mở dialog chiết khấu
+  const applyDiscount = () => {
+    toast.info("Tính năng chiết khấu đang được phát triển");
+    // Phần mở dialog sẽ được thêm sau
   };
 
   const value = {
     orderData,
-    loading,
+    orderType,
+    // loading,
     approveOrderApi,
     cancelOrder,
     editOrder,
-    orderType
+    applyDiscount
   };
 
   return (
@@ -147,7 +128,7 @@ export const OrderDetailProvider = ({ children, orderType = ORDER_TYPE_ID.SALES_
 
 export const useOrderDetail = () => {
   const context = useContext(OrderDetailContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useOrderDetail must be used within an OrderDetailProvider');
   }
   return context;

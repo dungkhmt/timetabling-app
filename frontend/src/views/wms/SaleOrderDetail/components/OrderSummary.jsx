@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { useOrderDetail } from "../context/OrderDetailContext";
+import { useOrderDetail } from "../../common/context/OrderDetailContext";
 
 const OrderSummary = ({ showDetailedPayment = false }) => {
   const { orderData } = useOrderDetail();

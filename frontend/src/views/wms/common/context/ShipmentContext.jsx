@@ -1,22 +1,24 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useWms2Data } from 'services/useWms2Data';
 import { useParams } from 'react-router-dom';
+import {SHIPMENT_TYPE_ID} from "../constants/constants";
 // Tạo context
 const ShipmentContext = createContext();
 
 // Provider Component
-export const ShipmentProvider = ({ children }) => {
+export const ShipmentProvider = ({ children, shipmentType }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { getOutBoundDetail, exportShipment } = useWms2Data();
-  const [outboundData, setOutboundData] = useState(null);
+  const { getOutBoundDetail, exportShipment, getInBoundDetail } = useWms2Data();
+  const [shipmentData, setShipmentData] = useState(null);
   const { shipmentId } = useParams(); // Lấy ID từ URL
 
   // Fetch dữ liệu
   const fetchData = async () => {
     try {
-      const response = await getOutBoundDetail(shipmentId);
-      setOutboundData(response.data);
+      debugger;
+      const response =   await (shipmentType === SHIPMENT_TYPE_ID.OUTBOUND ? getOutBoundDetail(shipmentId) : getInBoundDetail(shipmentId));
+      setShipmentData(response.data);
     } catch (err) {
       console.error("Failed to fetch outbound detail:", err);
     }
@@ -24,12 +26,12 @@ export const ShipmentProvider = ({ children }) => {
 
   const exportShipmentApi = async (shipmentId) => {
     try {
-      debugger;
       const res = await exportShipment(shipmentId);
     } catch (err) {
       console.error("Failed to export shipment:", err);
     }
   }
+
 
   // Load dữ liệu khi component mount
   useEffect(() => {
@@ -42,7 +44,7 @@ export const ShipmentProvider = ({ children }) => {
   const value = {
     loading,
     error,
-    outboundData,
+    shipmentData,
     fetchData,
     exportShipmentApi
   };

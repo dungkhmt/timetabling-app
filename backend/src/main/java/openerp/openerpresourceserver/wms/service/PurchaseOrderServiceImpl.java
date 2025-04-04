@@ -6,7 +6,6 @@ import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
-import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.CreatePurchaseOrderReq;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderDetailRes;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderListRes;
@@ -83,7 +82,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         var pageReq = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdStamp"));
         var specification = new PurchaseOrderSpecification(filters);
         var purchaseOrders = orderHeaderRepo.findAll(specification, pageReq);
-        var purchaseOrderListRes = purchaseOrders.getContent().stream()
+        List<PurchaseOrderListRes> purchaseOrderListRes = purchaseOrders.getContent().stream()
                 .map(purchaseOrder -> {
                     var orderListRes = objectMapper.convertToDto(purchaseOrder, PurchaseOrderListRes.class);
                     orderListRes.setSupplierName(purchaseOrder.getFromSupplier().getName());

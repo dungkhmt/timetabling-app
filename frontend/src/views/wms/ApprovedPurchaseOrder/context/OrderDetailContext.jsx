@@ -2,28 +2,27 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWms2Data } from 'services/useWms2Data';
 import { toast } from 'react-toastify';
-import { create } from '@mui/material/styles/createTransitions';
 
 // Tạo context
 const ApprovedOrderDetailContext = createContext();
 
 export const ApprovedOrderDetailProvider = ({ children }) => {
   const { id } = useParams();
-  const { getOutBoundsOrder, getMoreInventoryItems, createOutBoundOrder  } = useWms2Data();
+  const { getInBoundsOrder, getMoreInventoryItems, createInBoundOrder  } = useWms2Data();
   
-  const getOutBoundsOrderApi = async (id, page, limit) => {
+  const getInBoundsOrderApi = async (id, page, limit) => {
     try {
-      const res = await getOutBoundsOrder(id, page, limit);
+      const res = await getInBoundsOrder(id, page, limit);
       if ( !res || res.code !== 200) {
-        toast.error("Lỗi khi tải thông tin phiếu xuất : " + res?.message);
+        toast.error("Lỗi khi tải thông tin phiếu nhập : " + res?.message);
         return;
       }
 
       return res.data;
 
     } catch (error) {
-      console.error("Error fetching outbound order: ", error);
-      toast.error("Không thể tải thông tin phiếu xuất");
+      console.error("Error fetching inbound order: ", error);
+      toast.error("Không thể tải thông tin phiếu nhập");
     }
   };
 
@@ -38,9 +37,9 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
     }
   }
 
-  const createOutBoundOrderApi = async (data) => {
+  const createInBoundOrderApi = async (data) => {
     try {
-      const res = await createOutBoundOrder(data);
+      const res = await createInBoundOrder(data);
       if(res && res.code === 201)
         toast.success("Tạo đơn hàng xuất kho thành công!");
     } catch (error) {
@@ -51,9 +50,8 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
   }
 
   const value = {
-    getOutBoundsOrderApi,
-    createOutBoundOrder,
-    createOutBoundOrderApi,
+    getInBoundsOrderApi,
+    createInBoundOrderApi,
     getMoreInventoryItemsApi,
     // loading,
   };

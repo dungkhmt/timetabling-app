@@ -49,7 +49,7 @@ export const wms2Service = {
     return request("post", "/shipment/outbound/create", null, null, data);
   }, 
   getOutBoundDetail: (shipmentId) => {
-    return request("get", `/shipment/${shipmentId}`);
+    return request("get", `shipment/outbound/${shipmentId}`);
   },
   exportShipment: (shipmentId) => {
     return request("put", `/invoice/export/${shipmentId}` , null, null, null);
@@ -74,4 +74,13 @@ export const wms2Service = {
     approvePurchaseOrder: (orderId) => {
         return request("put", `/purchase-order/approve/${orderId}`);
     },
+  getInBoundsOrder : (orderId, page, limit) => {
+    return request("get", `/shipment/inbound/order/${orderId}?page=${page}&limit=${limit}`);
+  },
+    createInBoundOrder : (data) => {
+        return request("post", "/shipment/inbound/create", null, null, data);
+    },
+    getInBoundDetail: (shipmentId) => {
+        return request("get", `shipment/inbound/${shipmentId}`);
+    }
 };

@@ -8,13 +8,13 @@ import {
   Stack,
 } from "@mui/material";
 import { useParams } from "react-router-dom";
-import OutBoundDetailInfo from "./OutBoundDetailInfo";
-import OutBoundDetailProducts from "./OutBoundDetailProducts";
-import OutBoundDetailActions from "./OutBoundDetailActions";
+import InBoundDetailInfo from "./InBoundDetailInfo";
+import InBoundDetailProducts from "./InBoundDetailProducts";
+import InBoundDetailActions from "./InBoundDetailActions";
 import { ShipmentProvider, useShipment } from "../../common/context/ShipmentContext";
 import {SHIPMENT_TYPE_ID} from "../../common/constants/constants";
 
-const OutBoundDetailContent = () => {
+const InBoundDetailContent = () => {
   const { shipmentId } = useParams(); // Lấy ID từ URL
   const { shipmentData, loading, error, fetchData } = useShipment();
   console.log(shipmentData);
@@ -46,7 +46,7 @@ const OutBoundDetailContent = () => {
   if (!shipmentData) {
     return (
       <Alert severity="info" sx={{ mb: 2 }}>
-        Không tìm thấy thông tin phiếu xuất
+        Không tìm thấy thông tin phiếu nhập
       </Alert>
     );
   }
@@ -59,11 +59,11 @@ const OutBoundDetailContent = () => {
         mb={2}
       >
         <Typography variant="h5" fontWeight="bold" gutterBottom>
-          Thông tin chi tiết phiếu xuất: {shipmentData.id}
+          Thông tin chi tiết phiếu nhập: {shipmentData.id}
         </Typography>
 
         {/* Các nút hành động */}
-        <OutBoundDetailActions
+        <InBoundDetailActions
           shipmentId={shipmentData.id}
           status={shipmentData.statusId}
           onActionComplete={() => {
@@ -74,11 +74,11 @@ const OutBoundDetailContent = () => {
 
       <Divider sx={{ my: 2 }} />
 
-      {/* Thông tin chi tiết phiếu xuất */}
-      <OutBoundDetailInfo data={shipmentData} />
+      {/* Thông tin chi tiết phiếu nhập */}
+      <InBoundDetailInfo data={shipmentData} />
 
       {/* Danh sách sản phẩm */}
-      <OutBoundDetailProducts products={shipmentData.products} />
+      <InBoundDetailProducts products={shipmentData.products} />
 
       {/* Hiển thị thông báo khi đang thực hiện hành động */}
       {loading && (
@@ -90,11 +90,11 @@ const OutBoundDetailContent = () => {
   );
 };
 
-const OutBoundDetail = () => {
+const InBoundDetail = () => {
   return (
-    <ShipmentProvider shipmentType={SHIPMENT_TYPE_ID.OUTBOUND}>
-      <OutBoundDetailContent />
+    <ShipmentProvider shipmentType={SHIPMENT_TYPE_ID.INBOUND}>
+      <InBoundDetailContent />
     </ShipmentProvider>
   );
 };
-export default memo(OutBoundDetail);
+export default memo(InBoundDetail);

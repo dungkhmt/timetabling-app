@@ -3,7 +3,7 @@ import { Stack, Typography, Box, Button, useTheme, useMediaQuery, CircularProgre
 import { CheckOutlined, DeleteOutlined } from "@mui/icons-material";
 import EditIcon from '@mui/icons-material/Edit';
 import PercentIcon from '@mui/icons-material/Percent';
-import { useOrderDetail } from "../context/OrderDetailContext";
+import { useOrderDetail } from "../../common/context/OrderDetailContext";
 import { ORDER_STATUSES } from "views/wms/common/constants/constants";
 
 // Đối tượng mapping các trạng thái
