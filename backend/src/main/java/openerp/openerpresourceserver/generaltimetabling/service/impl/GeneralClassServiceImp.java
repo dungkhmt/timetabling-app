@@ -21,10 +21,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.ClusterClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
@@ -514,7 +511,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Override
     public List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule) {
         synchronizeCourses();
-        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule);
+        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
 
         for(TimeTablingConfigParams p: params){
@@ -528,6 +525,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
         //List<GeneralClass> foundClasses = gcoRepo.findAllBySemester(semester);
         List<GeneralClass> foundClasses = gcoRepo.findAllByIdIn(classIds);
+        log.info("autoScheduleTimeSlotRoom, nb general classes = " + foundClasses.size());
         List<GeneralClass> allClassesOfSemester = gcoRepo.findAllBySemester(semester);
         List<Long> ids = allClassesOfSemester.stream().map(gc -> gc.getId()).toList();
         //List<GeneralClass> autoScheduleClasses = V2ClassScheduler.autoScheduleTimeSlot(foundClasses, timeLimit);
@@ -572,7 +570,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         //roomOccupationRepo.saveAll(newRoomOccupations);
         for(RoomOccupation ro: newRoomOccupations){
             ro = roomOccupationRepo.save(ro);
-            //log.info("autoScheduleTimeSlotRoom, saved a new room occupation id = " + ro.getId());
+            //log.info("autoScheduleTimeSlotRoom, saved a new room occupation id = " + ro.getId() + ", room " + ro.getClassRoom() + " semester " + ro.getSemester());
         }
         //gcoRepo.saveAll(updatedClasses);
 
@@ -967,7 +965,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
             if(PLT != null && PLT.size() > 0){
                 List<Integer> seqSlots = PLT.get(idx);
                 // create a.size class-segment for class gc
-                if(seqSlots.size() > 1){
+                //
+                if(seqSlots.size() >= 1){
                     createClassSegment(gc,seqSlots);
                 }
                 idx += 1;
@@ -979,7 +978,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
             if(PBT != null && PBT.size() > 0){
                 List<Integer> seqSlots = PBT.get(idx);
                 // create a.size class-segment for class gc
-                if(seqSlots.size() > 1){
+                //if(seqSlots.size() > 1){
+                if(seqSlots.size() >= 1){
                     createClassSegment(gc,seqSlots);
                 }
                 idx += 1;
@@ -991,7 +991,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
             if(PLTBT != null && PLTBT.size() > 0){
                 List<Integer> seqSlots = PLTBT.get(idx);
                 // create a.size class-segment for class gc
-                if(seqSlots.size() > 1){
+                //if(seqSlots.size() > 1){
+                if(seqSlots.size() >= 1){
                     createClassSegment(gc,seqSlots);
                 }
                 idx += 1;
@@ -999,19 +1000,34 @@ public class GeneralClassServiceImp implements GeneralClassService {
             }
         }
     }
+
+
     @Transactional
     @Override
     public List<RoomReservation> createClassSegment(ModelInputCreateClassSegment I) {
-        List<GeneralClass> cls = gcoRepo.findAllBySemester(I.getSemester());
-        ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
 
+        //List<GeneralClass> cls = gcoRepo.findAllBySemester(I.getSemester()); NOT work WHY?
+        List<GeneralClass> allcls = gcoRepo.findAll();
+        List<GeneralClass> cls = new ArrayList<>();
+        log.info("createClassSegmen allcls = " + allcls.size());
+        for(GeneralClass gc: allcls){
+            if(gc.getSemester().equals(I.getSemester()))
+                cls.add(gc);
+        }
+
+        ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
+
+        log.info("createClassSegment, semester = " + I.getSemester() + " number classes = " + cls.size()
+        + " number courses = " + courses.size());
+
         Map<String, List<GeneralClass>> mCourseCode2Class = new HashMap<>();
         for(GeneralClass gc: cls){
             String courseCode = gc.getModuleCode();
             if(mCourseCode2Class.get(courseCode)==null)
                 mCourseCode2Class.put(courseCode,new ArrayList<>());
             mCourseCode2Class.get(courseCode).add(gc);
+            log.info("createClassSegment -> mCourseCode2Class.get(" + courseCode + ").add(gc.id " + gc.getId() + " gc.code " + gc.getClassCode()+ ")");
         }
         Map<String, List<List<Integer>>> mCourseCodeLT2Partitions = new HashMap<>();
         Map<String, List<List<Integer>>> mCourseCodeBT2Partitions = new HashMap<>();
@@ -1194,5 +1210,25 @@ public class GeneralClassServiceImp implements GeneralClassService {
         }
         return null;
 
+    }
+
+    @Transactional
+    @Override
+    public int removeClassSegment(ModelInputCreateClassSegment I) {
+        int cnt = 0;
+        List<GeneralClass> cls = gcoRepo.findAllBySemester(I.getSemester());
+        log.info("removeClassSegment, number of classes = " + cls.size());
+        for(GeneralClass gc: cls) {
+            List<RoomReservation> rr = roomReservationRepo.findAllByGeneralClass(gc);
+            log.info("removeClassSegment, gc.id = " + gc.getId() + " has " + rr.size() + " class-segments");
+            for(RoomReservation r: rr) {
+                //roomReservationRepo.delete(r);
+                roomReservationRepo.deleteById(r.getId());
+                log.info("removeClassSegment, gc.id = " + gc.getId() + " has " + rr.size()
+                        + " class-segments -> " + r.getId());
+                cnt++;
+            }
+        }
+        return cnt;
     }
 }

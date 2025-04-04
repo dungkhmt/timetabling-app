@@ -33,7 +33,10 @@ public interface GeneralClassRepository extends JpaRepository<GeneralClass, Long
     @Query("SELECT gc FROM GeneralClass gc WHERE gc.classCode IN :parentClassIds AND gc.parentClassId IS NULL")
     List<GeneralClass> findSubClassesByParentClassIds(@Param("parentClassIds") List<String> parentClassIds);
 
-    List<GeneralClass> findAllBySemester(String semester);
+    @Query(value = "SELECT gc.* FROM public.timetabling_general_classes gc " +
+               "WHERE gc.semester = :semester",
+            nativeQuery = true)
+    List<GeneralClass> findAllBySemester(@Param("semester")String semester);
 
     List<GeneralClass> findAllBySemesterAndGroupName(String semester, String groupName);
 

@@ -57,6 +57,25 @@ const GeneralUploadScreen = () => {
       body
     );
   }
+  function handleRemoveSegment(){
+    let body = {
+      semester: selectedSemester.semester
+    };
+
+    request(
+      "post",
+      "/general-classes/remove-class-segments",
+      (res) => {
+        console.log('create class-segments returned ',res.data);
+      },
+      {
+        onError: (e) => {
+          
+        }
+      },
+      body
+    );
+  }
   function handleComputeClusters(){
     let body = {
       semester: selectedSemester.semester
@@ -196,6 +215,21 @@ const GeneralUploadScreen = () => {
                 
               >
                 Phân cụm
+              </Button>
+              <Button
+                startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                sx={{ 
+                  width: 220,
+                  textTransform: 'none',
+                  fontSize: '16px'
+                }}
+                disabled={isDeletingBySemester || !selectedSemester}
+                onClick={handleRemoveSegment}
+                variant="contained"
+                color="error"
+                
+              >
+                Xóa ca học
               </Button>
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}

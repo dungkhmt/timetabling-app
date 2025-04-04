@@ -54,7 +54,7 @@ public class ClassSegmentsSlotsMatchingChecker {
         for(ClassSegment cs: L) msg = msg + cs.getDuration() + ",";
         String msgSlot = "";
         for(int i: slots) msgSlot = msgSlot + i + ",";
-        log.info("check, n = " + n + " class-segment msg = " + msg + " slots msg = " + msgSlot);
+        //log.info("check, n = " + n + " class-segment msg = " + msg + " slots msg = " + msgSlot);
 
         this.L = L; this.slots = slots;
         found = false;
@@ -63,7 +63,7 @@ public class ClassSegmentsSlotsMatchingChecker {
         sol = new int[n];
         for(int v = 0; v < n; v++) visited[v] = false;
         tryVal(0);
-        log.info("check, class-segment msg = " + msg + " slots msg = " + msgSlot + " result = " + found);
+        //log.info("check, class-segment msg = " + msg + " slots msg = " + msgSlot + " result = " + found);
         return found;
     }
     public int[] getSolution(){

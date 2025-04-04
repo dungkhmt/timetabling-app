@@ -342,17 +342,23 @@ public class ExcelService {
     @Transactional
     //public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass, String groupName) {
     public List<PlanGeneralClass> savePlanClasses(MultipartFile file, String semester, boolean createClass, Long groupId) {
-
+        log.info("savePlanClasses... START");
         try {
             //planGeneralClassRepository.deleteAllBySemester(semester);
             List<PlanGeneralClass> planClasses = PlanGeneralClassExcelHelper
                     .convertExcelToPlanGeneralClasses(file.getInputStream(), semester);
+            log.info("savePlanClasses, extract from excel GOT " + planClasses.size() + " items");
             //return planGeneralClassRepository.saveAll(planClasses);
+            for(PlanGeneralClass pl: planClasses) pl.setGroupId(groupId);
             planGeneralClassRepository.saveAll(planClasses);
+            log.info("savePlanClasse planCLasses CREATED!");
+
+            createClass = false;
             if(createClass){
                 
                 // create classes from planClasses
                 for(PlanGeneralClass p: planClasses) {
+                    log.info("savePlanClasses, start to create class for plan " + p.getModuleCode() + " nbClasses = " + p.getNumberOfClasses());
                     for(int i = 1;i <= p.getNumberOfClasses();i++) {
                         MakeGeneralClassRequest req = new MakeGeneralClassRequest();
                         req.setId(p.getId());

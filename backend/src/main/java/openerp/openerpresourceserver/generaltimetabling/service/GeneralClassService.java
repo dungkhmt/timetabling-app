@@ -60,4 +60,7 @@ public interface GeneralClassService {
     List<GeneralClassDto> getGeneralClassByCluster(Long clusterId);
 
     List<RoomReservation> createClassSegment(ModelInputCreateClassSegment I);
+
+    int removeClassSegment(ModelInputCreateClassSegment I);
+
 }

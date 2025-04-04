@@ -47,8 +47,8 @@ public class PlanGeneralClassController {
     @PostMapping("/make-class")
     public ResponseEntity<?> requestMakeClass(@RequestBody MakeGeneralClassRequest request
     ) {
-    //        return ResponseEntity.ok(planClassService.makeClass(request));
-    return null;
+            //return ResponseEntity.ok(planClassService.makeClass(request));
+            return null;
     }
 
     @PostMapping("/make-subclass")
@@ -63,7 +63,7 @@ public class PlanGeneralClassController {
     }
     @PostMapping("/generate-class-segment-from-classes")
     public ResponseEntity<?> generateClassSegmentFromClass(Principal principal, @RequestBody ModelInputGenerateClassSegmentFromClass I){
-        int cnt = planClassService.generateClassSegmentFromClass(I);
+        int cnt = 0;//planClassService.generateClassSegmentFromClass(I);
         return ResponseEntity.ok().body(cnt);
     }
     @PostMapping("/generate-classes-from-plan")

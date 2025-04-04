@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
@@ -21,6 +22,7 @@ import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
+import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,9 @@ public class GeneralClassController {
     private ExcelService excelService;
     private ClassGroupService classGroupService;
     private ClusterRepo clusterRepo;
+
+    private TimeTablingClassService timeTablingClassService;
+
     @ExceptionHandler(ConflictScheduleException.class)
     public ResponseEntity resolveScheduleConflict(ConflictScheduleException e) {
         return ResponseEntity.status(410).body(e.getCustomMessage());
@@ -69,6 +74,7 @@ public class GeneralClassController {
         return ResponseEntity.status(410).body("Mã lớp hoặc mã lớp tạm thời, mã lớp cha không phải là 1 số!");
     }
 
+    /*
     @GetMapping("/")
     public List<GeneralClassDto> requestGetClasses(
             @RequestParam("semester") String semester,
@@ -76,6 +82,15 @@ public class GeneralClassController {
         return gService.getGeneralClassDtos(semester, groupId);
     }
 
+     */
+    @GetMapping("/")
+    public List<ModelResponseTimeTablingClass> requestGetClasses(
+            @RequestParam("semester") String semester,
+            @RequestParam(value = "groupName", required = false) Long groupId) {
+        //return gService.getGeneralClassDtos(semester, groupId);
+        log.info("requestGetClasses, group = " + groupId + " semester = " + semester);
+        return timeTablingClassService.getTimeTablingClassDtos(semester,groupId);
+    }
 
     @GetMapping("/get-by-parent-class")
     public List<GeneralClassDto> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
@@ -254,9 +269,16 @@ public class GeneralClassController {
         return ResponseEntity.ok(clusters);
     }
 
+    @PostMapping("/remove-class-segments")
+    public ResponseEntity<?> removeClassSegments(Principal principal, @RequestBody ModelInputCreateClassSegment I){
+        int res = gService.removeClassSegment(I);
+        res = timeTablingClassService.removeClassSegment(I);
+        return ResponseEntity.ok().body(res);
+    }
     @PostMapping("/create-class-segments")
     public ResponseEntity<?> createClassSegments(Principal principal, @RequestBody ModelInputCreateClassSegment I){
         List<RoomReservation> res = gService.createClassSegment(I);
+        timeTablingClassService.createClassSegment(I);
         return ResponseEntity.ok().body(res);
     }
 }

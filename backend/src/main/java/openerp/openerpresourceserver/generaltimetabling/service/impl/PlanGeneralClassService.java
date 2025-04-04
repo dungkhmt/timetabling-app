@@ -19,6 +19,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ public class PlanGeneralClassService {
     private PlanGeneralClassRepository planGeneralClassRepository;
     private AcademicWeekRepo academicWeekRepo;
     private ClassGroupRepo classGroupRepo;
+
+    @Autowired
+    private TimeTablingClassRepo timeTablingClassRepo;
 
     @Autowired
     private RoomReservationRepo roomReservationRepo;
@@ -64,6 +68,7 @@ public class PlanGeneralClassService {
         //Long groupId = groups.get(0).getId();
         //Long groupId = gr.getId();
 
+        /*
         GeneralClass newClass = new GeneralClass();
 
         newClass.setRefClassId(request.getId());
@@ -114,6 +119,58 @@ public class PlanGeneralClassService {
         generalClassRepository.save(newClass);
         ClassGroup classGroup = new ClassGroup(newClass.getId(),groupId);
         classGroupRepo.save(classGroup);
+        */
+
+        // make class in new table timetabling_class
+        TimeTablingClass cls = new TimeTablingClass();
+
+        cls.setRefClassId(request.getId());
+        cls.setSemester(request.getSemester());
+        cls.setModuleCode(request.getModuleCode());
+        cls.setModuleName(request.getModuleName());
+        cls.setMass(request.getMass());
+        cls.setGroupName(groupName);
+        cls.setCrew(request.getCrew());
+        //newClass.setQuantityMax(request.getQuantityMax());
+        if(request.getLectureExerciseMaxQuantity()!=null)
+            cls.setQuantityMax(request.getLectureExerciseMaxQuantity());
+        if(request.getLectureMaxQuantity()!=null)
+            cls.setQuantityMax(request.getLectureMaxQuantity());
+        if(request.getExerciseMaxQuantity()!=null)
+            cls.setQuantityMax(request.getExerciseMaxQuantity());
+        cls.setLearningWeeks(request.getLearningWeeks());
+        cls.setDuration(request.getDuration());
+        if (request.getClassType() != null && !request.getClassType().isEmpty()) {
+            cls.setClassType(request.getClassType());
+        } else {
+            cls.setClassType("LT+BT");
+        }
+
+
+        if(request.getWeekType().equals("Chẵn")) {
+            List<Integer> weekIntList = LearningWeekExtractor.extractArray(request.getLearningWeeks()).stream().filter(num->num%2==0).toList();
+            String weekListString = weekIntList.stream().map(num -> num + "-" + num)
+                    .collect(Collectors.joining(","));
+            cls.setLearningWeeks(weekListString);
+        } else if(request.getWeekType().equals("Lẻ")) {
+            List<Integer> weekIntList = LearningWeekExtractor.extractArray(request.getLearningWeeks()).stream().filter(num->num%2!=0).toList();
+            String weekListString = weekIntList.stream().map(num -> num + "-" + num)
+                    .collect(Collectors.joining(","));
+            cls.setLearningWeeks(weekListString);
+        } else if(request.getWeekType().equals("Chẵn+Lẻ")) {
+            cls.setLearningWeeks(request.getLearningWeeks());
+        }
+
+        Long clsId = timeTablingClassRepo.getNextReferenceValue();//planGeneralClassRepository.getNextReferenceValue();
+        //newClass.setParentClassId(nextId);
+        cls.setClassCode(clsId.toString());
+        cls.setId(clsId);
+
+        timeTablingClassRepo.save(cls);
+        ClassGroup clsGroup = new ClassGroup(cls.getId(),groupId);
+        classGroupRepo.save(clsGroup);
+        log.info("makeClass -> SAVE classId " + cls.getId());
+
     }
 
     @Transactional
@@ -214,6 +271,7 @@ public class PlanGeneralClassService {
         return classes.size();
     }
     public List<GeneralClass> generateClassesFromPlan(ModelInputGenerateClassesFromPlan I){
+        /*
         List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
         for(GeneralClass gc: classes){
             log.info("generateClassesFromPlan, consider class " + gc.getId() + "/" + classes.size());
@@ -228,35 +286,48 @@ public class PlanGeneralClassService {
             //gc.setTimeSlots(rrs);
             //gc = generalClassRepository.save(gc);
         }
-        /*
-        List<PlanGeneralClass> plan = planGeneralClassRepository.findAllBySemester(I.getSemester());
-        List<GeneralClass> classes = new ArrayList<>();
-        for(PlanGeneralClass pl: plan){
-            for(int i = 1; i <= pl.getNumberOfClasses();i++) {
-                MakeGeneralClassRequest r = new MakeGeneralClassRequest();
-                r.setNbClasses(pl.getNumberOfClasses());
-                r.setWeekType(pl.getWeekType());
-                r.setId(pl.getId());
-                r.setProgramName(pl.getProgramName());
-                r.setCrew(pl.getCrew());
-                r.setWeekType(pl.getWeekType());
-                r.setLectureExerciseMaxQuantity(pl.getLectureExerciseMaxQuantity());
-                r.setLectureMaxQuantity(pl.getLectureMaxQuantity());
-                r.setExerciseMaxQuantity(pl.getExerciseMaxQuantity());
-                r.setModuleName(pl.getModuleName());
-                r.setSemester(pl.getSemester());
-                r.setLearningWeeks(pl.getLearningWeeks());
-                r.setModuleCode(pl.getModuleCode());
-                r.setModuleName(pl.getModuleName());
-                r.setDuration(pl.getDuration());
-                r.setQuantityMax(pl.getQuantityMax());
-                r.setMass(pl.getMass());
-
-            }
-
-        }
 
          */
+
+        List<PlanGeneralClass> plan = planGeneralClassRepository.findAllBySemester(I.getSemester());
+        log.info("generateClassesFromPlan, number of plan courses = " + plan.size());
+        List<GeneralClass> classes = new ArrayList<>();
+        for(PlanGeneralClass pl: plan){
+            //Group g = groupRepo.findByGroupName(pl.getProgramName()).orElse(null);
+            //Long groupId = null;
+            //if(g != null) {
+            //    groupId = g.getId();
+            //}
+            log.info("generateClassesFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
+
+                for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
+                    MakeGeneralClassRequest r = new MakeGeneralClassRequest();
+                    r.setNbClasses(pl.getNumberOfClasses());
+                    r.setWeekType(pl.getWeekType());
+                    r.setId(pl.getId());
+                    r.setProgramName(pl.getProgramName());
+                    r.setCrew(pl.getCrew());
+                    r.setWeekType(pl.getWeekType());
+                    r.setLectureExerciseMaxQuantity(pl.getLectureExerciseMaxQuantity());
+                    r.setLectureMaxQuantity(pl.getLectureMaxQuantity());
+                    r.setExerciseMaxQuantity(pl.getExerciseMaxQuantity());
+                    r.setModuleName(pl.getModuleName());
+                    r.setSemester(pl.getSemester());
+                    r.setLearningWeeks(pl.getLearningWeeks());
+                    r.setModuleCode(pl.getModuleCode());
+                    r.setModuleName(pl.getModuleName());
+                    r.setDuration(pl.getDuration());
+                    r.setQuantityMax(pl.getQuantityMax());
+                    r.setMass(pl.getMass());
+
+                    makeClass(r, pl.getGroupId());
+                }
+            //}else{
+            //    log.info("generateClassesFromPlan, cannot find group from name " + pl.getProgramName());
+            //}
+        }
+
+
         return classes;
     }
 

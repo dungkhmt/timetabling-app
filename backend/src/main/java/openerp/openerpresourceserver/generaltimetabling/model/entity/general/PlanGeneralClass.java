@@ -34,6 +34,7 @@ public class PlanGeneralClass {
     private int duration;
     private Date createdStamp;
     private String promotion;
+    private Long groupId;
     public void setLearningWeeks(String learningWeeks) {
         if (learningWeeks != null) {
             List<String> weekStringList = List.of(learningWeeks.split(","));

@@ -20,5 +20,7 @@ public interface ClassGroupRepo extends JpaRepository<ClassGroup, ClassGroupId> 
 
     List<ClassGroup> findAllByGroupId(Long groupId);
 
+
+
     Optional<ClassGroup> findByClassIdAndGroupId(Long classId, Long groupId);
 }

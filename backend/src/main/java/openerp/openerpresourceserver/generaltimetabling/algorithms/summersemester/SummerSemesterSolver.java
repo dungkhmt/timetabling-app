@@ -2,16 +2,16 @@ package openerp.openerpresourceserver.generaltimetabling.algorithms.summersemest
 
 import io.swagger.models.auth.In;
 import lombok.extern.log4j.Log4j2;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 
 import java.util.*;
 @Log4j2
 public class SummerSemesterSolver implements Solver {
     MapDataScheduleTimeSlotRoom I;
+    MapDataScheduleTimeSlotRoomWrapper W;
     Map<Integer, Integer> solutionSlot;
     //int[] solutionRoom; // solutionRoom[i] is the room assigned to class-segment i
     Map<Integer, Integer> solutionRoom;
@@ -27,13 +27,34 @@ public class SummerSemesterSolver implements Solver {
     boolean foundSolution;
     int timeLimit;
 
-    public SummerSemesterSolver(MapDataScheduleTimeSlotRoom I){
-        this.I = I;
+    public SummerSemesterSolver(MapDataScheduleTimeSlotRoomWrapper W){
+        this.I = W.data; this.W = W;
+
+    }
+    public void printRoomsUsed(){
+        Set<Classroom> R = new HashSet<>();
+        for(int id: solutionRoom.keySet()){
+            int r_idx = solutionRoom.get(id);
+            Classroom room = W.mIndex2Room.get(r_idx);
+            log.info("printRoomsUsed, class-segment " + id + " is assigned to room[" + r_idx + "] = " + room.getClassroom() + " has cap " + room.getQuantityMax());
+            R.add(room);
+        }
+        int cnt = 0;
+        for(Classroom r: R) {
+            log.info("printRoomsUsed, room " + r.getClassroom() + " cap " + r.getQuantityMax());
+            if (r.getQuantityMax() >= 150) {
+                cnt++;
+                log.info("printRoomsUsed, room " + r.getClassroom() + " cap " + r.getQuantityMax() + " >= 150 cnt = " + cnt);
+
+            }
+        }
     }
     private void assignTimeSlotRoom(ClassSegment cs, int timeSlot, int room){
         //solutionSlot[csi] = timeSlot;
         //solutionRoom[csi] = room;
-
+        if(solutionRoom.get(cs.getId())!=null){
+            log.info("assignTimeSlotRoom, BUG??? class-segment " + cs.getId() + " was assign to room " + room);
+        }
         solutionSlot.put(cs.getId(),timeSlot);
         solutionRoom.put(cs.getId(),room);
         // update room occupation
@@ -41,7 +62,7 @@ public class SummerSemesterSolver implements Solver {
         String os = "";
         for(int r: I.getRoomOccupations()[room]) os = os + r + ",";
         //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room + " occupied by slots " + os);
-
+        log.info("assignTimeSlotRoom[" + cs.getId() + "] room used index = " + room + " name = " + W.mIndex2Room.get(room).getClassroom() + " capacity " + W.mIndex2Room.get(room).getQuantityMax());
         for(int s = 0; s <= cs.getDuration()-1; s++){
             int sl = timeSlot + s;
             I.getRoomOccupations()[room].add(sl);
@@ -49,7 +70,22 @@ public class SummerSemesterSolver implements Solver {
             //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room
             // + " roomOccupation[" + room + "].add(" + sl + ") -> " + os);
         }
+        //printRoomsUsed();
         foundSolution = true;
+    }
+    public void printSlotOccupationOfRoom(ClassSegment csi, int timeSlot, int room){
+        //printRoomsUsed();
+        String msg = "";
+        for(int s: I.getRoomOccupations()[room]){
+            for(int j = 0; j < csi.getDuration(); j++) {
+                int sl = timeSlot + j;// check all time-slot of the duration
+                if (s == sl) {
+                    log.info("checkTimeSlotRoom(" + csi.getId() + ", duration " + csi.getDuration() + " timeSlot " + timeSlot + ", room = " + room + ")" +
+                                " --> return false as slot " + s + " occupied");
+                    return;
+                }
+            }
+        }
     }
     private boolean checkTimeSlotRoom(ClassSegment csi, int timeSlot, int room){
         int DEBUG_ID = 29;
@@ -609,6 +645,21 @@ public class SummerSemesterSolver implements Solver {
         }
         for(ClassSegment cs: scheduled) L.remove(cs);
     }
+    private String getClassLTBTInfo(Long id, Map<Long, List<Long>> mClassId2ChildrenIds, Map<Long, List<ClassSegment>> mClassId2ClassSegment){
+        List<ClassSegment> cls = mClassId2ClassSegment.get(id);
+        String s = "LT classId " + id + ": ";
+        for(ClassSegment cs: cls) {
+            s = s + "[" + cs.getCourseCode() + ", " + cs.getDuration() + "], ";
+        }
+        s = s + " children: ";
+        for(Long idi: mClassId2ChildrenIds.get(id)){
+            s = s + "BT classId " + idi + ": ";
+            for(ClassSegment csi: mClassId2ClassSegment.get(idi)){
+                s = s + "[" + csi.getCourseCode() + ", " + csi.getDuration() + "], ";
+            }
+        }
+        return s;
+    }
     private void scheduleLTandTwoBT(int[][][] C, List<Long> ids, Map<Long, List<Long>> mClassId2ChildrenIds, Map<Long,
             List<ClassSegment>> mClassId2ClassSegments, int session){
         /*
@@ -633,6 +684,7 @@ public class SummerSemesterSolver implements Solver {
         int idx = -1;
         Set<Long> scheduled = new HashSet<>();
         for(Long id: ids){
+            log.info("scheduleLTandTwoBT, consider class LT id = " + id + " detail " + getClassLTBTInfo(id,mClassId2ChildrenIds,mClassId2ClassSegments));
             idx++;
             int j = idx%nbInstances;
             int nbLTSegments = C[j][0].length/3;
@@ -647,18 +699,34 @@ public class SummerSemesterSolver implements Solver {
                 int s = new DaySessionSlot(day,session,slot).hash();
                 LTSlots.add(s);
             }
+            boolean LTOK = false;
+            log.info("scheduleLTandTwoBT, consider class LT id = " + id + " domain-rooms.sz = " + LT.get(0).getDomainRooms().size());
             for(int r: LT.get(0).getDomainRooms()){
+                Classroom clr = W.mIndex2Room.get(r);
                 boolean ok = true;
-                for(int k = 0; k < nbLTSegments; k++)
-                    if(!checkTimeSlotRoom(LT.get(k),LTSlots.get(k),r)) ok = false;
+                for(int k = 0; k < nbLTSegments; k++) {
+                    ClassSegment csk = LT.get(k);
+                    if (!checkTimeSlotRoom(csk, LTSlots.get(k), r)) {
+                        //log.info("scheduleLTandTwoBT, checkTimeSlotRoom(" + csk.getClassId() + "," + csk.getCourseCode() +
+                        //        ", duration " + csk.getDuration() + " slot " + LTSlots.get(k) + " room[" +
+                        //                r + "] " + clr.getClassroom() + ", with cap " + clr.getQuantityMax() + " -> FAILED ");
+                        //printSlotOccupationOfRoom(csk, LTSlots.get(k), r);
+                        ok = false;
+                    }
+                }
                 if(ok){
                     for(int k = 0; k < nbLTSegments; k++){
                         assignTimeSlotRoom(LT.get(k),LTSlots.get(k),r);
                         scheduled.add(id);
                     }
+                    LTOK = true;
                     break;
                 }
             }
+            if(!LTOK){
+                log.info("scheduleLTandTwoBT, cannot assign LT id = " + id + ": detail: " + getClassLTBTInfo(id,mClassId2ChildrenIds,mClassId2ClassSegments));
+            }
+
             List<List<ClassSegment>> BTs = new ArrayList<>();
             List<int[]> slots = new ArrayList<>();
             int q = 0;
@@ -684,9 +752,13 @@ public class SummerSemesterSolver implements Solver {
                                 int slot = matcher.mClassSegment2Slot.get(cs);
                                 assignTimeSlotRoom(cs, slot, r);
                             }
+                        }else{
+                            //log.info("scheduleLTandTwoBT, cannot assign BT for " + getClassLTBTInfo(id,mClassId2ChildrenIds,mClassId2ClassSegments));
                         }
                     }
                 }
+            }else{
+                log.info("scheduleLTandTwoBT, matcher.solve FAILED, cannot assign BT for " + getClassLTBTInfo(id,mClassId2ChildrenIds,mClassId2ClassSegments));
             }
 
             /*
@@ -732,7 +804,7 @@ public class SummerSemesterSolver implements Solver {
 
     private void scheduleGroupLTandBT(List<ClassSegment> L, int session){
         for(ClassSegment cs: L){
-            log.info("scheduleGroupLTandBT, cs = course " + cs.getCourseCode() + " classId " + cs.getClassId() + " type " + cs.getType() + " duration " + cs.getDuration());
+            //log.info("scheduleGroupLTandBT, cs = course " + cs.getCourseCode() + " classId " + cs.getClassId() + " type " + cs.getType() + " duration " + cs.getDuration());
         }
 
         Map<Long, List<ClassSegment>> mClassId2ClassSegments = new HashMap<>();
@@ -749,7 +821,7 @@ public class SummerSemesterSolver implements Solver {
                 Long pid = cs.getParentClassId();
                 if(pid != null){
                     mClassId2ParentId.put(id,pid);
-                    log.info("scheduleGroupLTandBT, id = " + id + " has parent pid = " + pid);
+                    //log.info("scheduleGroupLTandBT, id = " + id + " has parent pid = " + pid);
                 }
             }
         }
@@ -758,7 +830,7 @@ public class SummerSemesterSolver implements Solver {
             if(mClassId2ChildrenIds.get(pid)==null)
                 mClassId2ChildrenIds.put(pid,new ArrayList<>());
             mClassId2ChildrenIds.get(pid).add(id);
-            log.info("scheduleGroupLTandBT, add id = " + id + " -> children of " + pid + " size = " + mClassId2ChildrenIds.get(pid).size());
+            //log.info("scheduleGroupLTandBT, add id = " + id + " -> children of " + pid + " size = " + mClassId2ChildrenIds.get(pid).size());
         }
         List<Long> LT45BT2433 = new ArrayList<>();// list of classIds having pattern 4,5
         List<Long> LT33BT2433 = new ArrayList<>();
@@ -770,6 +842,7 @@ public class SummerSemesterSolver implements Solver {
             String pattern = detectPattern(CLS);
             String childrenPattern = detectePatternChildren(mClassId2ChildrenIds.get(id),mClassId2ClassSegments);
 
+            //log.info("scheduleGroupLTandBT, pattern = " + pattern + " childrenPattern = " + childrenPattern);
 
             if(pattern.equals("4,5")){
                 if(childrenPattern.equals("2,4-3,3")) {
@@ -786,10 +859,9 @@ public class SummerSemesterSolver implements Solver {
 
                 }
             }else if(pattern.equals("4")){
-                if(childrenPattern.equals("2")){
+                if(childrenPattern.equals("2-2-2")){
                     LT4BT2.add(id);
                     log.info("scheduleGroupLTandBT, LT4BT2.add(" + id + ")");
-
                 }
             }
         }
@@ -879,7 +951,7 @@ public class SummerSemesterSolver implements Solver {
         log.info("scheduleGroupLTandBT, ends L33BT2433.sz = " + LT33BT2433.size());
 
         log.info("scheduleGroupLTandBT, starts L4BT2.sz = " + LT4BT2.size());
-        scheduleLTandTwoBT(CLT4BT2,LT33BT3,mClassId2ChildrenIds,mClassId2ClassSegments,session);
+        scheduleLTandTwoBT(CLT4BT2,LT4BT2,mClassId2ChildrenIds,mClassId2ClassSegments,session);
         log.info("scheduleGroupLTandBT, ends L4BT2.sz = " + LT4BT2.size());
 
 
@@ -963,11 +1035,12 @@ public class SummerSemesterSolver implements Solver {
     }
     @Override
     public void solve() {
-        log.info("solve...START");
+        log.info("solve...START, nbClassSegments = " + I.getClassSegments().size());
         solutionSlot = new HashMap<>();
         solutionRoom = new HashMap<>();
         Map<Long, List<ClassSegment>> mClassId2ClassSegments= new HashMap<>();
         for(ClassSegment cs: I.getClassSegments()){
+            log.info("solve... cs = " + cs.getClassId() + " course " + cs.getCourseCode() + " type = " + cs.getType() + " duration " + cs.getDuration() + " domain-rooms = " + cs.getDomainRooms().size());
             if(mClassId2ClassSegments.get(cs.getClassId())==null)
                 mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
             mClassId2ClassSegments.get(cs.getClassId()).add(cs);
@@ -992,6 +1065,13 @@ public class SummerSemesterSolver implements Solver {
                 log.info("solver, classId " + id + " ses = " + ses);
                 if(ses == 1) morningClassIds.add(id);
                 else if(ses == 2) afternoonClassIds.add(id);
+                else{
+                    String info = "";
+                    for(ClassSegment cs: CLS) info = info + "["  + cs.getClassId() + " course " + cs.getCourseCode()  + " duration " + cs.getDuration() + "]";
+
+                    log.info("solve, unknown session " + ses + " for class " + id + " detail " + info);
+
+                }
             }
         }
         //String[] CH = {"CH1012","CH1015","CH1018","CH3220","CH3323","CH3224","CH3316","CH3330","CH4780",
@@ -1001,12 +1081,12 @@ public class SummerSemesterSolver implements Solver {
         Set<String> sCH  = new HashSet<>(Arrays.asList(new String[]{"CH1012","CH1015","CH1018","CH3220","CH3323","CH3224","CH3316","CH3330","CH4780",
                 "CH3400","CH3412","CH3420","CH3051","CH3061","CH2020","CH3456","CH4486","CH3452","CH3454",
                 "CH3474","CH2021"}));
-        Set<String> sETEE  = new HashSet<>(Arrays.asList(new String[]{"ET2012","ET2022","ET2031","ET2060","ET2100","ET3262","EE2012","EE2022","EE2023",
-                "EE2000"}));
+        Set<String> sETEE  = new HashSet<>(Arrays.asList(new String[]{"ET2012","ET2022","ET2031","ET2060","ET2100","ET3262",
+                "EE2012","EE2022","EE2021","EE2023", "EE2000"}));
 
         Set<String> sME  = new HashSet<>(Arrays.asList(new String[]{"ME2011","ME2201","ME2020","ME2011","ME2015","ME2040","ME2112","ME2211","ME2101",
                 "ME2202","ME3190","ME3190","ME2102","ME2030","ME2203","ME4159","ME4181","ME2021","ME3123",
-        "ME3124","HE2012","HE2020","TE3602","TE2020","IT2030"}));
+        "ME3124","HE2012","HE2020","TE3602","TE2020","IT2030","ME2140Q"}));
 
         Set<String> sEM  = new HashSet<>(Arrays.asList(new String[]{
             "EM1010","EM1170","EM1180","EM1100","EM3105","EM3004"
@@ -1027,54 +1107,84 @@ public class SummerSemesterSolver implements Solver {
 
 
         log.info("solver, morningids.sz = " + morningClassIds.size() + " afternoonids.sz = " + afternoonClassIds.size());
+        List<ClassSegment>[] CH = new ArrayList[2];
+        List<ClassSegment>[] ETEE = new ArrayList[2];
+        List<ClassSegment>[] ME = new ArrayList[2];
+        List<ClassSegment>[] EM = new ArrayList[2];
+        List<ClassSegment>[] ED = new ArrayList[2];
+        List<ClassSegment>[] MI = new ArrayList[2];
+        List<ClassSegment>[] SSH = new ArrayList[2];
+        for(int session = 0; session <= 1; session++) {
+            CH[session] = new ArrayList<>();
+            ETEE[session] = new ArrayList<>();
+            ME[session] = new ArrayList<>();
+            EM[session] = new ArrayList<>();
+            ED[session] = new ArrayList<>();
+            MI[session] = new ArrayList<>();
+            SSH[session] = new ArrayList<>();
+        }
         for(int session = 0; session <= 1; session++) {
             Set<Long> ids = morningClassIds;
             if(session == 1) ids = afternoonClassIds;
-            List<ClassSegment> CH = new ArrayList<>();
-            List<ClassSegment> ETEE = new ArrayList<>();
-            List<ClassSegment> ME = new ArrayList<>();
-            List<ClassSegment> EM = new ArrayList<>();
-            List<ClassSegment> ED = new ArrayList<>();
-            List<ClassSegment> MI = new ArrayList<>();
-            List<ClassSegment> SSH = new ArrayList<>();
-            for (Long id : ids) {
 
+            for (Long id : ids) {
                 for(ClassSegment cs: mClassId2ClassSegments.get(id)){
                     if(sCH.contains(cs.getCourseCode())){
-                        CH.add(cs);
+                        CH[session].add(cs);
                     }else if(sETEE.contains(cs.getCourseCode())){
-                        ETEE.add(cs);
+                        ETEE[session].add(cs);
                     }else if(sEM.contains(cs.getCourseCode())){
-                        EM.add(cs);
+                        EM[session].add(cs);
                     }else if(sED.contains(cs.getCourseCode())){
-                        ED.add(cs);
+                        ED[session].add(cs);
                     }else if(sME.contains(cs.getCourseCode())){
-                        ME.add(cs);
+                        ME[session].add(cs);
                     }else if(sMI.contains(cs.getCourseCode())){
-                        MI.add(cs);
+                        MI[session].add(cs);
                     }else if(sSSH.contains(cs.getCourseCode())){
-                        SSH.add(cs);
+                        SSH[session].add(cs);
                     }
                 }
-
             }
-            log.info("solve group CH size = " + CH.size());
-            scheduleGroup(CH,session);
-            log.info("solve group ME size = " + ME.size());
-            scheduleGroup(ME,session);
-            log.info("solve group ETEE size = " + ETEE.size());
-            scheduleGroup(ETEE,session);
-            log.info("solve group EM size = " + EM.size());
-            scheduleGroup(EM,session);
-            log.info("solve group ED size = " + ED.size());
-            scheduleGroup(ED,session);
-            log.info("solve group MI size = " + MI.size());
-            scheduleGroupLTandBT(MI,session);
-            log.info("solve group SSH size = " + SSH.size());
-            scheduleGroupLTandBT(SSH,session);
+            log.info("Session " + session + ": nb class-segments = " + I.getClassSegments().size());
+            log.info("Session " + session + ": After partitionning CH = " + CH[session].size() + " ME = " + ME[session].size() + " ETEE = " + ETEE[session].size()
+            + " EM = " + EM[session].size() + " ED = " + ED[session].size() + " MI = " + MI[session].size() + " SSH = " + SSH[session].size() +
+                    " -> SUM = " + (CH[session].size() + ME[session].size() + ETEE[session].size() + EM[session].size() + ED[session].size() + MI[session].size() + SSH[session].size()));
+
+            log.info("solve group CH size = " + CH[session].size());
+            //scheduleGroup(CH,session);
+            log.info("solve group ME size = " + ME[session].size());
+            //scheduleGroup(ME,session);
+            log.info("solve group ETEE size = " + ETEE[session].size());
+            //scheduleGroup(ETEE,session);
+            log.info("solve group EM size = " + EM[session].size());
+            //scheduleGroup(EM,session);
+            log.info("solve group ED size = " + ED[session].size());
+            //scheduleGroup(ED,session);
+            log.info("solve group MI size = " + MI[session].size());
+            //scheduleGroupLTandBT(MI,session);
+            log.info("solve group SSH size = " + SSH[session].size());
+            //scheduleGroupLTandBT(SSH,session);
 
         }
-
+        Set<ClassSegment> CS=new HashSet<>();
+        for(int s = 0; s <= 1; s++){
+            for(ClassSegment cs: CH[s]) CS.add(cs);
+            for(ClassSegment cs: ME[s]) CS.add(cs);
+            for(ClassSegment cs: ETEE[s]) CS.add(cs);
+            for(ClassSegment cs: EM[s]) CS.add(cs);
+            for(ClassSegment cs: ED[s]) CS.add(cs);
+            for(ClassSegment cs: MI[s]) CS.add(cs);
+            for(ClassSegment cs: SSH[s]) CS.add(cs);
+        }
+        for(ClassSegment cs: I.getClassSegments())
+        {
+            if(!CS.contains(cs)){
+                GeneralClass gc = W.mClassSegment2Class.get(cs.getId());
+                log.info("solve: class-segment " + cs.getClassId() + " code " + gc.getClassCode() + ", course " + cs.getCourseCode()  +
+                        " is NOT partitioned, not in any cluster");
+            }
+        }
         /*
         List<ClassSegment> L23M = new ArrayList<>();
         List<ClassSegment> L23A = new ArrayList<>();

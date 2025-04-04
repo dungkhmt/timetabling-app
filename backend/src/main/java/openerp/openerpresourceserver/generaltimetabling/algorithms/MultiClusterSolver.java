@@ -19,14 +19,15 @@ import java.util.Map;
 @Log4j2
 public class MultiClusterSolver implements Solver {
     MapDataScheduleTimeSlotRoom I;
+    MapDataScheduleTimeSlotRoomWrapper D;
     Map<Integer, Integer> solutionSlot;
     Map<Integer, Integer> solutionRoom;
     boolean foundSolution;
     int timeLimit = 10000;// 10 seconds by defalut
     String oneClusterAlgorithm = "";
     Solver oneClusterSolver = null;
-    public MultiClusterSolver(MapDataScheduleTimeSlotRoom I){
-        this.I = I;
+    public MultiClusterSolver(MapDataScheduleTimeSlotRoomWrapper D){
+        this.I = D.data; this.D = D;
     }
 
     public String name(){
@@ -74,12 +75,13 @@ public class MultiClusterSolver implements Solver {
                     I.getRoomOccupations(),
                     C
             );
+            MapDataScheduleTimeSlotRoomWrapper W = new MapDataScheduleTimeSlotRoomWrapper(IC,D.mClassSegment2Class,D.mClassSegment2RoomReservation,D.mIndex2Room);
             if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1))
                 oneClusterSolver = new CourseBasedConnectedClusterGreedySolver(IC);
             else if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS))
                 oneClusterSolver = new CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(IC);
             else if(oneClusterAlgorithm.equals(Constants.SUMMER_SEMESTER)){
-                oneClusterSolver = new SummerSemesterSolver(IC);
+                oneClusterSolver = new SummerSemesterSolver(W);
             }
 
             oneClusterSolver.setTimeLimit(timeLimit);

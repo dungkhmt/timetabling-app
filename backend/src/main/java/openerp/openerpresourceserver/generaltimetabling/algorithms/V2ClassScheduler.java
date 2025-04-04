@@ -68,11 +68,15 @@ public class V2ClassScheduler {
     }
 
     public MapDataScheduleTimeSlotRoomWrapper mapData(List<GeneralClass> classes, List<Classroom> rooms, Map<String, List<RoomReservation>> mId2RoomReservation, List<TimeTablingCourse> ttcourses, List<Group> groups,List<ClassGroup> classGroups){
-            log.info("mapData, number classes = " + classes.size());
+            log.info("mapData, number classes = " + classes.size() + " nb rooms = " + rooms.size());
             Map<Long, GeneralClass> mClassId2Class = new HashMap<>();
+        for(GeneralClass gc: classes){
+            if(gc.getTimeSlots().size() == 0){
+                log.info("mapData, class id = " + gc.getId() + ", code = " + gc.getClassCode() + " course " + gc.getModuleCode() + " does not have class-segments");
+            }
+        }
             for(GeneralClass gc: classes){
                 mClassId2Class.put(gc.getId(),gc);
-
             }
 
             int n = 0;
@@ -160,8 +164,10 @@ public class V2ClassScheduler {
             Map<String, Integer> mRoom2Index = new HashMap<>();
             List<Integer>[] roomOccupation = new List[rooms.size()];
 
+            Map<Integer, Classroom> mIndex2Room = new HashMap<>();
             for(int i = 0; i < rooms.size(); i++) {
                 Long cap = rooms.get(i).getQuantityMax();
+                mIndex2Room.put(i,rooms.get(i));
                 roomCapacity[i] = (int) cap.intValue();
                 mRoom2Index.put(rooms.get(i).getId(),i);
                 roomOccupation[i] = new ArrayList<>();
@@ -177,6 +183,7 @@ public class V2ClassScheduler {
                         for(int s = rr.getStartTime(); s <= rr.getEndTime(); s++) {
                             int slot = Constant.slotPerCrew * 2 * (rr.getWeekday() - 2) + KIP * Constant.slotPerCrew + s;
                             roomOccupation[roomIdx].add(slot);
+                            log.info("mapData, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
                         }
                     }
                 }
@@ -367,6 +374,9 @@ public class V2ClassScheduler {
 
 
                         log.info("mapData, roomPriority[" + idx + "/" + n + "].sz = " + roomPriority[idx].size() + " domain timeSlots.sz = " + D[idx].size());
+                        if(roomPriority[idx].size() == 24){
+                            log.info("mapData, WHY THIS???, course " + gc.getModuleCode() + " SL SV = " + vol[idx]);
+                        }
                         classSegments[idx] = new ClassSegment(idx, type,instanceIndex, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName());
 
                     }
@@ -430,7 +440,7 @@ public class V2ClassScheduler {
         //log.info("mapData, classSegments.length = " + classSegments.length + " listClassSegments.sz = " + listClassSegments.size());
         MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments);
 
-        MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation);
+        MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation,mIndex2Room);
 
         //data.print();
         return DW;
@@ -444,7 +454,7 @@ public class V2ClassScheduler {
                                                        List<ClassGroup> classGroups,
                                                        int timeLimit, String algorithm,
                                                        List<TimeTablingConfigParams> params) {
-        log.info("autoScheduleTimeSlotRoom, START....");
+        log.info("autoScheduleTimeSlotRoom, START.... classes.sz = " + classes.size());
         //for(int i = 0; i < rooms.size(); i++){
         //    log.info("autoScheduleTimeSlotRoom, room[" + i + "] = " + rooms.get(i).getClassroom());
         //}
@@ -499,9 +509,9 @@ public class V2ClassScheduler {
         */
         Solver solver = null;
         if(algorithm.equals(Constants.SUMMER_SEMESTER)){
-            solver = new SummerSemesterSolver((data));
+            solver = new SummerSemesterSolver(D);
         }else {
-            MultiClusterSolver msolver = new MultiClusterSolver(data);
+            MultiClusterSolver msolver = new MultiClusterSolver(D);
             msolver.oneClusterAlgorithm = algorithm;
             solver = msolver;
         }
@@ -570,7 +580,7 @@ public class V2ClassScheduler {
                     //newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
                     roomReservation.setRoom(rooms.get(idxRoom).getClassroom());
                 }
-                //log.info("class[" + i + "] is assigned to slot " + solution[i] + "(" + day + "," + K + "," + tietBD + "), room = " + idxRoom + " - " + newRoomReservation.getRoom());
+                log.info("class[" + i + "] is assigned to slot " + solution.get(cs.getId()) + "(" + day + "," + K + "," + tietBD + "), room = " + idxRoom + " - " + roomReservation.getRoom());
             }
             //roomReservations.forEach(rr -> {
             //    rr.setRoom(rooms.get(solver.getSolution()[roomReservations.indexOf(rr)]).getClassroom());
