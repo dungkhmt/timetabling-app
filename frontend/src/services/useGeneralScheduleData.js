@@ -427,6 +427,7 @@ export const useGeneralSchedule = () => {
         );
         await fetchClasses();
         await fetchClassesNoSchedule();
+        setSelectedRows([]); // Clear selection after successful upload
         toast.success("Upload file thành công!");
         return response;
       } catch (error) {
@@ -453,9 +454,12 @@ export const useGeneralSchedule = () => {
       try {
         await generalScheduleRepository.deleteBySemester(semester);
         await fetchClassesNoSchedule();
+        setSelectedRows([]); // Clear selection after deletion
         toast.success("Xóa danh sách lớp thành công!");
+        return true; // Add a return value to indicate success
       } catch (error) {
         toast.error(error.response?.data || "Xóa danh sách lớp thất bại!");
+        return false; // Add a return value to indicate failure
       } finally {
         setIsDeletingBySemester(false);
       }
@@ -623,8 +627,10 @@ export const useGeneralSchedule = () => {
       await fetchClassesNoSchedule();
       setSelectedRows([]);
       toast.success("Xóa các lớp đã chọn thành công!");
+      return true; // Add a return value to indicate success
     } catch (error) {
       toast.error(error.response?.data || "Có lỗi khi xóa các lớp đã chọn!");
+      return false; // Add a return value to indicate failure
     } finally {
       setIsDeletingByIds(false);
       setLoading(false);

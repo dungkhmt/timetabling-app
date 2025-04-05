@@ -66,9 +66,15 @@ const GeneralScheduleScreen = () => {
     filterClassesByCluster();
   }, [selectedCluster, states.classes]);
 
-  const handleConfirmReset = () => {
-    handlers.handleResetTimeTabling();
+  const handleConfirmReset = async () => {
+    await handlers.handleResetTimeTabling();
     setOpenResetConfirm(false);
+    setters.setSelectedRows([]);
+  };
+
+  const handleAutoScheduleSelectedWithClear = async () => {
+    await handlers.handleAutoScheduleSelected();
+    setters.setSelectedRows([]);
   };
 
   const isSchedulingInProgress =
@@ -415,7 +421,7 @@ const GeneralScheduleScreen = () => {
           closeDialog={() => setters.setOpenSelectedDialog(false)}
           timeLimit={states.selectedTimeLimit}
           setTimeLimit={setters.setSelectedTimeLimit}
-          submit={handlers.handleAutoScheduleSelected} // Already includes maxDaySchedule
+          submit={handleAutoScheduleSelectedWithClear} // Use our wrapper function
           selectedAlgorithm={states.selectedAlgorithm}
           maxDaySchedule={states.maxDaySchedule} // Pass maxDaySchedule to the dialog
         />

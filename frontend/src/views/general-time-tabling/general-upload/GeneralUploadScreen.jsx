@@ -7,7 +7,7 @@ import { Button } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import GeneralUploadTable from "./components/GeneralUploadTable";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
-import { request } from "../../../api";
+import { request } from "api";
 const GeneralUploadScreen = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -48,10 +48,13 @@ const GeneralUploadScreen = () => {
       "/general-classes/create-class-segments",
       (res) => {
         console.log('create class-segments returned ',res.data);
+        setSelectedIds([]);
+        setSelectedRows([]);
       },
       {
         onError: (e) => {
-          
+          setSelectedIds([]);
+          setSelectedRows([]);
         }
       },
       body
@@ -67,10 +70,15 @@ const GeneralUploadScreen = () => {
       "/general-classes/remove-class-segments",
       (res) => {
         console.log('create class-segments returned ',res.data);
+        // Clear selection after operation completes
+        setSelectedIds([]);
+        setSelectedRows([]);
       },
       {
         onError: (e) => {
-          
+          // Still clear selection even if there's an error
+          setSelectedIds([]);
+          setSelectedRows([]);
         }
       },
       body
@@ -86,10 +94,14 @@ const GeneralUploadScreen = () => {
       "/general-classes/compute-class-cluster",
       (res) => {
         console.log('compute cluster returned ',res.data);
+        // Clear selection after operation completes
+        setSelectedIds([]);
+        setSelectedRows([]);
       },
       {
         onError: (e) => {
-          
+          setSelectedIds([]);
+          setSelectedRows([]);
         }
       },
       body
@@ -104,6 +116,24 @@ const GeneralUploadScreen = () => {
     if (selectedFile) {
       await handleUploadFile(selectedFile);
       setSelectedFile(null);
+      // Explicitly clear selection after upload
+      setSelectedIds([]);
+    }
+  };
+
+  const handleDeleteSelectedRows = async () => {
+    const success = await handleDeleteByIds();
+    if (success) {
+      // Explicitly clear selection after deletion
+      setSelectedIds([]);
+    }
+  };
+
+  const handleDeleteSemester = async () => {
+    const success = await handleDeleteBySemester();
+    if (success) {
+      // Explicitly clear selection after deletion
+      setSelectedIds([]);
     }
   };
 
@@ -179,7 +209,7 @@ const GeneralUploadScreen = () => {
                   fontSize: '16px'
                 }}
                 disabled={isDeletingByIds || selectedIds.length === 0}
-                onClick={() => handleDeleteByIds()}
+                onClick={handleDeleteSelectedRows} // Use our new wrapper function
                 variant="contained"
                 color="error"
               >
@@ -193,7 +223,7 @@ const GeneralUploadScreen = () => {
                   fontSize: '16px'
                 }}
                 disabled={isDeletingBySemester || !selectedSemester}
-                onClick={handleDeleteBySemester}
+                onClick={handleDeleteSemester} // Use our new wrapper function
                 variant="contained"
                 color="error"
                 
