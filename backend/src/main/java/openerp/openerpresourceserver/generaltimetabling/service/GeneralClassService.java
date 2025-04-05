@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
@@ -41,7 +42,7 @@ public interface GeneralClassService {
 
     List<GeneralClass> autoScheduleGroup(String semester, String groupName, int timeLimit);
 
-    List<GeneralClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule);
+    List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule);
 
     List<GeneralClass> autoSchedule(String semester, int timeLimit);
 

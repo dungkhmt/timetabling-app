@@ -9,6 +9,8 @@ import java.util.List;
 public interface TimeTablingClassRepo extends JpaRepository<TimeTablingClass, Long> {
     List<TimeTablingClass> findAllBySemester(String semester);
 
+    List<TimeTablingClass> findAllByParentClassId(Long parentClassId);
+
     List<TimeTablingClass> findAllByIdIn(List<Long> ids);
 
     @Query(value = "SELECT nextval('timetabling_class_seq')", nativeQuery = true)

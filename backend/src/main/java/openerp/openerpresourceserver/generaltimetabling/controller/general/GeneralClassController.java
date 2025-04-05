@@ -16,6 +16,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
@@ -92,16 +93,23 @@ public class GeneralClassController {
         return timeTablingClassService.getTimeTablingClassDtos(semester,groupId);
     }
 
+    //@GetMapping("/get-by-parent-class")
+    //public List<GeneralClassDto> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
+    //    return gService.getSubClasses(parentClassId);
+    //}
     @GetMapping("/get-by-parent-class")
-    public List<GeneralClassDto> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
-        return gService.getSubClasses(parentClassId);
+    public List<ModelResponseTimeTablingClass> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
+        //return gService.getSubClasses(parentClassId);
+        return timeTablingClassService.getSubClass(parentClassId);
     }
-    
+
     @PostMapping("/update-class")
-    public ResponseEntity<GeneralClass> requestUpdateClass(@RequestBody UpdateGeneralClassRequest request) {
-        GeneralClass updatedGeneralClass= gService.updateGeneralClass(request);
-        if(updatedGeneralClass == null) throw new RuntimeException("General Class was null");
-        return ResponseEntity.ok().body(updatedGeneralClass);
+    public ResponseEntity<?> requestUpdateClass(@RequestBody UpdateGeneralClassRequest request) {
+        //GeneralClass updatedGeneralClass= gService.updateGeneralClass(request);
+        //if(updatedGeneralClass == null) throw new RuntimeException("General Class was null");
+        //return ResponseEntity.ok().body(updatedGeneralClass);
+        TimeTablingClass cls = timeTablingClassService.updateClass(request);
+        return ResponseEntity.ok().body(cls);
     }
 
     @PostMapping("/update-class-schedule")
@@ -174,10 +182,11 @@ public class GeneralClassController {
     }
 
     @PostMapping("/reset-schedule")
-    public ResponseEntity<List<GeneralClass>> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
+    //public ResponseEntity<List<GeneralClass>> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
+    public ResponseEntity<?> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
         log.info("Controler API -> requestResetSchedule start...");
-
-        return ResponseEntity.ok(gService.resetSchedule(request.getIds(), semester));
+        return ResponseEntity.ok(timeTablingClassService.clearTimeTable(request.getIds()));
+        //return ResponseEntity.ok(gService.resetSchedule(request.getIds(), semester));
     }
 
     @GetMapping("/get-list-algorithm-names")
@@ -222,7 +231,9 @@ public class GeneralClassController {
 
     @DeleteMapping("/delete-by-ids")
     public ResponseEntity<String> deleteClassesByIds(@RequestBody List<Long> ids) {
-        gService.deleteClassesByIds(ids);
+        log.info("deleteClassesByIds, ids = " + ids.size());
+        //gService.deleteClassesByIds(ids);
+        timeTablingClassService.deleteByIds(ids);
         return ResponseEntity.ok("Deleted classes with IDs: " + ids);
     }
 

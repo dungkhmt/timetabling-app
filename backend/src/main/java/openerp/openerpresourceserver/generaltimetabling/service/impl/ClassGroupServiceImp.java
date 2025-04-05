@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.generaltimetabling.service.impl;
 
+import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ClassGroupSummary;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+@Log4j2
 @Service
 public class ClassGroupServiceImp implements ClassGroupService {
 
@@ -35,16 +36,16 @@ public class ClassGroupServiceImp implements ClassGroupService {
             } else {
                 System.out.println("Found " + allGroups.size() + " groups.");
             }
-
+            //log.info("getAllClassGroup, allGroups.sz = " + allGroups.size());
             List<Long> assignedGroupIds = classGroupRepo.findByClassId(classId)
                     .stream()
                     .map(ClassGroup::getGroupId)
                     .collect(Collectors.toList());
-
+            log.info("getAllClassGroup, classId = " + classId + " allGroups.sz = " + allGroups.size() + ", assignGroupIds = " + assignedGroupIds.size());
             List<ClassGroupSummary> classGroupSummaries = allGroups.stream()
                     .map(group -> {
                         boolean isAssigned = assignedGroupIds.contains(group.getId());
-                        System.out.println("Group: " + group.getGroupName() + ", isAssigned: " + isAssigned);
+                        log.info("getAllClassGroup: " + group.getGroupName() + ", isAssigned: " + isAssigned);
                         return new ClassGroupSummary(
                                 group.getId(),
                                 group.getGroupName(),

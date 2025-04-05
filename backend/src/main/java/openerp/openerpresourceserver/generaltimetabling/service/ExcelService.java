@@ -353,7 +353,7 @@ public class ExcelService {
             planGeneralClassRepository.saveAll(planClasses);
             log.info("savePlanClasse planCLasses CREATED!");
 
-            createClass = false;
+            //createClass = false;
             if(createClass){
                 
                 // create classes from planClasses

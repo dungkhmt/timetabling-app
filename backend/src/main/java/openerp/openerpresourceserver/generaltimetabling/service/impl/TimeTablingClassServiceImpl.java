@@ -8,6 +8,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
@@ -286,6 +287,143 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds) {
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
+        Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
+
+        List<ClassGroup> CG = classGroupRepo.findAllByClassIdIn(classIds);
+        for(ClassGroup cg: CG){
+            Long classId = cg.getClassId();
+            if(mClassId2GroupIds.get(classId)==null)
+                mClassId2GroupIds.put(classId, new ArrayList<>());
+            mClassId2GroupIds.get(classId).add(cg.getGroupId());
+        }
+
+        Map<Long, List<String>> mClassId2GroupNames = new HashMap<>();
+        List<Group> groups = groupRepo.findAll();
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        for(TimeTablingClass c: cls){
+            List<Long> gids = mClassId2GroupIds.get(c.getId());
+            mClassId2GroupNames.put(c.getId(), new ArrayList<>());
+            if(gids != null) for(Long gid: gids){
+                String gname = mId2Group.get(gid).getGroupName();
+                mClassId2GroupNames.get(c.getId()).add(gname);
+            }
+        }
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
+        for(TimeTablingClassSegment cs: classSegments){
+            if(mClassId2ClassSegments.get(cs.getClassId())==null)
+                mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
+            mClassId2ClassSegments.get(cs.getClassId()).add(cs);
+        }
+        return cls.stream()
+                .map(c -> ModelResponseTimeTablingClass.builder()
+                        .id(c.getId())
+                        .quantity(c.getQuantity())
+                        .quantityMax(c.getQuantityMax())
+                        .moduleCode(c.getModuleCode())
+                        .moduleName(c.getModuleName())
+                        .classType(c.getClassType())
+                        .classCode(c.getClassCode())
+                        .semester(c.getSemester())
+                        .studyClass(c.getStudyClass())
+                        .mass(c.getMass())
+                        .state(c.getState())
+                        .crew(c.getCrew())
+                        .openBatch(c.getOpenBatch())
+                        .course(c.getCourse())
+                        .refClassId(c.getRefClassId())
+                        .parentClassId(c.getParentClassId())
+                        .duration(c.getDuration())
+                        .groupName(c.getGroupName())
+                        .listGroupName(mClassId2GroupNames.get(c.getId()))
+                        .timeSlots(mClassId2ClassSegments.get(c.getId()))
+                        .learningWeeks(c.getLearningWeeks())
+                        .foreignLecturer(c.getForeignLecturer())
+                        .build()
+                ).toList();
+    }
+
+    private List<ModelResponseTimeTablingClass> getDetailTimeTablingClassesFrom(List<TimeTablingClass> cls){
+        Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
+        List<Long> classIds = cls.stream().map(c -> c.getId()).toList();
+        List<ClassGroup> CG = classGroupRepo.findAllByClassIdIn(classIds);
+        for(ClassGroup cg: CG){
+            Long classId = cg.getClassId();
+            if(mClassId2GroupIds.get(classId)==null)
+                mClassId2GroupIds.put(classId, new ArrayList<>());
+            mClassId2GroupIds.get(classId).add(cg.getGroupId());
+        }
+
+        Map<Long, List<String>> mClassId2GroupNames = new HashMap<>();
+        List<Group> groups = groupRepo.findAll();
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        for(TimeTablingClass c: cls){
+            List<Long> gids = mClassId2GroupIds.get(c.getId());
+            mClassId2GroupNames.put(c.getId(), new ArrayList<>());
+            if(gids != null) for(Long gid: gids){
+                String gname = mId2Group.get(gid).getGroupName();
+                mClassId2GroupNames.get(c.getId()).add(gname);
+            }
+        }
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
+        for(TimeTablingClassSegment cs: classSegments){
+            if(mClassId2ClassSegments.get(cs.getClassId())==null)
+                mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
+            mClassId2ClassSegments.get(cs.getClassId()).add(cs);
+        }
+        return cls.stream()
+                .map(c -> ModelResponseTimeTablingClass.builder()
+                        .id(c.getId())
+                        .quantity(c.getQuantity())
+                        .quantityMax(c.getQuantityMax())
+                        .moduleCode(c.getModuleCode())
+                        .moduleName(c.getModuleName())
+                        .classType(c.getClassType())
+                        .classCode(c.getClassCode())
+                        .semester(c.getSemester())
+                        .studyClass(c.getStudyClass())
+                        .mass(c.getMass())
+                        .state(c.getState())
+                        .crew(c.getCrew())
+                        .openBatch(c.getOpenBatch())
+                        .course(c.getCourse())
+                        .refClassId(c.getRefClassId())
+                        .parentClassId(c.getParentClassId())
+                        .duration(c.getDuration())
+                        .groupName(c.getGroupName())
+                        .listGroupName(mClassId2GroupNames.get(c.getId()))
+                        .timeSlots(mClassId2ClassSegments.get(c.getId()))
+                        .learningWeeks(c.getLearningWeeks())
+                        .foreignLecturer(c.getForeignLecturer())
+                        .build()
+                ).toList();
+
+    }
+    @Override
+    public List<ModelResponseTimeTablingClass> findAll() {
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
+        return getDetailTimeTablingClassesFrom(cls);
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> findAllBySemester(String semester) {
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(semester);
+        return getDetailTimeTablingClassesFrom(cls);
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> findAllByClassIdIn(List<Long> classIds) {
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
+        List<ModelResponseTimeTablingClass> res = getDetailTimeTablingClassesFrom(cls);
+        return res;
+    }
+
+    @Override
     public int removeClassSegment(ModelInputCreateClassSegment I) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
         List<Long> classIds = cls.stream().map(c -> c.getId()).toList();
@@ -299,5 +437,76 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         return cnt;
     }
+
+    @Override
+    public int deleteByIds(List<Long> ids) {
+        timeTablingClassRepo.deleteAllById(ids);
+        return 0;
+    }
+
+    @Override
+    public TimeTablingClass updateClass(UpdateGeneralClassRequest r) {
+        TimeTablingClass cls = timeTablingClassRepo
+                .findById(r.getGeneralClass().getId()).orElse(null);
+        if(cls == null) return null;
+        GeneralClass gc = r.getGeneralClass();
+        cls.setCrew(gc.getCrew());
+        cls.setDuration(gc.getDuration());
+        cls.setClassCode(gc.getClassCode());
+        cls.setCourse(gc.getCourse());
+        cls.setClassType(gc.getClassType());
+        cls.setForeignLecturer(gc.getForeignLecturer());
+        cls.setGroupName(gc.getGroupName());
+        cls.setLearningWeeks(gc.getLearningWeeks());
+        cls.setMass(gc.getMass());
+        cls.setModuleCode(gc.getModuleCode());
+
+        cls.setModuleName(gc.getModuleName());
+        cls.setOpenBatch(gc.getOpenBatch());
+        cls.setParentClassId(gc.getParentClassId());
+        cls.setQuantity(gc.getQuantity());
+        cls.setQuantityMax(gc.getQuantityMax());
+        cls.setRefClassId(gc.getRefClassId());
+        cls.setSemester(gc.getSemester());
+        cls.setState(gc.getState());
+        cls.setStudyClass(gc.getStudyClass());
+
+        cls = timeTablingClassRepo.save(cls);
+        return cls;
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> getSubClass(Long id) {
+        List<TimeTablingClass> L = timeTablingClassRepo.findAllByParentClassId(id);
+        List<ModelResponseTimeTablingClass> res = getDetailTimeTablingClassesFrom(L);
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> clearTimeTable(List<String> ids) {
+        List<Long> classIds = new ArrayList<>();
+        for (String idString : ids) {
+            log.info("resetSchedule, idString = " + idString);
+            long gId = 0;
+            int timeSlotIndex = 0;
+            if (idString.contains("-")) {
+                gId = Integer.parseInt(idString.split("-")[0]);
+                timeSlotIndex = Integer.parseInt(idString.split("-")[1]) - 1;
+            } else {
+                gId = Integer.parseInt(idString);
+                timeSlotIndex = 0;
+            }
+            classIds.add(gId);
+        }
+        //List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        for(TimeTablingClassSegment cs: classSegments){
+            cs.setEndTime(null); cs.setStartTime(null); cs.setRoom(null);
+            cs = timeTablingClassSegmentRepo.save(cs);
+        }
+        List<ModelResponseTimeTablingClass> res = findAllByClassIdIn(classIds);
+        return res;
+    }
+
 
 }

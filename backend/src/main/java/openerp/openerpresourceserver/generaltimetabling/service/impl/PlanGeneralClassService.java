@@ -166,10 +166,10 @@ public class PlanGeneralClassService {
         cls.setClassCode(clsId.toString());
         cls.setId(clsId);
 
-        timeTablingClassRepo.save(cls);
+        cls = timeTablingClassRepo.save(cls);
         ClassGroup clsGroup = new ClassGroup(cls.getId(),groupId);
         classGroupRepo.save(clsGroup);
-        log.info("makeClass -> SAVE classId " + cls.getId());
+        log.info("makeClass -> SAVE classId " + cls.getId() + " groupId " + groupId);
 
     }
 
@@ -229,7 +229,7 @@ public class PlanGeneralClassService {
         TimeTablingClass parentClass = timeTablingClassRepo.findById(request.getFromParentClassId()).orElse(null);
         if (parentClass == null) return Collections.emptyList();
         List<ClassGroup> classGroup = classGroupRepo.findByClassId(request.getFromParentClassId());
-
+        log.info("makeSubClassNew, related classGroup.sz = " + classGroup.size());
         List<TimeTablingClass> newClasses = new ArrayList<>();
 
         for (int i = 0; i < request.getNumberClasses(); i++) {
@@ -254,13 +254,17 @@ public class PlanGeneralClassService {
             }
 
             Long nextId = timeTablingClassRepo.getNextReferenceValue();
+            log.info("makeSubClassNew, generate nextId = " + nextId);
             newClass.setId(nextId);
-
-            timeTablingClassRepo.save(newClass);
+            newClass.setGroupName(parentClass.getGroupName());
+            newClass = timeTablingClassRepo.save(newClass);
+            log.info("makeSubClassNew, after save, newClass.id = " + newClass.getId());
 
             for (ClassGroup group : classGroup) {
                 ClassGroup newClassGroup = new ClassGroup(newClass.getId(), group.getGroupId());
                 classGroupRepo.save(newClassGroup);
+                log.info("makeSubClassNew, save newClassGroup " + newClassGroup.getClassId() + "," + newClassGroup.getGroupId());
+
             }
             newClasses.add(newClass);
         }
