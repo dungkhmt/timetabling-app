@@ -15,8 +15,13 @@ import java.security.Principal;
 @RestController
 public class InvoiceController {
     private final InvoiceService invoiceService;
-    @PutMapping("/export/{shipmentId}")
-    public ApiResponse<Void> exportShipment(@PathVariable String shipmentId, Principal principal) {
-        return invoiceService.exportShipment(shipmentId, principal.getName());
+    @PutMapping("/export-outbound/{shipmentId}")
+    public ApiResponse<Void> exportOutBound(@PathVariable String shipmentId, Principal principal) {
+        return invoiceService.exportOunBound(shipmentId, principal.getName());
+    }
+
+    @PutMapping("/export-inbound/{shipmentId}")
+    public ApiResponse<Void> exportInBound(@PathVariable String shipmentId, Principal principal) {
+        return invoiceService.exportInBound(shipmentId, principal.getName());
     }
 }

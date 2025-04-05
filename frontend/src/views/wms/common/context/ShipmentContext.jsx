@@ -9,7 +9,7 @@ const ShipmentContext = createContext();
 export const ShipmentProvider = ({ children, shipmentType }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { getOutBoundDetail, exportShipment, getInBoundDetail } = useWms2Data();
+  const { getOutBoundDetail, exportOutBoundShipment, getInBoundDetail, ex } = useWms2Data();
   const [shipmentData, setShipmentData] = useState(null);
   const { shipmentId } = useParams(); // Lấy ID từ URL
 
@@ -24,13 +24,14 @@ export const ShipmentProvider = ({ children, shipmentType }) => {
     }
   };
 
-  const exportShipmentApi = async (shipmentId) => {
+  const exportOutBoundShipmentApi = async (shipmentId) => {
     try {
-      const res = await exportShipment(shipmentId);
+      const res = await exportOutBoundShipment(shipmentId);
     } catch (err) {
       console.error("Failed to export shipment:", err);
     }
   }
+
 
 
   // Load dữ liệu khi component mount
@@ -46,7 +47,7 @@ export const ShipmentProvider = ({ children, shipmentType }) => {
     error,
     shipmentData,
     fetchData,
-    exportShipmentApi
+    exportOutBoundShipmentApi
   };
 
   return (

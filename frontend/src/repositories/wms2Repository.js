@@ -51,8 +51,8 @@ export const wms2Service = {
   getOutBoundDetail: (shipmentId) => {
     return request("get", `shipment/outbound/${shipmentId}`);
   },
-  exportShipment: (shipmentId) => {
-    return request("put", `/invoice/export/${shipmentId}` , null, null, null);
+  exportOutBoundShipment: (shipmentId) => {
+    return request("put", `/invoice/export-outbound/${shipmentId}` , null, null, null);
   }, 
   getSalesOrdersForExport: (page, limit) => {
     return request("get", `/sale-order/export?page=${page}&limit=${limit}`);
@@ -82,5 +82,8 @@ export const wms2Service = {
     },
     getInBoundDetail: (shipmentId) => {
         return request("get", `shipment/inbound/${shipmentId}`);
-    }
+    },
+  exportInBoundShipment: (shipmentId) => {
+    return request("put", `/invoice/export-inbound/${shipmentId}` , null, null, null);
+  },
 };

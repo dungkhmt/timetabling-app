@@ -2,6 +2,8 @@ package openerp.openerpresourceserver.wms.dto.shipment;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
@@ -13,4 +15,5 @@ public class InboundByOrderRes {
     private String shipmentName;
     private String supplierName;
     private String statusId;
+    private LocalDate expectedDeliveryDate;
 }

@@ -187,9 +187,9 @@ export const useWms2Data = () => {
         }
     }
 
-    const exportShipment = async (shipmentId) => {
+    const exportOutBoundShipment = async (shipmentId) => {
         try {
-            const res = await wms2Service.exportShipment(shipmentId);
+            const res = await wms2Service.exportOutBoundShipment(shipmentId);
             console.log(res);
             if (res && res.code === 200) toast.success("Xuất phiếu xuất thành công!");
         } catch (error) {
@@ -308,6 +308,17 @@ export const useWms2Data = () => {
         }
     }
 
+    const exportInBoundShipment = async (shipmentId) => {
+        try {
+            const res = await wms2Service.exportInBoundShipment(shipmentId);
+            console.log(res);
+            if (res && res.code === 200) toast.success("Nhập vào kho thành công!");
+        } catch (error) {
+            console.error("Failed to export shipment:", error);
+            toast.error("Không thể xuất phiếu nhập");
+        }
+    }
+
 
     // Trả về các hàm thay vì dữ liệu
     return {
@@ -327,7 +338,7 @@ export const useWms2Data = () => {
         getMoreInventoryItems,
         getOutBoundsOrder,
         getOutBoundDetail,
-        exportShipment,
+        exportOutBoundShipment,
         getSalesOrdersForExport,
         getMoreSuppliers,
         getPurchaseOrders,
@@ -337,6 +348,7 @@ export const useWms2Data = () => {
         approvePurchaseOrder,
         createInBoundOrder,
         getInBoundsOrder,
-        getInBoundDetail
+        getInBoundDetail,
+        exportInBoundShipment,
     };
 };

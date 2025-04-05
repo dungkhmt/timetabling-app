@@ -166,7 +166,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         var orderItems = orderHeader.getOrderItems();
         var productReqs = req.getProducts();
         var shipment = Shipment.builder()
-                .shipmentTypeId(ShipmentType.OUTBOUND.name())
+                .shipmentTypeId(ShipmentType.INBOUND.name())
                 .fromSupplier(orderHeader.getFromSupplier())
                 .order(orderHeader)
                 .shipmentName(req.getShipmentName())
@@ -236,6 +236,7 @@ public class ShipmentServiceImpl implements ShipmentService {
                         .id(shipment.getId())
                         .shipmentType(shipment.getShipmentTypeId())
                         .shipmentName(shipment.getShipmentName())
+                        .expectedDeliveryDate(shipment.getExpectedDeliveryDate())
                         .supplierName(shipment.getFromSupplier().getName())
                         .statusId(shipment.getShipmentStatusId())
                         .build()

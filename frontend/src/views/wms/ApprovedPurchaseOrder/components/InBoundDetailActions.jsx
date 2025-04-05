@@ -6,9 +6,11 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import PrintIcon from "@mui/icons-material/Print";
 import { useShipment } from "../../common/context/ShipmentContext";
+import {useWms2Data} from "../../../../services/useWms2Data";
 
 const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
-  const { loading, exportShipmentApi } = useShipment();
+  const {exportInBoundShipment} = useWms2Data();
+  const {loading} = useShipment();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
 
   // Kiểm tra trạng thái để hiển thị các nút phù hợp
@@ -19,8 +21,8 @@ const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
   // Xử lý xác nhận hành động
   const handleConfirmAction = async () => {
     try {
-      if (confirmDialog.type === "ship") {
-        await exportShipmentApi(shipmentId);
+      if (confirmDialog.type === "export") {
+        await exportInBoundShipment(shipmentId);
       } 
       setConfirmDialog({ open: false, type: null });
       if (onActionComplete) onActionComplete();
@@ -32,12 +34,12 @@ const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
   // Hiển thị dialog xác nhận
   const showConfirmDialog = (type) => {
     let title, content;
-    if (type === "ship") {
-      title = "Xác nhận xuất hàng";
-      content = "Bạn có chắc chắn muốn xuất hàng cho phiếu xuất này? Hành động này không thể hoàn tác.";
+    if (type === "export") {
+      title = "Xác nhận nhập hàng";
+      content = "Bạn có chắc chắn muốn nhập hàng cho phiếu nhập này? Hành động này không thể hoàn tác.";
     } else if (type === "cancel") {
-      title = "Xác nhận hủy phiếu xuất";
-      content = "Bạn có chắc chắn muốn hủy phiếu xuất này? Hành động này không thể hoàn tác.";
+      title = "Xác nhận hủy phiếu nhập";
+      content = "Bạn có chắc chắn muốn hủy phiếu nhập này? Hành động này không thể hoàn tác.";
     }
     setConfirmDialog({ open: true, type, title, content });
   };
@@ -59,9 +61,9 @@ const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
               color="primary" 
               startIcon={<LocalShippingIcon />}
               disabled={loading}
-              onClick={() => showConfirmDialog("ship")}
+              onClick={() => showConfirmDialog("export")}
             >
-              Xuất hàng
+              Nhập hàng
             </Button>
             <Button 
               variant="contained" 
@@ -75,7 +77,7 @@ const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
           </>
         )}
         
-        {/* Nút in phiếu xuất có thể sử dụng bất kể trạng thái */}
+        {/* Nút in phiếu nhập có thể sử dụng bất kể trạng thái */}
         <Button 
           variant="contained" 
           color="secondary" 
@@ -90,7 +92,7 @@ const InBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
           startIcon={<PrintIcon />}
           disabled={loading || isCancelled}
         >
-          In phiếu xuất
+          In phiếu nhập
         </Button>
       </Box>
 

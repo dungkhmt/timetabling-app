@@ -13,6 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import OutBoundListRow from "./InBoundListRow";
+import InBoundListRow from "./InBoundListRow";
 
 const InBoundTable = ({ items = [] }) => {
   const theme = useTheme();
@@ -35,15 +36,13 @@ const InBoundTable = ({ items = [] }) => {
             <TableCell>Mã đơn xuất</TableCell>
             <TableCell>Tên đơn hàng</TableCell>
             <TableCell>Nhà cung cấp</TableCell>
-            <TableCell>Địa chỉ giao</TableCell>
-            <TableCell>Số điện thoại</TableCell>
             <TableCell>Ngày giao</TableCell>
             <TableCell>Trạng thái</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {items.map((item) => (
-            <OutBoundListRow
+            <InBoundListRow
               key={item.id}
               row={item}
               isSmall={isSmall}

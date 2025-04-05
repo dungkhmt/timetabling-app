@@ -8,9 +8,9 @@ const InBoundListRow = ({ row, isSmall }) => {
   return (
     <TableRow onClick={() => navigate.push(location.pathname+ `/inbound/${row.id}`)}>
       <TableCell>{row.id}</TableCell>
-        <TableCell>{row.productName || "N/A"}</TableCell>
-      <TableCell>{row.shipmentName || "N/A"}</TableCell>
+        <TableCell>{row.shipmentName || "N/A"}</TableCell>
       <TableCell>{row.supplierName || "N/A"}</TableCell>
+      <TableCell>{row.expectedDeliveryDate || "N/A"}</TableCell>
       <TableCell>{row.statusId || "N/A"}</TableCell>
     </TableRow>
   );
