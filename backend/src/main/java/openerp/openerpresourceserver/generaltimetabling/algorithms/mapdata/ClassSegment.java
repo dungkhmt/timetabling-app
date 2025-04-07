@@ -40,6 +40,9 @@ public class ClassSegment {
         }
         return s;
     }
+    public String str(){
+        return "{id = " + id + ",classId = " + classId + ",course = " + courseCode +" }";
+    }
     public String toString(){
         String s = "ClassSegment[" + id + "], classId = " + classId;
         s = s + " courseIndex " + courseIndex + "(" + courseCode + ") ";

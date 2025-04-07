@@ -486,7 +486,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     public List<ModelResponseTimeTablingClass> clearTimeTable(List<String> ids) {
         List<Long> classIds = new ArrayList<>();
         for (String idString : ids) {
-            log.info("resetSchedule, idString = " + idString);
+            log.info("clearTimeTable, idString = " + idString);
             long gId = 0;
             int timeSlotIndex = 0;
             if (idString.contains("-")) {
@@ -500,9 +500,11 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         //List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
         List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        log.info("clearTimeTable, class-segments to be cleared sz = " + classSegments.size());
         for(TimeTablingClassSegment cs: classSegments){
             cs.setEndTime(null); cs.setStartTime(null); cs.setRoom(null);
             cs = timeTablingClassSegmentRepo.save(cs);
+            log.info("clearTimeTable, clear class-segment " + cs.getId() + " classId = " + cs.getClassId());
         }
         List<ModelResponseTimeTablingClass> res = findAllByClassIdIn(classIds);
         return res;

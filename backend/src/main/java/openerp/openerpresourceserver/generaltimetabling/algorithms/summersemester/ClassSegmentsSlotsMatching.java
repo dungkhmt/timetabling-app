@@ -56,10 +56,10 @@ public class ClassSegmentsSlotsMatching {
         this.L = l;
         this.n = L.size();
         this.slots = slots;
-        log.info("ClassSegmentsSlotsMatching with infos");
+        log.info("ClassSegmentsSlotsMatching constructor with infos");
         for(List<ClassSegment> Li: L){
             String msg = "class " + Li.get(0).getClassId() + " course " + Li.get(0).getCourseCode();
-            for(ClassSegment cs: Li) msg = msg + " cls " + cs.getDuration() + ", ";
+            for(ClassSegment cs: Li) msg = msg + " class-segment[" + cs.getId() + "]" + cs.getDuration() + ", ";
             log.info("ClassSegmentsSlotsMatching, " + msg);
         }
         for(int[] row: slots){
@@ -67,6 +67,7 @@ public class ClassSegmentsSlotsMatching {
             for(int i : row) msg = msg + i + ",";
             log.info(msg);
         }
+        log.info("ClassSegmentsSlotsMatching constructor END");
     }
 
     public boolean solve(){
