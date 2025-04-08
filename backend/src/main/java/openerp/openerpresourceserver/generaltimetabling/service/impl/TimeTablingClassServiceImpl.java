@@ -5,27 +5,25 @@ import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.ClassSegmentPartitionConfigForSummerSemester;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentClassSolver;
+import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -33,6 +31,15 @@ import java.util.stream.Collectors;
 @Log4j2
 @Slf4j
 public class TimeTablingClassServiceImpl implements TimeTablingClassService {
+    @Autowired
+    private ClusterRepo clusterRepo;
+
+    @Autowired
+    private ClusterClassRepo clusterClassRepo;
+
+    @Autowired
+    private PlanGeneralClassRepository planGeneralClassRepository;
+
     @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
 
@@ -562,6 +569,120 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         return res;
 
+    }
+
+    @Override
+    public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(classId);
+        List<ModelResponseTimeTablingClass> L = findAllByClassIdIn(ids);
+        if(L == null || L.size() == 0){
+            throw new NotFoundException("Không tìm thấy lớp id " + classId);
+            //return null;
+        }
+        ModelResponseTimeTablingClass res = L.get(0);
+        TimeTablingClassSegment cs = timeTablingClassSegmentRepo.findById(parentClassSegmentId).orElse(null);
+        if(cs == null){
+            throw new NotFoundException("Không tìm thấy class segment " + parentClassSegmentId);
+        }
+        if(cs.getDuration() <= duration){
+            throw new NotFoundException("Số tiết ca được tạo mới (" + duration + ") phải nhỏ hơn số tiết ca cha (" + cs.getDuration()+ ") !");
+
+        }
+        cs.setDuration(cs.getDuration() - duration);
+        TimeTablingClassSegment ncs = new TimeTablingClassSegment();
+        ncs.setDuration(duration);
+        ncs.setCrew(cs.getCrew());
+        ncs.setClassId(cs.getClassId());
+        ncs.setParentId(parentClassSegmentId);
+        ncs.setVersionId(cs.getVersionId());
+        Long nextId = timeTablingClassSegmentRepo.getNextReferenceValue();
+        ncs.setId(nextId);
+
+        cs = timeTablingClassSegmentRepo.save(cs);
+        ncs = timeTablingClassSegmentRepo.save(ncs);
+        res.getTimeSlots().add(ncs);
+        return res;
+    }
+
+    @Override
+    public int computeClassCluster(ModelInputComputeClassCluster I) {
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        List<Long> classIds = new ArrayList<>();
+        for(TimeTablingClass c: cls) classIds.add(c.getId());
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
+        List<Group> groups = groupRepo.findAll();
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
+        for(ClassGroup cg: classGroups){
+            if(mClassId2GroupIds.get(cg.getClassId())==null)
+                mClassId2GroupIds.put(cg.getClassId(),new ArrayList<>());
+            mClassId2GroupIds.get(cg.getClassId()).add(cg.getGroupId());
+        }
+        ConnectedComponentClassSolver solver = new ConnectedComponentClassSolver();
+        List<List<TimeTablingClass>> clusters = solver.computeConnectedComponents(cls,classGroups);
+
+        List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        for(Cluster c: oldClusters){
+            clusterRepo.delete(c);
+        }
+
+        for(List<TimeTablingClass> cluster : clusters){
+            // create a new cluster
+            String clusterName = "";
+            Set<String> names = new HashSet<>();
+            for(TimeTablingClass gc: cluster){
+                Long classId = gc.getId();
+                List<Long> gids = mClassId2GroupIds.get(classId);
+                for(Long gId: gids){
+                    Group g = mId2Group.get(gId);
+                    names.add(g.getGroupName());
+                }
+            }
+            int cnt = 0;
+            for(String n: names){
+                cnt++;
+                clusterName = clusterName + n;
+                if(cnt < names.size()) clusterName = clusterName + ", ";
+            }
+            Long nextId = planGeneralClassRepository.getNextReferenceValue();
+            Cluster newCluster = new Cluster();
+            newCluster.setId(nextId);
+            newCluster.setName(clusterName);
+            newCluster.setSemester(I.getSemester());
+            newCluster = clusterRepo.save(newCluster);
+
+            for(TimeTablingClass gc: cluster){
+                ClusterClass clusterClass = new ClusterClass();
+                clusterClass.setClusterId(nextId);
+                clusterClass.setClassId(gc.getId());
+
+                clusterClass = clusterClassRepo.save(clusterClass);
+            }
+        }
+
+        return clusters.size();
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId) {
+        List<ClusterClass> clusterClasses = clusterClassRepo.findAllByClusterId(clusterId);
+
+        if (clusterClasses.isEmpty()) {
+            return new ArrayList<>();
+        }
+        log.info("getClassByCluster(" + clusterId + "), clusterClasses.sz = " + clusterClasses.size());
+
+
+        // Extract class IDs from the relationships
+        List<Long> classIds = clusterClasses.stream()
+                .map(ClusterClass::getClassId)
+                .collect(Collectors.toList());
+
+        List<ModelResponseTimeTablingClass> cls = findAllByClassIdIn(classIds);
+        log.info("getClassByCluster(" + clusterId + "), res.sz = " + cls.size());
+        return cls;
     }
 
 

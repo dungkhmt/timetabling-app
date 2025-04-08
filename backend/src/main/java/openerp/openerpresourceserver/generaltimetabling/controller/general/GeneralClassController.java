@@ -239,10 +239,12 @@ public class GeneralClassController {
 
 
     @PostMapping("/{generalClassId}/room-reservations/")
-    public ResponseEntity<GeneralClass> requestAddRoomReservation(
+    public ResponseEntity<?> requestAddRoomReservation(
             @PathVariable("generalClassId") Long generalClassId,
             @RequestBody RoomReservationDto request) {
-        return ResponseEntity.ok(gService.addRoomReservation(generalClassId, request.getParentId(), request.getDuration()));
+        //return ResponseEntity.ok(gService.addRoomReservation(generalClassId, request.getParentId(), request.getDuration()));
+        return ResponseEntity.ok(timeTablingClassService.splitNewClassSegment(generalClassId, request.getParentId(), request.getDuration()));
+
     }
 
     @DeleteMapping("/delete-by-semester")
@@ -263,14 +265,16 @@ public class GeneralClassController {
     @PostMapping("/compute-class-cluster")
     public ResponseEntity<?> computeClassCluster(Principal principal, @RequestBody ModelInputComputeClassCluster I){
         log.info("computeClassCluster, semester = " + I.getSemester());
-        int cnt = gService.computeClassCluster(I);
+        //int cnt = gService.computeClassCluster(I);
+        int cnt = timeTablingClassService.computeClassCluster(I);
         log.info("computeClassCluster, semester = " + I.getSemester() + " result cnt = " + cnt);
         return ResponseEntity.ok().body(cnt);
     }
 
     @GetMapping("/get-by-cluster/{clusterId}")
-    public ResponseEntity<List<GeneralClassDto>> getGeneralClassesByCluster(@PathVariable Long clusterId) {
-        List<GeneralClassDto> classes = gService.getGeneralClassByCluster(clusterId);
+    public ResponseEntity<?> getGeneralClassesByCluster(@PathVariable Long clusterId) {
+        //List<GeneralClassDto> classes = gService.getGeneralClassByCluster(clusterId);
+        List<ModelResponseTimeTablingClass> classes = timeTablingClassService.getClassByCluster(clusterId);
         return ResponseEntity.ok(classes);
     }
 

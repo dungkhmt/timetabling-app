@@ -208,12 +208,12 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             this.room = room;
         }
     }
-    private SlotRoom selectMaxScoreSlotRoom(int i, List<ClassSegment> classInGroup, List<ClassSegment> sortedClassSegments){
+    private SlotRoom selectMaxScoreSlotRoom(int i, List<ClassSegment> classInGroup, List<ClassSegment> sortedClassSegments, Map<String, Integer> mCourseGroup2TimeSlot){
         int maxScore = -1;
         ClassSegment cs = sortedClassSegments.get(i);
         SlotRoom sr = null;
-        //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() +
-        //        " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
+        log.info("selectMaxScoreSlotRoom -> Consider class-segment[" + cs.getId() + "] info " + cs.str() +
+                " domain-timeSlots.sz = " + cs.getDomainTimeSlots().size() + " domain-rooms.sz = " + cs.getDomainRooms().size());
         HashSet<Integer> slotUsedInGroup = new HashSet<>();
         for(ClassSegment csi: classInGroup){
             if(solutionSlot.get(csi.getId())!=null && solutionSlot.get(csi.getId()) > -1){
@@ -228,7 +228,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             for(int room: cs.getDomainRooms()){
                 if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
                     int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
-                    //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
+                    log.info("selectMaxScoreSlotRoom -> FIRST class-segment[" + cs.getId() + "], info " + cs.str() + " (slot,room) = " + timeslot + "," + room + " -> score = " + score);
                     if(score > maxScore){
                         maxScore = score;
                         sr = new SlotRoom(timeslot,room);
@@ -242,7 +242,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
                 for(int room: cs.getDomainRooms()){
                     if(checkTimeSlotRoom(i,timeslot,room,sortedClassSegments)){
                         int score = computeScoreTimeSlotRoom(i,timeslot,room,sortedClassSegments);
-                        //log.info("Consider class-segment[" + cs.getId() + "], classId " + cs.getClassId() + " score = " + score);
+                        log.info("selectMaxScoreSlotRoom -> FIRST class-segment[" + cs.getId() + "], info " + cs.str() + " (slot,room) = " + timeslot + "," + room + " -> score = " + score);
                         if(score > maxScore){
                             maxScore = score;
                             sr = new SlotRoom(timeslot,room);
@@ -333,7 +333,16 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         if(sr != null) return sr;
 
         // SECOND: Try to find time-slot, room maximizing score (registration possibility)
-        sr = selectMaxScoreSlotRoom(i,classInGroup,sortedClassSegments);
+        sr = selectMaxScoreSlotRoom(i,classInGroup,sortedClassSegments, mCourseGroup2TimeSlot);
+        if(sr == null){
+            log.info("findSlotRoom, selectMaxScoreSlotRoom failed to find a slot -> use slot of course-group");
+            int slot = mCourseGroup2TimeSlot.get(cs.hashCourseGroup());
+            for(int r: cs.getDomainRooms()){
+                if(checkTimeSlotRoom(i,slot,r,sortedClassSegments)){
+                    return new SlotRoom(slot,r);
+                }
+            }
+        }
         return sr;
     }
     @Override
@@ -540,6 +549,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             SlotRoom sr = findSlotRoom(i,classInGroup,sortedClassSegments,mCourseGroup2TimeSlot);
             if(sr == null){
                 log.info("solve: Cannot find a (time-slot, room) for class segment " + cs.str());
+
             }else{
                 assignTimeSlotRoom(cs,sr.slot,sr.room);
                 //log.info("solve: assign class-segment " + cs.getId() + " to slot " + sr.slot + ", room " + sr.room);
@@ -574,8 +584,11 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         // check if timeSlot overlap with conflicting and scheduled class-segment
         for(int j = 0; j < i; j++){
             ClassSegment csj = sortedClassSegments.get(j);
+            int slotJ = solutionSlot.get(csj.getId());
+            int durationJ = csj.getDuration();
             if(csi.getConflictClassSegmentIds().contains(csj.getId())){
-                return -100000000;
+                if(Util.overLap(timeSlot,csi.getDuration(),slotJ,durationJ))
+                    return -100000000;
             }
         }
         // compute courseQty[c] the number of assigned class-segments of course index c
