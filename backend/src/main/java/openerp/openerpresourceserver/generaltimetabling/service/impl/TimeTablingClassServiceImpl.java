@@ -36,7 +36,6 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
 
-
     @Autowired
     private TimeTablingClassRepo timeTablingClassRepo;
 
@@ -539,6 +538,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         log.info("getRoomOccupationsBySemesterAndWeekIndex, semester = " + semester + " weekIndex = " + weekIndex + " classes.sz = " + classes.size());
 
         for(ModelResponseTimeTablingClass c: classes){
+
+            System.out.println(c);
             List<Integer> learningWeeks = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());
             log.info("getRoomOccupationsBySemesterAndWeekIndex, learningWeeks = " + learningWeeks);
             if(!learningWeeks.contains(weekIndex)) continue;
@@ -548,6 +549,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 ro.setClassRoom(cs.getRoom());
                 ro.setWeekIndex(weekIndex);
                 ro.setDayIndex(cs.getWeekday());
+                ro.setClassCode(c.getClassCode());
                 ro.setEndPeriod(cs.getEndTime());
                 ro.setStartPeriod(cs.getStartTime());
                 ro.setModuleCode(c.getModuleCode());
