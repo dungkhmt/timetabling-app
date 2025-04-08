@@ -31,6 +31,7 @@ public class ClassSegment {
     // additional and temp data for debugging (to be removed later)
     public String courseCode;
     public String groupNames;
+    public String classCode;
 
     public String hashCourseGroup(){
         String s = courseIndex + "-" + type + "-" + instanceIndex + "-";
@@ -41,7 +42,7 @@ public class ClassSegment {
         return s;
     }
     public String str(){
-        return "{id = " + id + ",classId = " + classId + ",course = " + courseCode +" }";
+        return "{id = " + id + ", classId = " + classId + ", classCode = " + classCode + ", course = " + courseCode +" }";
     }
     public String toString(){
         String s = "ClassSegment[" + id + "], classId = " + classId;

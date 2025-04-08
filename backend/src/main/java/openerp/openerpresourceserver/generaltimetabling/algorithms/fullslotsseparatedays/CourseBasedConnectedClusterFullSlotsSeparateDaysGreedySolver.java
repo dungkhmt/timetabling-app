@@ -25,6 +25,8 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     Map<Integer, Set<String>> relatedCourseGroups;
     //int[] ins; // ins[i]: number of class having the same course with class segment i
     //ClassSegment[] classSegments = null;
+    Map<Integer, ClassSegment> mId2ClassSegment;
+    Map<String, List<ClassSegment>> mCourseCode2ClassSegments;
     List<ClassSegment> classSegments = null;
     // output data structures
     List<Integer> unScheduledClassSegment;
@@ -86,6 +88,17 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     public CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(MapDataScheduleTimeSlotRoom I){
 
         this.I = I;
+        mId2ClassSegment = new HashMap<>();
+        for(ClassSegment cs: I.getClassSegments()){
+            mId2ClassSegment.put(cs.getId(),cs);
+        }
+        mCourseCode2ClassSegments = new HashMap<>();
+        for(ClassSegment cs: I.getClassSegments()){
+            if(cs.getDomainRooms().size() <= 1 && cs.getDomainTimeSlots().size() <= 1) continue; // do not consider scheduled class segment
+            if(mCourseCode2ClassSegments.get(cs.getCourseCode())==null)
+                mCourseCode2ClassSegments.put(cs.getCourseCode(),new ArrayList<>());
+            mCourseCode2ClassSegments.get(cs.getCourseCode()).add(cs);
+        }
         //conflictClassSegment = new HashSet[I.getClassSegments().length];
         conflictClassSegment= new HashMap<>();
         for(ClassSegment cs: I.getClassSegments()){
@@ -332,7 +345,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         Map<String, Integer> mCourseGroup2Duration = new HashMap<>();
         Map<String, List<String>> mCourseGroup2ConflictCourseGroups = new HashMap<>();
 
-        Map<Integer, List<ClassSegment>> mCourseCode2ClassSegments = new HashMap<>();
+        //Map<Integer, List<ClassSegment>> mCourseCode2ClassSegments = new HashMap<>();
 
         //for(int i = 0; i < I.getNbClassSegments(); i++){
         //    String id = hashCourseGroup(I.getCourseIndex()[i],I.getRelatedGroupId()[i]);
@@ -348,9 +361,9 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             courseGroupId.add(id);
             mCourseGroup2ClassSegments.get(id).add(cs);
 
-            if(mCourseCode2ClassSegments.get(cs.getCourseIndex())==null)
-                mCourseCode2ClassSegments.put(cs.getCourseIndex(),new ArrayList<>());
-            mCourseCode2ClassSegments.get(cs.getCourseIndex()).add(cs);
+            //if(mCourseCode2ClassSegments.get(cs.getCourseIndex())==null)
+            //    mCourseCode2ClassSegments.put(cs.getCourseIndex(),new ArrayList<>());
+            //mCourseCode2ClassSegments.get(cs.getCourseIndex()).add(cs);
             //log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id);
         }
 
@@ -423,12 +436,63 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
                 sortedClassSegments.add(cs);
             }
         }
+        /*
+        String[] courseCodes = new String[mCourseCode2ClassSegments.keySet().size()];
+        int ic = -1;
+        for(String cc: mCourseCode2ClassSegments.keySet()){
+            ic++; courseCodes[ic] = cc;
+        }
+        // sort courseCodes in increasing order of number of class-segments
+        for(int i = 0; i < courseCodes.length; i++){
+            for(int j = i+1; j < courseCodes.length; j++){
+                if(mCourseCode2ClassSegments.get(courseCodes[i]).size() >
+                        mCourseGroup2ClassSegments.get(courseCodes[j]).size()){
+                    String ts = courseCodes[i]; courseCodes[i] = courseCodes[j]; courseCodes[j] = ts;
+                }
+            }
+        }
+
+         */
+        // sort courseGroupId in increasing order of number of class-segments belonging to
+        Map<String, List<ClassSegment>> mCourseGroup2UnscheduledClassSegments = new HashMap<>();
+        for(ClassSegment cs: I.getClassSegments()){
+            if(cs.getDomainTimeSlots().size() <= 1 && cs.getDomainRooms().size() <= 1) continue;
+            String cg = cs.hashCourseGroup();
+            if(mCourseGroup2UnscheduledClassSegments.get(cg)==null)
+                mCourseGroup2UnscheduledClassSegments.put(cg,new ArrayList<>());
+            mCourseGroup2UnscheduledClassSegments.get(cg).add(cs);
+        }
+        String[] sortedCourseGroupId = new String[mCourseGroup2UnscheduledClassSegments.keySet().size()];
+        int is = -1;
+        for(String cg: mCourseGroup2UnscheduledClassSegments.keySet()){
+            is++; sortedCourseGroupId[is] = cg;
+        }
+        for(int i= 0; i < sortedCourseGroupId.length; i++){
+            for(int j = i+1; j < sortedCourseGroupId.length; j++){
+                if(mCourseGroup2UnscheduledClassSegments.get(sortedCourseGroupId[i]).size() >
+                        mCourseGroup2UnscheduledClassSegments.get(sortedCourseGroupId[j]).size()){
+                    String ts = sortedCourseGroupId[i];
+                    sortedCourseGroupId[i] = sortedCourseGroupId[j];
+                    sortedCourseGroupId[j] = ts;
+                }
+            }
+        }
+        //for(String cg: sortedCourseGroupId){
+        //    for(ClassSegment cs: mCourseGroup2UnscheduledClassSegments.get(cg)){
+        //        sortedClassSegments.add(cs);
+        //    }
+        //}
+
         while(true){
             boolean finished = true;
-            for(String c: courseGroupId){
+            //for(String c: courseGroupId){
+            for(String c: sortedCourseGroupId){
                 int idx = mCourseGroup2Pointer.get(c);
-                if(idx < mCourseGroup2ClassSegments.get(c).size()){
-                    ClassSegment cs = mCourseGroup2ClassSegments.get(c).get(idx);
+                //if(idx < mCourseGroup2ClassSegments.get(c).size()){
+                if(idx < mCourseGroup2UnscheduledClassSegments.get(c).size()){
+
+                    //ClassSegment cs = mCourseGroup2ClassSegments.get(c).get(idx);
+                    ClassSegment cs = mCourseGroup2UnscheduledClassSegments.get(c).get(idx);
                     mCourseGroup2Pointer.put(c,idx+1);
                     //if(!scheduled[cs.getId()]) {
                     if(!scheduled.get(cs.getId())==true) {
@@ -442,9 +506,10 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             }
             if(finished) break;
         }
-        //log.info("solve, after sorting, sortedClassSegments: ");
-        //for(int i = 0; i < sortedClassSegments.size(); i++)
-        //    log.info("sortedClassSegments[" + i + "] = " + sortedClassSegments.get(i));
+
+        log.info("solve, after sorting, sortedClassSegments: ");
+        for(int i = 0; i < sortedClassSegments.size(); i++)
+            log.info("sortedClassSegments[" + i + "] = " + sortedClassSegments.get(i).str());
 
         for(int i = 0;i < sortedClassSegments.size(); i++){
             ClassSegment cs = sortedClassSegments.get(i);
@@ -456,6 +521,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
                     int timeSlot = cs.getDomainTimeSlots().get(0);
                     int room = cs.getDomainRooms().get(0);
                     assignTimeSlotRoom(cs, timeSlot, room);
+                    log.info("solve, assign fixed class-segment " + cs.str() + " with slot " + timeSlot + " room " + room);
                 }
                 continue;
             }
@@ -463,12 +529,22 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             //String courseGroup = hashCourseGroup(cs.getCourseIndex(),cs.getGroupIds());
             String courseGroup = cs.hashCourseGroup();
             List<ClassSegment> classInGroup = mCourseGroup2ClassSegments.get(courseGroup);
+            String info = "conflict cs: ";
+            for(int cid: cs.getConflictClassSegmentIds()) {
+                info = info + mId2ClassSegment.get(cid).str();
+            }
+            info = info + " class in group: ";
+            for(ClassSegment csi: classInGroup) info = info + csi.str();
+            log.info("solve, consider " + i + "/" + sortedClassSegments.size() + " sorted class-segment " + cs.str() + info);
+
             SlotRoom sr = findSlotRoom(i,classInGroup,sortedClassSegments,mCourseGroup2TimeSlot);
             if(sr == null){
-                log.info("solve: Cannot find a (time-slot, room) for class segment " + cs.getId());
+                log.info("solve: Cannot find a (time-slot, room) for class segment " + cs.str());
             }else{
                 assignTimeSlotRoom(cs,sr.slot,sr.room);
-                log.info("solve: assign class-segment " + cs.getId() + " to slot " + sr.slot + ", room " + sr.room);
+                //log.info("solve: assign class-segment " + cs.getId() + " to slot " + sr.slot + ", room " + sr.room);
+                log.info("solve, assign " + i + "/" + sortedClassSegments.size() + " class-segment " + cs.str() + " with slot " + sr.slot + " room " + sr.slot);
+
             }
         }
     }
@@ -495,6 +571,13 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     }
     private int computeScoreTimeSlotRoom(int i, int timeSlot, int room, List<ClassSegment> sortedClassSegments) {
         ClassSegment csi = sortedClassSegments.get(i);
+        // check if timeSlot overlap with conflicting and scheduled class-segment
+        for(int j = 0; j < i; j++){
+            ClassSegment csj = sortedClassSegments.get(j);
+            if(csi.getConflictClassSegmentIds().contains(csj.getId())){
+                return -100000000;
+            }
+        }
         // compute courseQty[c] the number of assigned class-segments of course index c
         // not overlap with class-segment i (to be assigned to time-slot timeSlot)
         //int[] courseQty = new int[I.getMaxTeacherOfCourses().length];

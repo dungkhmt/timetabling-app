@@ -28,6 +28,9 @@ public class RoomOccupationWithModuleCode {
     private String moduleCode;
     private String status;
 
+    public RoomOccupationWithModuleCode(){
+
+    }
     public RoomOccupationWithModuleCode( String classRoom,  String classCode, Integer startPeriod, Integer endPeriod,
                            String crew, Integer dayIndex, Integer weekIndex, String status, String semester, String moduleCode) {
         this.classRoom = classRoom;

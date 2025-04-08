@@ -292,4 +292,11 @@ public class GeneralClassController {
         timeTablingClassService.createClassSegment(I);
         return ResponseEntity.ok().body(res);
     }
+
+    @PostMapping("/create-class-segments-for-summer-semester")
+    public ResponseEntity<?> createClassSegmentsForSummerSemester(Principal principal, @RequestBody ModelInputCreateClassSegment I){
+        List<RoomReservation> res = gService.createClassSegment(I);
+        timeTablingClassService.createClassSegmentForSummerSemester(I);
+        return ResponseEntity.ok().body(res);
+    }
 }

@@ -1389,7 +1389,7 @@ public class SummerSemesterSolver implements Solver {
             scheduleGroup(EM[session],session);
             log.info("solve group ED size = " + ED[session].size());
             scheduleGroup(ED[session],session);
-            
+
 
 
 

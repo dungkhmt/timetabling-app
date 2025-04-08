@@ -2,9 +2,11 @@ package openerp.openerpresourceserver.generaltimetabling.controller.occupation;
 
 import java.util.List;
 
+import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.model.GetEmptyRoomsRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
+import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.service.RoomOccupationService;
 
-
+@Log4j2
 @RestController
 @RequestMapping("/room-occupation")
 public class RoomOccupationController {
@@ -25,6 +27,9 @@ public class RoomOccupationController {
 
     @Autowired
     private RoomOccupationService roomOccupationService;
+
+    @Autowired
+    private TimeTablingClassService timeTablingClassService;
 
     @GetMapping("/get-all")
     public ResponseEntity<List<RoomOccupation>> getRoomOccupation (@RequestParam("semester") String semester) {
@@ -49,7 +54,10 @@ public class RoomOccupationController {
 
     @GetMapping("/")
     public ResponseEntity<List<RoomOccupationWithModuleCode>> requestGetRoomOccupationsBySemesterAndWeekIndex(@RequestParam("semester")String semester, @RequestParam("weekIndex") int weekIndex) {
-        return ResponseEntity.ok(roomOccupationService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
+        log.info("requestGetRoomOccupationsBySemesterAndWeekIndex, semester " + semester + " week " + weekIndex);
+        //return ResponseEntity.ok(roomOccupationService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
+        return ResponseEntity.ok(timeTablingClassService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
+
     }
     
     @PostMapping("/empty-room")

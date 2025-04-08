@@ -60,6 +60,28 @@ const GeneralUploadScreen = () => {
       body
     );
   }
+  function handleCreateSegmentForSummer(){
+    let body = {
+      semester: selectedSemester.semester
+    };
+
+    request(
+      "post",
+      "/general-classes/create-class-segments-for-summer-semester",
+      (res) => {
+        console.log('create class-segments returned ',res.data);
+        setSelectedIds([]);
+        setSelectedRows([]);
+      },
+      {
+        onError: (e) => {
+          setSelectedIds([]);
+          setSelectedRows([]);
+        }
+      },
+      body
+    );
+  }
   function handleRemoveSegment(){
     let body = {
       semester: selectedSemester.semester
@@ -274,9 +296,23 @@ const GeneralUploadScreen = () => {
                 color="error"
                 
               >
-                Tạo ca học
+                Tạo ca học 
               </Button>
-              
+              <Button
+                startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                sx={{ 
+                  width: 220,
+                  textTransform: 'none',
+                  fontSize: '16px'
+                }}
+                disabled={isDeletingBySemester || !selectedSemester}
+                onClick={handleCreateSegmentForSummer}
+                variant="contained"
+                color="error"
+                
+              >
+                Tạo ca học (kỳ hè)
+              </Button>
             </div>
           </div>
         </div>

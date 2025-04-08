@@ -8,6 +8,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
@@ -126,11 +127,32 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public List<TimeTablingClassSegment> createClassSegment(ModelInputCreateClassSegment I) {
+        List<TimeTablingClassSegment> res = new ArrayList<>();
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        log.info("createClassSegment, semester = " + I.getSemester() + " classes.sz = " + cls.size());
+        int cnt = 0;
+        for(TimeTablingClass c: cls){
+            cnt++;
+            TimeTablingClassSegment cs = new TimeTablingClassSegment();
+            cs.setCrew(c.getCrew());
+            cs.setDuration(c.getDuration());
+            Long id = timeTablingClassSegmentRepo.getNextReferenceValue();
+            cs.setId(id);
+            cs.setClassId(c.getId());
+            cs = timeTablingClassSegmentRepo.save(cs);
+            log.info("createClassSegment, semester = " + I.getSemester() + " saved " + cnt + "/" + cls.size() + " gen id = " + id + " after save object, cs.id = " + cs.getId());
+            res.add(cs);
+        }
+        return res;
+    }
+
+    @Override
+    public List<TimeTablingClassSegment> createClassSegmentForSummerSemester(ModelInputCreateClassSegment I) {
         ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
 
-        log.info("createClassSegment, semester = " + I.getSemester() + " number classes = " + cls.size()
+        log.info("createClassSegmentForSummerSemester, semester = " + I.getSemester() + " number classes = " + cls.size()
                 + " number courses = " + courses.size());
 
         Map<String, List<TimeTablingClass>> mCourseCode2Class = new HashMap<>();
@@ -139,7 +161,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             if (mCourseCode2Class.get(courseCode) == null)
                 mCourseCode2Class.put(courseCode, new ArrayList<>());
             mCourseCode2Class.get(courseCode).add(gc);
-            log.info("createClassSegment -> mCourseCode2Class.get(" + courseCode + ").add(gc.id " + gc.getId() + " gc.code " + gc.getClassCode() + ")");
+            log.info("createClassSegmentForSummerSemester -> mCourseCode2Class.get(" + courseCode + ").add(gc.id " + gc.getId() + " gc.code " + gc.getClassCode() + ")");
         }
         Map<String, List<List<Integer>>> mCourseCodeLT2Partitions = new HashMap<>();
         Map<String, List<List<Integer>>> mCourseCodeBT2Partitions = new HashMap<>();
@@ -202,9 +224,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                         PLTBT = P.partitions.get(gc.getDuration());
                 }
             }
-            log.info("createClassSegment, for course " + courseCode + " morning sz = " + LS.size());
+            log.info("createClassSegmentForSummerSemester, for course " + courseCode + " morning sz = " + LS.size());
             createClassSegmentsOfASession(LS, PLT, PBT, PLTBT);
-            log.info("createClassSegment, for course " + courseCode + " afternoon sz = " + LC.size());
+            log.info("createClassSegmentForSummerSemester, for course " + courseCode + " afternoon sz = " + LC.size());
             createClassSegmentsOfASession(LC, PLT, PBT, PLTBT);
 
         }
@@ -508,6 +530,36 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         List<ModelResponseTimeTablingClass> res = findAllByClassIdIn(classIds);
         return res;
+    }
+
+    @Override
+    public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex) {
+        List<RoomOccupationWithModuleCode> res = new ArrayList<>();
+        List<ModelResponseTimeTablingClass> classes = findAllBySemester(semester);
+        log.info("getRoomOccupationsBySemesterAndWeekIndex, semester = " + semester + " weekIndex = " + weekIndex + " classes.sz = " + classes.size());
+
+        for(ModelResponseTimeTablingClass c: classes){
+            List<Integer> learningWeeks = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());
+            log.info("getRoomOccupationsBySemesterAndWeekIndex, learningWeeks = " + learningWeeks);
+            if(!learningWeeks.contains(weekIndex)) continue;
+            for(TimeTablingClassSegment cs: c.getTimeSlots()){
+                RoomOccupationWithModuleCode ro = new RoomOccupationWithModuleCode();
+                ro.setSemester(semester);
+                ro.setClassRoom(cs.getRoom());
+                ro.setWeekIndex(weekIndex);
+                ro.setDayIndex(cs.getWeekday());
+                ro.setEndPeriod(cs.getEndTime());
+                ro.setStartPeriod(cs.getStartTime());
+                ro.setModuleCode(c.getModuleCode());
+                ro.setCrew(c.getCrew());
+
+                log.info("getRoomOccupationsBySemesterAndWeekIndex, add a ro room " + ro.getClassRoom() + ", start " + ro.getStartPeriod() + " end " + ro.getEndPeriod());
+
+                res.add(ro);
+            }
+        }
+        return res;
+
     }
 
 

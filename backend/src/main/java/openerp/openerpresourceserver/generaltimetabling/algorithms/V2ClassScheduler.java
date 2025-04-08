@@ -763,7 +763,7 @@ public class V2ClassScheduler {
                     if(roomPriority[idx].size() == 24){
                         log.info("mapData, WHY THIS???, course " + gc.getModuleCode() + " SL SV = " + vol[idx]);
                     }
-                    classSegments[idx] = new ClassSegment(idx, type,instanceIndex, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName());
+                    classSegments[idx] = new ClassSegment(idx, type,instanceIndex, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName(),gc.getClassCode());
 
                 }
             }

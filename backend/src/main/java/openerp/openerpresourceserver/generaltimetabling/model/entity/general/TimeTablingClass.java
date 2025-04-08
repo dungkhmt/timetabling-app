@@ -96,6 +96,32 @@ public class TimeTablingClass {
         return W;
     }
 
+    public static List<Integer> extractLearningWeeks(String learningWeeks){
+        String[] terms = learningWeeks.split(",");
+        List<Integer> W = new ArrayList();
+        try {
+            if (terms != null) {
+                for (String t : terms) {
+                    if (!t.contains("-")) {
+                        int w = Integer.valueOf(t);
+                    }else{
+                        String[] s = t.split("-");
+                        if(s != null && s.length == 2){
+                            int start = Integer.valueOf(s[0]);
+                            int end = Integer.valueOf(s[1]);
+                            for(int w = start; w <= end; w++) W.add(w);
+                        }else{
+                            return new ArrayList<>();// not correct format
+                        }
+                    }
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            return new ArrayList<>(); // not correct format
+        }
+        return W;
+    }
 
 
 }
