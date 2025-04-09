@@ -32,5 +32,6 @@ public class MapDataScheduleTimeSlotRoom {
     //Map<Integer, GeneralClass> mClassSegment2Class;
     //ClassSegment[] classSegments;
     List<ClassSegment> classSegments;
+
 }
 

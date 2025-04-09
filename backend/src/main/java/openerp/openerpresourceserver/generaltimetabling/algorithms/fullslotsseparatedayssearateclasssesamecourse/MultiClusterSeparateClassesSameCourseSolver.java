@@ -132,7 +132,7 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
     public static void main(String[] args){
         try{
             Gson gson = new Gson();
-            Scanner in = new Scanner(new File("data//timetable-22-cls-2025.03.21.22.27.55-T2-T6-3groups.json"));
+            Scanner in = new Scanner(new File("/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/deploy_version/timetabling-app/backend/data/timetable-647-cls-2025.03.21.22.23.14-T2-T6.json"));
             String json = in.nextLine();
             in.close();
             MapDataScheduleTimeSlotRoom I = gson.fromJson(json, MapDataScheduleTimeSlotRoom.class);
