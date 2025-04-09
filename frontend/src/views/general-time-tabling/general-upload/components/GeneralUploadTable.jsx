@@ -19,9 +19,8 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
   const [localClasses, setLocalClasses] = useState([]);
   
   useEffect(() => {
-    if (classes && classes.length > 0) {
-      setLocalClasses(classes);
-    }
+    console.log("Classes updated:", classes?.length);
+    setLocalClasses(classes || []);
   }, [classes]);
 
   useEffect(() => {
@@ -38,10 +37,7 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
         toast.success("Cập nhật lớp học thành công!");
         setLoading(false);
         
-        // Update parent's state after successful save
         setClasses(localClasses);
-        
-        // Allow refreshing data again
         if (onRefreshNeeded) {
           onRefreshNeeded();
         }
@@ -71,12 +67,9 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
   };
   
   const handleOnCellChange = useCallback((e, params) => {
-    // Set editing flag
     if (setIsEditing) setIsEditing(true);
     
     const value = e.target.value !== "" ? e.target.value : null;
-    
-    // Use functional updates to avoid stale closures
     setLocalClasses(prevClasses => 
       prevClasses.map(prevClass => 
         prevClass.id === params.id 
@@ -87,7 +80,6 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
   }, [setIsEditing]);
 
   const handleOnCellSelect = useCallback((e, params, option) => {
-    // Set editing flag
     if (setIsEditing) setIsEditing(true);
     
     setLocalClasses(prevClasses => 
@@ -265,6 +257,8 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
             },
           },
         }}
+        // Force the grid to re-render when data changes by adding a key
+        key={`data-grid-${dataLoading ? 'loading' : localClasses.length}`}
         slots={{ toolbar: GridToolbar }}
         slotProps={{
           toolbar: { 

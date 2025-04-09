@@ -41,6 +41,7 @@ export const useGeneralSchedule = () => {
   const [isDeletingBySemester, setIsDeletingBySemester] = useState(false);
   const [isUpdatingClassesGroup, setIsUpdatingClassesGroup] = useState(false);
   const [isDeletingByIds, setIsDeletingByIds] = useState(false);
+  const [isLoadingClusterClasses, setIsLoadingClusterClasses] = useState(false);
 
   // Fetch classes when semester or group changes
   useEffect(() => {
@@ -99,7 +100,7 @@ export const useGeneralSchedule = () => {
 
   // Fetch classes
   const fetchClasses = useCallback(async () => {
-    if (!selectedSemester?.semester) return;
+    if (!selectedSemester?.semester) return [];
 
     setIsClassesLoading(true);
     setLoading(true);
@@ -121,7 +122,6 @@ export const useGeneralSchedule = () => {
     }
   }, [selectedSemester, selectedGroup]);
 
-  // Fetch classes no schedule
   const fetchClassesNoSchedule = useCallback(async () => {
     if (!selectedSemester?.semester) return;
 
@@ -140,7 +140,6 @@ export const useGeneralSchedule = () => {
     }
   }, [selectedSemester, selectedGroup]);
 
-  // Fetch algorithms on mount
   useEffect(() => {
     fetchAlgorithms();
   }, []);
@@ -660,6 +659,7 @@ export const useGeneralSchedule = () => {
       return [];
     }
   
+    setIsLoadingClusterClasses(true);
     setLoading(true);
   
     try {
@@ -670,6 +670,7 @@ export const useGeneralSchedule = () => {
       console.error("Failed to fetch classes by cluster", error);
       return [];
     } finally {
+      setIsLoadingClusterClasses(false);
       setLoading(false);
     }
   }, []);
@@ -726,6 +727,7 @@ export const useGeneralSchedule = () => {
       selectedAlgorithm,
       maxDaySchedule,
       isAlgorithmsLoading,
+      isLoadingClusterClasses,
     },
     setters: {
       setSelectedSemester,

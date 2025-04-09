@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import GeneralClusterAutoComplete from "../common-components/GeneralClusterAutoComplete";
@@ -8,12 +8,15 @@ import { FacebookCircularProgress } from "components/common/progressBar/Customiz
 import GeneralUploadTable from "./components/GeneralUploadTable";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import { request } from "api";
+
 const GeneralUploadScreen = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isUserEditing, setIsUserEditing] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [filteredClasses, setFilteredClasses] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const initialRender = useRef(true);
   
   const { 
     states,
@@ -23,7 +26,8 @@ const GeneralUploadScreen = () => {
       isClassesNoScheduleLoading,
       isDeletingBySemester,
       isDeletingByIds,
-      isUploading 
+      isUploading,
+      isLoadingClusterClasses
     },
     setters: { 
       setSelectedSemester,
@@ -138,7 +142,6 @@ const GeneralUploadScreen = () => {
     if (selectedFile) {
       await handleUploadFile(selectedFile);
       setSelectedFile(null);
-      // Explicitly clear selection after upload
       setSelectedIds([]);
     }
   };
@@ -146,7 +149,6 @@ const GeneralUploadScreen = () => {
   const handleDeleteSelectedRows = async () => {
     const success = await handleDeleteByIds();
     if (success) {
-      // Explicitly clear selection after deletion
       setSelectedIds([]);
     }
   };
@@ -154,7 +156,6 @@ const GeneralUploadScreen = () => {
   const handleDeleteSemester = async () => {
     const success = await handleDeleteBySemester();
     if (success) {
-      // Explicitly clear selection after deletion
       setSelectedIds([]);
     }
   };
@@ -179,18 +180,105 @@ const GeneralUploadScreen = () => {
     };
   }, []);
 
+  // Clear selected rows when semester changes
   useEffect(() => {
+    setSelectedIds([]);
+    setSelectedRows([]);
+    // Force clear the filtered classes immediately
+    setFilteredClasses([]);
+    // Reset cluster selection
+    setSelectedCluster(null);
+  }, [selectedSemester, setSelectedRows]);
+  
+  // Ensure classesNoSchedule gets cleared too when semester changes
+  // We need to make sure this only runs once when the semester changes
+  useEffect(() => {
+    if (initialRender.current) {
+      // Skip the first render
+      initialRender.current = false;
+      return;
+    }
+    
+    if (selectedSemester) {
+      // Using a function form prevents dependency on classesNoSchedule itself
+      setClassesNoSchedule(() => []);
+      
+      // No need to call fetchClassesNoSchedule here as it is already triggered
+      // when selectedSemester changes via the useEffect in useGeneralScheduleData
+    }
+  }, [selectedSemester?.semester]); // Only depend on the semester value itself
+
+  // Effect for filtering by cluster
+  useEffect(() => {
+    console.log("Filtering by cluster:", selectedCluster?.id);
+    console.log("Current semester:", selectedSemester?.semester);
+    
     const filterClassesByCluster = async () => {
-      if (selectedCluster) {
-        const clusterClasses = await getClassesByCluster(selectedCluster.id);
-        setFilteredClasses(clusterClasses);
-      } else {
-        setFilteredClasses(classesNoSchedule);
+      // Always set loading state when filter changes
+      setIsLoadingData(true);
+      
+      try {
+        if (selectedCluster) {
+          console.log("Fetching data for cluster:", selectedCluster.id);
+          const clusterClasses = await getClassesByCluster(selectedCluster.id);
+          console.log("Cluster classes loaded:", clusterClasses?.length || 0);
+          // Always set to an empty array if result is falsy
+          setFilteredClasses(clusterClasses || []);
+        } else {
+          // If no cluster is selected, no need to do anything with filteredClasses
+          setFilteredClasses([]);
+        }
+      } catch (error) {
+        console.error("Error fetching filtered classes:", error);
+        // In case of error, explicitly set to empty array
+        setFilteredClasses([]);
+      } finally {
+        setIsLoadingData(false);
       }
     };
     
-    filterClassesByCluster();
-  }, [selectedCluster, classesNoSchedule, getClassesByCluster]);
+    // Only run the filter if we have a semester selected
+    if (selectedSemester?.semester) {
+      filterClassesByCluster();
+    } else {
+      setFilteredClasses([]);
+      setIsLoadingData(false);
+    }
+  }, [selectedCluster, getClassesByCluster, selectedSemester]);
+
+  // Determine the appropriate loading state based on current operation
+  const tableLoadingState = isClassesNoScheduleLoading || isLoadingData || isLoadingClusterClasses;
+
+  // Create a variable to determine which data to show in the table
+  const displayClasses = useMemo(() => {
+    // Debugging logs
+    console.log("Display classes calculation:");
+    console.log("- Selected cluster:", selectedCluster?.id);
+    console.log("- Filtered classes length:", filteredClasses?.length || 0);
+    console.log("- Classes no schedule length:", classesNoSchedule?.length || 0);
+    console.log("- Is loading:", tableLoadingState);
+    
+    // When loading, return empty array to prevent showing stale data
+    if (tableLoadingState) {
+      console.log("Returning empty array because loading");
+      return [];
+    }
+    
+    // If a cluster is selected, use filtered classes
+    if (selectedCluster !== null) {
+      console.log("Returning filtered classes for cluster");
+      return filteredClasses || [];
+    }
+    
+    // Otherwise, use regular classesNoSchedule
+    console.log("Returning general classes");
+    return classesNoSchedule || [];
+  }, [
+    selectedCluster, 
+    filteredClasses, 
+    classesNoSchedule, 
+    tableLoadingState
+  ]);
 
   return (
     <LoadingProvider>
@@ -318,8 +406,8 @@ const GeneralUploadScreen = () => {
         </div>
         <GeneralUploadTable 
           setClasses={setClassesNoSchedule}
-          classes={selectedCluster ? filteredClasses : classesNoSchedule} 
-          dataLoading={isClassesNoScheduleLoading}
+          classes={displayClasses} 
+          dataLoading={tableLoadingState}
           onSelectionChange={handleSelectionChange} 
           selectedIds={selectedIds}
           onRefreshNeeded={handleRefreshData}
