@@ -121,9 +121,11 @@ public class GeneralClassController {
 
     @PostMapping("/update-class-schedule-v2")
     public ResponseEntity<List<GeneralClass>> requestUpdateClassScheduleV2(@RequestParam("semester")String semester, @RequestBody UpdateClassScheduleRequest request ) {
-        List<GeneralClass> updatedGeneralClass = gService.v2UpdateClassSchedule(semester, request.getSaveRequests());
-        if(updatedGeneralClass.isEmpty()) throw new RuntimeException("General Class was null");
-        return ResponseEntity.ok().body(updatedGeneralClass);
+        //List<GeneralClass> updatedGeneralClass = gService.v2UpdateClassSchedule(semester, request.getSaveRequests());
+        //if(updatedGeneralClass.isEmpty()) throw new RuntimeException("General Class was null");
+        //return ResponseEntity.ok().body(updatedGeneralClass);
+        boolean ok = timeTablingClassService.updateTimeTableClassSegment(semester, request.getSaveRequests());
+        return ResponseEntity.ok().body(new ArrayList<>());
     }
 
     @PostMapping("/update-classes-group")

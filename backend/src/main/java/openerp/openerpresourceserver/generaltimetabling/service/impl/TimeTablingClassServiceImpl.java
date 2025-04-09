@@ -6,12 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.ClassSegmentPartitionConfigForSummerSemester;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentClassSolver;
+import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
@@ -682,6 +684,57 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         List<ModelResponseTimeTablingClass> cls = findAllByClassIdIn(classIds);
         log.info("getClassByCluster(" + clusterId + "), res.sz = " + cls.size());
         return cls;
+    }
+
+    @Override
+    public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests) {
+        for(V2UpdateClassScheduleRequest r: saveRequests){
+            TimeTablingClassSegment ttcs = timeTablingClassSegmentRepo.findById(r.getRoomReservationId()).orElse(null);
+            if(ttcs == null){
+                log.info("updateTimeTableClassSegment, do not find class segment id " + r.getRoomReservationId());
+                return false;
+            }
+            log.info("updateTimeTableClassSegment consider class segment id = " + r.getRoomReservationId() + " start = " + r.getStartTime() + " end = " + r.getEndTime() + " room = " + r.getRoom());
+            TimeTablingClass cls = timeTablingClassRepo.findById(ttcs.getClassId()).orElse(null);
+            if(cls == null) return false;
+            List<Integer> weeks = cls.extractLearningWeeks();
+            List<ModelResponseTimeTablingClass> allClasses = findAllBySemester(semester);
+            List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo
+                    .findAllBySemesterAndRoomNotNull(semester);
+            log.info("updateTimeTableClassSegment, get scheduled class segments size = " + classSegments.size());
+            for(ModelResponseTimeTablingClass c: allClasses){
+                List<Integer> LW = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());
+                int cnt = Util.intersect(weeks,LW);
+                log.info("updateTimeTableClassSegment, check CONFLICT, consider class " + c.getClassCode() + " cnt = " + cnt);
+                if(cnt >= 1){
+                    for(TimeTablingClassSegment cs: c.getTimeSlots()){
+                        log.info("updateTimeTableClassSegment, check CONFLICT with class segment " + cs.getId() + " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() + " end = " + cs.getEndTime());
+                        if(cs.getRoom()==null) continue;
+                        if(!cs.getCrew().equals(ttcs.getCrew())) continue;
+                        if(cs.getWeekday() != r.getWeekday()) continue;
+                        boolean overLap = Util.overLap(r.getStartTime(),r.getEndTime()-r.getStartTime()+1,cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1);
+                        log.info("updateTimeTableClassSegment, check CONFLICT with class segment " + cs.getId() +
+                                " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() +
+                                " end = " + cs.getEndTime() + " overLap = " + overLap);
+
+                        if(overLap){
+                            if(cs.getRoom().equals(r.getRoom())){
+                                String msg = "Conflict room " + cs.getRoom() + " scheduled for class " + c.getClassCode();
+                                log.info("updateTimeTableClassSegment, DETECT Conflict room, msg = " + msg);
+                                throw new ConflictScheduleException(msg);
+                            }
+                        }
+                    }
+                }
+            }
+
+            ttcs.setStartTime(r.getStartTime());
+            ttcs.setEndTime(r.getEndTime());
+            ttcs.setWeekday(r.getWeekday());
+            ttcs.setRoom(r.getRoom());
+            ttcs = timeTablingClassSegmentRepo.save(ttcs);
+        }
+        return true;
     }
 
 

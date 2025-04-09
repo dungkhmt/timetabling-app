@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseT
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
@@ -44,4 +45,7 @@ public interface TimeTablingClassService {
     public int computeClassCluster(ModelInputComputeClassCluster I);
 
     public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId);
+
+    public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests);
+
 }

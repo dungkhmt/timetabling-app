@@ -8,6 +8,11 @@ import java.util.List;
 
 public interface TimeTablingClassSegmentRepo extends JpaRepository<TimeTablingClassSegment, Long> {
     List<TimeTablingClassSegment> findAllByClassIdIn(List<Long> classIds);
+
+    @Query(value = "select * from timetabling_class_segment tcs \n" +
+            "where class_id in (select id from timetabling_class tc where semester = ?1) and room is not null", nativeQuery = true)
+    List<TimeTablingClassSegment> findAllBySemesterAndRoomNotNull(String semester);
+
     @Query(value = "SELECT nextval('timetabling_class_segment_seq')", nativeQuery = true)
     Long getNextReferenceValue();
 }

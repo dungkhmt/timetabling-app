@@ -85,6 +85,23 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             return commonGroup(cg);
         }
     }
+
+    private int distance(int start1, int duration1, int start2, int duration2){
+        int end1 = start1 + duration1 - 1;     int end2 = start2 + duration2 - 1;
+        boolean notOverlap = start1 > end2 || start2 > end1;
+        if(notOverlap == false) return 0;
+        return Math.min(Math.abs(start1 - end2),Math.abs(start2-end1));
+    }
+    private int distance(int start, int duration, List<ClassSegment> cls){
+        int minD = Integer.MAX_VALUE;
+        for(ClassSegment cs: cls){
+            if(solutionSlot.get(cs.getId())==null) continue;
+            int s = solutionSlot.get(cs.getId());       int d = cs.getDuration();
+            int dis = distance(start, duration, s,d);
+            minD = Math.min(minD,dis);
+        }
+        return minD;
+    }
     public CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(MapDataScheduleTimeSlotRoom I){
 
         this.I = I;

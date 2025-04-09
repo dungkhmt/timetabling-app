@@ -588,15 +588,16 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Transactional
     @Override
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule) {
-        synchronizeCourses();
+        //synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
 
+        String PARAM_ROOM_PRIORITY = "Y";
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
-                p.setValue(maxDaySchedule);
-            }else{
-
+                p.setValue(maxDaySchedule + "");
+            }else if(p.getId().equals(TimeTablingConfigParams.USED_ROOM_PRIORITY)){
+                PARAM_ROOM_PRIORITY = p.getValue();
             }
         }
 

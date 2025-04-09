@@ -9,4 +9,5 @@ public class AlgorithmConfigParams {
     public int SLOT_PER_SESSION = 6; // each session consists of 6 time-slots, 1, 2, 3, 4, 5, 6
     public int MAX_DAY_SCHEDULED = 5; // by defalt: days 2, 3, 4, 5, 6
 
+    public String USED_ROOM_PRIORITY = "Y";
 }
