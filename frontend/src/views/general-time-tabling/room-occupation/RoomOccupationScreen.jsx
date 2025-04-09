@@ -233,11 +233,19 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
               {data
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((roomData, index) => (
-                  <tr key={roomData.room} className="border-t-2 border-slate-300">
-                    <th className="border border-slate-300" rowSpan="1">
+                  <tr 
+                    key={roomData.room} 
+                    className="border-t-2 border-slate-400"
+                    style={{ borderBottom: index === data.length - 1 ? '2px solid rgb(148 163 184)' : '' }}
+                  >
+                    <th 
+                      className="border border-slate-300 bg-gray-50" 
+                      rowSpan="1"
+                      style={{ fontWeight: 'bold' }}
+                    >
                       {roomData.room}
                     </th>
-                    <th className="border border-slate-300">
+                    <th className="border border-slate-300 bg-gray-50">
                       <div className="flex flex-col">
                         <div className="border-b border-slate-300 p-1">S</div>
                         <div className="p-1">C</div>
@@ -245,7 +253,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
                     </th>
                     <td colSpan="42" className="p-0 border border-slate-300">
                       <div className="flex flex-col">
-                        <div className="border-b border-slate-300 flex">
+                        <div className="border-b border-slate-200 flex">
                           {createSessionCells(roomData.morningPeriods).map(
                             (cell, index) => renderCell(cell, index)
                           )}
