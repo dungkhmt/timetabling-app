@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Checkbox } from "@mui/material";
 import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
@@ -44,6 +44,11 @@ const TimeTable = ({
   const [selectedPeriods, setSelectedPeriods] = useState("");
   const [selectedClassForSlot, setSelectedClassForSlot] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedClass, setDraggedClass] = useState(null);
+  const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
+  const [moveTarget, setMoveTarget] = useState(null);
+  const dragRef = useRef(null);
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const savedSettings = localStorage.getItem("timetable-column-visibility");
     return savedSettings
@@ -237,6 +242,22 @@ const renderCellContent = (classIndex, day, period) => {
         style={{ width: "70px" }}
         className="border border-gray-300 text-center cursor-pointer px-1"
         onClick={() => handleRowClick(actualIndex, day, period)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (draggedClass) {
+            e.currentTarget.style.backgroundColor = "#e6f7ff";
+          }
+        }}
+        onDragLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "";
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.currentTarget.style.backgroundColor = "";
+          if (draggedClass) {
+            handleDrop(actualIndex, day, period);
+          }
+        }}
       ></td>
     );
   }
@@ -249,6 +270,22 @@ const renderCellContent = (classIndex, day, period) => {
         style={{ width: "70px" }}
         className="border border-gray-300 text-center cursor-pointer px-1"
         onClick={() => handleRowClick(actualIndex, day, period)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (draggedClass) {
+            e.currentTarget.style.backgroundColor = "#e6f7ff";
+          }
+        }}
+        onDragLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "";
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.currentTarget.style.backgroundColor = "";
+          if (draggedClass) {
+            handleDrop(actualIndex, day, period);
+          }
+        }}
       ></td>
     );
   }
@@ -263,16 +300,31 @@ const renderCellContent = (classIndex, day, period) => {
         className="border border-gray-300 text-center cursor-pointer px-1"
         style={{ 
           width: `${70 * colSpan}px`, 
-          backgroundColor: "#FFD700", 
+          backgroundColor: isDragging && draggedClass?.index === actualIndex && draggedClass?.day === day ? "#b3e0ff" : "#FFD700", 
+          cursor: "grab"
         }}
         onClick={() => handleRowClick(actualIndex, day, period)}
+        draggable={true}
+        onDragStart={(e) => handleDragStart(e, actualIndex, day, timetable)}
+        onDragEnd={(e) => {
+          setIsDragging(false);
+          e.currentTarget.style.opacity = "1";
+          // Only clear background color for empty cells, not for class cells
+          document.querySelectorAll('td').forEach(td => {
+            // If it's a drop target (empty cell), reset its background
+            if (td.style.backgroundColor === 'rgb(230, 247, 255)') {
+              td.style.backgroundColor = "";
+            }
+            // Don't reset background for class cells (which have #FFD700 color)
+          });
+        }}
       >
         <span className="text-[14px]">{timetable.room}</span>
       </td>
     );
   }
 
-  return null; 
+  return null;
 };
 
 const handleRowClick = (classIndex, day, period) => {
@@ -300,6 +352,106 @@ const handleRowClick = (classIndex, day, period) => {
     });
   }
   setOpen(true);
+};
+
+const handleDragStart = (e, index, day, timetable) => {
+  // Store the dragged class information
+  setDraggedClass({
+    index,
+    day,
+    timetable,
+    classInfo: filteredClassDetails[index]
+  });
+  
+  setIsDragging(true);
+  e.currentTarget.style.opacity = "0.4";
+
+  // Create a drag image
+  const dragImg = document.createElement('div');
+  dragImg.textContent = timetable.room;
+  dragImg.style.backgroundColor = "#FFD700";
+  dragImg.style.padding = "5px 10px";
+  dragImg.style.borderRadius = "4px";
+  dragImg.style.position = "absolute";
+  dragImg.style.top = "-1000px";
+  document.body.appendChild(dragImg);
+  
+  // Set drag image
+  e.dataTransfer.setDragImage(dragImg, 20, 20);
+  
+  // Clean up the element after drag ends
+  setTimeout(() => {
+    document.body.removeChild(dragImg);
+  }, 0);
+};
+
+const handleDrop = (targetIndex, targetDay, targetPeriod) => {
+  if (!draggedClass) return;
+  
+  const sourceIndex = draggedClass.index;
+  const sourceDay = draggedClass.day;
+
+  // If dropped on the same position, do nothing
+  if (sourceIndex === targetIndex && sourceDay === targetDay) {
+    return;
+  }
+  
+  const sourceClassInfo = filteredClassDetails[sourceIndex];
+  const targetClassInfo = filteredClassDetails[targetIndex];
+
+  // Set the move target with necessary information for the save operation
+  setMoveTarget({
+    roomReservationId: Number(sourceClassInfo.roomReservationId),
+    generalClassId: sourceClassInfo.generalClassId,
+    sourceDay: sourceDay,
+    sourceStartTime: draggedClass.timetable.startTime,
+    sourceEndTime: draggedClass.timetable.endTime,
+    targetDay: targetDay,
+    targetStartTime: targetPeriod,
+    targetRoom: targetClassInfo.room || sourceClassInfo.room,
+    numberOfPeriods: draggedClass.timetable.endTime - draggedClass.timetable.startTime + 1
+  });
+  
+  // Open confirmation dialog
+  setMoveConfirmOpen(true);
+};
+
+const handleConfirmMove = async () => {
+  if (!moveTarget || !selectedSemester) {
+    setMoveConfirmOpen(false);
+    return;
+  }
+
+  try {
+    // Calculate the end time based on the starting period and number of periods
+    const endTime = moveTarget.targetStartTime + moveTarget.numberOfPeriods - 1;
+
+    // Call the API to update the time slot
+    await handlers.handleSaveTimeSlot(
+      selectedSemester.semester, 
+      {
+        roomReservationId: moveTarget.roomReservationId,
+        room: moveTarget.targetRoom,
+        startTime: moveTarget.targetStartTime,
+        endTime: endTime,
+        weekday: days.indexOf(moveTarget.targetDay) + 2,
+      }
+    );
+
+    onSaveSuccess();
+  } catch (error) {
+    console.error('Error moving time slot:', error);
+  } finally {
+    setMoveConfirmOpen(false);
+    setMoveTarget(null);
+    setDraggedClass(null);
+  }
+};
+
+const handleCancelMove = () => {
+  setMoveConfirmOpen(false);
+  setMoveTarget(null);
+  setDraggedClass(null);
 };
 
   const handleChangePage = (event, newPage) => {
@@ -1169,6 +1321,23 @@ const handleRowClick = (classIndex, day, period) => {
             sx={{ minWidth: "80px", padding: "6px 16px" }}
           >
             Thêm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={moveConfirmOpen} onClose={handleCancelMove}>
+        <DialogTitle>Xác nhận di chuyển ca học</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn di chuyển ca học này sang tiết {moveTarget?.targetStartTime} {moveTarget?.targetDay}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelMove} color="secondary">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmMove} color="primary" variant="contained">
+            Xác nhận
           </Button>
         </DialogActions>
       </Dialog>

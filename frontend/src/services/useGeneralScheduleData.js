@@ -281,7 +281,10 @@ export const useGeneralSchedule = () => {
       setLoading(true);
 
       try {
-        await generalScheduleRepository.updateTimeSlot(semester, data);
+        const response = await generalScheduleRepository.updateTimeSlot(semester, data);
+        if (!response || response.status >= 400) {
+          throw new Error(response?.data || "Lỗi không xác định");
+        }
         await fetchClasses();
         toast.success("Lưu TKB thành công!");
         return true;
@@ -291,6 +294,9 @@ export const useGeneralSchedule = () => {
           toast.warn(error.response?.data || "Dữ liệu đã thay đổi");
         } else if (error?.response?.status === 420) {
           toast.error(error.response?.data || "Lỗi xác thực dữ liệu");
+        } else if (error?.response?.status === 404) {
+          await fetchClasses();
+          toast.error("Không tìm thấy dữ liệu cần cập nhật!");
         } else {
           console.error("Save time slot error:", error);
           toast.error(
@@ -312,15 +318,20 @@ export const useGeneralSchedule = () => {
       setLoading(true);
 
       try {
-        await generalScheduleRepository.addTimeSlot(params);
+        const response = await generalScheduleRepository.addTimeSlot(params);
+        if (!response || response.status >= 400) {
+          throw new Error(response?.data || "Lỗi không xác định");
+        }
         await fetchClasses();
         toast.success("Thêm ca học thành công!");
         return true;
       } catch (error) {
         if (error.response?.status === 410) {
           toast.error(error.response.data);
+        } else if (error.response?.status === 404) {
+          toast.error("Không tìm thấy dữ liệu cần cập nhật!");
         } else {
-          toast.error("Thêm ca học thất bại!");
+          toast.error(error.response?.data || "Thêm ca học thất bại!");
         }
         return false;
       } finally {
@@ -337,15 +348,20 @@ export const useGeneralSchedule = () => {
       setLoading(true);
 
       try {
-        await generalScheduleRepository.removeTimeSlot(params);
+        const response = await generalScheduleRepository.removeTimeSlot(params);
+        if (!response || response.status >= 400) {
+          throw new Error(response?.data || "Lỗi không xác định");
+        }
         await fetchClasses();
         toast.success("Xóa ca học thành công!");
         return true;
       } catch (error) {
         if (error.response?.status === 410) {
           toast.error(error.response.data);
+        } else if (error.response?.status === 404) {
+          toast.error("Không tìm thấy dữ liệu cần xóa!");
         } else {
-          toast.error("Xóa ca học thất bại!");
+          toast.error(error.response?.data || "Xóa ca học thất bại!");
         }
         return false;
       } finally {
