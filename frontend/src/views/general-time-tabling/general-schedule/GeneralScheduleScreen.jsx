@@ -6,6 +6,7 @@ import GeneralClusterAutoComplete from "../common-components/GeneralClusterAutoC
 import { Button, Tabs, Tab, Chip, Divider, Paper } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
+import ConsolidatedTimeTable from "./components/ConsolidatedTimeTable";
 import RoomOccupationScreen from "../room-occupation/RoomOccupationScreen";
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -133,9 +134,10 @@ const GeneralScheduleScreen = () => {
             }
           />
           <Tab label="Xem theo phòng" />
+          <Tab label="Gộp lớp học" />
         </Tabs>
 
-        {(viewTab === 0 || viewTab === 1) && (
+        {(viewTab === 0 || viewTab === 1 || viewTab === 3) && (
           <div className="mt-3">
             <Paper variant="outlined" className="p-3">
               <div className="flex gap-3 items-center flex-wrap">
@@ -152,120 +154,140 @@ const GeneralScheduleScreen = () => {
                   }}
                 />
 
-                <GeneralGroupAutoComplete
-                  selectedGroup={states.selectedGroup}
-                  setSelectedGroup={(group) => {
-                    setters.setSelectedGroup(group);
-                    // Clear cluster selection when group changes
-                    setSelectedCluster(null);
-                  }}
-                  sx={{
-                    minWidth: 200,
-                    "& .MuiInputBase-root": { height: "40px" },
-                  }}
-                  disabled={selectedCluster !== null}
-                />
+                <div className="flex gap-3">
+                  <GeneralGroupAutoComplete
+                    selectedGroup={states.selectedGroup}
+                    setSelectedGroup={(group) => {
+                      setters.setSelectedGroup(group);
+                      // Clear cluster selection when group changes
+                      setSelectedCluster(null);
+                    }}
+                    sx={{
+                      minWidth: 200,
+                      "& .MuiInputBase-root": { height: "40px" },
+                    }}
+                    disabled={selectedCluster !== null}
+                  />
 
-                <FormControl
-                  sx={{
-                    minWidth: 200,
-                    "& .MuiInputBase-root": { height: "40px" },
-                  }}
-                  size="small"
-                  disabled={states.isAlgorithmsLoading}
-                >
-                  <InputLabel id="algorithm-select-label">
-                    Chọn thuật toán
-                  </InputLabel>
-                  <Select
-                    labelId="algorithm-select-label"
-                    id="algorithm-select"
-                    value={states.selectedAlgorithm}
-                    onChange={(e) =>
-                      setters.setSelectedAlgorithm(e.target.value)
-                    }
-                    label="Chọn thuật toán"
-                  >
-                    {states.algorithms.map((algorithm, index) => (
-                      <MenuItem key={index} value={algorithm}>
-                        {algorithm}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                  {viewTab === 3 && (
+                    <GeneralClusterAutoComplete
+                      selectedCluster={selectedCluster}
+                      setSelectedCluster={setSelectedCluster}
+                      selectedSemester={states.selectedSemester}
+                      sx={{
+                        minWidth: 200,
+                        "& .MuiInputBase-root": { height: "40px" },
+                      }}
+                    />
+                  )}
+                </div>
 
-                <FormControl
-                  sx={{
-                    minWidth: 200,
-                    "& .MuiInputBase-root": { height: "40px" },
-                  }}
-                  size="small"
-                  disabled={states.isAlgorithmsLoading}
-                  onMouseEnter={() => setIsMaxDayHovered(true)}
-                  onMouseLeave={() => setIsMaxDayHovered(false)}
-                >
-                  <InputLabel id="max-day-schedule-label">
-                    Chọn ngày muộn nhất
-                  </InputLabel>
-                  <Select
-                    labelId="max-day-schedule-label"
-                    id="max-day-schedule-select"
-                    value={states.maxDaySchedule || ""}
-                    onChange={(e) =>
-                      setters.setMaxDaySchedule(e.target.value || null)
-                    }
-                    label="Chọn ngày muộn nhất"
-                    renderValue={(selected) =>
-                      selected ? getDayName(selected) : "Không chọn"
-                    }
-                    endAdornment={
-                      states.maxDaySchedule &&
-                      isMaxDayHovered && (
-                        <Button
-                          sx={{
-                            position: "absolute",
-                            right: 36,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            minWidth: "auto",
-                            p: 0.5,
-                            borderRadius: "50%",
-                            width: "22px",
-                            height: "22px",
-                            color: "gray",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setters.setMaxDaySchedule(null);
-                          }}
-                        >
-                          <Clear fontSize="small" />
-                        </Button>
-                      )
-                    }
-                  >
-                    {days.map((day) => (
-                      <MenuItem key={day} value={day}>
-                        {getDayName(day)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                {viewTab !== 3 && (
+                  <>
+                    <FormControl
+                      sx={{
+                        minWidth: 200,
+                        "& .MuiInputBase-root": { height: "40px" },
+                      }}
+                      size="small"
+                      disabled={states.isAlgorithmsLoading}
+                    >
+                      <InputLabel id="algorithm-select-label">
+                        Chọn thuật toán
+                      </InputLabel>
+                      <Select
+                        labelId="algorithm-select-label"
+                        id="algorithm-select"
+                        value={states.selectedAlgorithm}
+                        onChange={(e) =>
+                          setters.setSelectedAlgorithm(e.target.value)
+                        }
+                        label="Chọn thuật toán"
+                      >
+                        {states.algorithms.map((algorithm, index) => (
+                          <MenuItem key={index} value={algorithm}>
+                            {algorithm}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl
+                      sx={{
+                        minWidth: 200,
+                        "& .MuiInputBase-root": { height: "40px" },
+                      }}
+                      size="small"
+                      disabled={states.isAlgorithmsLoading}
+                      onMouseEnter={() => setIsMaxDayHovered(true)}
+                      onMouseLeave={() => setIsMaxDayHovered(false)}
+                    >
+                      <InputLabel id="max-day-schedule-label">
+                        Chọn ngày muộn nhất
+                      </InputLabel>
+                      <Select
+                        labelId="max-day-schedule-label"
+                        id="max-day-schedule-select"
+                        value={states.maxDaySchedule || ""}
+                        onChange={(e) =>
+                          setters.setMaxDaySchedule(e.target.value || null)
+                        }
+                        label="Chọn ngày muộn nhất"
+                        renderValue={(selected) =>
+                          selected ? getDayName(selected) : "Không chọn"
+                        }
+                        endAdornment={
+                          states.maxDaySchedule &&
+                          isMaxDayHovered && (
+                            <Button
+                              sx={{
+                                position: "absolute",
+                                right: 36,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                minWidth: "auto",
+                                p: 0.5,
+                                borderRadius: "50%",
+                                width: "22px",
+                                height: "22px",
+                                color: "gray",
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setters.setMaxDaySchedule(null);
+                              }}
+                            >
+                              <Clear fontSize="small" />
+                            </Button>
+                          )
+                        }
+                      >
+                        {days.map((day) => (
+                          <MenuItem key={day} value={day}>
+                            {getDayName(day)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </>
+                )}
               </div>
             </Paper>
 
             <div className="sticky top-0 z-10 bg-white py-3 mt-3 border-b">
               <div className="flex justify-between gap-2">
-                <GeneralClusterAutoComplete
-                  selectedCluster={selectedCluster}
-                  setSelectedCluster={setSelectedCluster}
-                  selectedSemester={states.selectedSemester}
-                  sx={{
-                    minWidth: 200,
-                    "& .MuiInputBase-root": { height: "40px" },
-                  }}
-                />
-                <div className="flex md:flex-row flex-col justify-end gap-2">
+                {viewTab !== 3 && (
+                  <GeneralClusterAutoComplete
+                    selectedCluster={selectedCluster}
+                    setSelectedCluster={setSelectedCluster}
+                    selectedSemester={states.selectedSemester}
+                    sx={{
+                      minWidth: 200,
+                      "& .MuiInputBase-root": { height: "40px" },
+                    }}
+                  />
+                )}
+                <div className={`flex md:flex-row flex-col ${viewTab !== 3 ? 'justify-end' : 'justify-end w-full'} gap-2`}>
                   {states.selectedRows.length > 0 ? (
                     <div className="flex-grow flex items-center px-3 bg-blue-50 rounded">
                       <span className="text-blue-700">
@@ -303,52 +325,57 @@ const GeneralScheduleScreen = () => {
                   >
                     Xuất File Excel
                   </Button>
-                  <Button
-                    disabled={
-                      states.selectedRows.length === 0 || states.isResetLoading
-                    }
-                    startIcon={
-                      states.isResetLoading ? (
-                        <FacebookCircularProgress size={20} />
-                      ) : null
-                    }
-                    variant="contained"
-                    color="error"
-                    onClick={() => setOpenResetConfirm(true)}
-                    sx={{
-                      minWidth: "150px",
-                      height: "40px",
-                      padding: "8px 16px",
-                      fontWeight: 500,
-                      textTransform: "none",
-                      boxShadow: 1,
-                    }}
-                  >
-                    Xóa lịch học TKB
-                  </Button>
-                  <Button
-                    disabled={
-                      states.selectedRows.length === 0 || states.isAutoSaveLoading
-                    }
-                    startIcon={
-                      states.isAutoSaveLoading ? (
-                        <FacebookCircularProgress size={20} />
-                      ) : null
-                    }
-                    variant="contained"
-                    color="primary"
-                    onClick={() => setters.setOpenSelectedDialog(true)}
-                    sx={{
-                      minWidth: "200px",
-                      height: "40px",
-                      padding: "8px 16px",
-                      fontWeight: 500,
-                      textTransform: "none",
-                      boxShadow: 1,
-                    }}
-                  >
-                    Xếp lịch lớp đã chọn
-                  </Button>
+                  
+                  {viewTab !== 3 && (
+                    <>
+                      <Button
+                        disabled={
+                          states.selectedRows.length === 0 || states.isResetLoading
+                        }
+                        startIcon={
+                          states.isResetLoading ? (
+                            <FacebookCircularProgress size={20} />
+                          ) : null
+                        }
+                        variant="contained"
+                        color="error"
+                        onClick={() => setOpenResetConfirm(true)}
+                        sx={{
+                          minWidth: "150px",
+                          height: "40px",
+                          padding: "8px 16px",
+                          fontWeight: 500,
+                          textTransform: "none",
+                          boxShadow: 1,
+                        }}
+                      >
+                        Xóa lịch học TKB
+                      </Button>
+                      <Button
+                        disabled={
+                          states.selectedRows.length === 0 || states.isAutoSaveLoading
+                        }
+                        startIcon={
+                          states.isAutoSaveLoading ? (
+                            <FacebookCircularProgress size={20} />
+                          ) : null
+                        }
+                        variant="contained"
+                        color="primary"
+                        onClick={() => setters.setOpenSelectedDialog(true)}
+                        sx={{
+                          minWidth: "200px",
+                          height: "40px",
+                          padding: "8px 16px",
+                          fontWeight: 500,
+                          textTransform: "none",
+                          boxShadow: 1,
+                        }}
+                      >
+                        Xếp lịch lớp đã chọn
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -367,6 +394,18 @@ const GeneralScheduleScreen = () => {
               selectedSemester={states.selectedSemester}
               setSelectedSemester={setters.setSelectedSemester}
             />
+          </div>
+        ) : viewTab === 3 ? (
+          <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
+              <ConsolidatedTimeTable
+                selectedSemester={states.selectedSemester}
+                classes={displayClasses}
+                selectedGroup={states.selectedGroup}
+                onSaveSuccess={handlers.handleRefreshClasses}
+                loading={states.loading || isSchedulingInProgress}
+                selectedRows={states.selectedRows}
+                onSelectedRowsChange={setters.setSelectedRows}
+              />
           </div>
         ) : (
           <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
