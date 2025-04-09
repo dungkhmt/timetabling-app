@@ -88,7 +88,7 @@ const TimeTable = ({
             startTime: cls.startTime,
             endTime: cls.endTime,
           },
-        } : null, // Nếu không có startTime hoặc endTime, bỏ qua timetable
+        } : null,
         studyClass: cls.studyClass,
         listGroupName: cls.listGroupName,
         learningWeeks: cls.learningWeeks,
@@ -245,7 +245,7 @@ const renderCellContent = (classIndex, day, period) => {
         onDragOver={(e) => {
           e.preventDefault();
           if (draggedClass) {
-            e.currentTarget.style.backgroundColor = "#e6f7ff";
+            e.currentTarget.style.backgroundColor = "#EEC82C"; 
           }
         }}
         onDragLeave={(e) => {
@@ -273,7 +273,7 @@ const renderCellContent = (classIndex, day, period) => {
         onDragOver={(e) => {
           e.preventDefault();
           if (draggedClass) {
-            e.currentTarget.style.backgroundColor = "#e6f7ff";
+            e.currentTarget.style.backgroundColor = "#EEC82C"; // Green highlight for drop target
           }
         }}
         onDragLeave={(e) => {
@@ -312,7 +312,7 @@ const renderCellContent = (classIndex, day, period) => {
           // Only clear background color for empty cells, not for class cells
           document.querySelectorAll('td').forEach(td => {
             // If it's a drop target (empty cell), reset its background
-            if (td.style.backgroundColor === 'rgb(230, 247, 255)') {
+            if (td.style.backgroundColor === 'rgb(76, 175, 80)') { // Reset green background
               td.style.backgroundColor = "";
             }
             // Don't reset background for class cells (which have #FFD700 color)
@@ -390,9 +390,10 @@ const handleDrop = (targetIndex, targetDay, targetPeriod) => {
   
   const sourceIndex = draggedClass.index;
   const sourceDay = draggedClass.day;
+  const sourceStartTime = draggedClass.timetable.startTime;
 
-  // If dropped on the same position, do nothing
-  if (sourceIndex === targetIndex && sourceDay === targetDay) {
+  // Only suppress dialog if dropped on exactly the same position (same day AND same starting period)
+  if (sourceIndex === targetIndex && sourceDay === targetDay && sourceStartTime === targetPeriod) {
     return;
   }
   
