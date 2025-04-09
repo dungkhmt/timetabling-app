@@ -72,7 +72,12 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
       <td 
         key={index} 
         className="cell border border-slate-200"
-        style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}
+        style={{ 
+          width: '40px', 
+          minWidth: '40px', 
+          maxWidth: '40px',
+          borderLeft: index % 6 === 0 ? '2px solid rgb(148 163 184)' : '1px solid rgb(226 232 240)'
+        }}
       />
     );
     if (cell.hidden) return null;
@@ -94,9 +99,10 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
         style={{
           width: `${width}px`,
           minWidth: `${width}px`,
-          maxWidth: `${width}px`
+          maxWidth: `${width}px`,
+          borderLeft: index % 6 === 0 ? '2px solid rgb(148 163 184)' : undefined
         }}
-        className="cell bg-yellow-300 text-center overflow-hidden text-xs border border-slate-200"
+        className="cell bg-yellow-300 text-center overflow-hidden text-xs border border-slate-100"
       >
         <div className="flex flex-col items-center justify-center h-full">
           <span>{cell.classCode}</span>
@@ -160,7 +166,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
           </Button>
         </div>
       </div>
-      <div className="overflow-auto flex-grow border rounded-lg">
+      <div className="overflow-auto flex-grow border rounded-lg" style={{ height: "calc(100vh - 140px)" }}>
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <CircularProgress />
@@ -176,14 +182,17 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
               : "Vui lòng chọn kỳ học và tuần"}
           </div>
         ) : (
-          <table className="border-collapse border border-slate-300">
-            <thead className="sticky top-0 bg-white z-10">
+          <table className="border-collapse border border-slate-300 w-full relative">
+            <thead>
               <tr>
                 <th
-                  className="border border-slate-300 bg-gray-50"
+                  className="border-2 border-slate-300 bg-white sticky top-0 left-0 z-30"
                   rowSpan="2"
                   colSpan="2"
-                  style={{ minWidth: "150px" }}
+                  style={{ 
+                    minWidth: "150px",
+                    borderRight: '2px solid rgb(148 163 184)'
+                  }}
                 >
                   Phòng học/ Thời gian
                 </th>
@@ -191,8 +200,13 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
                   <th
                     key={index}
                     colSpan="6"
-                    className="cell text-center border border-slate-300 bg-gray-50"
-                    style={{ width: "240px", minWidth: "240px" }} // 6 periods × 40px
+                    className="cell text-center border-2 border-slate-300 bg-white sticky top-0 z-20"
+                    style={{ 
+                      width: "240px", 
+                      minWidth: "240px",
+                      borderLeft: '2px solid rgb(148 163 184)',
+                      borderRight: '2px solid rgb(148 163 184)'
+                    }}
                   >
                     {index + 2 === 8 ? "CN" : `Thứ ${index + 2}`}
                   </th>
@@ -202,8 +216,13 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
                 {Array.from({ length: 42 }).map((_, index) => (
                   <th
                     key={index}
-                    className="cell border border-slate-300 text-center bg-gray-50"
-                    style={{ width: "40px", minWidth: "40px", maxWidth: "40px" }}
+                    className="cell border border-slate-300 text-center bg-white sticky top-10 z-20"
+                    style={{ 
+                      width: "40px", 
+                      minWidth: "40px", 
+                      maxWidth: "40px",
+                      borderLeft: index % 6 === 0 ? '2px solid rgb(148 163 184)' : '1px solid rgb(226 232 240)'
+                    }}
                   >
                     {(index % 6) + 1}
                   </th>
@@ -214,7 +233,7 @@ const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
               {data
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((roomData, index) => (
-                  <tr key={roomData.room}>
+                  <tr key={roomData.room} className="border-t-2 border-slate-300">
                     <th className="border border-slate-300" rowSpan="1">
                       {roomData.room}
                     </th>
