@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Checkbox } from "@mui/material";
 import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import useDebounce from "hooks/useDebounce";
@@ -14,6 +13,7 @@ import {
   DialogActions,
   Tooltip,
   InputAdornment,
+  Checkbox,
 } from "@mui/material";
 import { Settings, Search } from "@mui/icons-material";
 import React from "react";
@@ -23,8 +23,7 @@ const ConsolidatedTimeTable = ({
   selectedSemester,
   selectedGroup,
   loading,
-  selectedRows,
-  onSelectedRowsChange,
+  onRowCountChange, // Add this prop to report back consolidated count
 }) => {
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
@@ -118,6 +117,13 @@ const ConsolidatedTimeTable = ({
     }
   }, [classes]);
 
+  // Report back the consolidated count when it changes
+  useEffect(() => {
+    if (onRowCountChange && classDetails) {
+      onRowCountChange(classDetails.length);
+    }
+  }, [classDetails, onRowCountChange]);
+
   // Use debounced search term for filtering
   useEffect(() => {
     if (debouncedSearchTerm.trim() === "") {
@@ -168,64 +174,6 @@ const ConsolidatedTimeTable = ({
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const handleSelectAll = (event) => {
-    if (event.target.checked) {
-      // For consolidated view, we need to extract all generalClassIds from timeSlots
-      const newSelected = [];
-      filteredClassDetails.forEach(classGroup => {
-        classGroup.timeSlots.forEach(slot => {
-          if (slot.generalClassId && !newSelected.includes(slot.generalClassId)) {
-            newSelected.push(slot.generalClassId);
-          }
-        });
-      });
-      onSelectedRowsChange(newSelected);
-    } else {
-      onSelectedRowsChange([]);
-    }
-  };
-
-  const handleSelectRow = (event, consolidatedId) => {
-    // Find the class group
-    const classGroup = filteredClassDetails.find(cls => cls.consolidatedId === consolidatedId);
-    
-    if (!classGroup || !classGroup.timeSlots || classGroup.timeSlots.length === 0) return;
-    
-    // Get all generalClassIds from this group's time slots
-    const groupIds = classGroup.timeSlots.map(slot => slot.generalClassId).filter(Boolean);
-    
-    // Check if any of the group's ids are already selected
-    const hasSelected = groupIds.some(id => selectedRows.includes(id));
-    
-    let newSelected = [...selectedRows];
-    
-    if (hasSelected) {
-      // Remove all ids from this group
-      newSelected = newSelected.filter(id => !groupIds.includes(id));
-    } else {
-      // Add all ids from this group
-      groupIds.forEach(id => {
-        if (!newSelected.includes(id)) {
-          newSelected.push(id);
-        }
-      });
-    }
-    
-    onSelectedRowsChange(newSelected);
-  };
-
-  const isSelected = (consolidatedId) => {
-    // Find the class group
-    const classGroup = filteredClassDetails.find(cls => cls.consolidatedId === consolidatedId);
-    
-    if (!classGroup || !classGroup.timeSlots || classGroup.timeSlots.length === 0) return false;
-    
-    // Check if any of the time slots' generalClassIds are in selectedRows
-    return classGroup.timeSlots.some(slot => 
-      slot.generalClassId && selectedRows.includes(slot.generalClassId)
-    );
   };
 
   const handleSettingsOpen = () => {
@@ -428,23 +376,6 @@ const ConsolidatedTimeTable = ({
           >
             <thead className="sticky top-0 z-10 bg-white">
               <tr>
-                <th
-                  className="border-[1px] border-solid border-gray-300 p-1"
-                  style={{ width: "30px", minWidth: "30px" }}
-                >
-                  <Checkbox
-                    indeterminate={
-                      selectedRows.length > 0 &&
-                      selectedRows.length < classDetails.length
-                    }
-                    checked={
-                      classDetails.length > 0 &&
-                      selectedRows.length === classDetails.length
-                    }
-                    onChange={handleSelectAll}
-                    size="small"
-                  />
-                </th>
                 {columnVisibility.classCode && (
                   <th
                     className="border-[1px] border-solid border-gray-300 p-1"
@@ -545,7 +476,6 @@ const ConsolidatedTimeTable = ({
                 ))}
               </tr>
               <tr className="bg-white">
-                <td className="border-[1px] border-solid border-gray-300"></td>
                 <td
                   colSpan={
                     Object.values(columnVisibility).filter(Boolean).length
@@ -570,8 +500,6 @@ const ConsolidatedTimeTable = ({
                 filteredClassDetails
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((classDetail, index) => {
-                    const isItemSelected = isSelected(classDetail.consolidatedId);
-
                     let groupDisplay = "";
                     let showTooltip = false;
                     let tooltipContent = "";
@@ -615,17 +543,7 @@ const ConsolidatedTimeTable = ({
                       <tr
                         key={`${classDetail.consolidatedId}-${index}`}
                         style={{ height: "40px" }}
-                        className={isItemSelected ? "bg-blue-50" : ""}
                       >
-                        <td className="border border-gray-300 text-center px-1">
-                          <Checkbox
-                            checked={isItemSelected}
-                            onChange={(event) =>
-                              handleSelectRow(event, classDetail.consolidatedId)
-                            }
-                            size="small"
-                          />
-                        </td>
                         {columnVisibility.classCode && (
                           <td className="border border-gray-300 text-center px-1">
                             {classDetail.code}
@@ -703,7 +621,6 @@ const ConsolidatedTimeTable = ({
                   })
               ) : (
                 <tr>
-                  <td className="border border-gray-300"></td>
                   <td
                     colSpan={
                       Object.values(columnVisibility).filter(Boolean).length +

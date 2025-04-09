@@ -26,10 +26,10 @@ const GeneralScheduleScreen = () => {
   const [isMaxDayHovered, setIsMaxDayHovered] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [filteredClasses, setFilteredClasses] = useState([]);
+  const [consolidatedCount, setConsolidatedCount] = useState(0);
 
   const days = [2, 3, 4, 5, 6, 7, 8];
 
-  // Function to map day numbers to Vietnamese day names
   const getDayName = (day) => {
     switch (day) {
       case 2:
@@ -76,6 +76,10 @@ const GeneralScheduleScreen = () => {
   const handleAutoScheduleSelectedWithClear = async () => {
     await handlers.handleAutoScheduleSelected();
     setters.setSelectedRows([]);
+  };
+
+  const handleSetConsolidatedCount = (count) => {
+    setConsolidatedCount(count);
   };
 
   const isSchedulingInProgress =
@@ -134,7 +138,18 @@ const GeneralScheduleScreen = () => {
             }
           />
           <Tab label="Xem theo phòng" />
-          <Tab label="Gộp lớp học" />
+          <Tab
+            label={
+              <div className="flex items-center gap-2">
+                <span>Gộp lớp học</span>
+                <Chip
+                  size="small"
+                  label={consolidatedCount || displayClasses?.length || 0}
+                  color="default"
+                />
+              </div>
+            }
+          />
         </Tabs>
 
         {(viewTab === 0 || viewTab === 1 || viewTab === 3) && (
@@ -403,8 +418,7 @@ const GeneralScheduleScreen = () => {
                 selectedGroup={states.selectedGroup}
                 onSaveSuccess={handlers.handleRefreshClasses}
                 loading={states.loading || isSchedulingInProgress}
-                selectedRows={states.selectedRows}
-                onSelectedRowsChange={setters.setSelectedRows}
+                onRowCountChange={handleSetConsolidatedCount}
               />
           </div>
         ) : (
