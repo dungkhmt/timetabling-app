@@ -363,7 +363,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
         return sr;
     }
     @Override
-    public void solve() {
+    public void solve() {// TODO by ThangND
         log.info("solve START....");
         Set<String> courseGroupId = new HashSet<>();
         Map<String, List<ClassSegment>> mCourseGroup2ClassSegments = new HashMap();
