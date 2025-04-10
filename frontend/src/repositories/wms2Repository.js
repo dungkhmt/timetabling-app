@@ -86,4 +86,7 @@ export const wms2Service = {
   exportInBoundShipment: (shipmentId) => {
     return request("put", `/invoice/export-inbound/${shipmentId}` , null, null, null);
   },
+  getLowStockForecast : () => {
+    return request("get", `/forecast/daily-low-stock`);
+  }
 };

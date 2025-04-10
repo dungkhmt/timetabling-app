@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ObjectMapper {
+public class GeneralMapper {
     private final ModelMapper  modelMapper;
 
     public <D, T> D convertToDto(T entity, Class<D> outClass) {

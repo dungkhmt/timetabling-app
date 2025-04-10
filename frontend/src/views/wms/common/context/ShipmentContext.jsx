@@ -16,7 +16,6 @@ export const ShipmentProvider = ({ children, shipmentType }) => {
   // Fetch dữ liệu
   const fetchData = async () => {
     try {
-      debugger;
       const response =   await (shipmentType === SHIPMENT_TYPE_ID.OUTBOUND ? getOutBoundDetail(shipmentId) : getInBoundDetail(shipmentId));
       setShipmentData(response.data);
     } catch (err) {

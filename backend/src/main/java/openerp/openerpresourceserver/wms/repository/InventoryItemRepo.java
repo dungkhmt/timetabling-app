@@ -11,4 +11,6 @@ public interface InventoryItemRepo extends JpaRepository<InventoryItem, String> 
     Page<InventoryItem> findByProductIdIn(List<String> productIds, PageRequest pageRequest);
 
     List<InventoryItem> findByProductIdIn(List<String> productIds);
+
+    List<InventoryItem> findByQuantityLessThan(int lowStockThreshold);
 }

@@ -12,7 +12,7 @@ import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderListRes;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.OrderItem;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
-import openerp.openerpresourceserver.wms.mapper.ObjectMapper;
+import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.PurchaseOrderSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 @RequiredArgsConstructor
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
-    private final ObjectMapper objectMapper;
+    private final GeneralMapper generalMapper;
     private final FacilityRepo facilityRepo;
     private final OrderHeaderRepo orderHeaderRepo;
     private final SupplierRepo supplierRepo;
@@ -46,7 +46,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         var userLogin = userLoginRepo.findById(name).orElseThrow(
                 () -> new DataNotFoundException("User not found with id: " + name));
 
-        var orderHeader = objectMapper.convertToEntity(purchaseOrder, OrderHeader.class);
+        var orderHeader = generalMapper.convertToEntity(purchaseOrder, OrderHeader.class);
         orderHeader.setFacility(facility);
         orderHeader.setFromSupplier(supplier);
         orderHeader.setCreatedByUser(userLogin);
@@ -56,7 +56,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         List<OrderItem> orderItemList= new ArrayList<>();
         AtomicInteger seq = new AtomicInteger(0);
         purchaseOrder.getOrderItems().forEach(item -> {
-            var orderItem = objectMapper.convertToEntity(item, OrderItem.class);
+            var orderItem = generalMapper.convertToEntity(item, OrderItem.class);
             orderItem.setOrder(orderHeader);
             var product = productRepo.findById(item.getProductId()).orElseThrow(
                     () -> new DataNotFoundException("Product not found with id: " + item.getProductId()));
@@ -84,7 +84,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         var purchaseOrders = orderHeaderRepo.findAll(specification, pageReq);
         List<PurchaseOrderListRes> purchaseOrderListRes = purchaseOrders.getContent().stream()
                 .map(purchaseOrder -> {
-                    var orderListRes = objectMapper.convertToDto(purchaseOrder, PurchaseOrderListRes.class);
+                    var orderListRes = generalMapper.convertToDto(purchaseOrder, PurchaseOrderListRes.class);
                     orderListRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
                     orderListRes.setFacilityName(purchaseOrder.getFacility().getName());
                     orderListRes.setCreatedByUserName(purchaseOrder.getCreatedByUser().getFullName());
@@ -115,7 +115,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         var purchaseOrder = orderHeaderRepo.findById(id).orElseThrow(
                 () -> new DataNotFoundException("Purchase order not found with id: " + id));
 
-        var purchaseOrderDetailRes = objectMapper.convertToDto(purchaseOrder, PurchaseOrderDetailRes.class);
+        var purchaseOrderDetailRes = generalMapper.convertToDto(purchaseOrder, PurchaseOrderDetailRes.class);
         purchaseOrderDetailRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
         purchaseOrderDetailRes.setFacilityName(purchaseOrder.getFacility().getName());
         purchaseOrderDetailRes.setCreatedByUser(purchaseOrder.getCreatedByUser().getFullName());
@@ -126,7 +126,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         var orderItemList = purchaseOrder.getOrderItems().stream()
                 .map(orderItem -> {
-                    var orderItemRes = objectMapper.convertToDto(orderItem, openerp.openerpresourceserver.wms.dto.saleOrder.OrderProductRes.class);
+                    var orderItemRes = generalMapper.convertToDto(orderItem, openerp.openerpresourceserver.wms.dto.saleOrder.OrderProductRes.class);
                     orderItemRes.setProductName(orderItem.getProduct().getName());
                     orderItemRes.setProductId(orderItem.getProduct().getId());
                     return orderItemRes;

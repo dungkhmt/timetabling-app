@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface ShipmentRepo extends JpaRepository<Shipment, String> {
     Page<Shipment> findByOrderId(String orderId, PageRequest pageRequest);
+
+    List<Shipment> findByShipmentStatusIdAndShipmentTypeId(String name, String outbound);
 }

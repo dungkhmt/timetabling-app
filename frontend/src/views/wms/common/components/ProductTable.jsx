@@ -43,8 +43,8 @@ const ProductTable = () => {
             <TableCell>Tên sản phẩm</TableCell>
             <TableCell>Đơn vị</TableCell>
             <TableCell>Giá nhập</TableCell>
-            <TableCell>Giá bán lẻ</TableCell>
             <TableCell>Số lượng</TableCell>
+            <TableCell>Thành tiền</TableCell>
             <TableCell>Thao tác</TableCell>
           </TableRow>
         </TableHead>
@@ -56,10 +56,9 @@ const ProductTable = () => {
                 <TableRow key={item.productId}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{product.id || item.productId}</TableCell>
-                  <TableCell>{product.name || "—"}</TableCell>
-                  <TableCell>{product.unit || "—"}</TableCell>
-                  <TableCell>{product.costPrice?.toLocaleString() || "—"}</TableCell>
-                  <TableCell>{product.retailPrice?.toLocaleString() || "—"}</TableCell>
+                  <TableCell>{item.productName || "—"}</TableCell>
+                  <TableCell>{item.unit || "—"}</TableCell>
+                  <TableCell>{item.price || "—"}</TableCell>
                   <TableCell>
                     <TextField
                       type="number"
@@ -69,6 +68,7 @@ const ProductTable = () => {
                       InputProps={{ inputProps: { min: 1 } }}
                     />
                   </TableCell>
+                  <TableCell>{item.price * item.quantity || "—"}</TableCell>
                   <TableCell>
                     <IconButton 
                       color="error" 
