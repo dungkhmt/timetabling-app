@@ -105,6 +105,7 @@ public class GeneralClassController {
 
     @PostMapping("/update-class")
     public ResponseEntity<?> requestUpdateClass(@RequestBody UpdateGeneralClassRequest request) {
+        log.info("requestUpdateClass, API /update-class: request classId = " + request.getGeneralClass().getId());
         //GeneralClass updatedGeneralClass= gService.updateGeneralClass(request);
         //if(updatedGeneralClass == null) throw new RuntimeException("General Class was null");
         //return ResponseEntity.ok().body(updatedGeneralClass);
@@ -161,6 +162,7 @@ public class GeneralClassController {
 
     @GetMapping("/get-class-groups")
     public ResponseEntity<List<ClassGroupSummary>> getClassGroups(Principal principal, @RequestParam Long classId) {
+        log.info("getClassGroups, classId = " + classId);
         List<ClassGroupSummary> classGroups = classGroupService.getAllClassGroup(classId);
         return ResponseEntity.ok(classGroups);
     }

@@ -90,7 +90,7 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
                         int sl = slot + s - 1;
                         //I.getRoomOccupations()[room].add(sl);
                     }
-                    log.info("solve, Cluster " + cs.getGroupNames() + " SET solutionSlot.put(" + cs.getId() + "," + slot + ") solutionRoom.put(" + cs.getId() + "," + room + ")");
+                    //log.info("solve, Cluster " + cs.getGroupNames() + " SET solutionSlot.put(" + cs.getId() + "," + slot + ") solutionRoom.put(" + cs.getId() + "," + room + ")");
                 }
                 if(!checkTimeRoom()){
                     log.info("Post check time-slot and room conflict FAILED???"); break;

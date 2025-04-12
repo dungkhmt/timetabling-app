@@ -25,6 +25,7 @@ public class ClassGroupServiceImp implements ClassGroupService {
 
     @Override
     public List<ClassGroupSummary> getAllClassGroup(Long classId) {
+        log.info("getAllClassGroup, classId = " + classId);
         if (classId == null || classId <= 0) {
             throw new IllegalArgumentException("Invalid classId");
         }

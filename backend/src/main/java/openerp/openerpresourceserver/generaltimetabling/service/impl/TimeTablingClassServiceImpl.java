@@ -469,12 +469,27 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public int deleteByIds(List<Long> ids) {
+        // FIRST delete class-segment
+        List<TimeTablingClassSegment> CS = timeTablingClassSegmentRepo.findAllByClassIdIn(ids);
+        List<Long> classSegmentIds = CS.stream().map(cs -> cs.getId()).toList();
+        timeTablingClassSegmentRepo.deleteAllById(classSegmentIds);
+        List<Long> childrenIds = new ArrayList<>();
+        for(Long id: ids) {
+            List<TimeTablingClass> childrenClass = timeTablingClassRepo.findAllByParentClassId(id);
+            for(TimeTablingClass c: childrenClass) childrenIds.add(c.getId());
+        }
+
+        // SECOND delete children classes (e.g., class BT)
+        timeTablingClassRepo.deleteAllById(childrenIds);
+
+        // FINAL delete classes by ids
         timeTablingClassRepo.deleteAllById(ids);
         return 0;
     }
 
     @Override
     public TimeTablingClass updateClass(UpdateGeneralClassRequest r) {
+        log.info("updateClass, classId = " + r.getGeneralClass().getId());
         TimeTablingClass cls = timeTablingClassRepo
                 .findById(r.getGeneralClass().getId()).orElse(null);
         if(cls == null) return null;
@@ -501,6 +516,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         cls.setStudyClass(gc.getStudyClass());
 
         cls = timeTablingClassRepo.save(cls);
+        log.info("updateClass, saved TimeTablingClass, new learning weeks = " + cls.getLearningWeeks());
         return cls;
     }
 
@@ -547,9 +563,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
         for(ModelResponseTimeTablingClass c: classes){
 
-            System.out.println(c);
+            //System.out.println(c);
             List<Integer> learningWeeks = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());
-            log.info("getRoomOccupationsBySemesterAndWeekIndex, learningWeeks = " + learningWeeks);
+            //log.info("getRoomOccupationsBySemesterAndWeekIndex, learningWeeks = " + learningWeeks);
             if(!learningWeeks.contains(weekIndex)) continue;
             for(TimeTablingClassSegment cs: c.getTimeSlots()){
                 RoomOccupationWithModuleCode ro = new RoomOccupationWithModuleCode();
@@ -563,7 +579,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 ro.setModuleCode(c.getModuleCode());
                 ro.setCrew(c.getCrew());
 
-                log.info("getRoomOccupationsBySemesterAndWeekIndex, add a ro room " + ro.getClassRoom() + ", start " + ro.getStartPeriod() + " end " + ro.getEndPeriod());
+                //log.info("getRoomOccupationsBySemesterAndWeekIndex, add a ro room " + ro.getClassRoom() + ", start " + ro.getStartPeriod() + " end " + ro.getEndPeriod());
 
                 res.add(ro);
             }
@@ -623,10 +639,17 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         ConnectedComponentClassSolver solver = new ConnectedComponentClassSolver();
         List<List<TimeTablingClass>> clusters = solver.computeConnectedComponents(cls,classGroups);
+        log.info("computeClassCluster, number of clusters = " + clusters.size());
 
         List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        log.info("computeClassCluster, oldClusters.sz = " + oldClusters.size());
         for(Cluster c: oldClusters){
+            List<ClusterClass> clusterClasses = clusterClassRepo.findAllByClusterId(c.getId());
+            for(ClusterClass cc: clusterClasses){
+                clusterClassRepo.delete(cc);
+            }
             clusterRepo.delete(c);
+            log.info("computeClassCluster, delete OK cluster " + c.getId() + " name = " + c.getName());
         }
 
         for(List<TimeTablingClass> cluster : clusters){
@@ -653,6 +676,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             newCluster.setName(clusterName);
             newCluster.setSemester(I.getSemester());
             newCluster = clusterRepo.save(newCluster);
+            log.info("computeClassCluster, saved cluster " + newCluster.getId() + " name = " + newCluster.getName());
 
             for(TimeTablingClass gc: cluster){
                 ClusterClass clusterClass = new ClusterClass();
@@ -660,6 +684,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 clusterClass.setClassId(gc.getId());
 
                 clusterClass = clusterClassRepo.save(clusterClass);
+                log.info("computeClassCluster, saved clusterClass " + clusterClass.getClusterId() + " classId " + clusterClass.getClassId());
+
             }
         }
 

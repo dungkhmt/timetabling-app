@@ -62,7 +62,7 @@ public class CourseNotOverlapBackTrackingSolver {
         }
         for(idx = 0; idx < nbCourses; idx++){
             String c = arrCourses[idx];
-            log.info("Solver: course " + c + " duration " + duration[idx] + ", conflict = " + conflict[idx] + ", domain = " + domain[idx].toString());
+            //log.info("Solver: course " + c + " duration " + duration[idx] + ", conflict = " + conflict[idx] + ", domain = " + domain[idx].toString());
         }
         x = new int[nbCourses];
         sol = new int[nbCourses];

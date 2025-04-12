@@ -16,10 +16,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +38,8 @@ public class PlanGeneralClassService {
 
     @Autowired
     private TimeTablingClassRepo timeTablingClassRepo;
+    @Autowired
+    private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
 
     @Autowired
     private RoomReservationRepo roomReservationRepo;
@@ -171,6 +170,15 @@ public class PlanGeneralClassService {
         classGroupRepo.save(clsGroup);
         log.info("makeClass -> SAVE classId " + cls.getId() + " groupId " + groupId);
 
+        // create corresponding class-segment
+        TimeTablingClassSegment cs = new TimeTablingClassSegment();
+        Long csId = timeTablingClassSegmentRepo.getNextReferenceValue();
+        cs.setId(csId);
+        cs.setClassId(cls.getId());
+        cs.setCrew(cls.getCrew());
+        cs.setDuration(cls.getDuration());
+        cs  = timeTablingClassSegmentRepo.save(cs);
+
     }
 
     @Transactional
@@ -238,7 +246,9 @@ public class PlanGeneralClassService {
             newClass.setRefClassId(parentClass.getRefClassId());
             newClass.setSemester(parentClass.getSemester());
             newClass.setModuleCode(parentClass.getModuleCode());
-            newClass.setClassCode(parentClass.getClassCode());
+            Long nextCode = timeTablingClassRepo.getNextReferenceValue();
+            String classCode = nextCode + "";
+            newClass.setClassCode(classCode);
             newClass.setModuleName(parentClass.getModuleName());
             newClass.setMass(parentClass.getMass());
             newClass.setCrew(parentClass.getCrew());
@@ -266,6 +276,17 @@ public class PlanGeneralClassService {
                 log.info("makeSubClassNew, save newClassGroup " + newClassGroup.getClassId() + "," + newClassGroup.getGroupId());
 
             }
+            // make 1 corresponding class segment
+
+            TimeTablingClassSegment cs = new TimeTablingClassSegment();
+            Long csId = timeTablingClassSegmentRepo.getNextReferenceValue();
+            cs.setId(csId);
+            cs.setClassId(newClass.getId());
+            cs.setCrew(newClass.getCrew());
+            cs.setDuration(newClass.getDuration());
+            cs = timeTablingClassSegmentRepo.save(cs);
+
+
             newClasses.add(newClass);
         }
 

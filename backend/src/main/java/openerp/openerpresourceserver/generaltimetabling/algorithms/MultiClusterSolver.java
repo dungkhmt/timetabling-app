@@ -12,9 +12,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.Conne
 import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolver;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Log4j2
 public class MultiClusterSolver implements Solver {
@@ -22,6 +20,8 @@ public class MultiClusterSolver implements Solver {
     MapDataScheduleTimeSlotRoomWrapper D;
     Map<Integer, Integer> solutionSlot;
     Map<Integer, Integer> solutionRoom;
+    Map<Integer, List<ClassSegment>> classesScheduledInSlot; // classesScheduledInSlot.get(s) is the list of classes scheduled in time slot s
+
     boolean foundSolution;
     int timeLimit = 10000;// 10 seconds by defalut
     String oneClusterAlgorithm = "";
@@ -58,6 +58,14 @@ public class MultiClusterSolver implements Solver {
         List<List<ClassSegment>> clusters = connectedComponentSolver.computeConnectedComponent(I.getClassSegments());
         solutionRoom= new HashMap<>();
         solutionSlot = new HashMap<>();
+        classesScheduledInSlot = new HashMap<>();
+        Set<Integer> allDomainSlots = new HashSet<>();
+        for(ClassSegment cs: I.getClassSegments()){
+            for(int s: cs.getDomainTimeSlots())
+                allDomainSlots.add(s);
+        }
+        for(int s: allDomainSlots) classesScheduledInSlot.put(s, new ArrayList<>());
+
         foundSolution = false;
         int cnt = 0;
         for(List<ClassSegment> C: clusters){
@@ -79,7 +87,7 @@ public class MultiClusterSolver implements Solver {
             if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1))
                 oneClusterSolver = new CourseBasedConnectedClusterGreedySolver(IC);
             else if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS))
-                oneClusterSolver = new CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(IC);
+                oneClusterSolver = new CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(IC,classesScheduledInSlot);
             else if(oneClusterAlgorithm.equals(Constants.SUMMER_SEMESTER)){
                 oneClusterSolver = new SummerSemesterSolver(W);
             }
@@ -97,7 +105,7 @@ public class MultiClusterSolver implements Solver {
                         int sl = slot + s - 1;
                         //I.getRoomOccupations()[room].add(sl);
                     }
-                    log.info("solve, Cluster " + cs.getGroupNames() + " SET solutionSlot.put(" + cs.getId() + "," + slot + ") solutionRoom.put(" + cs.getId() + "," + room + ")");
+                    //log.info("solve, Cluster " + cs.getGroupNames() + " SET solutionSlot.put(" + cs.getId() + "," + slot + ") solutionRoom.put(" + cs.getId() + "," + room + ")");
                 }
                 if(!checkTimeRoom()){
                     log.info("Post check time-slot and room conflict FAILED???"); break;

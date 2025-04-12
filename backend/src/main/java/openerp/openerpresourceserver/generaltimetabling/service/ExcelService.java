@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.helper.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.FilterClassOpenedDto;
@@ -378,6 +379,10 @@ public class ExcelService {
                         req.setWeekType(p.getWeekType());
                         //planGeneralClassService.makeClass(req, groupName);
                         planGeneralClassService.makeClass(req, groupId);
+
+                        // create ONE class-segment for the new class
+                        //TimeTablingClassSegment cs = new TimeTablingClassSegment();
+
                     }
                 }
             }

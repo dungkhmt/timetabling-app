@@ -128,7 +128,7 @@ public class ClassTimeScheduleBacktrackingSolver {
                 int t1 = solution[i] - day * 12;
                 int K = t1 / 6; // kip
                 int tietBD = t1 - 6 * K;
-                log.info("class[" + i + "] is assigned to slot " + solution[i] + "(" + day + "," + K + "," + tietBD + ")");
+                //log.info("class[" + i + "] is assigned to slot " + solution[i] + "(" + day + "," + K + "," + tietBD + ")");
             }
         }
     }

@@ -644,7 +644,7 @@ public class V2ClassScheduler {
 
         for (int i = 0; i < classes.size(); i++) {
             ModelResponseTimeTablingClass gc = classes.get(i);
-            log.info("mapDataNew, start create mapped class-segment[" + i + "/" + classes.size() + " for class " + gc.getId());
+            //log.info("mapDataNew, start create mapped class-segment[" + i + "/" + classes.size() + " for class " + gc.getId());
             Group gr = mName2Group.get(gc.getGroupName());
 
             //log.info("mapData, gc[" + i + "] crew = " + gc.getCrew());
@@ -772,7 +772,7 @@ public class V2ClassScheduler {
                                 //log.info("mapData, idx = " + idx + "/" + n + " for class " + gc.getId() + " qty = " + gc.getQuantityMax() + ", group " + gc.getGroupName() + " -> selectedSortedRoom add remain rooms " + r.getId() + ", " + r.getBuilding().getId() + ", " + r.getQuantityMax());
                             }
                         }else{// do not apply room priority predefined,
-                            log.info("mapDataNew, DO NOT use room priority");
+                            //log.info("mapDataNew, DO NOT use room priority");
                             // SORT all rooms in increasing order of capacity
                             for(Classroom r: rooms) selectedSortedClassRooms.add(r);
                             Collections.sort(selectedSortedClassRooms, new Comparator<Classroom>() {
@@ -791,7 +791,7 @@ public class V2ClassScheduler {
                     }
 
 
-                    log.info("mapData, roomPriority[" + idx + "/" + n + "].sz = " + roomPriority[idx].size() + " domain timeSlots.sz = " + D[idx].size());
+                    //log.info("mapData, roomPriority[" + idx + "/" + n + "].sz = " + roomPriority[idx].size() + " domain timeSlots.sz = " + D[idx].size());
                     if(roomPriority[idx].size() == 24){
                         log.info("mapData, WHY THIS???, course " + gc.getModuleCode() + " SL SV = " + vol[idx]);
                     }
@@ -975,6 +975,7 @@ public class V2ClassScheduler {
 
  */
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoomNew(List<ModelResponseTimeTablingClass> classes,
+                                                                           List<ModelResponseTimeTablingClass> allClasses,
                                                                            List<Classroom> rooms, Map<String,
             List<TimeTablingClassSegment>> mId2RoomReservations, List<TimeTablingCourse> ttcourses,
                                                                            List<Group> groups,
@@ -1107,7 +1108,7 @@ public class V2ClassScheduler {
                     //newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
                     classSegment.setRoom(rooms.get(idxRoom).getClassroom());
                 }
-                log.info("class[" + i + "] is assigned to slot " + solution.get(cs.getId()) + "(" + day + "," + K + "," + tietBD + "), room = " + idxRoom + " - " + classSegment.getRoom());
+                //log.info("class[" + i + "] is assigned to slot " + solution.get(cs.getId()) + "(" + day + "," + K + "," + tietBD + "), room = " + idxRoom + " - " + classSegment.getRoom());
             }
             //roomReservations.forEach(rr -> {
             //    rr.setRoom(rooms.get(solver.getSolution()[roomReservations.indexOf(rr)]).getClassroom());
@@ -1275,7 +1276,7 @@ public class V2ClassScheduler {
 
                 newRoomReservation.setGeneralClass(gClass);
                 gClass.getTimeSlots().add(newRoomReservation);
-                log.info("class[" + i + "] is assigned to slot " + solution[i] + "(" + day + "," + K + "," + tietBD + ")");
+                //log.info("class[" + i + "] is assigned to slot " + solution[i] + "(" + day + "," + K + "," + tietBD + ")");
             }
         }
         return classes;

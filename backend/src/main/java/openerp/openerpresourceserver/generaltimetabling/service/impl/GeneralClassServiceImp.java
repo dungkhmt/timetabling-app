@@ -622,7 +622,6 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 }
                 mId2RoomReservations.get(cs.getRoom()).add(cs);
             }
-
         }
         V2ClassScheduler optimizer = new V2ClassScheduler(params);
         List<Classroom> rooms = classroomRepo.findAll();
@@ -630,7 +629,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         List<Group> groups = groupRepo.findAll();
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
         //List<GeneralClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoom(foundClasses,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
-        List<ModelResponseTimeTablingClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoomNew(foundClasses,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
+        List<ModelResponseTimeTablingClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoomNew(foundClasses,allClassesOfSemester,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
 
         for(ModelResponseTimeTablingClass c: autoScheduleClasses){
             for(TimeTablingClassSegment cs: c.getTimeSlots()){
