@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotsseparatedays.BacktrackingSolverOneCluster;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotsseparatedays.CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.CourseBasedConnectedClusterGreedySolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.CourseBasedMultiClusterGreedySolver;
@@ -90,7 +91,8 @@ public class MultiClusterSolver implements Solver {
                 oneClusterSolver = new CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver(IC,classesScheduledInSlot);
             else if(oneClusterAlgorithm.equals(Constants.SUMMER_SEMESTER)){
                 oneClusterSolver = new SummerSemesterSolver(W);
-            }
+            }else if(oneClusterAlgorithm.equals(Constants.ALGO_BACKTRACKING_ONE_CLUSTER))
+                oneClusterSolver = new BacktrackingSolverOneCluster(W);
 
             oneClusterSolver.setTimeLimit(timeLimit);
             oneClusterSolver.solve();

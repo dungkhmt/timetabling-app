@@ -198,6 +198,7 @@ public class GeneralClassController {
         List<String> res = new ArrayList<>();
         res.add(Constants.SUMMER_SEMESTER);
         res.add(Constants.MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS);
+        res.add(Constants.ALGO_BACKTRACKING_ONE_CLUSTER);
         res.add(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_FIRST_FIT);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_2);

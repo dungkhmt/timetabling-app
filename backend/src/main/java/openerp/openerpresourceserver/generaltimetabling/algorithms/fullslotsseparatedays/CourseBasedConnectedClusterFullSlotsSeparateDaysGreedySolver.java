@@ -1,10 +1,7 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotsseparatedays;
 
 import lombok.extern.log4j.Log4j2;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
-import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity.CourseNotOverlapBackTrackingSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
@@ -227,15 +224,7 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     }
 
      */
-    class SlotRoom{
-        int slot;
-        int room;
 
-        public SlotRoom(int slot, int room) {
-            this.slot = slot;
-            this.room = room;
-        }
-    }
     private SlotRoom selectMaxScoreSlotRoom(int i, List<ClassSegment> classInGroup, List<ClassSegment> sortedClassSegments, Map<String, Integer> mCourseGroup2TimeSlot){
         int maxScore = -1;
         ClassSegment cs = sortedClassSegments.get(i);
