@@ -310,16 +310,16 @@ const GeneralUploadScreen = () => {
               setSelectedFile={setSelectedFile}
               submitHandler={handleSubmitFile}
             />
-            <div className="flex gap-2 text-[16px]">
+            <div className="flex flex-wrap gap-2 text-[16px] justify-end">
               <Button
                 startIcon={isDeletingByIds ? <FacebookCircularProgress /> : null}
                 sx={{ 
-                  width: 220,
+                  minWidth: '180px',
                   textTransform: 'none',
-                  fontSize: '16px'
+                  fontSize: '14px'
                 }}
                 disabled={isDeletingByIds || selectedIds.length === 0}
-                onClick={handleDeleteSelectedRows} // Use our new wrapper function
+                onClick={handleDeleteSelectedRows}
                 variant="contained"
                 color="error"
               >
@@ -328,15 +328,14 @@ const GeneralUploadScreen = () => {
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
-                  width: 220,
+                  minWidth: '180px',
                   textTransform: 'none',
-                  fontSize: '16px'
+                  fontSize: '14px'
                 }}
                 disabled={isDeletingBySemester || !selectedSemester}
-                onClick={handleDeleteSemester} // Use our new wrapper function
+                onClick={handleDeleteSemester}
                 variant="contained"
                 color="error"
-                
               >
                 Xóa danh sách theo kỳ
               </Button>
@@ -344,60 +343,56 @@ const GeneralUploadScreen = () => {
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
-                  width: 220,
+                  minWidth: '120px',
                   textTransform: 'none',
-                  fontSize: '16px'
+                  fontSize: '14px'
                 }}
                 disabled={isDeletingBySemester || !selectedSemester}
                 onClick={handleComputeClusters}
                 variant="contained"
-                color="error"
-                
+                color="primary"
               >
                 Phân cụm
               </Button>
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
-                  width: 220,
+                  minWidth: '120px',
                   textTransform: 'none',
-                  fontSize: '16px'
+                  fontSize: '14px'
                 }}
                 disabled={isDeletingBySemester || !selectedSemester}
                 onClick={handleRemoveSegment}
                 variant="contained"
-                color="error"
-                
+                color="secondary"
               >
                 Xóa ca học
               </Button>
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
-                  width: 220,
+                  minWidth: '120px',
                   textTransform: 'none',
-                  fontSize: '16px'
+                  fontSize: '14px'
                 }}
                 disabled={isDeletingBySemester || !selectedSemester}
                 onClick={handleCreateSegment}
                 variant="contained"
-                color="error"
-                
+                color="info"
               >
-                Tạo ca học 
+                Tạo ca học
               </Button>
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
-                  width: 220,
+                  minWidth: '140px',
                   textTransform: 'none',
-                  fontSize: '16px'
+                  fontSize: '14px'
                 }}
                 disabled={isDeletingBySemester || !selectedSemester}
                 onClick={handleCreateSegmentForSummer}
                 variant="contained"
-                color="error"
-                
+                color="success"
               >
                 Tạo ca học (kỳ hè)
               </Button>

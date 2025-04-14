@@ -31,6 +31,13 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
 
   const handleSaveClass = (classData) => {
     setLoading(true);
+    
+    const processedClassData = {...classData};
+    
+    if (processedClassData.id && typeof processedClassData.id === 'string' && processedClassData.id.includes('-')) {
+      processedClassData.id = processedClassData.id.split('-')[0];
+    }
+    
     request("post", "/general-classes/update-class", 
       (res) => {
         console.log(res);
@@ -48,7 +55,7 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
         setLoading(false);
       }, 
       {
-        generalClass: {...classData}
+        generalClass: processedClassData
       }
     );
   };
@@ -277,12 +284,14 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
         disableColumnFilter
         keepNonExistentRowsSelected
       />
+
       <ViewClassDetailDialog
         isOpen={openDetailDialog}
         classData={selectedClass}
         closeDialog={() => setOpenDetailDialog(false)}
         onRefreshParent={onRefreshNeeded}
       />
+
       <UpdateConfirmDialog
         open={updateDialogOpen}
         onClose={() => setUpdateDialogOpen(false)}

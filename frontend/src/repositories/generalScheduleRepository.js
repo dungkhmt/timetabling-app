@@ -209,9 +209,12 @@ export const generalScheduleRepository = {
     if (!classId) {
       throw new Error("classId is required");
     }
+    
+    const cleanId = classId.toString().split("-")[0];
+    
     const response = await request(
       "get",
-      `/general-classes/get-class-groups?classId=${classId}`
+      `/general-classes/get-class-groups?classId=${cleanId}`
     );
     return response.data;
   },
