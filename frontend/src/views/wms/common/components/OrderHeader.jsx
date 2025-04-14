@@ -2,11 +2,12 @@ import React from 'react';
 import { Typography, Button, Stack } from '@mui/material';
 import { Add, ImportExport, Refresh } from '@mui/icons-material';
 import { useHistory, useLocation } from 'react-router-dom';
+import { ORDER_TYPE_ID } from '../constants/constants';
 
 const OrderHeader = ({ onRefresh, onExport, type }) => {
   const history = useHistory();
   const location = useLocation();
-  const baseUrl = type === "sale" ? "/wms/sales" : "/wms/purchase";
+  const baseUrl = type === ORDER_TYPE_ID.SALES_ORDER ? "/wms/sales" : "/wms/purchase";
 
   const handleCreateOrder = () => {
     history.push(`${baseUrl}/orders/create`);

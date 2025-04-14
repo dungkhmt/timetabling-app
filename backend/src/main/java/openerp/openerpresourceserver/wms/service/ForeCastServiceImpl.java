@@ -36,7 +36,7 @@ public class ForeCastServiceImpl implements ForecastService {
     private final RedisService redisService;
 
     private static final int MAX_DAYS_HISTORY = 30; // Maximum 30 days of historical data
-    private static final int FORECAST_DAYS = 1; // Forecast for the next day
+    private static final int FORECAST_DAYS = 7; // Forecast for the next day
     private static final int LOW_STOCK_THRESHOLD = 1000; // Threshold for low stock products
     private static final int REDIS_EXPIRATION_DAYS = 7; // Cache expiration in days
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -57,7 +57,7 @@ public class ForeCastServiceImpl implements ForecastService {
         String redisKey = "LOW_STOCK_FORECAST:" + LocalDate.now().format(DATE_FORMATTER);
         List<DailyProductForecastDTO> cachedForecast = (List<DailyProductForecastDTO>) redisService.get(redisKey);
 
-        if (cachedForecast != null) {
+        if (cachedForecast != null && !cachedForecast.isEmpty()) {
             return ApiResponse.<List<DailyProductForecastDTO>>builder()
                     .code(200)
                     .message("Daily low stock forecast retrieved from cache")
