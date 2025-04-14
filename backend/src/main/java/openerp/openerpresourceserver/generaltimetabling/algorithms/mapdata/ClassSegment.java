@@ -41,6 +41,16 @@ public class ClassSegment {
         }
         return s;
     }
+    public String hashCourseCodeAndTypeGroup(){
+        String s = courseIndex + "-" + type;
+        //s = s + "-";
+        //for(int j = 0; j < groupIds.size(); j++){
+        //    s = s + groupIds.get(j);
+        //    if(j < groupIds.size()-1) s = s + ",";
+        //}
+        return s;
+    }
+
     public String str(){
         return "{id = " + id + ", classId = " + classId + ", classCode = " + classCode + ", course = " + courseCode +" }";
     }
