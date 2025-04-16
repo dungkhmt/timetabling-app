@@ -21,4 +21,6 @@ public interface SaleOrderService {
     ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit);
 
     ApiResponse<Pagination<OrderListExportedRes>> exportSaleOrders(int page, int limit);
+
+    void simulateSaleOrder();
 }

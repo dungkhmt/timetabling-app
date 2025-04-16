@@ -52,5 +52,4 @@ public class SaleOrderController {
         return saleOrderService.exportSaleOrders(page, limit);
     }
 
-
 }

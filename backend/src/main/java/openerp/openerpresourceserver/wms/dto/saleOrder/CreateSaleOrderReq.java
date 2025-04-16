@@ -3,10 +3,7 @@ package openerp.openerpresourceserver.wms.dto.saleOrder;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import openerp.openerpresourceserver.wms.dto.OrderItemReq;
 
 import java.math.BigDecimal;
@@ -17,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Setter
 @Getter
+@Builder
 public class CreateSaleOrderReq {
     private String id;
     @NotBlank

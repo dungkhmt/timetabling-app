@@ -25,4 +25,7 @@ public class Customer {
 
     @Column(name = "state_id", length = 200)
     private String stateId;
+
+    @Column(name = "phone", length = 40)
+    private String phone;
 }
