@@ -164,31 +164,31 @@ public class ExamTimetableAlgorithm {
                     invalidTimeSlots.add(courseToTimeSlot.get(conflictingCourse));
                     
                     // Also add time slots on same day to avoid consecutive time slots for conflicts
-                    UUID conflictTimeSlotId = courseToTimeSlot.get(conflictingCourse);
-                    for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
-                        if (timeSlot.getId().equals(conflictTimeSlotId)) {
-                            // Find all time slots on same day
-                            for (TimeSlot otherSlot : data.getAvailableTimeSlots()) {
-                                if (otherSlot.isSameDayAs(timeSlot) && otherSlot.isConsecutiveWith(timeSlot)) {
-                                    invalidTimeSlots.add(otherSlot.getId());
-                                }
-                            }
-                            break;
-                        }
-                    }
+                    // UUID conflictTimeSlotId = courseToTimeSlot.get(conflictingCourse);
+                    // for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
+                    //     if (timeSlot.getId().equals(conflictTimeSlotId)) {
+                    //         // Find all time slots on same day
+                    //         for (TimeSlot otherSlot : data.getAvailableTimeSlots()) {
+                    //             if (otherSlot.isSameDayAs(timeSlot) && otherSlot.isConsecutiveWith(timeSlot)) {
+                    //                 invalidTimeSlots.add(otherSlot.getId());
+                    //             }
+                    //         }
+                    //         break;
+                    //     }
+                    // }
                 }
             }
             
             // Add prohibited time slots to invalid set
-            for (TimeSlotRoomPair prohibited : data.getProhibitedSlots()) {
-                for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
-                    if (timeSlot.getSessionId().equals(prohibited.getSessionId()) &&
-                        timeSlot.getDate().equals(prohibited.getDate())) {
-                        invalidTimeSlots.add(timeSlot.getId());
-                        break;
-                    }
-                }
-            }
+            // for (TimeSlotRoomPair prohibited : data.getProhibitedSlots()) {
+            //     for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
+            //         if (timeSlot.getSessionId().equals(prohibited.getSessionId()) &&
+            //             timeSlot.getDate().equals(prohibited.getDate())) {
+            //             invalidTimeSlots.add(timeSlot.getId());
+            //             break;
+            //         }
+            //     }
+            // }
             
             // Soft constraint: Check courses in same group (should avoid same day if possible)
             Set<String> coursesInSameGroup = coursesByGroup.getOrDefault(courseId, Collections.emptySet());
@@ -354,25 +354,29 @@ public class ExamTimetableAlgorithm {
     
     /**
      * Assign rooms to classes, trying to assign as many as possible
+     * With additional soft constraint to keep classes with same course and group in the same building
      */
     private boolean assignRoomsToClasses(
-            TimetablingSolution solution,
-            Map<String, List<ExamClass>> courseGroups,
-            Map<String, UUID> courseToTimeSlot,
-            TimetablingData data) {
-        
+        TimetablingSolution solution,
+        Map<String, List<ExamClass>> courseGroups,
+        Map<String, UUID> courseToTimeSlot,
+        TimetablingData data) {
+
         boolean allSuccessful = true;
         int totalClasses = 0;
         int assignedClasses = 0;
-        
+
         // Map to track room usage at each time slot
         Map<TimeSlotRoomPair, Boolean> roomTimeSlotUsage = new HashMap<>();
-        
+
         // Initialize with prohibited slots
         for (TimeSlotRoomPair prohibited : data.getProhibitedSlots()) {
             roomTimeSlotUsage.put(prohibited, true);
         }
-        
+
+        // Map to track which building is used for each course+group combination
+        Map<String, String> courseGroupBuildingMap = new HashMap<>();
+
         // For each course, assign rooms to its classes
         for (Map.Entry<String, UUID> entry : courseToTimeSlot.entrySet()) {
             String courseId = entry.getKey();
@@ -407,11 +411,29 @@ public class ExamTimetableAlgorithm {
             for (ExamClass examClass : sortedClasses) {
                 int requiredCapacity = examClass.getNumberOfStudents() * 2; // Room needs 2n seats
                 
+                // Create a key for course+group combination
+                String courseGroupKey = courseId + "_" + (examClass.getGroupId() != null ? examClass.getGroupId() : "");
+                
+                // Check if we already assigned a building for this course+group
+                String preferredBuilding = courseGroupBuildingMap.get(courseGroupKey);
+                
                 // Find suitable rooms
                 List<ExamRoom> suitableRooms = data.getAvailableRooms().stream()
                     // Tạm thời tắt yêu cầu chỗ ngồi
                     // .filter(room -> room.getNumberSeat() >= requiredCapacity)
                     .sorted((r1, r2) -> {
+                        // If we have a preferred building, prioritize rooms in that building
+                        if (preferredBuilding != null) {
+                            String building1 = extractBuildingFromRoomName(r1.getName());
+                            String building2 = extractBuildingFromRoomName(r2.getName());
+                            
+                            boolean r1InPreferredBuilding = preferredBuilding.equals(building1);
+                            boolean r2InPreferredBuilding = preferredBuilding.equals(building2);
+                            
+                            if (r1InPreferredBuilding && !r2InPreferredBuilding) return -1;
+                            if (!r1InPreferredBuilding && r2InPreferredBuilding) return 1;
+                        }
+                        
                         // Sort by size (smallest suitable room first)
                         int compare = Integer.compare(r1.getNumberSeat(), r2.getNumberSeat());
                         if (compare != 0) return compare;
@@ -448,6 +470,12 @@ public class ExamTimetableAlgorithm {
                     continue;
                 }
                 
+                // If this is the first class for this course+group, record the building
+                if (preferredBuilding == null && assignedRoom != null) {
+                    String building = extractBuildingFromRoomName(assignedRoom.getName());
+                    courseGroupBuildingMap.put(courseGroupKey, building);
+                }
+                
                 // Add assignment to solution
                 solution.addAssignment(
                     examClass.getId(), 
@@ -463,11 +491,23 @@ public class ExamTimetableAlgorithm {
                 assignedClasses++;
             }
         }
-        
+
         log.info("Room assignment completed: {}/{} classes assigned successfully", 
             assignedClasses, totalClasses);
-        
+
         return allSuccessful;
+    }
+
+    /**
+    * Extract building name from room name
+    * Room name format: "building_name-room_number"
+    */
+    private String extractBuildingFromRoomName(String roomName) {
+        if (roomName == null || roomName.isEmpty() || !roomName.contains("-")) {
+            return null;
+        }
+
+        return roomName.substring(0, roomName.indexOf("-"));
     }
     
     /**
