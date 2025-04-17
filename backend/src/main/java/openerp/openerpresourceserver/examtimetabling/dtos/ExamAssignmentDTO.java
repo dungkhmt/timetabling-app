@@ -8,6 +8,7 @@ import java.time.LocalDate;
 public class ExamAssignmentDTO {
     private String id;
     private String examClassId;
+    private String examTimetableClassId;
     private String classId;
     private String courseId;
     private String groupId;

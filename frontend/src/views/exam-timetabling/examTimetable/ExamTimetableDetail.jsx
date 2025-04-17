@@ -35,6 +35,11 @@ import { useExamTimetableData } from 'services/useExamTimetableData';
 import { useExamRoomData } from 'services/useExamRoomData';
 import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
 
+const convertDateFormat = (dateStr) =>{
+  const [year, month, day] = dateStr.split('-');
+  return `${day}-${month}-${year}`;
+}
+
 const TimetableDetailPage = () => {
   const { id } = useParams();
   const history = useHistory();
@@ -106,21 +111,23 @@ const TimetableDetailPage = () => {
       (assignment.room || assignment.week || assignment.date || assignment.slot)
     );
 
-    if (assignedClasses.length > 0) {
-      setAlreadyAssignedClasses(assignedClasses);
-      setIsAutoAssignDialogOpen(true);
-    } else {
-      // If no assignments are already assigned, proceed directly
-      performAutoAssign();
-    }
+    setAlreadyAssignedClasses(assignedClasses);
+    setIsAutoAssignDialogOpen(true);
   };
 
   // Added function to perform auto-assign after confirmation
-  const performAutoAssign = async () => {
+  const performAutoAssign = async (selectedDates) => {
     try {
       setIsAutoAssigning(true);
-      const a = await autoAssign(selectedAssignments);
-      console.log(a);
+      const examClassAssignmentLookup = new Map(
+        examTimetableAssignments.map(assignment => [assignment.id, assignment.examTimetableClassId])
+      );
+      const result = await autoAssign({
+        examTimetableId: timetable.id,
+        classIds: selectedAssignments.map(id => examClassAssignmentLookup.get(id)),
+        examDates: selectedDates.map(date => convertDateFormat(date)),
+      });
+      console.log(result);
       setIsAutoAssigning(false);
       setIsAutoAssignDialogOpen(false);
     } catch (error) {
@@ -459,13 +466,14 @@ const TimetableDetailPage = () => {
             onClose={handleCloseInvalidModal}
           />
           
-          {/* Auto Assign Confirm Dialog - Added */}
+          {/* Auto Assign Confirm Dialog */}
           <AutoAssignConfirmDialog
             open={isAutoAssignDialogOpen}
             onClose={() => setIsAutoAssignDialogOpen(false)}
             onConfirm={performAutoAssign}
             assignedClasses={alreadyAssignedClasses}
             isProcessing={isAutoAssigning}
+            timetable={timetable} // Pass the timetable data for date calculations
           />
         </Box>
       </Paper>

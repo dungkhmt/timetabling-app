@@ -250,7 +250,8 @@ public class ExamTimetableAssignmentService {
             "  a.room_id, " +
             "  a.exam_session_id, " +
             "  a.week_number, " +
-            "  a.date " +
+            "  a.date, " +
+            "  c.id " +
             "FROM exam_timetable_assignment a " +
             "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
             "WHERE a.exam_timetable_id = :timetableId " +
@@ -279,6 +280,7 @@ public class ExamTimetableAssignmentService {
             dto.setRoomId(row[11] != null ? row[11].toString() : null);
             dto.setSessionId(row[12] != null ? row[12].toString() : null);
             dto.setWeekNumber(row[13] != null ? Integer.valueOf(row[13].toString()) : null);
+            dto.setExamTimetableClassId(row[15] != null ? row[15].toString() : null);
             
             if (row[14] != null) {
                 try {
