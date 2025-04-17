@@ -3,6 +3,8 @@ package openerp.openerpresourceserver.wms.service;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.shipment.*;
+import openerp.openerpresourceserver.wms.entity.OrderHeader;
+import openerp.openerpresourceserver.wms.entity.UserLogin;
 
 public interface ShipmentService {
     ApiResponse<Void> createOutboundSaleOrder(CreateOutBoundReq saleOrder, String name);
@@ -16,4 +18,6 @@ public interface ShipmentService {
     ApiResponse<Pagination<InboundByOrderRes>> getInBoundByOrder(String orderId, int page, int limit);
 
     ApiResponse<InboundDetailRes> getInBoundDetail(String shipmentId);
+
+    void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin);
 }

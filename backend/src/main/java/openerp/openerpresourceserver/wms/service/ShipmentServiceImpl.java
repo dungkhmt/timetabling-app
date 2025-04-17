@@ -289,5 +289,72 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .build();
     }
 
+    @Override
+    public void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin) {
+        try {
+            // Prepare shipment entity
+            Shipment shipment = Shipment.builder()
+                    .id(CommonUtil.getUUID())
+                    .shipmentTypeId(ShipmentType.OUTBOUND.name())
+                    .toCustomer(orderHeader.getToCustomer())
+                    .order(orderHeader)
+                    .shipmentName("Simulated Shipment for " + orderHeader.getOrderName())
+                    .expectedDeliveryDate(orderHeader.getDeliveryBeforeDate())
+                    .createdByUser(userLogin)
+                    .build();
+
+            // Get order items for creating inventory item details
+            var orderItems = orderHeader.getOrderItems();
+            var inventoryItemDetailDOs = new ArrayList<InventoryItemDetail>();
+
+            // Process each order item
+            for (OrderItem orderItem : orderItems) {
+                // Find inventory item for this product in this facility
+                InventoryItem inventoryItem = inventoryItemRepo
+                        .findByProductIdAndFacilityId(orderItem.getProduct().getId(), orderHeader.getFacility().getId());
+
+
+                // Skip if no inventory item found
+                if (inventoryItem == null ) {
+                    continue;
+                }
+
+                // Use half of ordered quantity for shipment (simulating partial fulfillment)
+                int shipQuantity = Math.max(1, orderItem.getQuantity() / 2);
+
+                // Ensure we don't exceed available inventory
+                if (inventoryItem.getQuantity() < shipQuantity) {
+                    shipQuantity = inventoryItem.getQuantity();
+                }
+
+                // Skip if no quantity to ship
+                if (shipQuantity <= 0) {
+                    continue;
+                }
+
+                // Create inventory item detail for the shipment
+                InventoryItemDetail inventoryItemDetail = InventoryItemDetail.builder()
+                        .id(CommonUtil.getUUID())
+                        .inventoryItem(inventoryItem)
+                        .quantity(shipQuantity)
+                        .product(orderItem.getProduct())
+                        .shipment(shipment)
+                        .orderItem(orderItem)
+                        .build();
+
+                inventoryItemDetailDOs.add(inventoryItemDetail);
+            }
+
+            // Only save shipment if there are items to ship
+            if (!inventoryItemDetailDOs.isEmpty()) {
+                shipmentRepo.save(shipment);
+                inventoryItemDetailRepo.saveAll(inventoryItemDetailDOs);
+            }
+        } catch (Exception e) {
+            // Log error but continue processing
+            e.printStackTrace();
+        }
+    }
+
 
 }

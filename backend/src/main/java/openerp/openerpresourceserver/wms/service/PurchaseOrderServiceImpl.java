@@ -47,6 +47,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 () -> new DataNotFoundException("User not found with id: " + name));
 
         var orderHeader = generalMapper.convertToEntity(purchaseOrder, OrderHeader.class);
+        orderHeader.setId(CommonUtil.getUUID());
         orderHeader.setFacility(facility);
         orderHeader.setFromSupplier(supplier);
         orderHeader.setCreatedByUser(userLogin);

@@ -22,5 +22,5 @@ public interface SaleOrderService {
 
     ApiResponse<Pagination<OrderListExportedRes>> exportSaleOrders(int page, int limit);
 
-    void simulateSaleOrder();
+    void simulateSaleOrder() throws InterruptedException;
 }
