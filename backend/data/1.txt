@@ -1,5 +1,6 @@
 6 5
-11
+13
+IT3011 LT+BT 1 3
 IT3011 LT+BT 1 3
 IT3020 LT+BT 1 4
 IT3020 LT+BT 1 4
@@ -11,4 +12,6 @@ PH1120 BT 1 2
 MI3052 LT+BT 1 3
 MI3052 LT+BT 1 3
 MI3052 LT+BT 1 3
+MI3052 LT+BT 1 3
+
 maximize number of pairs of 2 classes having same course schedule in the same session
