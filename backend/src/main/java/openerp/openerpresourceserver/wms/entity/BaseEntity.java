@@ -24,8 +24,12 @@ public class BaseEntity {
 
     @PrePersist
     public void prePersist() {
-        createdStamp = LocalDateTime.now();
-        lastUpdatedStamp = LocalDateTime.now();
+        if(createdStamp == null) {
+            createdStamp = LocalDateTime.now();
+        }
+        if(lastUpdatedStamp == null) {
+            lastUpdatedStamp = LocalDateTime.now();
+        }
         customPrePersist();
     }
 

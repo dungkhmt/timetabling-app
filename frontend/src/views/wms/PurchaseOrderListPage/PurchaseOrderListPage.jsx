@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom"; // React Router v5
-import { Button, Box, CircularProgress } from "@mui/material";
+import { Button, Box, CircularProgress, useMediaQuery } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { toast } from "react-toastify";
 import { useWms2Data } from 'services/useWms2Data';
@@ -15,6 +15,7 @@ const PurchaseOrderListPage = () => {
   const history = useHistory(); // Use useHistory from React Router v5
   const { getPurchaseOrders, getPurchaseOrdersForExport, getLowStockForecast } = useWms2Data();
   const [loading, setLoading] = useState(false);
+  const isMobile = useMediaQuery(theme => theme.breakpoints.down("sm"));
 
   const initialFilters = {
     keyword: "",
@@ -66,7 +67,7 @@ const PurchaseOrderListPage = () => {
           disabled={loading}
           sx={{ mr: 2 }}
         >
-          {loading ? "Đang xử lý..." : "Gợi ý nhập hàng"}
+          {!isMobile && "Gợi ý nhập hàng"}
         </Button>
       </Box>
       

@@ -35,10 +35,10 @@ public class ForeCastServiceImpl implements ForecastService {
     private final ObjectMapper objectMapper;
     private final RedisService redisService;
 
-    private static final int MAX_DAYS_HISTORY = 30; // Maximum 30 days of historical data
+    private static final int MAX_DAYS_HISTORY = 360; // Maximum 30 days of historical data
     private static final int FORECAST_DAYS = 7; // Forecast for the next day
     private static final int LOW_STOCK_THRESHOLD = 1000; // Threshold for low stock products
-    private static final int REDIS_EXPIRATION_DAYS = 7; // Cache expiration in days
+    private static final int REDIS_EXPIRATION_DAYS = 7 * 24 * 60 * 60; // Cache expiration in days
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @Scheduled(cron = "0 0 1 * * ?")
@@ -87,14 +87,7 @@ public class ForeCastServiceImpl implements ForecastService {
                 forecasts.add(forecast);
             }
         }
-
-        try {
-            String forecastJson = objectMapper.writeValueAsString(forecasts);
-            redisService.save(redisKey, forecastJson, REDIS_EXPIRATION_DAYS);
-        } catch (JsonProcessingException e) {
-            log.error("Error serializing daily forecast for Redis", e);
-        }
-
+        redisService.save(redisKey, forecasts, REDIS_EXPIRATION_DAYS);
         return ApiResponse.<List<DailyProductForecastDTO>>builder()
                 .code(200)
                 .message("Daily low stock forecast generated successfully")
@@ -134,7 +127,14 @@ public class ForeCastServiceImpl implements ForecastService {
         try {
             ForecastResult forecastResult = Arima.auto_forecast_arima(timeSeriesData, FORECAST_DAYS);
             double[] forecast = forecastResult.getForecast();
-            int predictedQuantity = (int) Math.round(Math.max(0, forecast[0]));
+            int predictedQuantity = 0;
+            for(int i = 0; i < FORECAST_DAYS; i++) {
+                predictedQuantity += Math.round(forecast[i]);
+            }
+
+            if (predictedQuantity < 0) {
+                predictedQuantity = 0;
+            }
 
             return DailyProductForecastDTO.builder()
                     .productId(product.getId())

@@ -25,13 +25,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static openerp.openerpresourceserver.wms.constant.Constants.DEFAULT_ADMIN_USER_NAME;
 import static openerp.openerpresourceserver.wms.util.CommonUtil.getAllWeeklyStartDates;
+import static openerp.openerpresourceserver.wms.util.CommonUtil.getRandomElements;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     private final UserLoginRepo userLoginRepo;
     private final ProductRepo productRepo;
     private final ShipmentService shipmentService;
+    private final InventoryItemRepo inventoryItemRepo;
     @Qualifier("customExecutor")
     private final ThreadPoolTaskExecutor executor;
     @Override
@@ -296,13 +298,17 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         List<SaleChannel> saleChannels = List.of(SaleChannel.values());
         UserLogin userLogin = userLoginRepo.findById(DEFAULT_ADMIN_USER_NAME)
                 .orElseThrow(() -> new DataNotFoundException("Default admin user not found"));
+        List<InventoryItem> inventoryItems = inventoryItemRepo.findAll();
+        // Map inventory Items to Map <ProductId, List<InventoryItem>>
+        var inventoryItemMap = inventoryItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getProduct().getId()));
 
         for (LocalDate weekStart : weeks) {
             for (int i = 0; i < 7; i++) {
                 LocalDate day = weekStart.plusDays(i);
 
-                Collections.shuffle(customers);
-                List<Customer> assignedCustomers = customers.subList(0, ThreadLocalRandom.current().nextInt(1, 5));
+                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, 6);
+                List<Customer> assignedCustomers = getRandomElements(customers, 0, numberOfCustomers);
 
                 for (Customer customer : assignedCustomers) {
                     LocalDateTime timestamp = day.atTime(
@@ -314,12 +320,12 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                         if (orderHeader == null) {
                             return;
                         }
-                        shipmentService.simulateOuboundShipment(orderHeader, userLogin);
+                        shipmentService.simulateOuboundShipment(orderHeader, userLogin, inventoryItemMap);
                     });
                 }
 
                 // Sleep for a short duration to avoid overwhelming the system
-                Thread.sleep(1000);
+                Thread.sleep(100);
             }
         }
     }
@@ -328,8 +334,8 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     public OrderHeader saveOrderForCustomer(Customer customer, LocalDateTime orderDateTime, List<Facility> facilities,
                                      List<SaleChannel> saleChannels, List<Product> products, UserLogin userLogin) {
         try {
-            Facility facility = facilities.get(ThreadLocalRandom.current().nextInt(facilities.size()));
-            SaleChannel saleChannel = saleChannels.get(ThreadLocalRandom.current().nextInt(saleChannels.size()));
+            Facility facility = CommonUtil.getRandomElement(facilities);
+            SaleChannel saleChannel = CommonUtil.getRandomElement(saleChannels);
 
             OrderHeader orderHeader = OrderHeader.builder()
                     .id(CommonUtil.getUUID())
@@ -346,21 +352,19 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                     .createdByUser(userLogin)
                     .build();
 
+            orderHeader.setCreatedStamp(orderDateTime);
             orderHeaderRepo.save(orderHeader);
 
             int numItems = ThreadLocalRandom.current().nextInt(1, 6);
-            Collections.shuffle(products);
-            List<Product> selectedProducts = products.subList(0, numItems);
+            List<Product> selectedProducts = CommonUtil.getRandomElements(products, 0, numItems);
 
             AtomicInteger increment = new AtomicInteger(0);
             List<OrderItem> orderItems = selectedProducts.stream()
                     .map(product -> {
                         int quantity = ThreadLocalRandom.current().nextInt(1, 20);
-                        BigDecimal price = product.getWholeSalePrice() != null ?
-                                product.getWholeSalePrice() :
-                                BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(10, 1000));
+                        BigDecimal price = product.getWholeSalePrice();
 
-                        return OrderItem.builder()
+                        var orderItem =  OrderItem.builder()
                                 .id(CommonUtil.getUUID())
                                 .order(orderHeader)
                                 .product(product)
@@ -370,9 +374,12 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                                 .unit("Cái")
                                 .orderItemSeqId(CommonUtil.getSequenceId("ORDITM", 5, increment.incrementAndGet()))
                                 .build();
+                        orderItem.setCreatedStamp(orderDateTime);
+                        return orderItem;
                     })
                     .toList();
 
+            orderHeader.setOrderItems(orderItems);
             orderItemRepo.saveAll(orderItems);
 
             return orderHeader;

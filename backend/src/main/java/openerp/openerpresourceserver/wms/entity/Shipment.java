@@ -1,19 +1,13 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
-import openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator;
-import openerp.openerpresourceserver.wms.util.CommonUtil;
-import org.hibernate.annotations.GenericGenerator;
 
-@Data
+import java.time.LocalDate;
+
+@Getter
+@Setter
 @Entity
 @Table(name = "wms2_shipment")
 @Builder
@@ -21,16 +15,16 @@ import org.hibernate.annotations.GenericGenerator;
 @AllArgsConstructor
 public class Shipment extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_shipment_sequences")
-    @GenericGenerator(
-            name = "wms2_shipment_sequences",
-            strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
-            parameters = {
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "SHM"),
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_shipment_sequences"),
-                    @org.hibernate.annotations.Parameter(name = "increment_size", value = "1") // Fix lỗi
-            })
+//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_shipment_sequences")
+//    @GenericGenerator(
+//            name = "wms2_shipment_sequences",
+//            strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
+//            parameters = {
+//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "SHM"),
+//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
+//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_shipment_sequences"),
+//                    @org.hibernate.annotations.Parameter(name = "increment_size", value = "1") // Fix lỗi
+//            })
     private String id;
 
     @Column(name = "shipment_type_id", length = 40)

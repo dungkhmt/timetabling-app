@@ -29,6 +29,14 @@ public class RedisService {
         }
     }
 
+    public void save(String key, Object value, long timeout, TimeUnit unit) {
+        try {
+            redisTemplate.opsForValue().set(key, value, timeout, unit);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public Object get(String key) {
         try {
             return redisTemplate.opsForValue().get(key);

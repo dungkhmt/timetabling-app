@@ -11,8 +11,8 @@ import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +32,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         var orderItems = orderHeader.getOrderItems();
         var productReqs = req.getProducts();
         var shipment = Shipment.builder()
+                .id(CommonUtil.getUUID())
                 .shipmentTypeId(ShipmentType.OUTBOUND.name())
                 .toCustomer(orderHeader.getToCustomer())
                 .order(orderHeader)
@@ -166,6 +167,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         var orderItems = orderHeader.getOrderItems();
         var productReqs = req.getProducts();
         var shipment = Shipment.builder()
+                .id(CommonUtil.getUUID())
                 .shipmentTypeId(ShipmentType.INBOUND.name())
                 .fromSupplier(orderHeader.getFromSupplier())
                 .order(orderHeader)
@@ -290,7 +292,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
-    public void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin) {
+    public void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin, Map<String, List<InventoryItem>> inventoryItemMap) {
         try {
             // Prepare shipment entity
             Shipment shipment = Shipment.builder()
@@ -303,42 +305,29 @@ public class ShipmentServiceImpl implements ShipmentService {
                     .createdByUser(userLogin)
                     .build();
 
+            shipment.setCreatedStamp(orderHeader.getCreatedStamp());
             // Get order items for creating inventory item details
             var orderItems = orderHeader.getOrderItems();
             var inventoryItemDetailDOs = new ArrayList<InventoryItemDetail>();
 
             // Process each order item
             for (OrderItem orderItem : orderItems) {
-                // Find inventory item for this product in this facility
-                InventoryItem inventoryItem = inventoryItemRepo
-                        .findByProductIdAndFacilityId(orderItem.getProduct().getId(), orderHeader.getFacility().getId());
 
+                // find inventory items from the list containing productId
+                List<InventoryItem> filteredInventoryItems = inventoryItemMap.get(orderItem.getProduct().getId());
 
-                // Skip if no inventory item found
-                if (inventoryItem == null ) {
-                    continue;
-                }
-
-                // Use half of ordered quantity for shipment (simulating partial fulfillment)
-                int shipQuantity = Math.max(1, orderItem.getQuantity() / 2);
-
-                // Ensure we don't exceed available inventory
-                if (inventoryItem.getQuantity() < shipQuantity) {
-                    shipQuantity = inventoryItem.getQuantity();
-                }
-
-                // Skip if no quantity to ship
-                if (shipQuantity <= 0) {
-                    continue;
-                }
+                // random inventory item from the filtered list
+                InventoryItem inventoryItem = CommonUtil.getRandomElement(filteredInventoryItems);
 
                 // Create inventory item detail for the shipment
                 InventoryItemDetail inventoryItemDetail = InventoryItemDetail.builder()
                         .id(CommonUtil.getUUID())
                         .inventoryItem(inventoryItem)
-                        .quantity(shipQuantity)
+                        .quantity(orderItem.getQuantity())
                         .product(orderItem.getProduct())
                         .shipment(shipment)
+                        .createdStamp(orderHeader.getCreatedStamp())
+                        .note("Simulated shipment detail")
                         .orderItem(orderItem)
                         .build();
 

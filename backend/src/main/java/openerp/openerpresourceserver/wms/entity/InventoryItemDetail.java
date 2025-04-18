@@ -1,6 +1,8 @@
 package openerp.openerpresourceserver.wms.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -37,4 +39,8 @@ public class InventoryItemDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_item_id")
     private OrderItem orderItem;
+
+    private String note;
+
+    private LocalDateTime createdStamp;
 }
