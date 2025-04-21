@@ -291,7 +291,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     @Override
     @Transactional
     public void simulateSaleOrder() throws InterruptedException {
-        List<LocalDate> weeks = getAllWeeklyStartDates(LocalDate.now().minusYears(1), LocalDate.now());
+        List<LocalDate> weeks = getAllWeeklyStartDates(LocalDate.now().minusYears(2), LocalDate.now());
         List<Customer> customers = customerRepo.findAll();
         List<Facility> facilities = facilityRepo.findAll();
         List<Product> products = productRepo.findAll();
@@ -307,7 +307,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
             for (int i = 0; i < 7; i++) {
                 LocalDate day = weekStart.plusDays(i);
 
-                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, 6);
+                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, 51);
                 List<Customer> assignedCustomers = getRandomElements(customers, 0, numberOfCustomers);
 
                 for (Customer customer : assignedCustomers) {
@@ -361,7 +361,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
             AtomicInteger increment = new AtomicInteger(0);
             List<OrderItem> orderItems = selectedProducts.stream()
                     .map(product -> {
-                        int quantity = ThreadLocalRandom.current().nextInt(1, 20);
+                        int quantity = ThreadLocalRandom.current().nextInt(1, 100);
                         BigDecimal price = product.getWholeSalePrice();
 
                         var orderItem =  OrderItem.builder()
