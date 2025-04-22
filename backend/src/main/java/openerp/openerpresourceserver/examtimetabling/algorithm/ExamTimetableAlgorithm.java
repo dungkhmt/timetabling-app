@@ -32,24 +32,179 @@ public class ExamTimetableAlgorithm {
     public TimetablingSolution assign(TimetablingData data) {
         log.info("Starting assignment algorithm for {} classes", data.getExamClasses().size());
         
-        // Phase 1: Initial assignment using graph coloring
-        TimetablingSolution initialSolution = createInitialAssignment(data);
+        // Create initial solution with multiple attempts for unassigned classes
+        TimetablingSolution solution = createInitialAssignmentWithRetries(data);
         
-        if (!initialSolution.isComplete()) {
-            log.warn("Could not find a complete initial assignment");
-            return initialSolution;
+        if (solution.getAssignedClasses().size() < data.getExamClasses().size()) {
+            log.warn("Could not assign all classes: {}/{} assigned", 
+                    solution.getAssignedClasses().size(), data.getExamClasses().size());
+        } else {
+            log.info("All classes successfully assigned in initial solution");
         }
+        
+        // Phase 2: Improve solution using local search
+        TimetablingSolution optimizedSolution = optimizeSolution(solution, data);
+        
+        log.info("Optimization complete. Final solution quality: {}", optimizedSolution.getQualityScore());
+        
+        return optimizedSolution;
+    }
 
-        return initialSolution;
+    /**
+     * Create initial assignment with multiple retries for unassigned classes
+     */
+    private TimetablingSolution createInitialAssignmentWithRetries(TimetablingData data) {
+        TimetablingSolution solution = new TimetablingSolution();
         
-        // log.info("Initial assignment complete. Starting optimization...");
+        // Set of class IDs that have been successfully assigned
+        Set<UUID> assignedClassIds = new HashSet<>();
+        // Total number of classes to assign
+        int totalClasses = data.getExamClasses().size();
+        // Number of classes assigned in the current iteration
+        int newlyAssignedClasses;
+        // Maximum number of retries
+        int maxRetries = 10;
+        // Current retry count
+        int retryCount = 0;
         
-        // // Phase 2: Improve solution using local search
-        // TimetablingSolution optimizedSolution = optimizeSolution(initialSolution, data);
+        do {
+            retryCount++;
+            log.info("Initial assignment attempt #{}", retryCount);
+            
+            // Create filtered data for unassigned classes
+            TimetablingData filteredData = filterUnassignedClasses(data, assignedClassIds);
+            
+            // Try to assign remaining classes
+            TimetablingSolution iterationSolution = createInitialAssignment(filteredData);
+            
+            // Merge the new assignments with existing solution
+            newlyAssignedClasses = mergeSolutions(solution, iterationSolution);
+            
+            // Update the set of assigned class IDs
+            for (UUID classId : iterationSolution.getAssignedClasses().keySet()) {
+                assignedClassIds.add(classId);
+            }
+            
+            log.info("Assigned {} new classes in iteration #{}, total assigned: {}/{}", 
+                    newlyAssignedClasses, retryCount, assignedClassIds.size(), totalClasses);
+            
+            // Continue if we made progress and still have unassigned classes
+        } while (newlyAssignedClasses > 0 && assignedClassIds.size() < totalClasses && retryCount < maxRetries);
         
-        // log.info("Optimization complete. Final solution quality: {}", optimizedSolution.getQualityScore());
+        // Calculate metrics for the final solution
+        solution.calculateMetrics(data);
         
-        // return optimizedSolution;
+        return solution;
+    }
+
+    /**
+     * Filter data to only include unassigned classes
+     */
+    private TimetablingData filterUnassignedClasses(TimetablingData originalData, Set<UUID> assignedClassIds) {
+        TimetablingData filteredData = new TimetablingData();
+        
+        // Copy all basic data
+        filteredData.setAvailableRooms(originalData.getAvailableRooms());
+        filteredData.setAvailableTimeSlots(originalData.getAvailableTimeSlots());
+        filteredData.setExamDates(originalData.getExamDates());
+        filteredData.setProhibitedSlots(originalData.getProhibitedSlots());
+        filteredData.setEarlyTimeSlots(originalData.getEarlyTimeSlots());
+        filteredData.setExistingAssignments(originalData.getExistingAssignments());
+        
+        // Filter classes to only include unassigned ones
+        List<ExamClass> unassignedClasses = originalData.getExamClasses().stream()
+                .filter(ec -> !assignedClassIds.contains(ec.getId()))
+                .collect(Collectors.toList());
+        filteredData.setExamClasses(unassignedClasses);
+        
+        // Rebuild class groupings
+        Map<String, List<ExamClass>> classesByCourseId = unassignedClasses.stream()
+                .collect(Collectors.groupingBy(ExamClass::getCourseId));
+        filteredData.setClassesByCourseId(classesByCourseId);
+        
+        Map<String, List<ExamClass>> classesByGroupId = unassignedClasses.stream()
+                .filter(ec -> ec.getGroupId() != null && !ec.getGroupId().isEmpty())
+                .collect(Collectors.groupingBy(ExamClass::getGroupId));
+        filteredData.setClassesByGroupId(classesByGroupId);
+        
+        // Filter conflict graph to only include unassigned classes
+        Map<UUID, Set<UUID>> filteredConflictGraph = new HashMap<>();
+        for (ExamClass examClass : unassignedClasses) {
+            UUID classId = examClass.getId();
+            Set<UUID> conflicts = originalData.getConflictGraph().getOrDefault(classId, new HashSet<>());
+            
+            // Keep only conflicts with other unassigned classes
+            Set<UUID> filteredConflicts = conflicts.stream()
+                    .filter(conflictId -> !assignedClassIds.contains(conflictId))
+                    .collect(Collectors.toSet());
+            
+            filteredConflictGraph.put(classId, filteredConflicts);
+        }
+        filteredData.setConflictGraph(filteredConflictGraph);
+        
+        return filteredData;
+    }
+
+    /**
+     * Merge a new solution into the existing solution
+     * @return Number of newly assigned classes
+     */
+    private int mergeSolutions(TimetablingSolution existingSolution, TimetablingSolution newSolution) {
+        int newlyAssignedCount = 0;
+        
+        // Merge assigned classes
+        for (Map.Entry<UUID, AssignmentDetails> entry : newSolution.getAssignedClasses().entrySet()) {
+            UUID classId = entry.getKey();
+            AssignmentDetails details = entry.getValue();
+            
+            if (!existingSolution.getAssignedClasses().containsKey(classId)) {
+                existingSolution.getAssignedClasses().put(classId, details);
+                newlyAssignedCount++;
+            }
+        }
+        
+        // Merge course time slot assignments
+        for (Map.Entry<String, UUID> entry : newSolution.getCourseTimeSlotAssignments().entrySet()) {
+            String courseId = entry.getKey();
+            UUID timeSlotId = entry.getValue();
+            
+            existingSolution.getCourseTimeSlotAssignments().put(courseId, timeSlotId);
+        }
+        
+        // Merge time slot class assignments
+        for (Map.Entry<UUID, List<UUID>> entry : newSolution.getTimeSlotClassAssignments().entrySet()) {
+            UUID timeSlotId = entry.getKey();
+            List<UUID> classes = entry.getValue();
+            
+            List<UUID> existingClasses = existingSolution.getTimeSlotClassAssignments()
+                    .computeIfAbsent(timeSlotId, k -> new ArrayList<>());
+            
+            for (UUID classId : classes) {
+                if (!existingClasses.contains(classId)) {
+                    existingClasses.add(classId);
+                }
+            }
+        }
+        
+        // Merge room usage counts
+        for (Map.Entry<UUID, Integer> entry : newSolution.getRoomUsageCounts().entrySet()) {
+            UUID roomId = entry.getKey();
+            Integer count = entry.getValue();
+            
+            existingSolution.getRoomUsageCounts().put(roomId, 
+                    existingSolution.getRoomUsageCounts().getOrDefault(roomId, 0) + count);
+        }
+        
+        // Merge time slot usage counts
+        for (Map.Entry<UUID, Integer> entry : newSolution.getTimeSlotUsageCounts().entrySet()) {
+            UUID timeSlotId = entry.getKey();
+            Integer count = entry.getValue();
+            
+            existingSolution.getTimeSlotUsageCounts().put(timeSlotId, 
+                    existingSolution.getTimeSlotUsageCounts().getOrDefault(timeSlotId, 0) + count);
+        }
+        
+        return newlyAssignedCount;
     }
     
     /**
@@ -409,7 +564,7 @@ public class ExamTimetableAlgorithm {
             
             // Assign rooms to classes
             for (ExamClass examClass : sortedClasses) {
-                int requiredCapacity = examClass.getNumberOfStudents() * 2; // Room needs 2n seats
+                int requiredCapacity = examClass.getNumberOfStudents() * 15 / 10; // Room needs 2n seats
                 
                 // Create a key for course+group combination
                 String courseGroupKey = courseId + "_" + (examClass.getGroupId() != null ? examClass.getGroupId() : "");
@@ -419,8 +574,7 @@ public class ExamTimetableAlgorithm {
                 
                 // Find suitable rooms
                 List<ExamRoom> suitableRooms = data.getAvailableRooms().stream()
-                    // Tạm thời tắt yêu cầu chỗ ngồi
-                    // .filter(room -> room.getNumberSeat() >= requiredCapacity)
+                    .filter(room -> room.getNumberSeat() >= requiredCapacity)
                     .sorted((r1, r2) -> {
                         // If we have a preferred building, prioritize rooms in that building
                         if (preferredBuilding != null) {
