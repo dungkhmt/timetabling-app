@@ -114,7 +114,7 @@ class SolutionClass{
         for(int[] p: periods)
         {
             for(int[] pi: sci.periods){
-                if(p[2] != pi[2]) return false;// sessions are different
+                if(p[2] != pi[2]) continue;// sessions are different
                 if(SolutionClass.overLap(p[0],p[1]+1-p[0],pi[0],pi[1]+1-pi[0])) return true;
             }
         }
@@ -391,6 +391,21 @@ class Combination{
         solutionClasses = new ArrayList<>();
         solutionClasses.add(sc);
     }
+    public boolean valid(){
+        for(int i = 0; i < solutionClasses.size(); i++){
+            for(int j = i+1; j < solutionClasses.size(); j++){
+                if(solutionClasses.get(i).overlap(solutionClasses.get(j))){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    public String toString(){
+        String s = "";
+        for(SolutionClass sc: solutionClasses) s = s + sc + "; ";
+        return s;
+    }
 }
 class CourseSolver{
     List<AClass> classes;
@@ -468,7 +483,7 @@ public class BacktrackingOneGroup {
     int bestObj;
     int obj;
     int nbSolutions;
-    public void input(String filename){
+    public void inputFile(String filename){
         try{
             BufferedReader in = new BufferedReader(new InputStreamReader( new FileInputStream(filename)));
             String line = in.readLine();
@@ -486,7 +501,9 @@ public class BacktrackingOneGroup {
             {
                 line = in.readLine();
                 s = line.split(" ");
-                String course = s[0] + "-" + s[1];
+                int classId = Integer.valueOf(s[0]);
+                String course = s[1];
+                //String course = s[0] + "-" + s[1];
                 int nbCS = Integer.valueOf(s[2]);
                 List<AClassSegment> classSegmentList = new ArrayList<>();
                 for(int j = 1; j <= nbCS; j++){
@@ -500,10 +517,72 @@ public class BacktrackingOneGroup {
                     mCourse2ClassSegments.get(course).add(cs);
                     classSegmentList.add(cs);
                 }
-                AClass cls = new AClass(i+1,course,classSegmentList);
+                AClass cls = new AClass(classId,course,classSegmentList);
                 if(mCourse2Classes.get(course)==null)
                     mCourse2Classes.put(course,new ArrayList<>());
                 mCourse2Classes.get(course).add(cls);
+                classes.add(cls);
+            }
+            nbClassSegments = classSegments.size();
+            conflict = new boolean[nbClassSegments][nbClassSegments];
+            for(int i = 0; i < nbClassSegments; i++)
+                for(int j = 0; j < nbClassSegments; j++)
+                    conflict[i][j] = false;
+            for(int i = 0; i < nbClassSegments; i++){
+                for(int j = i+1; j < nbClassSegments; j++){
+                    AClassSegment csi = classSegments.get(i);
+                    AClassSegment csj = classSegments.get(j);
+
+                }
+            }
+            courses = new ArrayList<>();
+            for(String course: mCourse2Classes.keySet()){
+                courses.add(course);
+            }
+            in.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    public void input(){
+        try{
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+            String line = in.readLine();
+            String[] s = line.split(" ");
+            nbSlotPerSession = Integer.valueOf(s[0]);
+            nbSessions = Integer.valueOf(s[1]);
+            line = in.readLine();
+            nbClasses = Integer.valueOf(line);
+            classSegments = new ArrayList<>();
+            mCourse2ClassSegments = new HashMap<>();
+            mCourse2Classes = new HashMap<>();
+            int id = 0;
+            classes = new ArrayList<>();
+            for(int i = 0; i < nbClasses; i++)
+            {
+                line = in.readLine();
+                s = line.split(" ");
+                int classId = Integer.valueOf(s[0]);
+                String course = s[1];
+                //String course = s[0] + "-" + s[1];
+                int nbCS = Integer.valueOf(s[2]);
+                List<AClassSegment> classSegmentList = new ArrayList<>();
+                for(int j = 1; j <= nbCS; j++){
+                    int duration = Integer.valueOf(s[2+j]);
+                    id++;
+
+                    AClassSegment cs = new AClassSegment(id,course,duration);
+                    classSegments.add(cs);
+                    if(mCourse2ClassSegments.get(course)==null)
+                        mCourse2ClassSegments.put(course, new ArrayList<>());
+                    mCourse2ClassSegments.get(course).add(cs);
+                    classSegmentList.add(cs);
+                }
+                AClass cls = new AClass(classId,course,classSegmentList);
+                if(mCourse2Classes.get(course)==null)
+                    mCourse2Classes.put(course,new ArrayList<>());
+                mCourse2Classes.get(course).add(cls);
+                classes.add(cls);
             }
             nbClassSegments = classSegments.size();
             conflict = new boolean[nbClassSegments][nbClassSegments];
@@ -529,15 +608,76 @@ public class BacktrackingOneGroup {
 
     private boolean feasible(Combination com, SolutionClass sc) {
         for (SolutionClass sci : com.solutionClasses) {
+            //if(sci.toString().equals("IT3020_LT_BT[5]: (5,6,0) (5,6,1) ")
+            //&& sc.toString().equals("MI3052_LT_BT[13]: (4,6,1) ")) System.out.println("SEE " + sci.overlap(sc));
             if(sci.overlap(sc)) return false;
         }
         return true;
     }
+    private List<Combination> checkFeasibleCombination(int idxCourse, Map<AClass,SolutionClass> m,List<Combination> combinations){
+        //System.out.println("checkFeasibleCombination, course " + courses.get(idxCourse));
+        List<Combination> res = new ArrayList<>();
+        boolean ok = true;
+        for(AClass cls: m.keySet()){
+            SolutionClass sc = m.get(cls);
+            boolean okcls = false;
+            for (Combination com : combinations) {
+                if (feasible(com, sc)) {
+                    okcls = true; break;
+                    //Combination newCom = new Combination(com, sc);
+                    //res.add(newCom);
+                }
+            }
+            if(!okcls){ ok = false; break; }
+        }
+        if(!ok) return new ArrayList<>();// not feasible
+        // establish new combination
+        for(AClass cls: m.keySet()){
+            SolutionClass sc = m.get(cls);
+            //boolean okcls = false;
+            for (Combination com : combinations) {
+                if (feasible(com, sc)) {
+                    //okcls = true; break;
+                    //if(sc.cls.course.equals("MI3052_LT_BT") && sc.cls.id == 13){
+                    //if(sc.toString().equals("MI3052_LT_BT[13]: (4,6,1) ")){
+                    //    System.out.println("Combination " + com + " COMBINE with " + sc.toString());
+                    //}
+                    Combination newCom = new Combination(com, sc);
+                    //if(!newCom.valid()) System.out.println("Combination " + newCom + " -> not valid, BUG????");
+                    res.add(newCom);
+                }
+            }
+            //if(!okcls){ ok = false; break; }
+        }
+        // check if res cover all classes already scheduled or not
+        Set<Integer> ids = new HashSet<>();
+        for(Combination com: res){
+            for(SolutionClass sc: com.solutionClasses){
+                ids.add(sc.cls.id);
+            }
+        }
+        ok = true;
+        for(int j = 0; j <= idxCourse; j++){
+            String crs = courses.get(j);
+            for(AClass cls: mCourse2Classes.get(crs)){
+                if(!ids.contains(cls.id)){
+                    ok = false; break;
+                }
+            }
+            if(!ok) break;
+        }
+        if(!ok) return new ArrayList<>();
+        return res;
+    }
     private void tryCourse(int i,List<Combination> combinations){
+        //if(i == 1){
+        //    System.out.println("tryCourse(" + i + "), level 1 -> combinations = ");
+        //    for(Combination com: combinations) System.out.println(com);
+        //}
         double t = System.currentTimeMillis() - t0;
         //System.out.println("tryCourse, t = " + t + " timeLimit = " + timeLimit + " obj = " + obj + " bestObj = " + bestObj) ;
         if(t * 0.001 > timeLimit) return;
-        if(solutions.size() > 10000000) return;
+        //if(solutions.size() > 10000000) return;
         //if(nbSolutions >= 1) return;
         //System.out.println("tryCourse(" + i + ", combinations = " + combinations.size() + ")");
         String crs = courses.get(i);
@@ -546,32 +686,36 @@ public class BacktrackingOneGroup {
 
         List<Map<AClass, SolutionClass>> solutionCourse = CS.solve(crs,CLS,combinations,true);
         for(Map<AClass,SolutionClass> m: solutionCourse){
-            // admit a solution class
-            x[i] = m;
-            MaxClique MCSolver = new MaxClique();
-            int mc = MCSolver.computeMaxClique(x[i]);
-            obj = obj + mc;
-            List<Combination> childCombinations = new ArrayList<>();
-            for(AClass cls: m.keySet()){
-                SolutionClass sc = m.get(cls);
-                for(Combination com: combinations){
-                    if(feasible(com,sc)){
-                        Combination newCom = new Combination(com,sc);
-                        childCombinations.add(newCom);
+            List<Combination> childCombinations = checkFeasibleCombination(i,m,combinations);
+            if(childCombinations.size() > 0) {
+                // admit a solution class
+                x[i] = m;
+                MaxClique MCSolver = new MaxClique();
+                int mc = MCSolver.computeMaxClique(x[i]);
+                obj = obj + mc;
+                /*
+                List<Combination> childCombinations = new ArrayList<>();
+                for (AClass cls : m.keySet()) {
+                    SolutionClass sc = m.get(cls);
+                    for (Combination com : combinations) {
+                        if (feasible(com, sc)) {
+                            Combination newCom = new Combination(com, sc);
+                            childCombinations.add(newCom);
+                        }
                     }
                 }
-            }
-
-            if(i == courses.size()-1) {
-                solution(childCombinations);
-            }else{
-                if(obj + courses.size() - (i+1) < bestObj) {
-                    tryCourse(i + 1, childCombinations);
-                }else{
-                    System.out.println("tryCourse(" + i + "/" + courses.size() + ") obj = " + obj + " bestObj = " + bestObj + " -> BOUND!!!") ;
+                */
+                if (i == courses.size() - 1) {
+                    solution(childCombinations);
+                } else {
+                    if (obj + courses.size() - (i + 1) < bestObj) {
+                        tryCourse(i + 1, childCombinations);
+                    } else {
+                        //System.out.println("tryCourse(" + i + "/" + courses.size() + ") obj = " + obj + " bestObj = " + bestObj + " -> BOUND!!!") ;
+                    }
                 }
+                obj = obj - mc;
             }
-            obj = obj - mc;
         }
     }
     public void solveNew(int maxTime){
@@ -589,6 +733,7 @@ public class BacktrackingOneGroup {
         bestObj = 100000000;
         nbSolutions = 0;
         obj = 0;
+        //for(int i = 0; i < courses.size(); i++) System.out.println("course[" + i + "] = " + courses.get(i));
         for(Map<AClass, SolutionClass> sol: solutionCourse){
             x[0] = sol;
             MaxClique MCSolver = new MaxClique();
@@ -604,17 +749,41 @@ public class BacktrackingOneGroup {
             if(obj  + courses.size() -1 < bestObj) {
                 tryCourse(1, childCombinations);
             }else{
-                System.out.println("BOUND!!!") ;
+                //System.out.println("BOUND!!!") ;
             }
             obj -= mc;
         }
-        System.out.println("number solutions = " + solutions.size());
+        //System.out.println("number solutions = " + solutions.size());
         double t = System.currentTimeMillis() - t0;
-        System.out.println("bestObj = " + bestObj + " time = " + t*0.001);
+        //System.out.println("bestObj = " + bestObj + " time = " + t*0.001);
     }
 
-
+    private boolean checkCombinationCoverAllClasses(List<Combination> combinations, boolean PRINT){
+        Set<Integer> ids = new HashSet<>();
+        for(Combination com: combinations){
+            //if(PRINT)System.out.print("checkCombinationCoverAllClasses, com:");
+            for(SolutionClass sc: com.solutionClasses){
+                ids.add(sc.cls.id);
+                //if(PRINT)System.out.print(sc + "; ");
+            }
+            //if(PRINT)System.out.println();
+        }
+        //for(int id: ids) System.out.println("ids item " + id);
+        //System.out.println("------------");
+        boolean ok = true;
+        for(AClass cls: classes){
+            //System.out.println("checkCombinationCoverAllClasses exam cls.id " + cls.id);
+            if(!ids.contains(cls.id)){
+                ok = false; break;
+            }
+        }
+        return ok;
+    }
     private void solution(List<Combination> combinations){
+        if(!checkCombinationCoverAllClasses(combinations,false)){
+            System.out.println("solution, BUT checkCombinationCoverAllClasses failed???");
+            return;
+        }
         nbSolutions += 1;
         //System.out.println("FOUND solutions " + combinations.size());
         for(Combination com: combinations){
@@ -636,7 +805,7 @@ public class BacktrackingOneGroup {
             //}
             //System.out.println("Solution " + info + " mc = " + mc + " f = " + f);
         //}
-        System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj);
+        //System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj);
         if(obj < bestObj){
             bestObj = obj;
             best_x= new Map[x.length];
@@ -646,7 +815,8 @@ public class BacktrackingOneGroup {
                     best_x[i].put(c,x[i].get(c));
                 }
             }
-            System.out.println("update best " + bestObj);
+            boolean ok = checkCombinationCoverAllClasses(combinations,true);
+            //System.out.println("update best " + bestObj + " checkCombinations = " + ok);
         }
         //System.out.println("-------------------");
 
@@ -663,6 +833,24 @@ public class BacktrackingOneGroup {
             System.out.println(info);
         }
     }
+    public void writeSolutionFormat(){
+        System.out.println(classes.size());
+        for(int i = 0; i < best_x.length; i++){
+            //String info = "";
+            for(AClass c: best_x[i].keySet()){
+                SolutionClass sc = best_x[i].get(c);
+                //info = info + sc + "; ";
+                System.out.print(c.id + " " + sc.periods.size() + " ");
+                for(int[] p: sc.periods){
+                    SessionSlot ss = new SessionSlot(p[0]);
+                    //System.out.print((ss.session+1) + " " + ss.slot + " ");
+                    System.out.print(p[2] + " " + p[0] + " ");
+                }
+                System.out.println();
+            }
+            //System.out.println(info);
+        }
+    }
     public void printSolution(Map<AClass, SolutionClass>[] x){
         System.out.println("Solution: ");
         for(int i = 0; i < x.length; i++){
@@ -676,8 +864,10 @@ public class BacktrackingOneGroup {
     }
     public static void main(String[] args){
         BacktrackingOneGroup solver = new BacktrackingOneGroup();
-        solver.input("data/1.txt");
-        solver.solveNew(600);
-        solver.printBestSolution();
+        solver.inputFile("data/3.txt");
+        //solver.input();
+        solver.solveNew(1200);
+        //solver.printBestSolution();
+        solver.writeSolutionFormat();
     }
 }
