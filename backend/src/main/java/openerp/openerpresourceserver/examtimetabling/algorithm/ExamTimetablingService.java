@@ -5,22 +5,16 @@ import openerp.openerpresourceserver.examtimetabling.algorithm.model.Timetabling
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingSolution;
 import openerp.openerpresourceserver.examtimetabling.entity.*;
 import openerp.openerpresourceserver.examtimetabling.repository.*;
-import openerp.openerpresourceserver.examtimetabling.algorithm.model.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.ParseException;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import java.util.Locale;
 
 /**
  * Service for automating exam timetabling assignments
@@ -63,7 +57,7 @@ public class ExamTimetablingService {
         log.info("Starting auto assignment for {} classes over {} dates", classIds.size(), examDates.size());
         
         try {
-            // First, clear any existing assignments for these classes
+            // Step 0: clear any existing assignments for these classes
             clearExistingAssignments(examTimetableId, classIds);
             log.info("Cleared existing assignments for {} classes", classIds.size());
             
@@ -107,12 +101,10 @@ public class ExamTimetablingService {
      * for the classes that will be auto-assigned
      */
     private void clearExistingAssignments(UUID examTimetableId, List<UUID> classIds) {
-        // Fetch all existing assignment records for these classes
         List<ExamTimetableAssignment> existingAssignments = 
             examTimetableAssignmentRepository.findByExamTimetableIdAndExamTimetablingClassIdIn(
                 examTimetableId, classIds);
         
-        // Clear assignment data
         for (ExamTimetableAssignment assignment : existingAssignments) {
             assignment.setRoomId(null);
             assignment.setExamSessionId(null);
@@ -120,7 +112,6 @@ public class ExamTimetablingService {
             assignment.setWeekNumber(null);
         }
         
-        // Save the cleared assignments
         examTimetableAssignmentRepository.saveAll(existingAssignments);
     }
     
@@ -128,37 +119,31 @@ public class ExamTimetablingService {
      * Saves the solution by updating existing assignment records in the database
      */
     private void saveSolution(UUID examTimetableId, TimetablingSolution solution) {
-        // Get the exam plan to calculate week numbers
         ExamTimetable examTimetable = examTimetableRepository.findById(examTimetableId)
             .orElseThrow(() -> new RuntimeException("Exam timetable not found: " + examTimetableId));
         
         ExamPlan examPlan = examPlanRepository.findById(examTimetable.getExamPlanId())
             .orElseThrow(() -> new RuntimeException("Exam plan not found: " + examTimetable.getExamPlanId()));
         
-        // Fetch all existing assignment records for this timetable
         List<ExamTimetableAssignment> existingAssignments = 
             examTimetableAssignmentRepository.findByExamTimetableId(examTimetableId);
         
-        // Create a map for quick lookup of assignments by class ID
         Map<UUID, ExamTimetableAssignment> assignmentsByClassId = existingAssignments.stream()
             .collect(Collectors.toMap(
                 ExamTimetableAssignment::getExamTimetablingClassId, 
                 assignment -> assignment,
-                (a1, a2) -> a1 // In case of duplicates, keep the first one
+                (a1, a2) -> a1 
             ));
         
         List<ExamTimetableAssignment> updatedAssignments = new ArrayList<>();
         
-        // Update assignments with the solution data
         for (Map.Entry<UUID, AssignmentDetails> entry : solution.getAssignedClasses().entrySet()) {
             UUID classId = entry.getKey();
             AssignmentDetails details = entry.getValue();
             
-            // Find the existing assignment for this class
             ExamTimetableAssignment assignment = assignmentsByClassId.get(classId);
             
             if (assignment != null) {
-                // Update the existing assignment with new values
                 assignment.setRoomId(details.getRoomId());
                 assignment.setExamSessionId(details.getSessionId());
                 assignment.setDate(details.getDate());
@@ -173,7 +158,6 @@ public class ExamTimetablingService {
             }
         }
         
-        // Save all updated assignments
         if (!updatedAssignments.isEmpty()) {
             examTimetableAssignmentRepository.saveAll(updatedAssignments);
             log.info("Updated {} assignment records", updatedAssignments.size());
@@ -182,32 +166,23 @@ public class ExamTimetablingService {
     
     /**
      * Calculate week number based on exam plan start date and start week
-     * 
-     * @param date The date to calculate week number for
-     * @param examPlan The exam plan containing start date and start week
-     * @return The calculated week number
      */
     private Integer calculateWeekNumber(LocalDate date, ExamPlan examPlan) {
         if (date == null || examPlan == null || examPlan.getStartTime() == null || examPlan.getStartWeek() == null) {
             return null;
         }
         
-        // Get start date from exam plan
         LocalDate planStartDate = examPlan.getStartTime().toLocalDate();
         Integer planStartWeek = examPlan.getStartWeek();
         
-        // Calculate days between the start date and the given date
         long daysBetween = ChronoUnit.DAYS.between(planStartDate, date);
         
-        // Calculate week difference (integer division by 7)
         int weekDifference = (int) (daysBetween / 7);
         
-        // Add any remaining days that constitute a week boundary crossing
         if (daysBetween % 7 > 0 && planStartDate.getDayOfWeek().getValue() > date.getDayOfWeek().getValue()) {
             weekDifference++;
         }
         
-        // Calculate the week number by adding the difference to the start week
         return planStartWeek + weekDifference;
     }
 }

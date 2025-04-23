@@ -43,12 +43,11 @@ public class ExamTimetablingUtils {
             UUID conflictTimeSlotId = courseTimeSlots.get(conflictCourseId);
             
             if (conflictTimeSlotId != null) {
-                // If exact same time slot, it's invalid
                 if (conflictTimeSlotId.equals(timeSlotId)) {
                     return false;
                 }
                 
-                // Also check if they're consecutive slots on the same day
+                // Check if they're consecutive slots on the same day
                 TimeSlot timeSlot = findTimeSlot(timeSlotId, availableTimeSlots);
                 TimeSlot conflictTimeSlot = findTimeSlot(conflictTimeSlotId, availableTimeSlots);
                 
@@ -78,10 +77,6 @@ public class ExamTimetablingUtils {
     
     /**
      * Check if a room can be assigned to a class
-     * 
-     * @param examClass The exam class
-     * @param room The room
-     * @return true if the room is suitable for the class
      */
     public static boolean isRoomSuitable(ExamClass examClass, ExamRoom room) {
         // Room must have at least 2n seats for n students
@@ -115,13 +110,11 @@ public class ExamTimetablingUtils {
             Set<TimeSlotRoomPair> prohibitedSlots,
             Map<TimeSlotRoomPair, Boolean> assignedRooms) {
         
-        // Create key for room-time slot pair
         TimeSlotRoomPair pair = new TimeSlotRoomPair();
         pair.setRoomId(roomId);
         pair.setSessionId(timeSlot.getSessionId());
         pair.setDate(timeSlot.getDate());
         
-        // Check if this pair is prohibited
         if (prohibitedSlots.contains(pair)) {
             return false;
         }

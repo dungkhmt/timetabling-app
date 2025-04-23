@@ -15,13 +15,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TimetablingData {
-    // Basic data
     private List<ExamClass> examClasses;
     private List<ExamRoom> availableRooms;
     private List<TimeSlot> availableTimeSlots;
     private List<LocalDate> examDates;
     
-    // Grouped data
     private Map<String, List<ExamClass>> classesByCourseId;
     private Map<String, List<ExamClass>> classesByGroupId;
     

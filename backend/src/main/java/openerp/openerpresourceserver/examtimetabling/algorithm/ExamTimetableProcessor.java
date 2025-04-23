@@ -49,41 +49,31 @@ public class ExamTimetableProcessor {
     public TimetablingData processData(UUID examTimetableId, List<UUID> classIds, List<String> examDates) {
         TimetablingData data = new TimetablingData();
         
-        // Process dates
         List<LocalDate> dates = processExamDates(examDates);
         data.setExamDates(dates);
         
-        // Get exam classes
         List<ExamClass> examClasses = examClassRepository.findAllByIdIn(classIds);
         data.setExamClasses(examClasses);
         
-        // Group classes by course ID
         Map<String, List<ExamClass>> classesByCourseId = examClasses.stream()
             .collect(Collectors.groupingBy(ExamClass::getCourseId));
         data.setClassesByCourseId(classesByCourseId);
         
-        // Group classes by group ID
         Map<String, List<ExamClass>> classesByGroupId = examClasses.stream()
             .filter(ec -> ec.getGroupId() != null && !ec.getGroupId().isEmpty())
             .collect(Collectors.groupingBy(ExamClass::getGroupId));
         data.setClassesByGroupId(classesByGroupId);
         
-        // Get available rooms
         List<ExamRoom> rooms = examRoomRepository.findAll();
         data.setAvailableRooms(rooms);
         
-        // Generate available time slots
         List<TimeSlot> timeSlots = generateTimeSlots(examTimetableId, dates);
         data.setAvailableTimeSlots(timeSlots);
         
-        // Get assigned assignments for this timetable
         List<ExamTimetableAssignment> assignedAssignments = 
             assignmentRepository.findAssignedClassByExamTimetableId(examTimetableId);
         data.setExistingAssignments(assignedAssignments);
 
-        
-        
-        // Get prohibited time slots
         Set<TimeSlotRoomPair> prohibitedSlots = getProhibitedSlots(assignedAssignments);
         data.setProhibitedSlots(prohibitedSlots);
         
@@ -113,11 +103,9 @@ public class ExamTimetableProcessor {
      * Only includes sessions that belong to the timetable's session collection
      */
     private List<TimeSlot> generateTimeSlots(UUID examTimetableId, List<LocalDate> dates) {
-        // Get the timetable to find its session collection
         ExamTimetable examTimetable = examTimetableRepository.findById(examTimetableId)
             .orElseThrow(() -> new RuntimeException("Exam timetable not found: " + examTimetableId));
         
-        // Get sessions belonging to this timetable's session collection
         List<ExamTimetableSession> sessionTemplates = 
             getSessionsForTimetable(examTimetable.getExamTimetableSessionCollectionId());
         
@@ -126,7 +114,7 @@ public class ExamTimetableProcessor {
         for (LocalDate date : dates) {
             for (ExamTimetableSession sessionTemplate : sessionTemplates) {
                 TimeSlot slot = new TimeSlot();
-                slot.setId(UUID.randomUUID()); // Generate a unique ID for the time slot
+                slot.setId(UUID.randomUUID()); 
                 slot.setSessionId(sessionTemplate.getId());
                 slot.setDate(date);
                 slot.setStartTime(sessionTemplate.getStartTime().toLocalTime());
@@ -143,7 +131,6 @@ public class ExamTimetableProcessor {
      * Get all sessions that belong to a specific session collection
      */
     private List<ExamTimetableSession> getSessionsForTimetable(UUID sessionCollectionId) {
-        // Find all sessions that belong to this collection
         List<ExamTimetableSession> sessions = sessionRepository.findByExamTimetableSessionCollectionId(sessionCollectionId);
         
         return sessions;
@@ -172,12 +159,10 @@ public class ExamTimetableProcessor {
     private Map<UUID, Set<UUID>> buildConflictGraph(List<UUID> classIds) {
         Map<UUID, Set<UUID>> conflictGraph = new HashMap<>();
         
-        // Initialize empty sets for all classes
         for (UUID classId : classIds) {
             conflictGraph.put(classId, new HashSet<>());
         }
         
-        // Add conflicts from the repository
         List<ConflictExamTimetablingClass> conflicts = conflictRepository.findByExamTimetablingClassId1InOrExamTimetablingClassId2In(
             classIds, classIds);
         
@@ -191,10 +176,6 @@ public class ExamTimetableProcessor {
                 conflictGraph.computeIfAbsent(class2, k -> new HashSet<>()).add(class1);
             }
         }
-        
-        // Add implicit conflicts - classes with same course ID are not conflicts
-        // They need to be scheduled at the same time
-        // But we'll handle this as a special case in the algorithm
         
         return conflictGraph;
     }

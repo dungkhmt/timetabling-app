@@ -21,7 +21,7 @@ public class ExamTimetableAlgorithm {
     private static final double WEIGHT_EARLY_SLOTS = 2.0;     // 3rd priority
     
     // Maximum iterations for local search
-    private static final int MAX_ITERATIONS = 100;
+    private static final int MAX_ITERATIONS = 1000;
     
     /**
      * Main method to assign classes to rooms and time slots
@@ -29,11 +29,11 @@ public class ExamTimetableAlgorithm {
      * @param data The preprocessed timetabling data
      * @return A solution with assignments
      */
-    public TimetablingSolution assign(TimetablingData data) {
+    public ExamTimetableSolution assign(TimetablingData data) {
         log.info("Starting assignment algorithm for {} classes", data.getExamClasses().size());
         
         // Create initial solution with multiple attempts for unassigned classes
-        TimetablingSolution solution = createInitialAssignmentWithRetries(data);
+        ExamTimetableSolution solution = createInitialAssignmentWithRetries(data);
         
         if (solution.getAssignedClasses().size() < data.getExamClasses().size()) {
             log.warn("Could not assign all classes: {}/{} assigned", 
@@ -43,7 +43,7 @@ public class ExamTimetableAlgorithm {
         }
         
         // Phase 2: Improve solution using local search
-        TimetablingSolution optimizedSolution = optimizeSolution(solution, data);
+        ExamTimetableSolution optimizedSolution = optimizeSolution(solution, data);
         
         log.info("Optimization complete. Final solution quality: {}", optimizedSolution.getQualityScore());
         
@@ -53,34 +53,25 @@ public class ExamTimetableAlgorithm {
     /**
      * Create initial assignment with multiple retries for unassigned classes
      */
-    private TimetablingSolution createInitialAssignmentWithRetries(TimetablingData data) {
-        TimetablingSolution solution = new TimetablingSolution();
+    private ExamTimetableSolution createInitialAssignmentWithRetries(TimetablingData data) {
+        ExamTimetableSolution solution = new ExamTimetableSolution();
         
-        // Set of class IDs that have been successfully assigned
         Set<UUID> assignedClassIds = new HashSet<>();
-        // Total number of classes to assign
         int totalClasses = data.getExamClasses().size();
-        // Number of classes assigned in the current iteration
         int newlyAssignedClasses;
-        // Maximum number of retries
         int maxRetries = 10;
-        // Current retry count
         int retryCount = 0;
         
         do {
             retryCount++;
             log.info("Initial assignment attempt #{}", retryCount);
             
-            // Create filtered data for unassigned classes
             TimetablingData filteredData = filterUnassignedClasses(data, assignedClassIds);
             
-            // Try to assign remaining classes
-            TimetablingSolution iterationSolution = createInitialAssignment(filteredData);
+            ExamTimetableSolution iterationSolution = createInitialAssignment(filteredData);
             
-            // Merge the new assignments with existing solution
             newlyAssignedClasses = mergeSolutions(solution, iterationSolution);
             
-            // Update the set of assigned class IDs
             for (UUID classId : iterationSolution.getAssignedClasses().keySet()) {
                 assignedClassIds.add(classId);
             }
@@ -88,10 +79,8 @@ public class ExamTimetableAlgorithm {
             log.info("Assigned {} new classes in iteration #{}, total assigned: {}/{}", 
                     newlyAssignedClasses, retryCount, assignedClassIds.size(), totalClasses);
             
-            // Continue if we made progress and still have unassigned classes
         } while (newlyAssignedClasses > 0 && assignedClassIds.size() < totalClasses && retryCount < maxRetries);
         
-        // Calculate metrics for the final solution
         solution.calculateMetrics(data);
         
         return solution;
@@ -103,7 +92,6 @@ public class ExamTimetableAlgorithm {
     private TimetablingData filterUnassignedClasses(TimetablingData originalData, Set<UUID> assignedClassIds) {
         TimetablingData filteredData = new TimetablingData();
         
-        // Copy all basic data
         filteredData.setAvailableRooms(originalData.getAvailableRooms());
         filteredData.setAvailableTimeSlots(originalData.getAvailableTimeSlots());
         filteredData.setExamDates(originalData.getExamDates());
@@ -133,7 +121,6 @@ public class ExamTimetableAlgorithm {
             UUID classId = examClass.getId();
             Set<UUID> conflicts = originalData.getConflictGraph().getOrDefault(classId, new HashSet<>());
             
-            // Keep only conflicts with other unassigned classes
             Set<UUID> filteredConflicts = conflicts.stream()
                     .filter(conflictId -> !assignedClassIds.contains(conflictId))
                     .collect(Collectors.toSet());
@@ -149,10 +136,9 @@ public class ExamTimetableAlgorithm {
      * Merge a new solution into the existing solution
      * @return Number of newly assigned classes
      */
-    private int mergeSolutions(TimetablingSolution existingSolution, TimetablingSolution newSolution) {
+    private int mergeSolutions(ExamTimetableSolution existingSolution, ExamTimetableSolution newSolution) {
         int newlyAssignedCount = 0;
         
-        // Merge assigned classes
         for (Map.Entry<UUID, AssignmentDetails> entry : newSolution.getAssignedClasses().entrySet()) {
             UUID classId = entry.getKey();
             AssignmentDetails details = entry.getValue();
@@ -163,7 +149,6 @@ public class ExamTimetableAlgorithm {
             }
         }
         
-        // Merge course time slot assignments
         for (Map.Entry<String, UUID> entry : newSolution.getCourseTimeSlotAssignments().entrySet()) {
             String courseId = entry.getKey();
             UUID timeSlotId = entry.getValue();
@@ -171,7 +156,6 @@ public class ExamTimetableAlgorithm {
             existingSolution.getCourseTimeSlotAssignments().put(courseId, timeSlotId);
         }
         
-        // Merge time slot class assignments
         for (Map.Entry<UUID, List<UUID>> entry : newSolution.getTimeSlotClassAssignments().entrySet()) {
             UUID timeSlotId = entry.getKey();
             List<UUID> classes = entry.getValue();
@@ -186,7 +170,6 @@ public class ExamTimetableAlgorithm {
             }
         }
         
-        // Merge room usage counts
         for (Map.Entry<UUID, Integer> entry : newSolution.getRoomUsageCounts().entrySet()) {
             UUID roomId = entry.getKey();
             Integer count = entry.getValue();
@@ -195,7 +178,6 @@ public class ExamTimetableAlgorithm {
                     existingSolution.getRoomUsageCounts().getOrDefault(roomId, 0) + count);
         }
         
-        // Merge time slot usage counts
         for (Map.Entry<UUID, Integer> entry : newSolution.getTimeSlotUsageCounts().entrySet()) {
             UUID timeSlotId = entry.getKey();
             Integer count = entry.getValue();
@@ -210,8 +192,8 @@ public class ExamTimetableAlgorithm {
     /**
      * Create initial assignment using graph coloring approach
      */
-    private TimetablingSolution createInitialAssignment(TimetablingData data) {
-        TimetablingSolution solution = new TimetablingSolution();
+    private ExamTimetableSolution createInitialAssignment(TimetablingData data) {
+        ExamTimetableSolution solution = new ExamTimetableSolution();
         
         // Step 1: Group classes by course ID (they must be scheduled together)
         Map<String, List<ExamClass>> courseGroups = data.getClassesByCourseId();
@@ -254,7 +236,6 @@ public class ExamTimetableAlgorithm {
                 Set<UUID> conflictingClasses = data.getConflictGraph().getOrDefault(examClass.getId(), Collections.emptySet());
                 
                 for (UUID conflictId : conflictingClasses) {
-                    // Find the course ID of the conflicting class
                     for (ExamClass ec : data.getExamClasses()) {
                         if (ec.getId().equals(conflictId)) {
                             conflictingCourses.add(ec.getCourseId());
@@ -277,7 +258,7 @@ public class ExamTimetableAlgorithm {
         sorted.sort((e1, e2) -> {
             int c1 = courseConstraints.getOrDefault(e1.getKey(), 0);
             int c2 = courseConstraints.getOrDefault(e2.getKey(), 0);
-            return Integer.compare(c2, c1); // Descending order
+            return Integer.compare(c2, c1); 
         });
         
         return sorted;
@@ -351,10 +332,8 @@ public class ExamTimetableAlgorithm {
                 if (!courseId.equals(groupCourse) && courseToTimeSlot.containsKey(groupCourse)) {
                     UUID groupCourseTimeSlotId = courseToTimeSlot.get(groupCourse);
                     
-                    // Find the timeslot for this course
                     for (TimeSlot groupTimeSlot : data.getAvailableTimeSlots()) {
                         if (groupTimeSlot.getId().equals(groupCourseTimeSlotId)) {
-                            // Mark timeslots on the same day as "preferred to avoid"
                             for (TimeSlot otherSlot : data.getAvailableTimeSlots()) {
                                 if (otherSlot.isSameDayAs(groupTimeSlot) && !invalidTimeSlots.contains(otherSlot.getId())) {
                                     preferredToAvoidTimeSlots.add(otherSlot.getId());
@@ -366,7 +345,6 @@ public class ExamTimetableAlgorithm {
                 }
             }
             
-            // Try to find a valid time slot (not in invalid set)
             UUID assignedTimeSlot = null;
             
             // First try: Find slots that satisfy both hard and soft constraints
@@ -440,13 +418,11 @@ public class ExamTimetableAlgorithm {
     private Map<String, Set<String>> buildCourseGroupMap(TimetablingData data) {
         Map<String, Set<String>> coursesByGroup = new HashMap<>();
 
-        // Iterate through classes and group courses by group ID
         for (ExamClass examClass : data.getExamClasses()) {
             String courseId = examClass.getCourseId();
             String groupId = examClass.getGroupId();
             
             if (groupId != null && !groupId.isEmpty()) {
-                // For each group ID, map the courses in that group
                 for (ExamClass otherClass : data.getExamClasses()) {
                     if (groupId.equals(otherClass.getGroupId())) {
                         coursesByGroup.computeIfAbsent(courseId, k -> new HashSet<>())
@@ -465,16 +441,13 @@ public class ExamTimetableAlgorithm {
     private Map<String, Set<String>> buildCourseConflictGraph(TimetablingData data) {
         Map<String, Set<String>> courseConflictGraph = new HashMap<>();
         
-        // Initialize empty sets for all courses
         for (String courseId : data.getClassesByCourseId().keySet()) {
             courseConflictGraph.put(courseId, new HashSet<>());
         }
         
-        // Build course conflict graph from class conflict graph
         for (Map.Entry<UUID, Set<UUID>> classConflict : data.getConflictGraph().entrySet()) {
             UUID classId1 = classConflict.getKey();
             
-            // Find course ID for class 1
             String courseId1 = null;
             for (ExamClass ec : data.getExamClasses()) {
                 if (ec.getId().equals(classId1)) {
@@ -485,9 +458,7 @@ public class ExamTimetableAlgorithm {
             
             if (courseId1 == null) continue;
             
-            // Add conflicts with all conflicting classes
             for (UUID classId2 : classConflict.getValue()) {
-                // Find course ID for class 2
                 String courseId2 = null;
                 for (ExamClass ec : data.getExamClasses()) {
                     if (ec.getId().equals(classId2)) {
@@ -498,7 +469,6 @@ public class ExamTimetableAlgorithm {
                 
                 if (courseId2 == null || courseId1.equals(courseId2)) continue;
                 
-                // Add conflict
                 courseConflictGraph.get(courseId1).add(courseId2);
                 courseConflictGraph.get(courseId2).add(courseId1);
             }
@@ -512,7 +482,7 @@ public class ExamTimetableAlgorithm {
      * With additional soft constraint to keep classes with same course and group in the same building
      */
     private boolean assignRoomsToClasses(
-        TimetablingSolution solution,
+        ExamTimetableSolution solution,
         Map<String, List<ExamClass>> courseGroups,
         Map<String, UUID> courseToTimeSlot,
         TimetablingData data) {
@@ -554,7 +524,7 @@ public class ExamTimetableAlgorithm {
             if (timeSlot == null) {
                 log.error("Could not find time slot with ID {}", timeSlotId);
                 allSuccessful = false;
-                continue; // Skip this course but continue with others
+                continue; 
             }
             
             // Sort classes by number of students (largest first)
@@ -566,7 +536,6 @@ public class ExamTimetableAlgorithm {
             for (ExamClass examClass : sortedClasses) {
                 int requiredCapacity = examClass.getNumberOfStudents() * 15 / 10; // Room needs 2n seats
                 
-                // Create a key for course+group combination
                 String courseGroupKey = courseId + "_" + (examClass.getGroupId() != null ? examClass.getGroupId() : "");
                 
                 // Check if we already assigned a building for this course+group
@@ -630,7 +599,6 @@ public class ExamTimetableAlgorithm {
                     courseGroupBuildingMap.put(courseGroupKey, building);
                 }
                 
-                // Add assignment to solution
                 solution.addAssignment(
                     examClass.getId(), 
                     timeSlotId, 
@@ -667,29 +635,28 @@ public class ExamTimetableAlgorithm {
     /**
      * Optimize solution using local search
      */
-    private TimetablingSolution optimizeSolution(TimetablingSolution initialSolution, TimetablingData data) {
-        TimetablingSolution currentSolution = initialSolution;
+    private ExamTimetableSolution optimizeSolution(ExamTimetableSolution initialSolution, TimetablingData data) {
+        ExamTimetableSolution currentSolution = initialSolution;
         currentSolution.calculateMetrics(data);
         
         double bestScore = currentSolution.getQualityScore();
-        TimetablingSolution bestSolution = deepCopy(currentSolution);
+        ExamTimetableSolution bestSolution = deepCopy(currentSolution);
         
         Random random = new Random();
         int iterations = 0;
         int noImprovementCount = 0;
         
         while (iterations < MAX_ITERATIONS && noImprovementCount < 100) {
+            System.err.println("---------------------------------");
             System.err.println("Iteration: " + iterations + ", Best Score: " + bestScore);
             iterations++;
             
-            // Generate a neighbor solution by applying a random move
-            TimetablingSolution neighborSolution = applyRandomMove(currentSolution, data, random);
+            ExamTimetableSolution neighborSolution = applyRandomMove(currentSolution, data, random);
             
-            // Calculate metrics for the neighbor solution
             neighborSolution.calculateMetrics(data);
             
-            // If the neighbor is better, accept it
             double neighborScore = neighborSolution.getQualityScore();
+            System.err.println("Neighbor Score: " + neighborScore);
             if (neighborScore > bestScore) {
                 bestScore = neighborScore;
                 bestSolution = deepCopy(neighborSolution);
@@ -698,7 +665,6 @@ public class ExamTimetableAlgorithm {
                 
                 log.debug("Improvement found at iteration {}. New score: {}", iterations, bestScore);
             } else {
-                // Sometimes accept worse solutions (simulated annealing style)
                 double acceptanceProbability = Math.exp((neighborScore - bestScore) / (1.0 - iterations / (double)MAX_ITERATIONS));
                 if (random.nextDouble() < acceptanceProbability) {
                     currentSolution = neighborSolution;
@@ -716,23 +682,20 @@ public class ExamTimetableAlgorithm {
     /**
      * Apply a random move to generate a neighbor solution
      */
-    private TimetablingSolution applyRandomMove(TimetablingSolution solution, TimetablingData data, Random random) {
-        TimetablingSolution neighbor = deepCopy(solution);
+    private ExamTimetableSolution applyRandomMove(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        ExamTimetableSolution neighbor = deepCopy(solution);
         
         // Choose a random move type
         int moveType = random.nextInt(3);
         
         switch (moveType) {
             case 0:
-                // Swap time slots of two courses
                 swapCourseTimeSlots(neighbor, data, random);
                 break;
             case 1:
-                // Reassign rooms within a time slot
                 reassignRooms(neighbor, data, random);
                 break;
             case 2:
-                // Move a course to a different time slot
                 moveCourseToNewTimeSlot(neighbor, data, random);
                 break;
         }
@@ -743,11 +706,9 @@ public class ExamTimetableAlgorithm {
     /**
      * Swap time slots between two courses
      */
-    private void swapCourseTimeSlots(TimetablingSolution solution, TimetablingData data, Random random) {
-        // Get list of course IDs
+    private void swapCourseTimeSlots(ExamTimetableSolution solution, TimetablingData data, Random random) {
         List<String> courseIds = new ArrayList<>(solution.getCourseTimeSlotAssignments().keySet());
         
-        // Need at least 2 courses to swap
         if (courseIds.size() < 2) return;
         
         // Choose two random courses
@@ -763,7 +724,7 @@ public class ExamTimetableAlgorithm {
         
         // Check if swap is valid (no new conflicts)
         if (!isValidSwap(course1, course2, timeSlot1, timeSlot2, solution, data)) {
-            return; // Invalid swap, don't make any changes
+            return;
         }
         
         // Find all classes for each course
@@ -798,7 +759,6 @@ public class ExamTimetableAlgorithm {
             AssignmentDetails details = solution.getAssignedClasses().get(classId);
             details.setTimeSlotId(timeSlot2);
             
-            // Find the time slot to get session ID and date
             for (TimeSlot ts : data.getAvailableTimeSlots()) {
                 if (ts.getId().equals(timeSlot2)) {
                     details.setSessionId(ts.getSessionId());
@@ -812,7 +772,6 @@ public class ExamTimetableAlgorithm {
             AssignmentDetails details = solution.getAssignedClasses().get(classId);
             details.setTimeSlotId(timeSlot1);
             
-            // Find the time slot to get session ID and date
             for (TimeSlot ts : data.getAvailableTimeSlots()) {
                 if (ts.getId().equals(timeSlot1)) {
                     details.setSessionId(ts.getSessionId());
@@ -833,7 +792,7 @@ public class ExamTimetableAlgorithm {
      * Check if swapping time slots between two courses creates conflicts
      */
     private boolean isValidSwap(String course1, String course2, UUID timeSlot1, UUID timeSlot2, 
-                                TimetablingSolution solution, TimetablingData data) {
+                                ExamTimetableSolution solution, TimetablingData data) {
         // Build course conflict graph
         Map<String, Set<String>> courseConflicts = buildCourseConflictGraph(data);
         
@@ -863,7 +822,7 @@ public class ExamTimetableAlgorithm {
     /**
      * Reassign rooms within a time slot
      */
-    private void reassignRooms(TimetablingSolution solution, TimetablingData data, Random random) {
+    private void reassignRooms(ExamTimetableSolution solution, TimetablingData data, Random random) {
         // Get a random time slot
         List<UUID> timeSlots = new ArrayList<>(solution.getTimeSlotClassAssignments().keySet());
         if (timeSlots.isEmpty()) return;
@@ -932,7 +891,7 @@ public class ExamTimetableAlgorithm {
     /**
      * Move a course to a new time slot
      */
-    private void moveCourseToNewTimeSlot(TimetablingSolution solution, TimetablingData data, Random random) {
+    private void moveCourseToNewTimeSlot(ExamTimetableSolution solution, TimetablingData data, Random random) {
         // Choose a random course
         List<String> courseIds = new ArrayList<>(solution.getCourseTimeSlotAssignments().keySet());
         if (courseIds.isEmpty()) return;
@@ -954,7 +913,7 @@ public class ExamTimetableAlgorithm {
             if (timeSlot != null) {
                 conflictingTimeSlots.add(timeSlot);
                 
-                // Also add consecutive time slots on same day
+                // add consecutive time slots on same day
                 for (TimeSlot ts1 : data.getAvailableTimeSlots()) {
                     if (ts1.getId().equals(timeSlot)) {
                         for (TimeSlot ts2 : data.getAvailableTimeSlots()) {
@@ -1010,7 +969,6 @@ public class ExamTimetableAlgorithm {
         for (Map.Entry<UUID, AssignmentDetails> entry : solution.getAssignedClasses().entrySet()) {
             UUID classId = entry.getKey();
             
-            // Find course ID for this class
             for (ExamClass ec : data.getExamClasses()) {
                 if (ec.getId().equals(classId) && ec.getCourseId().equals(courseId)) {
                     classIdsToUpdate.add(classId);
@@ -1040,8 +998,8 @@ public class ExamTimetableAlgorithm {
     /**
      * Create a deep copy of a solution
      */
-    private TimetablingSolution deepCopy(TimetablingSolution solution) {
-        TimetablingSolution copy = new TimetablingSolution();
+    private ExamTimetableSolution deepCopy(ExamTimetableSolution solution) {
+        ExamTimetableSolution copy = new ExamTimetableSolution();
         
         // Copy assigned classes
         Map<UUID, AssignmentDetails> assignedClasses = new HashMap<>();
@@ -1058,23 +1016,18 @@ public class ExamTimetableAlgorithm {
         }
         copy.setAssignedClasses(assignedClasses);
         
-        // Copy course time slot assignments
         copy.setCourseTimeSlotAssignments(new HashMap<>(solution.getCourseTimeSlotAssignments()));
         
-        // Copy time slot class assignments
         Map<UUID, List<UUID>> timeSlotClassAssignments = new HashMap<>();
         for (Map.Entry<UUID, List<UUID>> entry : solution.getTimeSlotClassAssignments().entrySet()) {
             timeSlotClassAssignments.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
         copy.setTimeSlotClassAssignments(timeSlotClassAssignments);
         
-        // Copy room usage counts
         copy.setRoomUsageCounts(new HashMap<>(solution.getRoomUsageCounts()));
         
-        // Copy time slot usage counts
         copy.setTimeSlotUsageCounts(new HashMap<>(solution.getTimeSlotUsageCounts()));
         
-        // Copy metrics
         copy.setGroupSpacingViolations(solution.getGroupSpacingViolations());
         copy.setRoomBalanceMetric(solution.getRoomBalanceMetric());
         copy.setTimeSlotBalanceMetric(solution.getTimeSlotBalanceMetric());

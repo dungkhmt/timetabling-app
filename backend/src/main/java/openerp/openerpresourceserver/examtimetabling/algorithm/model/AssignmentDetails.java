@@ -13,16 +13,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignmentDetails {
-    // The ID of the time slot
     private UUID timeSlotId;
     
-    // The ID of the room
     private UUID roomId;
     
-    // The ID of the session
     private UUID sessionId;
     
-    // The date of the assignment
     private LocalDate date;
     
     /**

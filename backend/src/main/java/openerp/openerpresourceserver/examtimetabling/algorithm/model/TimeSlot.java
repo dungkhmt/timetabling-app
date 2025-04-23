@@ -14,20 +14,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TimeSlot {
-    // Unique identifier for this time slot
     private UUID id;
     
-    // Reference to the session template
     private UUID sessionId;
     
-    // The date for this time slot
     private LocalDate date;
     
-    // Start and end times
     private LocalTime startTime;
     private LocalTime endTime;
     
-    // Descriptive name
     private String name;
     
     /**
