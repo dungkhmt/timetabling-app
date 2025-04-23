@@ -235,6 +235,7 @@
 				pom
 			</type>
 		</dependency>
+
 		<dependency>
 			<groupId>
 				io.springfox
