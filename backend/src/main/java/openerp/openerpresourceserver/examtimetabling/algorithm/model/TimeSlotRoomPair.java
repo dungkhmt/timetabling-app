@@ -13,13 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TimeSlotRoomPair {
-    // The session ID
     private UUID sessionId;
     
-    // The date
     private LocalDate date;
     
-    // The room ID
     private UUID roomId;
     
     @Override

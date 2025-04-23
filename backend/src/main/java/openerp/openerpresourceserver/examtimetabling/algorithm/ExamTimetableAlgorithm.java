@@ -4,6 +4,7 @@ import openerp.openerpresourceserver.examtimetabling.entity.*;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.*;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -217,56 +218,52 @@ public class ExamTimetableAlgorithm {
     }
     
     /**
-     * Sort course groups by number of constraints (most constrained first)
+     * Sort course groups by constraint level (most constrained first)
      */
     private List<Map.Entry<String, List<ExamClass>>> sortCourseGroupsByConstraints(
-            Map<String, List<ExamClass>> courseGroups, TimetablingData data) {
-        
+        Map<String, List<ExamClass>> courseGroups, TimetablingData data) {
+
+        // Build course conflict graph based on group membership
+        Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
+
         // Calculate how constrained each course is
         Map<String, Integer> courseConstraints = new HashMap<>();
-        
+
         for (Map.Entry<String, List<ExamClass>> entry : courseGroups.entrySet()) {
             String courseId = entry.getKey();
             List<ExamClass> classes = entry.getValue();
             
-            // Count number of conflicting courses
-            Set<String> conflictingCourses = new HashSet<>();
+            // 1. Number of conflicting courses (highest weight)
+            int conflictingCoursesCount = courseConflictGraph.getOrDefault(courseId, Collections.emptySet()).size();
             
-            for (ExamClass examClass : classes) {
-                Set<UUID> conflictingClasses = data.getConflictGraph().getOrDefault(examClass.getId(), Collections.emptySet());
-                
-                for (UUID conflictId : conflictingClasses) {
-                    for (ExamClass ec : data.getExamClasses()) {
-                        if (ec.getId().equals(conflictId)) {
-                            conflictingCourses.add(ec.getCourseId());
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            // The constraint score is the number of conflicting courses plus the number of students
+            // 2. Total number of students (medium weight)
             int totalStudents = classes.stream()
                 .mapToInt(ExamClass::getNumberOfStudents)
                 .sum();
             
-            courseConstraints.put(courseId, conflictingCourses.size() * 100 + totalStudents);
+            // 3. Total number of classes in the course (lowest weight)
+            int classCount = classes.size();
+            
+            // Combined constraint score with appropriate weights
+            int constraintScore = (conflictingCoursesCount * 1000) + (totalStudents * 10) + classCount;
+            
+            courseConstraints.put(courseId, constraintScore);
         }
-        
+
         // Sort by constraint score (descending)
         List<Map.Entry<String, List<ExamClass>>> sorted = new ArrayList<>(courseGroups.entrySet());
         sorted.sort((e1, e2) -> {
             int c1 = courseConstraints.getOrDefault(e1.getKey(), 0);
             int c2 = courseConstraints.getOrDefault(e2.getKey(), 0);
-            return Integer.compare(c2, c1); 
+            return Integer.compare(c2, c1); // Descending order
         });
-        
+
         return sorted;
     }
     
     /**
      * Assign time slots to courses using graph coloring approach,
-     * trying to assign as many courses as possible
+     * trying to assign as many courses as possible and maximize days between exams in the same group
      */
     private Map<String, UUID> assignTimeSlotsToCourses(
         List<Map.Entry<String, List<ExamClass>>> sortedCourseGroups, TimetablingData data) {
@@ -274,11 +271,18 @@ public class ExamTimetableAlgorithm {
         Map<String, UUID> courseToTimeSlot = new HashMap<>();
         Map<UUID, Set<String>> timeSlotToCourses = new HashMap<>();
 
-        // Build course conflict graph (two courses conflict if any of their classes conflict)
+        // Build course conflict graph (two courses conflict if they are in the same group with different course IDs)
         Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
 
         // Map to track courses in the same group
         Map<String, Set<String>> coursesByGroup = buildCourseGroupMap(data);
+        
+        // Track which groups have already had courses assigned
+        Map<String, Boolean> groupHasAssignedCourses = new HashMap<>();
+        
+        // Track earliest and latest assigned dates for each group
+        Map<String, LocalDate> groupEarliestDate = new HashMap<>();
+        Map<String, LocalDate> groupLatestDate = new HashMap<>();
 
         int totalCourses = sortedCourseGroups.size();
         int assignedCourses = 0;
@@ -288,9 +292,17 @@ public class ExamTimetableAlgorithm {
             String courseId = courseEntry.getKey();
             List<ExamClass> classes = courseEntry.getValue();
             
-            // Get set of time slots that can't be used (due to conflicts with already assigned courses)
+            // Find the group this course belongs to
+            String courseGroup = null;
+            for (ExamClass examClass : classes) {
+                if (examClass.getGroupId() != null && !examClass.getGroupId().isEmpty()) {
+                    courseGroup = examClass.getGroupId();
+                    break;
+                }
+            }
+            
+            // Get set of time slots that can't be used due to conflicts with already assigned courses
             Set<UUID> invalidTimeSlots = new HashSet<>();
-            Set<UUID> preferredToAvoidTimeSlots = new HashSet<>(); // For soft constraints
             
             // Hard constraint: Check conflicting courses (cannot be in same time slot)
             Set<String> conflictingCourses = courseConflictGraph.getOrDefault(courseId, Collections.emptySet());
@@ -299,96 +311,198 @@ public class ExamTimetableAlgorithm {
                 if (courseToTimeSlot.containsKey(conflictingCourse)) {
                     invalidTimeSlots.add(courseToTimeSlot.get(conflictingCourse));
                     
-                    // Also add time slots on same day to avoid consecutive time slots for conflicts
-                    // UUID conflictTimeSlotId = courseToTimeSlot.get(conflictingCourse);
-                    // for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
-                    //     if (timeSlot.getId().equals(conflictTimeSlotId)) {
-                    //         // Find all time slots on same day
-                    //         for (TimeSlot otherSlot : data.getAvailableTimeSlots()) {
-                    //             if (otherSlot.isSameDayAs(timeSlot) && otherSlot.isConsecutiveWith(timeSlot)) {
-                    //                 invalidTimeSlots.add(otherSlot.getId());
-                    //             }
-                    //         }
-                    //         break;
-                    //     }
-                    // }
-                }
-            }
-            
-            // Add prohibited time slots to invalid set
-            // for (TimeSlotRoomPair prohibited : data.getProhibitedSlots()) {
-            //     for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
-            //         if (timeSlot.getSessionId().equals(prohibited.getSessionId()) &&
-            //             timeSlot.getDate().equals(prohibited.getDate())) {
-            //             invalidTimeSlots.add(timeSlot.getId());
-            //             break;
-            //         }
-            //     }
-            // }
-            
-            // Soft constraint: Check courses in same group (should avoid same day if possible)
-            Set<String> coursesInSameGroup = coursesByGroup.getOrDefault(courseId, Collections.emptySet());
-            for (String groupCourse : coursesInSameGroup) {
-                if (!courseId.equals(groupCourse) && courseToTimeSlot.containsKey(groupCourse)) {
-                    UUID groupCourseTimeSlotId = courseToTimeSlot.get(groupCourse);
+                    // Also add time slots on same day and consecutive days to avoid close scheduling
+                    UUID conflictTimeSlotId = courseToTimeSlot.get(conflictingCourse);
+                    TimeSlot conflictTimeSlot = findTimeSlot(conflictTimeSlotId, data.getAvailableTimeSlots());
                     
-                    for (TimeSlot groupTimeSlot : data.getAvailableTimeSlots()) {
-                        if (groupTimeSlot.getId().equals(groupCourseTimeSlotId)) {
-                            for (TimeSlot otherSlot : data.getAvailableTimeSlots()) {
-                                if (otherSlot.isSameDayAs(groupTimeSlot) && !invalidTimeSlots.contains(otherSlot.getId())) {
-                                    preferredToAvoidTimeSlots.add(otherSlot.getId());
-                                }
+                    if (conflictTimeSlot != null) {
+                        for (TimeSlot otherSlot : data.getAvailableTimeSlots()) {
+                            // Same day
+                            if (otherSlot.isSameDayAs(conflictTimeSlot)) {
+                                invalidTimeSlots.add(otherSlot.getId());
                             }
-                            break;
+                            // Day before or day after
+                            else if (otherSlot.isDayBefore(conflictTimeSlot) || otherSlot.isDayAfter(conflictTimeSlot)) {
+                                invalidTimeSlots.add(otherSlot.getId());
+                            }
                         }
                     }
                 }
             }
             
+            // // Add prohibited time slots to invalid set
+            // for (TimeSlotRoomPair prohibited : data.getProhibitedSlots()) {
+            //     for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
+            //         if (timeSlot.getSessionId().equals(prohibited.getSessionId()) &&
+            //             timeSlot.getDate().equals(prohibited.getDate())) {
+            //             invalidTimeSlots.add(timeSlot.getId());
+            //         }
+            //     }
+            // }
+            
             UUID assignedTimeSlot = null;
             
-            // First try: Find slots that satisfy both hard and soft constraints
-            List<TimeSlot> bestTimeSlots = data.getAvailableTimeSlots().stream()
+            // Filter to only valid time slots
+            List<TimeSlot> validTimeSlots = data.getAvailableTimeSlots().stream()
                 .filter(ts -> !invalidTimeSlots.contains(ts.getId()))
-                .filter(ts -> !preferredToAvoidTimeSlots.contains(ts.getId()))
-                .sorted(createTimeSlotComparator(data, timeSlotToCourses))
                 .collect(Collectors.toList());
             
-            if (!bestTimeSlots.isEmpty()) {
-                assignedTimeSlot = bestTimeSlots.get(0).getId();
-            } else {
-                // Second try: Find slots that satisfy only hard constraints
-                List<TimeSlot> validTimeSlots = data.getAvailableTimeSlots().stream()
-                    .filter(ts -> !invalidTimeSlots.contains(ts.getId()))
-                    .sorted(createTimeSlotComparator(data, timeSlotToCourses))
-                    .collect(Collectors.toList());
-                
-                if (!validTimeSlots.isEmpty()) {
-                    assignedTimeSlot = validTimeSlots.get(0).getId();
-                    log.warn("Course {} assigned to same-day timeslot as another course in its group", courseId);
-                }
-            }
-            
-            // If no valid time slot, skip this course but continue with others
-            if (assignedTimeSlot == null) {
+            if (validTimeSlots.isEmpty()) {
                 log.warn("Could not find valid time slot for course {}. Skipping.", courseId);
                 continue;
             }
             
-            // Assign the time slot to the course
-            courseToTimeSlot.put(courseId, assignedTimeSlot);
+            if (courseGroup != null) {
+                boolean isFirstCourseInGroup = !groupHasAssignedCourses.getOrDefault(courseGroup, false);
+                
+                if (isFirstCourseInGroup) {
+                    // This is the first course in this group to be assigned
+                    // Choose either the earliest or latest date
+                    
+                    // Sort by date (ascending)
+                    validTimeSlots.sort(Comparator.comparing(TimeSlot::getDate));
+                    
+                    // Decide whether to use earliest or latest date
+                    Random random = new Random();
+                    boolean useEarliestDate = random.nextBoolean();
+                    
+                    if (useEarliestDate && !validTimeSlots.isEmpty()) {
+                        // Group time slots by date
+                        Map<LocalDate, List<TimeSlot>> slotsByDate = validTimeSlots.stream()
+                            .collect(Collectors.groupingBy(TimeSlot::getDate));
+                        
+                        // Get earliest date
+                        LocalDate earliestDate = validTimeSlots.get(0).getDate();
+                        
+                        // Choose the best time slot from this date
+                        List<TimeSlot> slotsOnEarliestDate = slotsByDate.get(earliestDate);
+                        slotsOnEarliestDate.sort(createTimeSlotComparator(data, timeSlotToCourses));
+                        
+                        assignedTimeSlot = slotsOnEarliestDate.get(0).getId();
+                        
+                        // Record this as the earliest date for this group
+                        groupEarliestDate.put(courseGroup, earliestDate);
+                        groupLatestDate.put(courseGroup, earliestDate);
+                    } else if (!validTimeSlots.isEmpty()) {
+                        // Use latest date
+                        Map<LocalDate, List<TimeSlot>> slotsByDate = validTimeSlots.stream()
+                            .collect(Collectors.groupingBy(TimeSlot::getDate));
+                        
+                        // Get latest date
+                        LocalDate latestDate = validTimeSlots.get(validTimeSlots.size() - 1).getDate();
+                        
+                        // Choose the best time slot from this date
+                        List<TimeSlot> slotsOnLatestDate = slotsByDate.get(latestDate);
+                        slotsOnLatestDate.sort(createTimeSlotComparator(data, timeSlotToCourses));
+                        
+                        assignedTimeSlot = slotsOnLatestDate.get(0).getId();
+                        
+                        // Record this as the earliest and latest date for this group
+                        groupEarliestDate.put(courseGroup, latestDate);
+                        groupLatestDate.put(courseGroup, latestDate);
+                    }
+                    
+                    // Mark that this group now has an assigned course
+                    groupHasAssignedCourses.put(courseGroup, true);
+                } else {
+                    // This is NOT the first course in this group
+                    // Try to schedule it as far away as possible from existing courses
+                    
+                    LocalDate currentEarliestDate = groupEarliestDate.get(courseGroup);
+                    LocalDate currentLatestDate = groupLatestDate.get(courseGroup);
+                    
+                    // First, try scheduling before the earliest date
+                    List<TimeSlot> slotBeforeEarliest = validTimeSlots.stream()
+                        .filter(ts -> ts.getDate().isBefore(currentEarliestDate))
+                        .sorted(Comparator.comparing(TimeSlot::getDate).reversed()) // Sort by date descending
+                        .collect(Collectors.toList());
+                    
+                    // Second, try scheduling after the latest date
+                    List<TimeSlot> slotsAfterLatest = validTimeSlots.stream()
+                        .filter(ts -> ts.getDate().isAfter(currentLatestDate))
+                        .sorted(Comparator.comparing(TimeSlot::getDate)) // Sort by date ascending
+                        .collect(Collectors.toList());
+                    
+                    // Decide which option to use (before earliest or after latest)
+                    TimeSlot selectedSlot = null;
+                    
+                    if (!slotBeforeEarliest.isEmpty() && !slotsAfterLatest.isEmpty()) {
+                        // Both options are available, choose the one with more days in between
+                        long daysBeforeEarliest = ChronoUnit.DAYS.between(
+                            slotBeforeEarliest.get(0).getDate(), currentEarliestDate);
+                        long daysAfterLatest = ChronoUnit.DAYS.between(
+                            currentLatestDate, slotsAfterLatest.get(0).getDate());
+                        
+                        if (daysBeforeEarliest >= daysAfterLatest) {
+                            selectedSlot = slotBeforeEarliest.get(0);
+                            groupEarliestDate.put(courseGroup, selectedSlot.getDate());
+                        } else {
+                            selectedSlot = slotsAfterLatest.get(0);
+                            groupLatestDate.put(courseGroup, selectedSlot.getDate());
+                        }
+                    } else if (!slotBeforeEarliest.isEmpty()) {
+                        // Only before-earliest is available
+                        selectedSlot = slotBeforeEarliest.get(0);
+                        groupEarliestDate.put(courseGroup, selectedSlot.getDate());
+                    } else if (!slotsAfterLatest.isEmpty()) {
+                        // Only after-latest is available
+                        selectedSlot = slotsAfterLatest.get(0);
+                        groupLatestDate.put(courseGroup, selectedSlot.getDate());
+                    } else {
+                        // Neither option is available, just use the best time slot by standard criteria
+                        validTimeSlots.sort(createTimeSlotComparator(data, timeSlotToCourses));
+                        if (!validTimeSlots.isEmpty()) {
+                            selectedSlot = validTimeSlots.get(0);
+                            
+                            // Update group date tracking
+                            if (selectedSlot.getDate().isBefore(currentEarliestDate)) {
+                                groupEarliestDate.put(courseGroup, selectedSlot.getDate());
+                            } else if (selectedSlot.getDate().isAfter(currentLatestDate)) {
+                                groupLatestDate.put(courseGroup, selectedSlot.getDate());
+                            }
+                        }
+                    }
+                    
+                    if (selectedSlot != null) {
+                        assignedTimeSlot = selectedSlot.getId();
+                    }
+                }
+            } else {
+                // This course is not part of a group, just use standard time slot selection
+                validTimeSlots.sort(createTimeSlotComparator(data, timeSlotToCourses));
+                if (!validTimeSlots.isEmpty()) {
+                    assignedTimeSlot = validTimeSlots.get(0).getId();
+                }
+            }
             
-            // Update time slot usage
-            timeSlotToCourses.computeIfAbsent(assignedTimeSlot, k -> new HashSet<>())
-                .add(courseId);
-            
-            assignedCourses++;
+            if (assignedTimeSlot != null) {
+                courseToTimeSlot.put(courseId, assignedTimeSlot);
+                
+                timeSlotToCourses.computeIfAbsent(assignedTimeSlot, k -> new HashSet<>())
+                    .add(courseId);
+                
+                assignedCourses++;
+            } else {
+                log.warn("Could not find suitable time slot for course {}. Skipping.", courseId);
+            }
         }
 
         log.info("Time slot assignment completed: {}/{} courses assigned successfully", 
             assignedCourses, totalCourses);
 
         return courseToTimeSlot;
+    }
+
+    /**
+     * Helper method to find a time slot by ID
+     */
+    private TimeSlot findTimeSlot(UUID timeSlotId, List<TimeSlot> availableTimeSlots) {
+        for (TimeSlot ts : availableTimeSlots) {
+            if (ts.getId().equals(timeSlotId)) {
+                return ts;
+            }
+        }
+        return null;
     }
 
     /**
@@ -436,41 +550,43 @@ public class ExamTimetableAlgorithm {
     }
     
     /**
-     * Build a graph of course conflicts
+     * Build a graph of course conflicts based on courses in the same group
      */
     private Map<String, Set<String>> buildCourseConflictGraph(TimetablingData data) {
         Map<String, Set<String>> courseConflictGraph = new HashMap<>();
         
+        // Initialize empty sets for all courses
         for (String courseId : data.getClassesByCourseId().keySet()) {
             courseConflictGraph.put(courseId, new HashSet<>());
         }
         
-        for (Map.Entry<UUID, Set<UUID>> classConflict : data.getConflictGraph().entrySet()) {
-            UUID classId1 = classConflict.getKey();
+        // Group courses by group ID
+        Map<String, Set<String>> coursesByGroup = new HashMap<>();
+        
+        // Build mapping of which courses are in which groups
+        for (ExamClass examClass : data.getExamClasses()) {
+            String courseId = examClass.getCourseId();
+            String groupId = examClass.getGroupId();
             
-            String courseId1 = null;
-            for (ExamClass ec : data.getExamClasses()) {
-                if (ec.getId().equals(classId1)) {
-                    courseId1 = ec.getCourseId();
-                    break;
-                }
+            if (groupId != null && !groupId.isEmpty()) {
+                coursesByGroup.computeIfAbsent(groupId, k -> new HashSet<>())
+                    .add(courseId);
             }
+        }
+        
+        // For each group, add conflicts between all courses in that group
+        for (Set<String> coursesInGroup : coursesByGroup.values()) {
+            // If there's only one course in the group, no conflicts to add
+            if (coursesInGroup.size() <= 1) continue;
             
-            if (courseId1 == null) continue;
-            
-            for (UUID classId2 : classConflict.getValue()) {
-                String courseId2 = null;
-                for (ExamClass ec : data.getExamClasses()) {
-                    if (ec.getId().equals(classId2)) {
-                        courseId2 = ec.getCourseId();
-                        break;
+            // For each pair of different courses in the group, add conflict
+            for (String courseId1 : coursesInGroup) {
+                for (String courseId2 : coursesInGroup) {
+                    // Don't add conflict with self
+                    if (!courseId1.equals(courseId2)) {
+                        courseConflictGraph.get(courseId1).add(courseId2);
                     }
                 }
-                
-                if (courseId2 == null || courseId1.equals(courseId2)) continue;
-                
-                courseConflictGraph.get(courseId1).add(courseId2);
-                courseConflictGraph.get(courseId2).add(courseId1);
             }
         }
         
