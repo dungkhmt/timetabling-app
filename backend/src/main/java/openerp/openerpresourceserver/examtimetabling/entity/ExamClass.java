@@ -2,6 +2,8 @@ package openerp.openerpresourceserver.examtimetabling.entity;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -59,6 +61,7 @@ public class ExamClass {
     private UUID examPlanId;
     
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "exam_plan_id", insertable = false, updatable = false)
     private ExamPlan examPlan;
 }

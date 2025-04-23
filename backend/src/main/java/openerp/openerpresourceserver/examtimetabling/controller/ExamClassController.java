@@ -63,7 +63,6 @@ public class ExamClassController {
         try {
             List<ExamClass> result = examClassService.bulkCreateFromExcel(file, examPlanId);
 
-            System.err.println(result);
             return ResponseEntity.ok(result);
         } catch (IOException e) {
             return ResponseEntity.badRequest().build();
