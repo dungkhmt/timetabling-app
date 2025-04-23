@@ -4,25 +4,19 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Box,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
   Divider,
   FormControl,
   FormLabel,
   Paper,
   Chip,
-  IconButton,
   FormControlLabel,
-  Grid,
   Checkbox
 } from '@mui/material';
-import { Warning, CalendarMonth, ExpandMore } from '@mui/icons-material';
-import { format, addDays, parseISO } from 'date-fns';
+import { Warning, CalendarMonth,  } from '@mui/icons-material';
+import { format, parseISO } from 'date-fns';
 
 const AutoAssignConfirmDialog = ({ 
   open, 
@@ -36,7 +30,6 @@ const AutoAssignConfirmDialog = ({
   const [dateOptions, setDateOptions] = useState([]);
   const [hasError, setHasError] = useState(false);
 
-  // Generate date options based on timetable plan dates and weeks
   useEffect(() => {
     if (!timetable) return;
     
@@ -45,15 +38,50 @@ const AutoAssignConfirmDialog = ({
     const endDate = parseISO(timetable.planEndTime);
     const startWeek = timetable.planStartWeek;
     
-    // Calculate the number of days between start and end dates
-    const daysDiff = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+    const startDayOfWeek = startDate.getDay(); 
+    const daysFromMonday = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1; 
+    const firstMondayOfPlan = new Date(startDate);
+    firstMondayOfPlan.setDate(startDate.getDate() - daysFromMonday);
     
-    // Generate all dates in the range, grouped by week
-    for (let week = 0; week < Math.ceil(daysDiff / 7) + 1; week++) {
-      const weekNumber = startWeek + week;
-      const weekStart = addDays(startDate, week * 7);
+    const currentWeekGroup = {
+      week: startWeek,
+      label: `Tuần ${startWeek}`,
+      id: `week-${startWeek}`,
+      dates: []
+    };
+    
+    let currentDate = new Date(startDate);
+    const endOfFirstWeek = new Date(currentDate);
+
+    while (endOfFirstWeek.getDay() !== 0) {
+      endOfFirstWeek.setDate(endOfFirstWeek.getDate() + 1);
+    }
+
+    while (currentDate <= endOfFirstWeek && currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      const dayName = dayOfWeek === 0 ? 'CN' : `T${dayOfWeek + 1}`;
       
-      // Create week group
+      currentWeekGroup.dates.push({
+        date: new Date(currentDate),
+        value: format(currentDate, 'yyyy-MM-dd'),
+        label: `T${startWeek} - ${dayName} ${format(currentDate, 'dd/MM/yyyy')}`
+      });
+      
+      currentDate = new Date(currentDate);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    if (currentWeekGroup.dates.length > 0) {
+      options.push(currentWeekGroup);
+    }
+    
+    let weekCounter = 1;
+    currentDate = new Date(firstMondayOfPlan);
+    currentDate.setDate(firstMondayOfPlan.getDate() + 7); 
+    
+    while (currentDate <= endDate) {
+      const weekNumber = startWeek + weekCounter;
+      
       const weekGroup = {
         week: weekNumber,
         label: `Tuần ${weekNumber}`,
@@ -61,26 +89,30 @@ const AutoAssignConfirmDialog = ({
         dates: []
       };
       
-      // Add days for this week (max 7 days or until end date)
-      for (let day = 0; day < 7; day++) {
-        const currentDate = addDays(weekStart, day);
-        if (currentDate <= endDate) {
-          const dayOfWeek = currentDate.getDay();
-          // Convert to Vietnamese day naming (T2, T3, etc., CN for Sunday)
+      for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(currentDate);
+        dayDate.setDate(currentDate.getDate() + i);
+        
+        if (dayDate <= endDate) {
+          const dayOfWeek = dayDate.getDay();
           const dayName = dayOfWeek === 0 ? 'CN' : `T${dayOfWeek + 1}`;
           
           weekGroup.dates.push({
-            date: currentDate,
-            value: format(currentDate, 'yyyy-MM-dd'),
-            label: `T${weekNumber} - ${dayName} ${format(currentDate, 'dd/MM/yyyy')}`
+            date: new Date(dayDate),
+            value: format(dayDate, 'yyyy-MM-dd'),
+            label: `T${weekNumber} - ${dayName} ${format(dayDate, 'dd/MM/yyyy')}`
           });
+        } else {
+          break;
         }
       }
       
-      // Only add week if it has dates
       if (weekGroup.dates.length > 0) {
         options.push(weekGroup);
       }
+      
+      currentDate.setDate(currentDate.getDate() + 7);
+      weekCounter++;
     }
     
     setDateOptions(options);
@@ -99,14 +131,11 @@ const AutoAssignConfirmDialog = ({
   const handleWeekToggle = (weekDates) => {
     const weekDateValues = weekDates.map(d => d.value);
     
-    // Check if all dates in this week are already selected
     const allSelected = weekDateValues.every(date => selectedDates.includes(date));
     
     if (allSelected) {
-      // If all selected, remove them all
       setSelectedDates(prev => prev.filter(d => !weekDateValues.includes(d)));
     } else {
-      // Otherwise, add all missing dates
       setSelectedDates(prev => {
         const currentSet = new Set(prev);
         weekDateValues.forEach(date => currentSet.add(date));
@@ -117,10 +146,8 @@ const AutoAssignConfirmDialog = ({
 
   const handleSelectAll = () => {
     if (selectedDates.length === getAllDates().length) {
-      // If all are selected, deselect all
       setSelectedDates([]);
     } else {
-      // Otherwise select all
       setSelectedDates(getAllDates());
     }
   };
@@ -137,7 +164,6 @@ const AutoAssignConfirmDialog = ({
     onConfirm(selectedDates);
   };
 
-  // Reset selected dates when dialog closes
   useEffect(() => {
     if (!open) {
       setSelectedDates([]);
@@ -145,7 +171,6 @@ const AutoAssignConfirmDialog = ({
     }
   }, [open]);
 
-  // Helper function to find date label by value
   const getDateLabel = (dateValue) => {
     for (const week of dateOptions) {
       for (const date of week.dates) {
@@ -157,12 +182,10 @@ const AutoAssignConfirmDialog = ({
     return dateValue;
   };
   
-  // Check if all dates in a week are selected
   const isWeekSelected = (weekDates) => {
     return weekDates.every(date => selectedDates.includes(date.value));
   };
   
-  // Check if some but not all dates in a week are selected
   const isWeekPartiallySelected = (weekDates) => {
     return weekDates.some(date => selectedDates.includes(date.value)) && 
            !weekDates.every(date => selectedDates.includes(date.value));
@@ -197,11 +220,26 @@ const AutoAssignConfirmDialog = ({
         {assignedClasses.length > 0 && (
           <>
             <Typography variant="body1">
-              Phân công tự động sẽ xóa phân công hiện tại của các lớp thi này:
+              Phân công tự động sẽ xóa phân công hiện tại của 
+              <Box component="span" sx={{ fontWeight: 700, color: 'error.main', mx: 1 }}>
+                {assignedClasses.length}
+              </Box>
+              lớp thi này:
             </Typography>
-            <Typography variant="h6" fontWeight={700} color="error.main" sx={{ my: 1 }}>
-              {assignedClasses.map(item => item.examClassId).join(', ')}
-            </Typography>
+            <Box 
+              sx={{ 
+                my: 1, 
+                maxHeight: '150px', 
+                overflowY: 'auto', 
+                p: 1, 
+                border: '1px solid #eee',
+                borderRadius: 1
+              }}
+            >
+              <Typography variant="h6" fontWeight={700} color="error.main">
+                {assignedClasses.map(item => item.examClassId).join(', ')}
+              </Typography>
+            </Box>
             <Divider sx={{ my: 2 }} />
           </>
         )}
