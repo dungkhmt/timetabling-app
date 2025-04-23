@@ -42,13 +42,15 @@ public class ExamTimetableAlgorithm {
         } else {
             log.info("All classes successfully assigned in initial solution");
         }
+
+        return solution;
         
-        // Phase 2: Improve solution using local search
-        ExamTimetableSolution optimizedSolution = optimizeSolution(solution, data);
+        // Phase 2: Improve solution using local search (Temporary discarded for now)
+        // ExamTimetableSolution optimizedSolution = optimizeSolution(solution, data);
         
-        log.info("Optimization complete. Final solution quality: {}", optimizedSolution.getQualityScore());
+        // log.info("Optimization complete. Final solution quality: {}", optimizedSolution.getQualityScore());
         
-        return optimizedSolution;
+        // return optimizedSolution;
     }
 
     /**
