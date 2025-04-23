@@ -1,0 +1,188 @@
+package openerp.openerpresourceserver.examtimetabling.algorithm;
+
+import openerp.openerpresourceserver.examtimetabling.algorithm.model.AssignmentDetails;
+import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingData;
+import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingSolution;
+import openerp.openerpresourceserver.examtimetabling.entity.*;
+import openerp.openerpresourceserver.examtimetabling.repository.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Service for automating exam timetabling assignments
+ */
+@Service
+@Slf4j
+public class ExamTimetablingService {
+
+    @Autowired
+    private ExamClassRepository examClassRepository;
+    
+    @Autowired
+    private ExamRoomRepository examRoomRepository;
+    
+    @Autowired
+    private ExamTimetableSessionRepository examTimetableSessionRepository;
+    
+    @Autowired
+    private ExamTimetableAssignmentRepository examTimetableAssignmentRepository;
+    
+    @Autowired
+    private ConflictExamTimetablingClassRepository conflictRepository;
+    
+    @Autowired
+    private ExamTimetableRepository examTimetableRepository;
+    
+    @Autowired
+    private ExamPlanRepository examPlanRepository;
+
+    /**
+     * Main method to automatically assign classes to rooms and time slots
+     * 
+     * @param examTimetableId The ID of the exam timetable
+     * @param classIds List of class IDs to be assigned
+     * @param examDates List of dates for the exam period in 'dd-MM-yyyy' format
+     * @return true if assignment is successful, false otherwise
+     */
+    @Transactional
+    public boolean autoAssignClass(UUID examTimetableId, List<UUID> classIds, List<String> examDates) {
+        log.info("Starting auto assignment for {} classes over {} dates", classIds.size(), examDates.size());
+        
+        try {
+            // Step 0: clear any existing assignments for these classes
+            clearExistingAssignments(examTimetableId, classIds);
+            log.info("Cleared existing assignments for {} classes", classIds.size());
+            
+            // Step 1: Process data
+            ExamTimetableProcessor processor = new ExamTimetableProcessor(
+                examClassRepository,
+                examRoomRepository,
+                examTimetableSessionRepository,
+                examTimetableAssignmentRepository,
+                conflictRepository,
+                examTimetableRepository
+            );
+            
+            TimetablingData data = processor.processData(examTimetableId, classIds, examDates);
+            log.info("Data processing complete. {} classes, {} time slots, {} rooms", 
+                data.getExamClasses().size(), data.getAvailableTimeSlots().size(), data.getAvailableRooms().size());
+            
+            // Step 2: Apply algorithm
+            ExamTimetableAlgorithm algorithm = new ExamTimetableAlgorithm();
+            TimetablingSolution solution = algorithm.assign(data);
+            
+            if (!solution.isComplete()) {
+                log.warn("Failed to find complete assignment. Assigned: {}/{}", 
+                    solution.getAssignedClasses().size(), classIds.size());
+                return false;
+            }
+            
+            // Step 3: Save results
+            saveSolution(examTimetableId, solution);
+            log.info("Successfully assigned all {} classes", classIds.size());
+            return true;
+            
+        } catch (Exception e) {
+            log.error("Error during auto assignment", e);
+            throw new RuntimeException("Failed to auto-assign classes: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Clear existing assignments (room_id, session_id, date, week_number) 
+     * for the classes that will be auto-assigned
+     */
+    private void clearExistingAssignments(UUID examTimetableId, List<UUID> classIds) {
+        List<ExamTimetableAssignment> existingAssignments = 
+            examTimetableAssignmentRepository.findByExamTimetableIdAndExamTimetablingClassIdIn(
+                examTimetableId, classIds);
+        
+        for (ExamTimetableAssignment assignment : existingAssignments) {
+            assignment.setRoomId(null);
+            assignment.setExamSessionId(null);
+            assignment.setDate(null);
+            assignment.setWeekNumber(null);
+        }
+        
+        examTimetableAssignmentRepository.saveAll(existingAssignments);
+    }
+    
+    /**
+     * Saves the solution by updating existing assignment records in the database
+     */
+    private void saveSolution(UUID examTimetableId, TimetablingSolution solution) {
+        ExamTimetable examTimetable = examTimetableRepository.findById(examTimetableId)
+            .orElseThrow(() -> new RuntimeException("Exam timetable not found: " + examTimetableId));
+        
+        ExamPlan examPlan = examPlanRepository.findById(examTimetable.getExamPlanId())
+            .orElseThrow(() -> new RuntimeException("Exam plan not found: " + examTimetable.getExamPlanId()));
+        
+        List<ExamTimetableAssignment> existingAssignments = 
+            examTimetableAssignmentRepository.findByExamTimetableId(examTimetableId);
+        
+        Map<UUID, ExamTimetableAssignment> assignmentsByClassId = existingAssignments.stream()
+            .collect(Collectors.toMap(
+                ExamTimetableAssignment::getExamTimetablingClassId, 
+                assignment -> assignment,
+                (a1, a2) -> a1 
+            ));
+        
+        List<ExamTimetableAssignment> updatedAssignments = new ArrayList<>();
+        
+        for (Map.Entry<UUID, AssignmentDetails> entry : solution.getAssignedClasses().entrySet()) {
+            UUID classId = entry.getKey();
+            AssignmentDetails details = entry.getValue();
+            
+            ExamTimetableAssignment assignment = assignmentsByClassId.get(classId);
+            
+            if (assignment != null) {
+                assignment.setRoomId(details.getRoomId());
+                assignment.setExamSessionId(details.getSessionId());
+                assignment.setDate(details.getDate());
+                
+                // Calculate week number based on exam plan
+                Integer weekNumber = calculateWeekNumber(details.getDate(), examPlan);
+                assignment.setWeekNumber(weekNumber);
+                
+                updatedAssignments.add(assignment);
+            } else {
+                log.warn("No existing assignment found for class ID: {}", classId);
+            }
+        }
+        
+        if (!updatedAssignments.isEmpty()) {
+            examTimetableAssignmentRepository.saveAll(updatedAssignments);
+            log.info("Updated {} assignment records", updatedAssignments.size());
+        }
+    }
+    
+    /**
+     * Calculate week number based on exam plan start date and start week
+     */
+    private Integer calculateWeekNumber(LocalDate date, ExamPlan examPlan) {
+        if (date == null || examPlan == null || examPlan.getStartTime() == null || examPlan.getStartWeek() == null) {
+            return null;
+        }
+        
+        LocalDate planStartDate = examPlan.getStartTime().toLocalDate();
+        Integer planStartWeek = examPlan.getStartWeek();
+        
+        long daysBetween = ChronoUnit.DAYS.between(planStartDate, date);
+        
+        int weekDifference = (int) (daysBetween / 7);
+        
+        if (daysBetween % 7 > 0 && planStartDate.getDayOfWeek().getValue() > date.getDayOfWeek().getValue()) {
+            weekDifference++;
+        }
+        
+        return planStartWeek + weekDifference;
+    }
+}

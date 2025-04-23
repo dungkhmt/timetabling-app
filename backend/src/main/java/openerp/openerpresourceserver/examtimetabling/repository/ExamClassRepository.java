@@ -33,4 +33,6 @@ public interface ExamClassRepository extends JpaRepository<ExamClass, UUID> {
 
     @Query("SELECT e FROM ExamClass e WHERE e.examPlanId = :examPlanId AND e.examClassId IN :examClassIds")
     List<ExamClass> findByExamPlanIdAndExamClassIdIn(UUID examPlanId, List<String> examClassIds);
+
+    List<ExamClass> findAllByIdIn(List<UUID> ids);
 }

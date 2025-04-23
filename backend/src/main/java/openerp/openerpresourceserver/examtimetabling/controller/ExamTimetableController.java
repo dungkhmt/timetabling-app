@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.examtimetabling.algorithm.ExamTimetablingService;
 import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.AutoAssignRequestDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
@@ -38,6 +40,7 @@ import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableServic
 public class ExamTimetableController {
     private final ExamTimetableService examTimetableService;
     private final ExamTimetableAssignmentService examTimetableAssignmentService;
+    private final ExamTimetablingService examTimetablingService;
     
     @GetMapping("/plan/{examPlanId}")
     public ResponseEntity<List<ExamTimetableDTO>> getAllTimetablesByExamPlanId(@PathVariable UUID examPlanId) {
@@ -172,19 +175,34 @@ public class ExamTimetableController {
     }
 
     @PostMapping("/assignment/auto-assign")
-    public ResponseEntity<?> autoAssignSchedule(@RequestBody List<UUID> assignmentIds) {
+    public ResponseEntity<AutoAssignRequestDTO> autoAssignClasses(
+            @Valid @RequestBody AutoAssignRequestDTO request) {
         try {
-            List<ExamTimetableAssignment> updatedAssignments = examTimetableAssignmentService.autoAssignSchedule(assignmentIds);
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Successfully assigned schedule to " + updatedAssignments.size() + " assignments",
-                "assignments", updatedAssignments
-            ));
+            // Call the service to perform the assignment
+            boolean success = examTimetablingService.autoAssignClass(
+                request.getExamTimetableId(),
+                request.getClassIds(),
+                request.getExamDates()
+            );
+            
+            // Create response based on result
+            AutoAssignRequestDTO response = new AutoAssignRequestDTO();
+            response.setSuccess(success);
+            
+            if (success) {
+                response.setMessage("Successfully assigned all classes");
+                return ResponseEntity.ok(response);
+            } else {
+                response.setMessage("Failed to assign all classes. Some constraints could not be satisfied.");
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
+            }
+            
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            AutoAssignRequestDTO response = new AutoAssignRequestDTO();
+            response.setSuccess(false);
+            response.setMessage("Error processing request: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
