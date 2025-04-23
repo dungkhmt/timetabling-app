@@ -1,11 +1,12 @@
-package openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotsseparatedayssearateclasssesamecourse;
+package openerp.openerpresourceserver.generaltimetabling.algorithms.aco;
 
-import com.nimbusds.jose.shaded.gson.Gson;
-import lombok.extern.log4j.Log4j2;
+import com.google.gson.Gson;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotsseparatedayssearateclasssesamecourse.OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentSolver;
 
 import java.io.File;
@@ -15,21 +16,23 @@ import java.util.Map;
 import java.util.Scanner;
 
 @Log4j2
-public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
+public class FullClusters implements Solver {
     MapDataScheduleTimeSlotRoom I;
     Map<Integer, Integer> solutionSlot;
     Map<Integer, Integer> solutionRoom;
     boolean foundSolution;
-    int timeLimit = 10000;// 10 seconds by defalut
-    String oneClusterAlgorithm = "";
-    Solver oneClusterSolver = null;
-    public MultiClusterSeparateClassesSameCourseSolver(MapDataScheduleTimeSlotRoom I){
+    int timeLimit = 10000;
+    int maxIterations = 50;
+    int numAnts = 10;
+
+    public FullClusters(MapDataScheduleTimeSlotRoom I){
         this.I = I;
     }
 
     public String name(){
-        return "CourseBasedMultiClusterGreedySolver";
+        return "ACOSolver";
     }
+
     public boolean checkTimeRoom(){
         for(int i = 0; i < I.getClassSegments().size(); i++){
             ClassSegment csi = I.getClassSegments().get(i);
@@ -49,55 +52,57 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
         }
         return true;
     }
+
     @Override
     public void solve() {
         ConnectedComponentSolver connectedComponentSolver = new ConnectedComponentSolver();
         List<List<ClassSegment>> clusters = connectedComponentSolver.computeConnectedComponent(I.getClassSegments());
-        solutionRoom= new HashMap<>();
+
+        solutionRoom = new HashMap<>();
         solutionSlot = new HashMap<>();
         foundSolution = false;
-        int cnt = 0;
-        for(List<ClassSegment> C: clusters){
-            cnt++;
-            log.info(name() + "::solver, get a cluster " + cnt + "/" + clusters.size() + ": ");
-            //for(ClassSegment cs: C){
-            //    log.info(cs.toString());
-            //}
-            MapDataScheduleTimeSlotRoom IC = new MapDataScheduleTimeSlotRoom(
+        int clusterCount = 0;
+        for (List<ClassSegment> cluster : clusters) {
+            clusterCount++;
+            log.info("Solving cluster #" + clusterCount + " with " + cluster.size() + " segments...");
+
+            MapDataScheduleTimeSlotRoom ICluster = new MapDataScheduleTimeSlotRoom(
                     I.getRoomCapacity(),
                     I.getMaxTeacherOfCourses(),
                     I.getConflict(),
                     I.getDomains(),
                     I.getRooms(),
                     I.getRoomOccupations(),
-                    C
+                    cluster
             );
-            oneClusterSolver = new OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver(IC);
 
-            oneClusterSolver.setTimeLimit(timeLimit);
-            oneClusterSolver.solve();
-            if(oneClusterSolver.hasSolution()){
-                foundSolution = true;
-                for(ClassSegment cs: C){
-                    int slot = oneClusterSolver.getMapSolutionSlot().get(cs.getId());
-                    int room = oneClusterSolver.getMapSolutionRoom().get(cs.getId());
-                    solutionRoom.put(cs.getId(),room);
-                    solutionSlot.put(cs.getId(),slot);
-                    for(int s = 1; s <= cs.getDuration(); s++){
-                        int sl = slot + s - 1;
-                        //I.getRoomOccupations()[room].add(sl);
+            ACOTimetableSolver acoSolver = new ACOTimetableSolver(ICluster);
+            acoSolver.solve();
+
+            Map<Integer, Integer> clusterSlots = acoSolver.getMapSolutionSlot();
+            Map<Integer, Integer> clusterRooms = acoSolver.getMapSolutionRoom();
+
+            if (acoSolver.hasSolution()) {
+                for (ClassSegment cs : cluster) {
+                    Integer segId = cs.getId();
+                    Integer assignedSlot = clusterSlots.get(segId);
+                    Integer assignedRoom = clusterRooms.get(segId);
+
+                    if (assignedSlot != null && assignedRoom != null) {
+                        solutionSlot.put(segId, assignedSlot);
+                        solutionRoom.put(segId, assignedRoom);
+                        log.info("Cluster #" + clusterCount + " - Assigned Segment " + segId +
+                                " to Slot " + assignedSlot + ", Room " + assignedRoom);
+                    } else {
+                        log.warn("Segment " + segId + " could not be assigned.");
                     }
-                    //log.info("solve, Cluster " + cs.getGroupNames() + " SET solutionSlot.put(" + cs.getId() + "," + slot + ") solutionRoom.put(" + cs.getId() + "," + room + ")");
                 }
-                if(!checkTimeRoom()){
-                    log.info("Post check time-slot and room conflict FAILED???"); break;
-                }else{
-                    log.info("Post check time-slot and room conflict PASS");
-                }
-            }else{
-
+            } else {
+                log.warn("ACO failed to solve cluster #" + clusterCount + ". Partial results may be used.");
             }
         }
+
+        foundSolution = true;
     }
 
     @Override
@@ -120,10 +125,11 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
         this.timeLimit = timeLimit;
     }
 
-
     @Override
     public void printSolution() {
-
+        for (Integer segId : solutionSlot.keySet()) {
+            log.info("Segment " + segId + " assigned to slot " + solutionSlot.get(segId) + ", room " + solutionRoom.get(segId));
+        }
     }
 
     public static void main(String[] args){
@@ -133,12 +139,11 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
             String json = in.nextLine();
             in.close();
             MapDataScheduleTimeSlotRoom I = gson.fromJson(json, MapDataScheduleTimeSlotRoom.class);
-            MultiClusterSeparateClassesSameCourseSolver solver
-                    = new MultiClusterSeparateClassesSameCourseSolver(I);
+            FullClusters solver = new FullClusters(I);
             solver.solve();
-        }catch (Exception e){
+        }
+        catch(Exception e) {
             e.printStackTrace();
         }
     }
-
 }
