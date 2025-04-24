@@ -307,6 +307,31 @@ public class ExamTimetableAssignmentService {
         }).collect(Collectors.toList());
     }
 
+    @Transactional
+    public int unassignAssignments(List<UUID> assignmentIds) {
+        if (assignmentIds == null || assignmentIds.isEmpty()) {
+            return 0;
+        }
+        
+        String idList = assignmentIds.stream()
+            .map(id -> "'" + id + "'")
+            .collect(Collectors.joining(","));
+        
+        String sql = "UPDATE exam_timetable_assignment " +
+                     "SET room_id = NULL, " +
+                     "    exam_session_id = NULL, " +
+                     "    date = NULL, " +
+                     "    week_number = NULL, " +
+                     "    updated_at = NOW() " +
+                     "WHERE id IN (" + idList + ") " +
+                     "AND deleted_at IS NULL";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        int updatedCount = query.executeUpdate();
+        
+        return updatedCount;
+    }
+
     public ByteArrayInputStream exportAssignmentsToExcel(List<String> assignmentIds) {
         if (assignmentIds == null || assignmentIds.isEmpty()) {
             return createEmptyExcel();

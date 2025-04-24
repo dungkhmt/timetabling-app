@@ -147,6 +147,21 @@ public class ExamTimetableController {
         }
     }
 
+    @PostMapping("/assignment/unassign")
+    public ResponseEntity<?> unassignAssignments(@RequestBody List<UUID> assignmentIds) {
+        try {
+            int unassignedCount = examTimetableAssignmentService.unassignAssignments(assignmentIds);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Successfully unassigned " + unassignedCount + " assignments"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
 
     @GetMapping("/assignment/{timetableId}")
     public ResponseEntity<List<ExamAssignmentDTO>> getAssignments(@PathVariable UUID timetableId) {
@@ -188,7 +203,7 @@ public class ExamTimetableController {
         }
     }
 
-    @PostMapping("/auto-assign")
+    @PostMapping("/assignment/auto-assign")
     public ResponseEntity<ExamTimetablingResponse> autoAssignClasses(
             @Valid @RequestBody AutoAssignRequestDTO request) {
         try {
