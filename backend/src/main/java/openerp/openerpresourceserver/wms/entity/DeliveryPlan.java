@@ -7,8 +7,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "wms2_delivery")
-public class Delivery {
+@Table(name = "wms2_delivery_plan")
+public class DeliveryPlan {
     @Id
     @Column(name = "id", length = 40)
     private String id;

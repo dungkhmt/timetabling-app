@@ -18,7 +18,7 @@ public class DeliveryRoute {
 
     @ManyToOne
     @JoinColumn(name = "delivery_id")
-    private Delivery delivery;
+    private DeliveryPlan delivery;
 
     @ManyToOne
     @JoinColumn(name = "assign_to_shipper_id")

@@ -1,22 +1,21 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "wms2_delivery_route_item")
 public class DeliveryRouteItem {
-    @EmbeddedId
-    private DeliveryRouteItemPK id;
+    @Id
+    private String id;
 
-    @MapsId("deliveryRouteId")
+    @Column(name = "delivery_route_id", length = 40)
+    private String deliveryRouteId;
+
+    @Column(name = "delivery_route_seq_id", length = 10)
+    private String deliveryRouteSeqId;
+
     @ManyToOne
     @JoinColumn(name = "delivery_route_id")
     private DeliveryRoute deliveryRoute;

@@ -55,8 +55,13 @@ public class ForeCastServiceImpl implements ForecastService {
     @Override
     public ApiResponse<List<DailyProductForecastDTO>> forecastDailyLowStockProducts() {
         String redisKey = "LOW_STOCK_FORECAST:" + LocalDate.now().format(DATE_FORMATTER);
-        List<DailyProductForecastDTO> cachedForecast = (List<DailyProductForecastDTO>) redisService.get(redisKey);
-
+        List<DailyProductForecastDTO> cachedForecast = null;
+        try {
+           cachedForecast  = (List<DailyProductForecastDTO>) redisService.get(redisKey);
+        } catch (Exception e) {
+            log.error("Error retrieving forecast from Redis: {}", e.getMessage());
+            cachedForecast = null;
+        }
         if (cachedForecast != null && !cachedForecast.isEmpty()) {
             return ApiResponse.<List<DailyProductForecastDTO>>builder()
                     .code(200)
