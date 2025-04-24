@@ -587,7 +587,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     */
     @Transactional
     @Override
-    public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule) {
+    public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule, Long versionId) {
         //synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();

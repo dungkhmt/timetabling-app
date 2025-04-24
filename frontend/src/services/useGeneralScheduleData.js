@@ -14,6 +14,9 @@ export const useGeneralSchedule = () => {
   const [loading, setLoading] = useState(false);
   const [isOpenSelectedDialog, setOpenSelectedDialog] = useState(false);
   const [selectedTimeLimit, setSelectedTimeLimit] = useState(5);
+  const [isSaveVersionLoading, setIsSaveVersionLoading] = useState(false);
+  const [openSaveVersionDialog, setOpenSaveVersionDialog] = useState(false);
+  const [versionId, setVersionId] = useState(null); // Add state for version ID
 
   // Algorithm states
   const [algorithms, setAlgorithms] = useState([]);
@@ -108,7 +111,8 @@ export const useGeneralSchedule = () => {
     try {
       const data = await generalScheduleRepository.getClasses(
         selectedSemester?.semester,
-        selectedGroup?.id
+        selectedGroup?.id,
+        versionId // Pass the versionId to the API call
       );
 
       const processedClasses = processClassData(data);
@@ -120,7 +124,7 @@ export const useGeneralSchedule = () => {
       setIsClassesLoading(false);
       setLoading(false);
     }
-  }, [selectedSemester, selectedGroup]);
+  }, [selectedSemester, selectedGroup, versionId]); // Add versionId to dependencies
 
   const fetchClassesNoSchedule = useCallback(async () => {
     if (!selectedSemester?.semester) return;
@@ -130,7 +134,8 @@ export const useGeneralSchedule = () => {
     try {
       const data = await generalScheduleRepository.getClassesNoSchedule(
         selectedSemester?.semester,
-        selectedGroup?.id
+        selectedGroup?.id,
+        versionId // Pass the versionId to the API call
       );
       setClassesNoSchedule(data || []);
     } catch (error) {
@@ -138,7 +143,7 @@ export const useGeneralSchedule = () => {
     } finally {
       setIsClassesNoScheduleLoading(false);
     }
-  }, [selectedSemester, selectedGroup]);
+  }, [selectedSemester, selectedGroup, versionId]); // Add versionId to dependencies
 
   useEffect(() => {
     fetchAlgorithms();
@@ -170,11 +175,33 @@ export const useGeneralSchedule = () => {
     setIsResetLoading(true);
     setLoading(true);
 
+    // Tạo mảng mới chỉ chứa roomReservationId từ các lớp đã chọn thay vì gửi generalClassId
     try {
+      // Trong TimeTable, một hàng có thể được chọn theo generalClassId hoặc roomReservationId
+      // Chúng ta cần tìm các hàng được chọn và lấy roomReservationId của chúng
+      const selectedRowsRoomReservationIds = [];
+      
+      // Tìm các lớp từ classes có generalClassId trùng với selectedRows
+      for (const row of selectedRows) {
+        // Tìm lớp trong classes mà có id hoặc generalClassId trùng với row
+        const foundClass = classes.find(
+          cls => cls.id === row || 
+                cls.generalClassId === row || 
+                cls.roomReservationId === row
+        );
+        
+        if (foundClass && foundClass.roomReservationId) {
+          selectedRowsRoomReservationIds.push(foundClass.roomReservationId);
+        }
+      }
+      
+      console.log("Reset schedule với các roomReservationId:", selectedRowsRoomReservationIds);
+      
       await generalScheduleRepository.resetSchedule(
         selectedSemester.semester,
-        selectedRows
+        selectedRowsRoomReservationIds // Truyền mảng roomReservationId
       );
+      
       await fetchClasses();
       setSelectedRows([]);
       toast.success("Reset thời khóa biểu thành công!");
@@ -185,7 +212,7 @@ export const useGeneralSchedule = () => {
       setIsResetLoading(false);
       setLoading(false);
     }
-  }, [selectedSemester, selectedRows, fetchClasses]);
+  }, [selectedSemester, selectedRows, fetchClasses, classes]);
 
   // Auto schedule time with algorithm
   const handleAutoScheduleTimeSlotTimeTabling = useCallback(async () => {
@@ -483,7 +510,7 @@ export const useGeneralSchedule = () => {
   );
 
   // Auto schedule selected with algorithm
-  const handleAutoScheduleSelected = useCallback(async () => {
+  const handleAutoScheduleSelected = useCallback(async (verionId) => {
     if (!selectedSemester?.semester || selectedRows.length === 0) {
       toast.error("Vui lòng chọn học kỳ và lớp!");
       return;
@@ -491,17 +518,19 @@ export const useGeneralSchedule = () => {
 
     setLoading(true);
 
-    // Clean up classIds by removing the -[number] suffix if it exists
-    const cleanClassIds = selectedRows.map((id) => id.split("-")[0]);
+    const cleanClassIds = selectedRows.map((id) => {
+      const strId = String(id);
+      return strId.includes("-") ? strId.split("-")[0] : strId;
+    });
 
     try {
-
       await generalScheduleRepository.autoScheduleSelected(
         cleanClassIds,
         selectedTimeLimit,
         selectedSemester.semester,
         selectedAlgorithm,
-        maxDaySchedule
+        maxDaySchedule,
+        versionId
       );
       await fetchClasses();
       setOpenSelectedDialog(false);
@@ -710,6 +739,35 @@ export const useGeneralSchedule = () => {
     }
   }, []);
 
+  // Save schedule to a specific version
+  const saveScheduleToVersion = useCallback(
+    async (semester, versionId) => {
+      if (!semester || !versionId) {
+        toast.error("Thiếu thông tin semester hoặc versionId!");
+        return false;
+      }
+
+      setLoading(true);
+
+      try {
+        const result = await generalScheduleRepository.saveScheduleToVersion(
+          semester,
+          versionId,
+        );
+        
+        toast.success(`Đã lưu ca học vào phiên bản!`);
+        return result;
+      } catch (error) {
+        console.error("Save to version error:", error);
+        toast.error(error?.response?.data?.message || "Lỗi khi lưu thời khóa biểu vào phiên bản!");
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     states: {
       selectedSemester,
@@ -744,6 +802,9 @@ export const useGeneralSchedule = () => {
       maxDaySchedule,
       isAlgorithmsLoading,
       isLoadingClusterClasses,
+      isSaveVersionLoading,
+      openSaveVersionDialog,
+      versionId, 
     },
     setters: {
       setSelectedSemester,
@@ -762,6 +823,8 @@ export const useGeneralSchedule = () => {
       setSelectedTimeLimit,
       setSelectedAlgorithm,
       setMaxDaySchedule,
+      setOpenSaveVersionDialog,
+      setVersionId, // Add setter for versionId
     },
     handlers: {
       handleResetTimeTabling,
@@ -785,6 +848,7 @@ export const useGeneralSchedule = () => {
       fetchAlgorithms,
       getClassesByCluster,
       getClustersBySemester,
+      saveScheduleToVersion,
     },
   };
 };

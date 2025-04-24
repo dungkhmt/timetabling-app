@@ -17,5 +17,6 @@ public class ModelInputAutoScheduleTimeSlotRoom {
     private int timeLimit;
     private String algorithm;
     private int maxDaySchedule;
+    private Long versionId;
 }
 

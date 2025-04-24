@@ -9,7 +9,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
-
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.SaveScheduleToVersionRequest;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public interface TimeTablingClassService {
 
     List<TimeTablingClassSegment> createClassSegmentForSummerSemester(ModelInputCreateClassSegment I);
 
-    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId);
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId);
 
     List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds);
 
@@ -36,16 +36,17 @@ public interface TimeTablingClassService {
 
     public List<ModelResponseTimeTablingClass> getSubClass(Long id);
 
-    public List<ModelResponseTimeTablingClass> clearTimeTable(List<String> ids);
+    public String clearTimeTable(List<Long> ids);
 
     public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex);
 
-    public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration);
+    public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration, Long versionId);
 
     public int computeClassCluster(ModelInputComputeClassCluster I);
 
     public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId);
 
     public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests);
-
+    
+    public List<TimeTablingClassSegment> saveScheduleToVersion(String semester, Long versionId);
 }

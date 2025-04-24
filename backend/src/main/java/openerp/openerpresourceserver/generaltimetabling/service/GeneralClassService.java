@@ -42,7 +42,7 @@ public interface GeneralClassService {
 
     List<GeneralClass> autoScheduleGroup(String semester, String groupName, int timeLimit);
 
-    List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule);
+    List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule, Long versionId);
 
     List<GeneralClass> autoSchedule(String semester, int timeLimit);
 

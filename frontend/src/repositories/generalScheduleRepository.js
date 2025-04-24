@@ -1,12 +1,13 @@
 import { request } from "api";
 
 export const generalScheduleRepository = {
-  getClasses: async (semester, groupName = "", forceRefresh = false) => {
+  getClasses: async (semester, groupName = "", versionId = null) => {
     try {
       console.log("Fetching classes data");
+      const url = `/general-classes/?semester=${semester}&groupName=${groupName || ""}${versionId ? `&versionId=${versionId}` : ""}`;
       const response = await request(
         "get",
-        `/general-classes/?semester=${semester}&groupName=${groupName || ""}`
+        url
       );
 
       const transformedData = response.data.map((item) => ({
@@ -22,11 +23,12 @@ export const generalScheduleRepository = {
     }
   },
 
-  getClassesNoSchedule: async (semester, groupName = "") => {
+  getClassesNoSchedule: async (semester, groupName = "", versionId = null) => {
     try {
+      const url = `/general-classes/?semester=${semester}&groupName=${groupName || ""}${versionId ? `&versionId=${versionId}` : ""}`;
       const response = await request(
         "get",
-        `/general-classes/?semester=${semester}&groupName=${groupName || ""}`
+        url
       );
 
       const transformedData = response.data.map((classObj) => {
@@ -65,7 +67,7 @@ export const generalScheduleRepository = {
     );
   },
 
-  autoScheduleSelected: async (classIds, timeLimit, semester, algorithm,maxDaySchedule) => {
+  autoScheduleSelected: async (classIds, timeLimit, semester, algorithm,maxDaySchedule, versionId) => {
     return await request(
       "post",
       "/general-classes/auto-schedule-timeslot-room",
@@ -76,7 +78,8 @@ export const generalScheduleRepository = {
         timeLimit,
         semester,
         algorithm,
-        maxDaySchedule
+        maxDaySchedule,
+        versionId  // Thêm versionId vào request body
       }
     );
   },
@@ -140,7 +143,7 @@ export const generalScheduleRepository = {
   },
 
   addTimeSlot: async (params = {}) => {
-    const { generalClassId, parentId, duration } = params;
+    const { generalClassId, parentId, duration, versionId } = params;
     if (!generalClassId) {
       throw new Error("generalClassId is required");
     }
@@ -150,7 +153,7 @@ export const generalScheduleRepository = {
       `/general-classes/${cleanId}/room-reservations/`,
       null,
       null,
-      { parentId, duration }
+      { parentId, duration, versionId }
     );
   },
 
@@ -298,6 +301,21 @@ export const generalScheduleRepository = {
       return response.data;
     } catch (error) {
       console.error("Fetch clusters by semester error:", error);
+      throw error;
+    }
+  },
+
+  saveScheduleToVersion: async (semester, versionId) => {
+    try {
+      const response = await request(
+        "post",
+        `/general-classes/save-schedule-to-version?semester=${semester}&versionId=${versionId}`,
+        null,
+        null,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Save schedule to version error:", error);
       throw error;
     }
   },

@@ -1,5 +1,4 @@
 import { Autocomplete, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
-import { Box, Typography } from "@mui/material";
 
 const AutoScheduleDialog = ({
   title,
@@ -9,7 +8,6 @@ const AutoScheduleDialog = ({
   open,
   closeDialog,
   selectedAlgorithm, 
-  maxDaySchedule
 }) => {
   return (
     <Dialog open={open} onClose={closeDialog}>

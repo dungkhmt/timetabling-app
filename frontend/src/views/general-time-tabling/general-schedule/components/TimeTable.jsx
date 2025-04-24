@@ -98,7 +98,7 @@ const TimeTable = ({
         classType: cls.classType,
         mass: cls.mass,
         duration: cls.duration,
-        generalClassId: String(cls.id || ""),
+        generalClassId: cls.id,
         parentId: cls.parentClassId,
       }));
       setClassDetails(transformedClassDetails);

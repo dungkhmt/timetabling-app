@@ -14,6 +14,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelI
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.SaveScheduleToVersionRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
@@ -241,12 +242,12 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId) {
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId) {
         List<TimeTablingClass> cls = null;
         Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
         if(groupId == null){
             cls = timeTablingClassRepo.findAllBySemester(semester);
-            log.info("getTimeTablingClassDtos, group NULL -> cls.sz = " + cls.size());
+            log.info("getTimeTablingClassDtos, group NULL, version_id = " + versionId + " -> cls.sz = " + cls.size());
         }else{
             List<ClassGroup> CG = classGroupRepo.findAllByGroupId(groupId);
             List<Long> classIds = CG.stream().map(c -> c.getClassId()).toList();
@@ -257,7 +258,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     cls.add(c);
                 }
             }
-            log.info("getTimeTablingClassDtos, group NOT NULL -> cls.sz = " + cls.size());
+            log.info("getTimeTablingClassDtos, group NOT NULL, version_id = " + versionId + " -> cls.sz = " + cls.size());
         }
         List<Long> classIds = cls.stream().map(c -> c.getId()).toList();
         List<ClassGroup> CG = classGroupRepo.findAllByClassIdIn(classIds);
@@ -280,7 +281,16 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 mClassId2GroupNames.get(c.getId()).add(gname);
             }
         }
-        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        
+        List<TimeTablingClassSegment> classSegments;
+        if (versionId != null) {
+            classSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
+            log.info("getTimeTablingClassDtos, filtered by version_id = " + versionId + ", found " + classSegments.size() + " segments");
+        } else {
+            classSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionIdIsNull(classIds);
+            log.info("getTimeTablingClassDtos: Lọc class segments với version_id = NULL, tìm thấy " + classSegments.size() + " segments");
+        }
+        
         Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
         for(TimeTablingClassSegment cs: classSegments){
             if(mClassId2ClassSegments.get(cs.getClassId())==null)
@@ -318,61 +328,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     @Override
     public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
-        Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
-
-        List<ClassGroup> CG = classGroupRepo.findAllByClassIdIn(classIds);
-        for(ClassGroup cg: CG){
-            Long classId = cg.getClassId();
-            if(mClassId2GroupIds.get(classId)==null)
-                mClassId2GroupIds.put(classId, new ArrayList<>());
-            mClassId2GroupIds.get(classId).add(cg.getGroupId());
-        }
-
-        Map<Long, List<String>> mClassId2GroupNames = new HashMap<>();
-        List<Group> groups = groupRepo.findAll();
-        Map<Long, Group> mId2Group = new HashMap<>();
-        for(Group g: groups) mId2Group.put(g.getId(),g);
-        for(TimeTablingClass c: cls){
-            List<Long> gids = mClassId2GroupIds.get(c.getId());
-            mClassId2GroupNames.put(c.getId(), new ArrayList<>());
-            if(gids != null) for(Long gid: gids){
-                String gname = mId2Group.get(gid).getGroupName();
-                mClassId2GroupNames.get(c.getId()).add(gname);
-            }
-        }
-        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
-        Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
-        for(TimeTablingClassSegment cs: classSegments){
-            if(mClassId2ClassSegments.get(cs.getClassId())==null)
-                mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
-            mClassId2ClassSegments.get(cs.getClassId()).add(cs);
-        }
-        return cls.stream()
-                .map(c -> ModelResponseTimeTablingClass.builder()
-                        .id(c.getId())
-                        .quantity(c.getQuantity())
-                        .quantityMax(c.getQuantityMax())
-                        .moduleCode(c.getModuleCode())
-                        .moduleName(c.getModuleName())
-                        .classType(c.getClassType())
-                        .classCode(c.getClassCode())
-                        .semester(c.getSemester())
-                        .studyClass(c.getStudyClass())
-                        .mass(c.getMass())
-                        .state(c.getState())
-                        .crew(c.getCrew())
-                        .openBatch(c.getOpenBatch())
-                        .course(c.getCourse())
-                        .refClassId(c.getRefClassId())
-                        .parentClassId(c.getParentClassId())
-                        .duration(c.getDuration())
-                        .groupName(c.getGroupName())
-                        .listGroupName(mClassId2GroupNames.get(c.getId()))
-                        .timeSlots(mClassId2ClassSegments.get(c.getId()))
-                        .learningWeeks(c.getLearningWeeks())
-                        .foreignLecturer(c.getForeignLecturer())
-                        .build()
-                ).toList();
+        log.info("getTimeTablingClassDtos(List<Long>), classIds.size = " + classIds.size() + " found classes = " + cls.size());
+        return getDetailTimeTablingClassesFrom(cls);
     }
 
     private List<ModelResponseTimeTablingClass> getDetailTimeTablingClassesFrom(List<TimeTablingClass> cls){
@@ -528,31 +485,30 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public List<ModelResponseTimeTablingClass> clearTimeTable(List<String> ids) {
-        List<Long> classIds = new ArrayList<>();
-        for (String idString : ids) {
-            log.info("clearTimeTable, idString = " + idString);
-            long gId = 0;
-            int timeSlotIndex = 0;
-            if (idString.contains("-")) {
-                gId = Integer.parseInt(idString.split("-")[0]);
-                timeSlotIndex = Integer.parseInt(idString.split("-")[1]) - 1;
-            } else {
-                gId = Integer.parseInt(idString);
-                timeSlotIndex = 0;
+    public String clearTimeTable(List<Long> ids) {
+        try {
+            // Find segments directly by their IDs (these are roomReservationId values)
+            List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllById(ids);
+            log.info("clearTimeTable, clearing schedule information for " + ids.size() + " segment IDs, found " + classSegments.size() + " segments");
+            
+            if (classSegments.isEmpty()) {
+                return "Không tìm thấy phân đoạn lớp học với các ID đã cung cấp";
             }
-            classIds.add(gId);
+            
+            for(TimeTablingClassSegment cs: classSegments){
+                cs.setRoom(null);
+                cs.setEndTime(null);
+                cs.setStartTime(null);
+                cs.setWeekday(null);
+                timeTablingClassSegmentRepo.save(cs);
+                log.info("clearTimeTable: Reset segment " + cs.getId() + " of class " + cs.getClassId() + " with versionId=" + cs.getVersionId());
+            }
+            
+            return "ok";
+        } catch (Exception e) {
+            log.error("Error in clearTimeTable: ", e);
+            return "Lỗi khi xóa thời khóa biểu: " + e.getMessage();
         }
-        //List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
-        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
-        log.info("clearTimeTable, class-segments to be cleared sz = " + classSegments.size());
-        for(TimeTablingClassSegment cs: classSegments){
-            cs.setEndTime(null); cs.setStartTime(null); cs.setRoom(null);
-            cs = timeTablingClassSegmentRepo.save(cs);
-            log.info("clearTimeTable, clear class-segment " + cs.getId() + " classId = " + cs.getClassId());
-        }
-        List<ModelResponseTimeTablingClass> res = findAllByClassIdIn(classIds);
-        return res;
     }
 
     @Override
@@ -589,7 +545,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration) {
+    public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration, Long versionId) {
         List<Long> ids = new ArrayList<>();
         ids.add(classId);
         List<ModelResponseTimeTablingClass> L = findAllByClassIdIn(ids);
@@ -763,5 +719,45 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         return true;
     }
 
+    @Override
+    @Transactional
+    public List<TimeTablingClassSegment> saveScheduleToVersion(String semester, Long versionId) {
+        log.info("saveScheduleToVersion, semester = " + semester + ", versionId = " + versionId);
+        
+        List<TimeTablingClass> classes = timeTablingClassRepo.findAllBySemester(semester);
+        List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
+        
+        List<TimeTablingClassSegment> sourceSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionIdIsNull(classIds);
+        log.info("saveScheduleToVersion: Tìm thấy " + sourceSegments.size() + " segments gốc với version_id = null");
+        
+        List<TimeTablingClassSegment> savedSegments = new ArrayList<>();
+        
+        for (TimeTablingClassSegment originalSegment : sourceSegments) {
+            TimeTablingClassSegment versionSegment = new TimeTablingClassSegment();
+            versionSegment.setClassId(originalSegment.getClassId());
+            versionSegment.setCrew(originalSegment.getCrew());
+            versionSegment.setDuration(originalSegment.getDuration());
+            versionSegment.setParentId(originalSegment.getParentId());
+            
+            versionSegment.setRoom(originalSegment.getRoom());
+            versionSegment.setStartTime(originalSegment.getStartTime());
+            versionSegment.setEndTime(originalSegment.getEndTime());
+            versionSegment.setWeekday(originalSegment.getWeekday());
+            
+            versionSegment.setVersionId(versionId);
+            
+            Long newId = timeTablingClassSegmentRepo.getNextReferenceValue();
+            versionSegment.setId(newId);
+            
+            versionSegment = timeTablingClassSegmentRepo.save(versionSegment);
+            log.info("saveScheduleToVersion: Đã tạo segment mới ID=" + versionSegment.getId() + 
+                " cho class ID=" + versionSegment.getClassId() + " với versionId=" + versionId);
+            
+            savedSegments.add(versionSegment);
+        }
+        
+        log.info("saveScheduleToVersion: Đã lưu thành công " + savedSegments.size() + " segments với versionId=" + versionId);
+        return savedSegments;
+    }
 
 }

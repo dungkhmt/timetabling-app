@@ -1,9 +1,11 @@
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
+import { useTimeTablingVersionData } from "services/useTimeTablingVersionData";
 import AutoScheduleDialog from "./components/AutoScheduleDialog";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoComplete";
 import GeneralClusterAutoComplete from "../common-components/GeneralClusterAutoComplete";
-import { Button, Tabs, Tab, Chip, Divider, Paper } from "@mui/material";
+import VersionSelectionScreen from "../version-selection/VersionSelectionScreen";
+import { Button, Tabs, Tab, Chip, Divider, Paper, Typography, Box } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
 import ConsolidatedTimeTable from "./components/ConsolidatedTimeTable";
@@ -15,10 +17,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-} from "@mui/material";
-import { FormControl, InputLabel, Select, MenuItem, Box } from "@mui/material";
-import { FilterList, Assessment, Clear } from "@mui/icons-material";
+  TextField,
 
+} from "@mui/material";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { Clear, ArrowBack, Save } from "@mui/icons-material";
+import {toast} from "react-toastify";
 const GeneralScheduleScreen = () => {
   const { states, setters, handlers } = useGeneralSchedule();
   const [viewTab, setViewTab] = useState(0);
@@ -27,6 +31,12 @@ const GeneralScheduleScreen = () => {
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [filteredClasses, setFilteredClasses] = useState([]);
   const [consolidatedCount, setConsolidatedCount] = useState(0);
+  
+  const [selectedVersion, setSelectedVersion] = useState(null);
+  const [showVersionSelection, setShowVersionSelection] = useState(true);
+  const [openNewVersionDialog, setOpenNewVersionDialog] = useState(false);
+  const [newVersionName, setNewVersionName] = useState("");
+  const [newVersionStatus, setNewVersionStatus] = useState("DRAFT");
 
   const days = [2, 3, 4, 5, 6, 7, 8];
 
@@ -51,7 +61,29 @@ const GeneralScheduleScreen = () => {
     }
   };
 
-  // xóa option chọn nhóm khi chọn cụm và xóa chọn cum khi chọn nhóm
+  const { 
+    states: { versions, isLoading: isVersionsLoading, isCreating, searchName, selectedSemester: versionSelectedSemester },
+    setters: { setSearchName, setSelectedSemester: setVersionSelectedSemester },
+    handlers: { fetchVersions, createVersion }
+  } = useTimeTablingVersionData();
+
+  // Handle selecting a version
+  const handleVersionSelect = (version) => {
+    setSelectedVersion(version);
+    setters.setVersionId(version.id);
+    
+    if (version && version.semester) {
+      const versionSemester = { semester: version.semester };
+      setters.setSelectedSemester(versionSemester);
+    }
+    
+    setShowVersionSelection(false);
+  };
+
+  const handleBackToVersionSelection = () => {
+    setShowVersionSelection(true);
+  };
+
   useEffect(() => {
     const filterClassesByCluster = async () => {
       if (selectedCluster) {
@@ -74,7 +106,13 @@ const GeneralScheduleScreen = () => {
   };
 
   const handleAutoScheduleSelectedWithClear = async () => {
-    await handlers.handleAutoScheduleSelected();
+    // Lấy versionId từ version hiện tại nếu có
+    const currentVersionId = selectedVersion?.id;
+    
+    console.log("Xếp lịch với version_id:", currentVersionId);
+    
+    // Gọi hàm xếp lịch và truyền versionId
+    await handlers.handleAutoScheduleSelected(currentVersionId);
     setters.setSelectedRows([]);
   };
 
@@ -94,10 +132,118 @@ const GeneralScheduleScreen = () => {
   }, [states.classes, filteredClasses, selectedCluster]);
 
   const displayClasses = selectedCluster ? filteredClasses : states.classes;
+  
+  // Handle saving the current schedule as a new version
+  const handleSaveVersion = async () => {
+    if (!newVersionName) {
+      toast.error("Vui lòng nhập tên phiên bản!");
+      return;
+    }
 
+    // Set loading state
+    // setters.setIsSaveVersionLoading(true);
+
+    try {
+      // Step 1: Create a new version
+      const versionData = {
+        name: newVersionName,
+        status: newVersionStatus,
+        semester: states.selectedSemester.semester,
+        userId: "timetablingadmin01" 
+      };
+      
+      const createdVersion = await createVersion(versionData);
+      
+      if (createdVersion) {
+        // Step 2: Save the current schedule with the new version ID
+        const saveResult = await handlers.saveScheduleToVersion(
+          states.selectedSemester.semester,
+          createdVersion.id,
+          displayClasses.filter(cls => cls.room !== null && cls.startTime !== null && cls.endTime !== null)
+        );
+        
+        if (saveResult) {
+          toast.success("Phiên bản thời khóa biểu đã được lưu thành công!");
+          
+          // Update the current selected version to the newly created one
+          setSelectedVersion(createdVersion);
+          setters.setVersionId(createdVersion.id);
+          
+          // Close dialog and reset form
+          setOpenNewVersionDialog(false);
+          setNewVersionName("");
+          setNewVersionStatus("DRAFT");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving version:", error);
+      toast.error("Có lỗi khi lưu phiên bản thời khóa biểu!");
+    } finally {
+      // setters.setIsSaveVersionLoading(false);
+    }
+  };
+
+  // Version selection UI
+  if (showVersionSelection) {
+    return (
+      <VersionSelectionScreen
+        selectedSemester={versionSelectedSemester}
+        setSelectedSemester={setVersionSelectedSemester}
+        searchName={searchName}
+        setSearchName={setSearchName}
+        versions={versions}
+        isLoading={isVersionsLoading}
+        handleVersionSelect={handleVersionSelect}
+        openNewVersionDialog={openNewVersionDialog}
+        setOpenNewVersionDialog={setOpenNewVersionDialog}
+        newVersionName={newVersionName}
+        setNewVersionName={setNewVersionName}
+        newVersionStatus={newVersionStatus}
+        setNewVersionStatus={setNewVersionStatus}
+        isCreating={isCreating}
+        createVersion={createVersion} // Truyền createVersion từ useTimeTablingVersionData
+        onCreateSuccess={(createdVersion) => {
+          // Khi tạo version thành công, refresh danh sách
+          fetchVersions();
+        }}
+      />
+    );
+  }
+
+  // Main scheduling UI (original content)
   return (
     <div className="flex flex-col gap-3">
       <Paper elevation={1} className="p-3">
+        <Box className="flex justify-between items-center mb-3">
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={handleBackToVersionSelection}
+            variant="outlined"
+          >
+            Trở lại danh sách phiên bản
+          </Button>
+          
+          {selectedVersion && (
+            <Box className="flex flex-col items-end">
+              <Box className="flex items-center gap-2">
+              <Typography variant="h6" className="font-semibold">
+                {selectedVersion.name}
+              </Typography>
+                <Chip 
+                  label={selectedVersion.status} 
+                  color={selectedVersion.status === "DRAFT" ? "default" : "success"} 
+                  size="small" 
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Học kỳ: {selectedVersion.semester}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </Box>
+        
+        <Divider className="mb-3" />
+        
         <Tabs
           value={viewTab}
           onChange={(e, newVal) => setViewTab(newVal)}
@@ -158,44 +304,40 @@ const GeneralScheduleScreen = () => {
               <div className="flex gap-3 items-center flex-wrap">
                 <GeneralSemesterAutoComplete
                   selectedSemester={states.selectedSemester}
-                  setSelectedSemester={(semester) => {
-                    setters.setSelectedSemester(semester);
-                    // Clear cluster selection when semester changes
+                  setSelectedSemester={setters.setSelectedSemester}
+                  sx={{
+                    minWidth: 200,
+                    "& .MuiInputBase-root": { height: "40px" },
+                  }}
+                  label="Chọn học kỳ"
+                  disabled={!!selectedVersion} 
+                />
+
+                <GeneralGroupAutoComplete
+                  selectedGroup={states.selectedGroup}
+                  setSelectedGroup={(group) => {
+                    setters.setSelectedGroup(group);
+                    // Clear cluster selection when group changes
                     setSelectedCluster(null);
                   }}
                   sx={{
                     minWidth: 200,
                     "& .MuiInputBase-root": { height: "40px" },
                   }}
+                  disabled={selectedCluster !== null}
                 />
 
-                <div className="flex gap-3">
-                  <GeneralGroupAutoComplete
-                    selectedGroup={states.selectedGroup}
-                    setSelectedGroup={(group) => {
-                      setters.setSelectedGroup(group);
-                      // Clear cluster selection when group changes
-                      setSelectedCluster(null);
-                    }}
+                {viewTab === 3 && (
+                  <GeneralClusterAutoComplete
+                    selectedCluster={selectedCluster}
+                    setSelectedCluster={setSelectedCluster}
+                    selectedSemester={states.selectedSemester}
                     sx={{
                       minWidth: 200,
                       "& .MuiInputBase-root": { height: "40px" },
                     }}
-                    disabled={selectedCluster !== null}
                   />
-
-                  {viewTab === 3 && (
-                    <GeneralClusterAutoComplete
-                      selectedCluster={selectedCluster}
-                      setSelectedCluster={setSelectedCluster}
-                      selectedSemester={states.selectedSemester}
-                      sx={{
-                        minWidth: 200,
-                        "& .MuiInputBase-root": { height: "40px" },
-                      }}
-                    />
-                  )}
-                </div>
+                )}
 
                 {viewTab !== 3 && (
                   <>
@@ -419,6 +561,7 @@ const GeneralScheduleScreen = () => {
                 onSaveSuccess={handlers.handleRefreshClasses}
                 loading={states.loading || isSchedulingInProgress}
                 onRowCountChange={handleSetConsolidatedCount}
+                selectedVersion={selectedVersion}
               />
           </div>
         ) : (
@@ -432,6 +575,7 @@ const GeneralScheduleScreen = () => {
                 loading={states.loading || isSchedulingInProgress}
                 selectedRows={states.selectedRows}
                 onSelectedRowsChange={setters.setSelectedRows}
+                selectedVersion={selectedVersion}
               />
             )}
             {viewTab === 1 && (
@@ -443,6 +587,7 @@ const GeneralScheduleScreen = () => {
                 loading={states.loading || isSchedulingInProgress}
                 selectedRows={states.selectedRows}
                 onSelectedRowsChange={setters.setSelectedRows}
+                selectedVersion={selectedVersion}
               />
             )}
           </div>
@@ -450,7 +595,7 @@ const GeneralScheduleScreen = () => {
       </div>
 
       <div>
-        <AutoScheduleDialog
+        {/* <AutoScheduleDialog
           title={"Tự động xếp lịch học của kì học"}
           open={states.isOpenTimeslotDialog}
           closeDialog={() => setters.setOpenTimeslotDialog(false)}
@@ -458,8 +603,8 @@ const GeneralScheduleScreen = () => {
           setTimeLimit={setters.setTimeSlotTimeLimit}
           submit={handlers.handleAutoScheduleTimeSlotTimeTabling}
           selectedAlgorithm={states.selectedAlgorithm}
-        />
-        <AutoScheduleDialog
+        /> */}
+        {/* <AutoScheduleDialog
           title={"Tự động xếp phòng học"}
           open={states.isOpenClassroomDialog}
           closeDialog={() => setters.setOpenClassroomDialog(false)}
@@ -467,16 +612,16 @@ const GeneralScheduleScreen = () => {
           timeLimit={states.classroomTimeLimit}
           submit={handlers.handleAutoScheduleClassroomTimeTabling}
           selectedAlgorithm={states.selectedAlgorithm}
-        />
+        /> */}
         <AutoScheduleDialog
           title={"Tự động xếp lịch các lớp đã chọn"}
           open={states.isOpenSelectedDialog}
           closeDialog={() => setters.setOpenSelectedDialog(false)}
           timeLimit={states.selectedTimeLimit}
           setTimeLimit={setters.setSelectedTimeLimit}
-          submit={handleAutoScheduleSelectedWithClear} // Use our wrapper function
+          submit={handleAutoScheduleSelectedWithClear}
           selectedAlgorithm={states.selectedAlgorithm}
-          maxDaySchedule={states.maxDaySchedule} // Pass maxDaySchedule to the dialog
+          maxDaySchedule={states.maxDaySchedule}
         />
       </div>
 
@@ -507,6 +652,54 @@ const GeneralScheduleScreen = () => {
             sx={{ minWidth: "80px", padding: "6px 16px" }}
           >
             Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Save version dialog */}
+      <Dialog
+        open={openNewVersionDialog}
+        onClose={() => setOpenNewVersionDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Lưu phiên bản thời khóa biểu</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Tên phiên bản"
+              fullWidth
+              variant="outlined"
+              value={newVersionName}
+              onChange={(e) => setNewVersionName(e.target.value)}
+              sx={{ mb: 3 }}
+            />
+            <TextField
+              select
+              margin="dense"
+              label="Trạng thái"
+              fullWidth
+              variant="outlined"
+              value={newVersionStatus}
+              onChange={(e) => setNewVersionStatus(e.target.value)}
+              sx={{ width: "200px" }}
+            >
+              <MenuItem value="DRAFT">Nháp</MenuItem>
+              <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpenNewVersionDialog(false)}>Hủy</Button>
+          <Button 
+            onClick={handleSaveVersion} 
+            variant="contained"
+            disabled={!newVersionName || states.isSaveVersionLoading}
+            startIcon={states.isSaveVersionLoading ? <FacebookCircularProgress size={20} /> : null}
+          >
+            Lưu
           </Button>
         </DialogActions>
       </Dialog>

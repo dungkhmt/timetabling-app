@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -17,6 +18,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
@@ -75,40 +77,23 @@ public class GeneralClassController {
         return ResponseEntity.status(410).body("Mã lớp hoặc mã lớp tạm thời, mã lớp cha không phải là 1 số!");
     }
 
-    /*
-    @GetMapping("/")
-    public List<GeneralClassDto> requestGetClasses(
-            @RequestParam("semester") String semester,
-            @RequestParam(value = "groupName", required = false) Long groupId) {
-        return gService.getGeneralClassDtos(semester, groupId);
-    }
-
-     */
     @GetMapping("/")
     public List<ModelResponseTimeTablingClass> requestGetClasses(
             @RequestParam("semester") String semester,
-            @RequestParam(value = "groupName", required = false) Long groupId) {
-        //return gService.getGeneralClassDtos(semester, groupId);
-        log.info("requestGetClasses, group = " + groupId + " semester = " + semester);
-        return timeTablingClassService.getTimeTablingClassDtos(semester,groupId);
+            @RequestParam(value = "groupName", required = false) Long groupId,
+            @RequestParam(value = "versionId", required = false) Long versionId) {
+        log.info("requestGetClasses, group = " + groupId + ", semester = " + semester + ", versionId = " + versionId);
+        return timeTablingClassService.getTimeTablingClassDtos(semester, groupId, versionId);
     }
 
-    //@GetMapping("/get-by-parent-class")
-    //public List<GeneralClassDto> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
-    //    return gService.getSubClasses(parentClassId);
-    //}
     @GetMapping("/get-by-parent-class")
     public List<ModelResponseTimeTablingClass> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
-        //return gService.getSubClasses(parentClassId);
         return timeTablingClassService.getSubClass(parentClassId);
     }
 
     @PostMapping("/update-class")
     public ResponseEntity<?> requestUpdateClass(@RequestBody UpdateGeneralClassRequest request) {
         log.info("requestUpdateClass, API /update-class: request classId = " + request.getGeneralClass().getId());
-        //GeneralClass updatedGeneralClass= gService.updateGeneralClass(request);
-        //if(updatedGeneralClass == null) throw new RuntimeException("General Class was null");
-        //return ResponseEntity.ok().body(updatedGeneralClass);
         TimeTablingClass cls = timeTablingClassService.updateClass(request);
         return ResponseEntity.ok().body(cls);
     }
@@ -122,9 +107,6 @@ public class GeneralClassController {
 
     @PostMapping("/update-class-schedule-v2")
     public ResponseEntity<List<GeneralClass>> requestUpdateClassScheduleV2(@RequestParam("semester")String semester, @RequestBody UpdateClassScheduleRequest request ) {
-        //List<GeneralClass> updatedGeneralClass = gService.v2UpdateClassSchedule(semester, request.getSaveRequests());
-        //if(updatedGeneralClass.isEmpty()) throw new RuntimeException("General Class was null");
-        //return ResponseEntity.ok().body(updatedGeneralClass);
         boolean ok = timeTablingClassService.updateTimeTableClassSegment(semester, request.getSaveRequests());
         return ResponseEntity.ok().body(new ArrayList<>());
     }
@@ -186,11 +168,9 @@ public class GeneralClassController {
     }
 
     @PostMapping("/reset-schedule")
-    //public ResponseEntity<List<GeneralClass>> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
     public ResponseEntity<?> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
         log.info("Controler API -> requestResetSchedule start...");
         return ResponseEntity.ok(timeTablingClassService.clearTimeTable(request.getIds()));
-        //return ResponseEntity.ok(gService.resetSchedule(request.getIds(), semester));
     }
 
     @GetMapping("/get-list-algorithm-names")
@@ -208,7 +188,7 @@ public class GeneralClassController {
     }
     @PostMapping("/auto-schedule-timeslot-room")
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
-        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getSemester(),I.getClassIds(),I.getTimeLimit(),I.getAlgorithm(),I.getMaxDaySchedule()));
+        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getSemester(),I.getClassIds(),I.getTimeLimit(),I.getAlgorithm(),I.getMaxDaySchedule(), I.getVersionId()));
     }
     @PostMapping("/auto-schedule-time")
     public ResponseEntity<List<GeneralClass>> requestAutoScheduleTime(
@@ -216,7 +196,6 @@ public class GeneralClassController {
             @RequestParam("groupName") String groupName,
             @RequestParam("timeLimit") int timeLimit) {
         log.info("Controller API -> requestAutoScheduleTime...");
-        //return ResponseEntity.ok(gService.autoScheduleGroup(semester, groupName, timeLimit*1000));
         return ResponseEntity.ok(gService.autoSchedule(semester, timeLimit*1000));
     }
 
@@ -237,7 +216,6 @@ public class GeneralClassController {
     @DeleteMapping("/delete-by-ids")
     public ResponseEntity<String> deleteClassesByIds(@RequestBody List<Long> ids) {
         log.info("deleteClassesByIds, ids = " + ids.size());
-        //gService.deleteClassesByIds(ids);
         timeTablingClassService.deleteByIds(ids);
         return ResponseEntity.ok("Deleted classes with IDs: " + ids);
     }
@@ -247,9 +225,7 @@ public class GeneralClassController {
     public ResponseEntity<?> requestAddRoomReservation(
             @PathVariable("generalClassId") Long generalClassId,
             @RequestBody RoomReservationDto request) {
-        //return ResponseEntity.ok(gService.addRoomReservation(generalClassId, request.getParentId(), request.getDuration()));
-        return ResponseEntity.ok(timeTablingClassService.splitNewClassSegment(generalClassId, request.getParentId(), request.getDuration()));
-
+        return ResponseEntity.ok(timeTablingClassService.splitNewClassSegment(generalClassId, request.getParentId(), request.getDuration(), request.getVersionId()));
     }
 
     @DeleteMapping("/delete-by-semester")
@@ -270,7 +246,6 @@ public class GeneralClassController {
     @PostMapping("/compute-class-cluster")
     public ResponseEntity<?> computeClassCluster(Principal principal, @RequestBody ModelInputComputeClassCluster I){
         log.info("computeClassCluster, semester = " + I.getSemester());
-        //int cnt = gService.computeClassCluster(I);
         int cnt = timeTablingClassService.computeClassCluster(I);
         log.info("computeClassCluster, semester = " + I.getSemester() + " result cnt = " + cnt);
         return ResponseEntity.ok().body(cnt);
@@ -278,7 +253,6 @@ public class GeneralClassController {
 
     @GetMapping("/get-by-cluster/{clusterId}")
     public ResponseEntity<?> getGeneralClassesByCluster(@PathVariable Long clusterId) {
-        //List<GeneralClassDto> classes = gService.getGeneralClassByCluster(clusterId);
         List<ModelResponseTimeTablingClass> classes = timeTablingClassService.getClassByCluster(clusterId);
         return ResponseEntity.ok(classes);
     }
@@ -308,4 +282,23 @@ public class GeneralClassController {
         timeTablingClassService.createClassSegmentForSummerSemester(I);
         return ResponseEntity.ok().body(res);
     }
+
+   @PostMapping("/save-schedule-to-version")
+   public ResponseEntity<?> saveScheduleToVersion(
+           @RequestParam("semester") String semester,
+           @RequestParam("versionId") Long versionId
+    ) {
+       log.info("saveScheduleToVersion, semester = " + semester + ", versionId = " + versionId);
+       try {
+           List<TimeTablingClassSegment> savedSegments = timeTablingClassService.saveScheduleToVersion(semester, versionId);
+           return ResponseEntity.ok().body(Map.of(
+               "savedCount", savedSegments.size(),
+               "message", "Đã lưu thành công " + savedSegments.size() + " ca học vào phiên bản."
+           ));
+       } catch (Exception e) {
+           log.error("Error saving schedule to version", e);
+           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+               .body(Map.of("message", e.getMessage()));
+       }
+   }
 }
