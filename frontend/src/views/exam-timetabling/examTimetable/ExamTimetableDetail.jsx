@@ -34,6 +34,7 @@ import { validateAssignmentChanges } from './utils/AssignmentValidation';
 import { useExamTimetableData } from 'services/useExamTimetableData';
 import { useExamRoomData } from 'services/useExamRoomData';
 import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
+import UnassignConfirmDialog from './components/UnassignConfirmDialog'
 
 const convertDateFormat = (dateStr) =>{
   const [year, month, day] = dateStr.split('-');
@@ -51,16 +52,17 @@ const TimetableDetailPage = () => {
     updateExamTimetableAssignments,
     getAssignmentConflicts,
   } = useExamTimetableData(null, id);
-
+  
   const {
     examRooms,
   } = useExamRoomData();
-
+  
   const {
     examTimetableAssignments,
     isLoading,
     exportTimetable,
     error,
+    unassignAssignments,
     autoAssign,
     algorithms,
     isLoadingAlgorithm,
@@ -79,6 +81,10 @@ const TimetableDetailPage = () => {
   const [isAutoAssignDialogOpen, setIsAutoAssignDialogOpen] = useState(false);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
   const [alreadyAssignedClasses, setAlreadyAssignedClasses] = useState([]);
+
+  const [isUnassignDialogOpen, setIsUnassignDialogOpen] = useState(false);
+  const [isUnassigning, setIsUnassigning] = useState(false);
+  const [assignmentsToUnassign, setAssignmentsToUnassign] = useState([]);
 
   const classesTableRef = useRef();
 
@@ -101,13 +107,11 @@ const TimetableDetailPage = () => {
     }
   };
 
-  // Added function to handle auto-assign button click
   const handleAutoAssign = () => {
     if (selectedAssignments.length === 0) {
       return;
     }
 
-    // Check if any selected assignments are already assigned
     const assignedClasses = examTimetableAssignments.filter(assignment => 
       selectedAssignments.includes(assignment.id) && 
       (assignment.room || assignment.week || assignment.date || assignment.slot)
@@ -135,13 +139,43 @@ const TimetableDetailPage = () => {
         algorithm,
         timeLimit,
       });
-      console.log(result);
       setIsAutoAssigning(false);
       setIsAutoAssignDialogOpen(false);
     } catch (error) {
       console.error('Error auto-assigning:', error);
       setIsAutoAssigning(false);
       setIsAutoAssignDialogOpen(false);
+    }
+  };
+
+  const handleUnassign = () => {
+    if (selectedAssignments.length === 0) {
+      return;
+    }
+  
+    const assignedClasses = examTimetableAssignments.filter(assignment => 
+      selectedAssignments.includes(assignment.id) && 
+      (assignment.room || assignment.week || assignment.date || assignment.slot)
+    );
+  
+    if (assignedClasses.length === 0) {
+      return;
+    }
+  
+    setAssignmentsToUnassign(assignedClasses);
+    setIsUnassignDialogOpen(true);
+  };
+  
+  const performUnassign = async () => {
+    try {
+      setIsUnassigning(true);
+      await unassignAssignments(selectedAssignments);
+      setIsUnassigning(false);
+      setIsUnassignDialogOpen(false);
+    } catch (error) {
+      console.error('Error unassigning assignments:', error);
+      setIsUnassigning(false);
+      setIsUnassignDialogOpen(false);
     }
   };
 
@@ -414,6 +448,24 @@ const TimetableDetailPage = () => {
               </span>
             </Tooltip>
 
+            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để hủy phân công" : "Hủy phân công cho lớp đã chọn"}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<Delete />}
+                  onClick={handleUnassign}
+                  disabled={selectedAssignments.length === 0 || isUnassigning}
+                  sx={{ 
+                    bgcolor: 'error.light',
+                    '&:hover': { bgcolor: '#EF5350' }
+                  }}
+                >
+                  {isUnassigning ? 'Đang xử lý...' : `Hủy phân công (${selectedAssignments.length})`}
+                </Button>
+              </span>
+            </Tooltip>
+
             <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để xuất" : "Xuất danh sách đã chọn"}>
               <span>
                 <Button
@@ -472,6 +524,14 @@ const TimetableDetailPage = () => {
             open={isInvalidModalOpen}
             invalidAssignments={invalidAssignments}
             onClose={handleCloseInvalidModal}
+          />
+
+          <UnassignConfirmDialog
+            open={isUnassignDialogOpen}
+            onClose={() => setIsUnassignDialogOpen(false)}
+            onConfirm={performUnassign}
+            assignmentsToUnassign={assignmentsToUnassign}
+            isProcessing={isUnassigning}
           />
           
           {/* Auto Assign Confirm Dialog */}

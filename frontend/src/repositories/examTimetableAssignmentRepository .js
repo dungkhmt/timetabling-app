@@ -25,6 +25,14 @@ class ExamTimetableAssignmentService {
     });
   }
 
+  async unassignExamTimetableAssignment(data) {
+    return await request("post", "/exam-timetable/assignment/unassign", null, null, data, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
   async exportTimetable(data) {
     return await request("post", "/exam-timetable/assignment/export", null, null, data, {
       responseType: 'arraybuffer',

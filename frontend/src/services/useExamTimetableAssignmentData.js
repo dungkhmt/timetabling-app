@@ -35,6 +35,16 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     }
   });
 
+  const unassignAssignmentMutation = useMutation(examTimetableAssignmentService.unassignExamTimetableAssignment, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('examTimetableAssignments');
+      toast.success('Cập nhật lịch thi thành công!');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật lịch thi');
+    }
+  });
+
   const getAssignmentConflictsMutation = useMutation(examTimetableAssignmentService.checkExamTimetableAssignmentConflict, {
     onSuccess: () => {
       queryClient.invalidateQueries('examTimetables');
@@ -86,5 +96,6 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     isLoadingUpdatingAssignment: updateAssignmentMutation.isLoading,
     exportTimetable: exportTimetableMutation.mutateAsync,
     autoAssign: autoAssignMutation.mutateAsync,
+    unassignAssignments: unassignAssignmentMutation.mutateAsync,
   };
 };
