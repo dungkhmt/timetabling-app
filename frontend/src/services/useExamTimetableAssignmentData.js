@@ -14,6 +14,17 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     }
   );
 
+  
+  const { data: algorithms, isLoading: isLoadingAlgorithm, error: errorAlgorithm } = useQuery(
+    'algorithm',
+    () => examTimetableAssignmentService.getAlgorithms(),
+    {
+      // staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+      // cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
+      // enabled: !!examTimetableId,
+    }
+  );
+
   const updateAssignmentMutation = useMutation(examTimetableAssignmentService.updateExamTimetableAssignment, {
     onSuccess: () => {
       queryClient.invalidateQueries('examTimetableAssignments');
@@ -66,6 +77,9 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     examTimetableAssignments: examTimetableAssignments?.data || [],
     isLoading,
     error,
+    algorithms: algorithms?.data || [],
+    isLoadingAlgorithm,
+    errorAlgorithm,
     updateExamTimetableAssignments: updateAssignmentMutation.mutateAsync,
     getAssignmentConflicts: getAssignmentConflictsMutation.mutateAsync,
     isLoadingConflicts: getAssignmentConflictsMutation.isLoading,

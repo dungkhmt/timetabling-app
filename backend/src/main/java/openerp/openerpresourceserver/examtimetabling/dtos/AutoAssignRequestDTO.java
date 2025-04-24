@@ -2,6 +2,8 @@ package openerp.openerpresourceserver.examtimetabling.dtos;
 
 import java.util.List;
 import java.util.UUID;
+
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +21,11 @@ public class AutoAssignRequestDTO {
     private List<UUID> classIds;
     
     private List<String> examDates;
+
+    private String algorithm = "default"; 
+    
+    @Min(value = 1, message = "Time limit must be at least 1 minute")
+    private Integer timeLimit = 30; 
 
     public void setSuccess(boolean b) {
     }

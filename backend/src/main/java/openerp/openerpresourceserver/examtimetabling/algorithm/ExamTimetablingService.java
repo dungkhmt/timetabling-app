@@ -13,6 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,54 +50,74 @@ public class ExamTimetablingService {
     private ExamPlanRepository examPlanRepository;
 
     /**
-     * Main method to automatically assign classes to rooms and time slots
+     * Main method to automatically assign classes to rooms and time slots with time limit
      * 
      * @param examTimetableId The ID of the exam timetable
      * @param classIds List of class IDs to be assigned
      * @param examDates List of dates for the exam period in 'dd-MM-yyyy' format
+     * @param algorithm Algorithm to use (currently ignored as there's only one)
+     * @param timeLimit Maximum time in minutes to run the algorithm
      * @return true if assignment is successful, false otherwise
      */
     @Transactional
-    public boolean autoAssignClass(UUID examTimetableId, List<UUID> classIds, List<String> examDates) {
-        log.info("Starting auto assignment for {} classes over {} dates", classIds.size(), examDates.size());
+    public boolean autoAssignClass(UUID examTimetableId, List<UUID> classIds, 
+                                  List<String> examDates, String algorithm, Integer timeLimit) {
+        log.info("Starting auto assignment for {} classes over {} dates with time limit {} minutes", 
+                classIds.size(), examDates.size(), timeLimit);
+        
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         
         try {
-            // Step 0: clear any existing assignments for these classes
             clearExistingAssignments(examTimetableId, classIds);
             log.info("Cleared existing assignments for {} classes", classIds.size());
             
-            // Step 1: Process data
-            ExamTimetableProcessor processor = new ExamTimetableProcessor(
-                examClassRepository,
-                examRoomRepository,
-                examTimetableSessionRepository,
-                examTimetableAssignmentRepository,
-                conflictRepository,
-                examTimetableRepository
-            );
+            Future<Boolean> future = executor.submit(() -> {
+                try {
+                    // Step 1: Process data
+                    ExamTimetableProcessor processor = new ExamTimetableProcessor(
+                        examClassRepository,
+                        examRoomRepository,
+                        examTimetableSessionRepository,
+                        examTimetableAssignmentRepository,
+                        conflictRepository,
+                        examTimetableRepository
+                    );
+                    
+                    TimetablingData data = processor.processData(examTimetableId, classIds, examDates);
+                    log.info("Data processing complete. {} classes, {} time slots, {} rooms", 
+                        data.getExamClasses().size(), data.getAvailableTimeSlots().size(), data.getAvailableRooms().size());
+                    
+                    // Step 2: Apply algorithm
+                    ExamTimetableAlgorithm timetableAlgorithm = new ExamTimetableAlgorithm();
+                    TimetablingSolution solution = timetableAlgorithm.assign(data);
+                    
+                    if (!solution.isComplete()) {
+                        log.warn("Failed to find complete assignment. Assigned: {}/{}", 
+                            solution.getAssignedClasses().size(), classIds.size());
+                        return false;
+                    }
+                    
+                    // Step 3: Save results
+                    saveSolution(examTimetableId, solution);
+                    log.info("Successfully assigned all {} classes", classIds.size());
+                    return true;
+                    
+                } catch (Exception e) {
+                    log.error("Error during auto assignment", e);
+                    throw new RuntimeException("Failed to auto-assign classes: " + e.getMessage(), e);
+                }
+            });
             
-            TimetablingData data = processor.processData(examTimetableId, classIds, examDates);
-            log.info("Data processing complete. {} classes, {} time slots, {} rooms", 
-                data.getExamClasses().size(), data.getAvailableTimeSlots().size(), data.getAvailableRooms().size());
+            return future.get(timeLimit, TimeUnit.MINUTES);
             
-            // Step 2: Apply algorithm
-            ExamTimetableAlgorithm algorithm = new ExamTimetableAlgorithm();
-            TimetablingSolution solution = algorithm.assign(data);
-            
-            if (!solution.isComplete()) {
-                log.warn("Failed to find complete assignment. Assigned: {}/{}", 
-                    solution.getAssignedClasses().size(), classIds.size());
-                return false;
-            }
-            
-            // Step 3: Save results
-            saveSolution(examTimetableId, solution);
-            log.info("Successfully assigned all {} classes", classIds.size());
-            return true;
-            
+        } catch (TimeoutException e) {
+            log.warn("Algorithm timed out after {} minutes", timeLimit);
+            return false;
         } catch (Exception e) {
             log.error("Error during auto assignment", e);
             throw new RuntimeException("Failed to auto-assign classes: " + e.getMessage(), e);
+        } finally {
+            executor.shutdownNow();
         }
     }
     

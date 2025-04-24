@@ -5,6 +5,10 @@ class ExamTimetableAssignmentService {
     return await request("get", `/exam-timetable/assignment/${timetableId}`);
   }
 
+  async getAlgorithms() {
+    return await request("get", `/exam-timetable/assignment/algorithms`);
+  }
+
   async updateExamTimetableAssignmentAssignment(data) {
     return await request("post", "/exam-timetable/assignment/update-batch", null, null, data, {
       headers: {

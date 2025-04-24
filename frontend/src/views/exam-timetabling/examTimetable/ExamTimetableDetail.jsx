@@ -62,6 +62,8 @@ const TimetableDetailPage = () => {
     exportTimetable,
     error,
     autoAssign,
+    algorithms,
+    isLoadingAlgorithm,
   } = useExamTimetableAssignmentData(id);
 
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -115,8 +117,12 @@ const TimetableDetailPage = () => {
     setIsAutoAssignDialogOpen(true);
   };
 
-  // Added function to perform auto-assign after confirmation
-  const performAutoAssign = async (selectedDates) => {
+  const performAutoAssign = async (data) => {
+    const {
+      dates: selectedDates,
+      timeLimit,
+      algorithm,
+    } = data;
     try {
       setIsAutoAssigning(true);
       const examClassAssignmentLookup = new Map(
@@ -126,6 +132,8 @@ const TimetableDetailPage = () => {
         examTimetableId: timetable.id,
         classIds: selectedAssignments.map(id => examClassAssignmentLookup.get(id)),
         examDates: selectedDates.map(date => convertDateFormat(date)),
+        algorithm,
+        timeLimit,
       });
       console.log(result);
       setIsAutoAssigning(false);
@@ -473,7 +481,12 @@ const TimetableDetailPage = () => {
             onConfirm={performAutoAssign}
             assignedClasses={alreadyAssignedClasses}
             isProcessing={isAutoAssigning}
-            timetable={timetable} // Pass the timetable data for date calculations
+            timetable={timetable}
+            algorithms={algorithms.map(algorithmName => ({
+              value: algorithmName,
+              label: algorithmName
+            }))}
+            isLoadingAlgorithms={isLoadingAlgorithm}
           />
         </Box>
       </Paper>

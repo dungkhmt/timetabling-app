@@ -28,6 +28,7 @@ import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetablingResponse;
 import openerp.openerpresourceserver.examtimetabling.dtos.TimetableStatisticsDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
@@ -157,6 +158,19 @@ public class ExamTimetableController {
         }
     }
 
+    @GetMapping("/assignment/algorithms")
+    public ResponseEntity<String[]> getAssignmentAlgorithm() {
+        try {
+            String[] assignments = {
+                "Greedy Algorithm (Khoa)",
+                "Genetic Algorithm",
+            };
+            return ResponseEntity.ok(assignments);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new String[0]);
+        }
+    }
+
     @PostMapping("/assignment/export")
     public ResponseEntity<Resource> exportAssignmentsToExcel(@RequestBody List<String> assignmentIds) {
         try {
@@ -174,31 +188,37 @@ public class ExamTimetableController {
         }
     }
 
-    @PostMapping("/assignment/auto-assign")
-    public ResponseEntity<AutoAssignRequestDTO> autoAssignClasses(
+    @PostMapping("/auto-assign")
+    public ResponseEntity<ExamTimetablingResponse> autoAssignClasses(
             @Valid @RequestBody AutoAssignRequestDTO request) {
         try {
-            // Call the service to perform the assignment
+            long startTime = System.currentTimeMillis();
+            
             boolean success = examTimetablingService.autoAssignClass(
                 request.getExamTimetableId(),
                 request.getClassIds(),
-                request.getExamDates()
+                request.getExamDates(),
+                request.getAlgorithm(),
+                request.getTimeLimit()
             );
             
-            // Create response based on result
-            AutoAssignRequestDTO response = new AutoAssignRequestDTO();
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            
+            ExamTimetablingResponse response = new ExamTimetablingResponse();
             response.setSuccess(success);
+            response.setExecutionTimeMs(executionTime);
             
             if (success) {
-                response.setMessage("Successfully assigned all classes");
+                response.setMessage("Successfully assigned all classes. Execution time: " + executionTime + "ms");
                 return ResponseEntity.ok(response);
             } else {
-                response.setMessage("Failed to assign all classes. Some constraints could not be satisfied.");
+                response.setMessage("Failed to assign all classes. Some constraints could not be satisfied or time limit exceeded. Execution time: " + executionTime + "ms");
                 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
             }
             
         } catch (Exception e) {
-            AutoAssignRequestDTO response = new AutoAssignRequestDTO();
+            ExamTimetablingResponse response = new ExamTimetablingResponse();
             response.setSuccess(false);
             response.setMessage("Error processing request: " + e.getMessage());
             

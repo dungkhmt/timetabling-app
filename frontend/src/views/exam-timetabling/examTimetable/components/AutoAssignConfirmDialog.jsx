@@ -13,9 +13,14 @@ import {
   Paper,
   Chip,
   FormControlLabel,
-  Checkbox
+  Grid,
+  Checkbox,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormHelperText
 } from '@mui/material';
-import { Warning, CalendarMonth,  } from '@mui/icons-material';
+import { Warning, CalendarMonth,  Tune } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 
 const AutoAssignConfirmDialog = ({ 
@@ -24,11 +29,35 @@ const AutoAssignConfirmDialog = ({
   onConfirm, 
   assignedClasses,
   isProcessing,
-  timetable
+  timetable,
+  algorithms = [], 
+  isLoadingAlgorithms = false 
 }) => {
   const [selectedDates, setSelectedDates] = useState([]);
   const [dateOptions, setDateOptions] = useState([]);
   const [hasError, setHasError] = useState(false);
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState('');
+  const [timeLimit, setTimeLimit] = useState('5');
+  const [algorithmError, setAlgorithmError] = useState(false);
+
+  // Time limit options in minutes
+  const timeLimitOptions = [
+    { value: '1', label: '1 phút' },
+    { value: '3', label: '3 phút' },
+    { value: '5', label: '5 phút' },
+    { value: '10', label: '10 phút' },
+    { value: '30', label: '30 phút' },
+    { value: '60', label: '1 giờ' },
+    { value: '120', label: '2 giờ' },
+    { value: '180', label: '3 giờ' },
+    { value: '300', label: '5 giờ' }
+  ];
+  
+  useEffect(() => {
+    if (algorithms.length > 0 && (!selectedAlgorithm || !algorithms.find(a => a.value === selectedAlgorithm))) {
+      setSelectedAlgorithm(algorithms[0].value);
+    }
+  }, [algorithms, selectedAlgorithm]);
 
   useEffect(() => {
     if (!timetable) return;
@@ -49,7 +78,7 @@ const AutoAssignConfirmDialog = ({
       id: `week-${startWeek}`,
       dates: []
     };
-    
+      
     let currentDate = new Date(startDate);
     const endOfFirstWeek = new Date(currentDate);
 
@@ -70,7 +99,7 @@ const AutoAssignConfirmDialog = ({
       currentDate = new Date(currentDate);
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+  
     if (currentWeekGroup.dates.length > 0) {
       options.push(currentWeekGroup);
     }
@@ -157,19 +186,46 @@ const AutoAssignConfirmDialog = ({
   };
 
   const handleConfirm = () => {
+    let hasValidationError = false;
+    
     if (selectedDates.length === 0) {
       setHasError(true);
+      hasValidationError = true;
+    } else {
+      setHasError(false);
+    }
+    
+    if (!selectedAlgorithm) {
+      setAlgorithmError(true);
+      hasValidationError = true;
+    } else {
+      setAlgorithmError(false);
+    }
+    
+    if (hasValidationError) {
       return;
     }
-    onConfirm(selectedDates);
+    
+    const data = {
+      dates: selectedDates,
+      algorithm: selectedAlgorithm,
+      timeLimit: parseInt(timeLimit, 10) 
+    };
+    
+    onConfirm(data);
   };
 
   useEffect(() => {
     if (!open) {
       setSelectedDates([]);
       setHasError(false);
+      setSelectedAlgorithm('');
+      setAlgorithmError(false);
+      setTimeLimit('5'); 
+    } else if (algorithms.length > 0 && !selectedAlgorithm) {
+      setSelectedAlgorithm(algorithms[0].value);
     }
-  }, [open]);
+  }, [open, algorithms]);
 
   const getDateLabel = (dateValue) => {
     for (const week of dateOptions) {
@@ -243,6 +299,72 @@ const AutoAssignConfirmDialog = ({
             <Divider sx={{ my: 2 }} />
           </>
         )}
+
+        {/* Algorithm and Time Limit selection in a single row */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Tune sx={{ mr: 1 }} color="primary" />
+            <FormLabel required sx={{ color: 'text.primary', fontWeight: 500 }}>
+              Cấu hình chạy thuật toán:
+            </FormLabel>
+          </Box>
+          
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            {/* Algorithm selection */}
+            <Grid item xs={8}>
+              <FormControl fullWidth error={algorithmError} required size="small">
+                <InputLabel id="algorithm-select-label">Thuật toán</InputLabel>
+                <Select
+                  labelId="algorithm-select-label"
+                  id="algorithm-select"
+                  value={selectedAlgorithm}
+                  label="Thuật toán"
+                  onChange={(e) => setSelectedAlgorithm(e.target.value)}
+                  disabled={isLoadingAlgorithms || algorithms.length === 0}
+                >
+                  {isLoadingAlgorithms ? (
+                    <MenuItem value="" disabled>
+                      Đang tải danh sách thuật toán...
+                    </MenuItem>
+                  ) : algorithms.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      Không có thuật toán nào
+                    </MenuItem>
+                  ) : (
+                    algorithms.map((algorithm) => (
+                      <MenuItem key={algorithm.value} value={algorithm.value}>
+                        {algorithm.label}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+                {algorithmError && <FormHelperText>Vui lòng chọn thuật toán</FormHelperText>}
+              </FormControl>
+            </Grid>
+            
+            {/* Time limit selection */}
+            <Grid item xs={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="time-limit-select-label">Thời gian tối đa</InputLabel>
+                <Select
+                  labelId="time-limit-select-label"
+                  id="time-limit-select"
+                  value={timeLimit}
+                  label="Thời gian tối đa"
+                  onChange={(e) => setTimeLimit(e.target.value)}
+                >
+                  {timeLimitOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+          
+          <Divider sx={{ my: 2 }} />
+        </Box>
 
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
