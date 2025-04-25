@@ -10,9 +10,6 @@ public class DeliveryRouteItem {
     @Id
     private String id;
 
-    @Column(name = "delivery_route_id", length = 40)
-    private String deliveryRouteId;
-
     @Column(name = "delivery_route_seq_id", length = 10)
     private String deliveryRouteSeqId;
 
