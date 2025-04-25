@@ -31,7 +31,6 @@ const AddTimetableModal = ({ open, onClose, planId, onCreateTimetable }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const history = useHistory();
 
-  // Instead of managing a separate state, use the data directly from the hook
   const sessionCollections = examSessions || [];
 
   const handleChange = (e) => {
@@ -53,31 +52,28 @@ const AddTimetableModal = ({ open, onClose, planId, onCreateTimetable }) => {
       hasError = true;
     }
 
-    if (!selectedCollection) {
-      setCollectionError('Vui lòng chọn bộ ca thi');
-      hasError = true;
-    }
+    // if (!selectedCollection) {
+    //   setCollectionError('Vui lòng chọn bộ ca thi');
+    //   hasError = true;
+    // }
 
     if (hasError) return;
 
     try {
       setIsSubmitting(true);
 
-      // Call API to create timetable with selected collection
       const result = await onCreateTimetable({
         name,
         examPlanId: planId,
-        examTimetableSessionCollectionId: selectedCollection // Add the selected collection ID
+        examTimetableSessionCollectionId: sessionCollections[0].id
       });
 
       setIsSubmitting(false);
 
-      // Reset form and close modal
       setName('');
       setSelectedCollection('');
       onClose();
 
-      // Redirect to timetable detail page
       if (result && result.id) {
         history.push(`/exam-timetables/${result.id}`);
       }
@@ -96,7 +92,6 @@ const AddTimetableModal = ({ open, onClose, planId, onCreateTimetable }) => {
     onClose();
   };
 
-  // Find the selected collection object
   const selectedCollectionData = sessionCollections.find(
     collection => collection.id === selectedCollection
   );
@@ -145,7 +140,7 @@ const AddTimetableModal = ({ open, onClose, planId, onCreateTimetable }) => {
           sx={{ mt: 2, mb: 2 }}
         />
 
-        <FormControl fullWidth error={!!collectionError} sx={{ mb: 2 }}>
+        {/* <FormControl fullWidth error={!!collectionError} sx={{ mb: 2 }}>
           <InputLabel id="session-collection-label">Bộ ca thi</InputLabel>
           <Select
             labelId="session-collection-label"
@@ -161,12 +156,12 @@ const AddTimetableModal = ({ open, onClose, planId, onCreateTimetable }) => {
             ))}
           </Select>
           {collectionError && <FormHelperText>{collectionError}</FormHelperText>}
-        </FormControl>
+        </FormControl> */}
 
         {selectedCollectionData && (
           <Box sx={{ mt: 2, bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Danh sách ca thi trong bộ <strong>{selectedCollectionData.name}</strong>:
+              Danh sách ca thi:
             </Typography>
             <Divider sx={{ mb: 1 }} />
             
