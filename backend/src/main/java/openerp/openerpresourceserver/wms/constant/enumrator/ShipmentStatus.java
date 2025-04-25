@@ -5,6 +5,7 @@ public enum ShipmentStatus {
     PENDING,
     EXPORTED,
     SHIPPED,
+    PARTIALLY_DELIVERED,
     DELIVERED,
     CANCELLED,
     IMPORTED,

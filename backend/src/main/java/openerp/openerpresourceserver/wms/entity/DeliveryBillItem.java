@@ -1,17 +1,22 @@
 package openerp.openerpresourceserver.wms.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "wms2_delivery_bill_item")
-public class DeliveryBillItem {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class DeliveryBillItem extends BaseEntity{
     @Id
     private String id;
 
-    @Column(name = "delivery_bill_id", length = 40)
-    private String deliveryBillId;
+    @ManyToOne
+    @JoinColumn(name = "delivery_bill_id")
+    private DeliveryBill deliveryBill;
 
     @Column(name = "delivery_bill_item_seq_id", length = 10)
     private String deliveryBillItemSeqId;
