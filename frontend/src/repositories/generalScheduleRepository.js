@@ -113,7 +113,7 @@ export const generalScheduleRepository = {
     }
   },
 
-  updateTimeSlot: async (semester, saveRequest, errorCallback) => {
+  updateTimeSlot: async (semester, versionId, saveRequest, errorCallback) => {
     try {
       const response = await request(
         "post",

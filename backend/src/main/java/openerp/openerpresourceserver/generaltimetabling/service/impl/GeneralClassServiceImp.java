@@ -601,14 +601,16 @@ public class GeneralClassServiceImp implements GeneralClassService {
             }
         }
 
-        List<ModelResponseTimeTablingClass> foundClasses = timeTablingClassService.getTimeTablingClassDtos(classIds);
+        List<ModelResponseTimeTablingClass> foundClasses = timeTablingClassService.getTimeTablingClassDtos(classIds,versionId);
 
         log.info("autoScheduleTimeSlotRoom, nb general classes = " + foundClasses.size());
         List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(semester);
         List<Long> ids = allClassesOfSemester.stream().map(gc -> gc.getId()).toList();
         //List<GeneralClass> autoScheduleClasses = V2ClassScheduler.autoScheduleTimeSlot(foundClasses, timeLimit);
 
-        List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByClassIdIn(ids);
+        //List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByClassIdIn(ids);
+        List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByVersionIdAndClassIdIn(versionId,ids);
+
         //List<RoomReservation> roomReservationsOfSemester = roomReservationRepo.findAllByGeneralClassIn(allClassesOfSemester);
 
         //for(RoomReservation rr: roomReservationsOfSemester){

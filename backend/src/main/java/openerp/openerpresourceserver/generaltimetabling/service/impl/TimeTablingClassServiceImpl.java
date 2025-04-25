@@ -326,13 +326,13 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds) {
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds, Long versionId) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
         log.info("getTimeTablingClassDtos(List<Long>), classIds.size = " + classIds.size() + " found classes = " + cls.size());
-        return getDetailTimeTablingClassesFrom(cls);
+        return getDetailTimeTablingClassesFrom(cls,versionId);
     }
 
-    private List<ModelResponseTimeTablingClass> getDetailTimeTablingClassesFrom(List<TimeTablingClass> cls){
+    private List<ModelResponseTimeTablingClass> getDetailTimeTablingClassesFrom(List<TimeTablingClass> cls, Long versionId){
         Map<Long, List<Long>> mClassId2GroupIds = new HashMap<>();
         List<Long> classIds = cls.stream().map(c -> c.getId()).toList();
         List<ClassGroup> CG = classGroupRepo.findAllByClassIdIn(classIds);
@@ -355,7 +355,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 mClassId2GroupNames.get(c.getId()).add(gname);
             }
         }
-        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        //List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByVersionIdAndClassIdIn(versionId, classIds);
+
         Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
         for(TimeTablingClassSegment cs: classSegments){
             if(mClassId2ClassSegments.get(cs.getClassId())==null)
@@ -393,19 +395,19 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     @Override
     public List<ModelResponseTimeTablingClass> findAll() {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
-        return getDetailTimeTablingClassesFrom(cls);
+        return getDetailTimeTablingClassesFrom(cls,null);
     }
 
     @Override
     public List<ModelResponseTimeTablingClass> findAllBySemester(String semester) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(semester);
-        return getDetailTimeTablingClassesFrom(cls);
+        return getDetailTimeTablingClassesFrom(cls,null);
     }
 
     @Override
     public List<ModelResponseTimeTablingClass> findAllByClassIdIn(List<Long> classIds) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllByIdIn(classIds);
-        List<ModelResponseTimeTablingClass> res = getDetailTimeTablingClassesFrom(cls);
+        List<ModelResponseTimeTablingClass> res = getDetailTimeTablingClassesFrom(cls,null);
         return res;
     }
 
@@ -480,7 +482,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     @Override
     public List<ModelResponseTimeTablingClass> getSubClass(Long id) {
         List<TimeTablingClass> L = timeTablingClassRepo.findAllByParentClassId(id);
-        List<ModelResponseTimeTablingClass> res = getDetailTimeTablingClassesFrom(L);
+        List<ModelResponseTimeTablingClass> res = getDetailTimeTablingClassesFrom(L,null);
         return res;
     }
 
@@ -681,8 +683,13 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             if(cls == null) return false;
             List<Integer> weeks = cls.extractLearningWeeks();
             List<ModelResponseTimeTablingClass> allClasses = findAllBySemester(semester);
+            Long versionId = ttcs.getVersionId();
+            //List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo
+            //        .findAllBySemesterAndRoomNotNull(semester);
+
             List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo
-                    .findAllBySemesterAndRoomNotNull(semester);
+                    .findAllByVersionIdAndSemesterAndRoomNotNull(versionId,semester);
+
             log.info("updateTimeTableClassSegment, get scheduled class segments size = " + classSegments.size());
             for(ModelResponseTimeTablingClass c: allClasses){
                 List<Integer> LW = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());

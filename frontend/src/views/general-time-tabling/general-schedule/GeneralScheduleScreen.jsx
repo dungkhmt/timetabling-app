@@ -23,6 +23,9 @@ import {
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { Clear, ArrowBack, Save } from "@mui/icons-material";
 import {toast} from "react-toastify";
+import { request } from "api";
+
+
 const GeneralScheduleScreen = () => {
   const { states, setters, handlers } = useGeneralSchedule();
   const [viewTab, setViewTab] = useState(0);
@@ -37,6 +40,10 @@ const GeneralScheduleScreen = () => {
   const [openNewVersionDialog, setOpenNewVersionDialog] = useState(false);
   const [newVersionName, setNewVersionName] = useState("");
   const [newVersionStatus, setNewVersionStatus] = useState("DRAFT");
+
+  const[isDeletingBySemester, setIsDeletingBySemester] = useState(false);
+  const[isCreateBySemester, setIsCreateBySemester] = useState(false);
+  
 
   const days = [2, 3, 4, 5, 6, 7, 8];
 
@@ -133,6 +140,34 @@ const GeneralScheduleScreen = () => {
 
   const displayClasses = selectedCluster ? filteredClasses : states.classes;
   
+  /*
+    function handleRemoveSegment(){
+      let body = {
+        semester: selectedSemester.semester
+      };
+  
+      request(
+        "post",
+        "/general-classes/remove-class-segments",
+        (res) => {
+          console.log('create class-segments returned ',res.data);
+          // Clear selection after operation completes
+          setSelectedIds([]);
+          setSelectedRows([]);
+        },
+        {
+          onError: (e) => {
+            // Still clear selection even if there's an error
+            setSelectedIds([]);
+            setSelectedRows([]);
+          }
+        },
+        body
+      );
+    }
+    
+  */
+
   // Handle saving the current schedule as a new version
   const handleSaveVersion = async () => {
     if (!newVersionName) {
@@ -453,6 +488,34 @@ const GeneralScheduleScreen = () => {
                     </div>
                   ) : null}
   
+                <Button
+                  //startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                  sx={{ 
+                    minWidth: '120px',
+                    textTransform: 'none',
+                    fontSize: '14px'
+                  }}
+                  //disabled={isDeletingBySemester || !selectedSemester}
+                  //onClick={handleRemoveSegment}
+                  variant="contained"
+                  color="secondary"
+                >
+                  Tạo ca học
+                </Button>
+                <Button
+                  //startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                  sx={{ 
+                    minWidth: '120px',
+                    textTransform: 'none',
+                    fontSize: '14px'
+                  }}
+                  //disabled={isDeletingBySemester || !selectedSemester}
+                  //onClick={handleRemoveSegment}
+                  variant="contained"
+                  color="secondary"
+                >
+                  Xóa ca học
+                </Button>
                   <Button
                     disabled={
                       states.selectedSemester === null ||

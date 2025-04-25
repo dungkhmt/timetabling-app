@@ -42,6 +42,7 @@ const GeneralUploadScreen = () => {
     }
   } = useGeneralSchedule();
 
+  
   function handleCreateSegment(){
     let body = {
       semester: selectedSemester.semester
@@ -64,6 +65,7 @@ const GeneralUploadScreen = () => {
       body
     );
   }
+    
   function handleCreateSegmentForSummer(){
     let body = {
       semester: selectedSemester.semester

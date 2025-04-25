@@ -20,7 +20,7 @@ public interface TimeTablingClassService {
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId);
 
-    List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds);
+    List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds, Long versionId);
 
     List<ModelResponseTimeTablingClass> findAll();
 
