@@ -356,7 +356,7 @@ const GeneralUploadScreen = () => {
               >
                 Phân cụm
               </Button>
-              <Button
+              {/* <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
                   minWidth: '120px',
@@ -383,7 +383,7 @@ const GeneralUploadScreen = () => {
                 color="info"
               >
                 Tạo ca học
-              </Button>
+              </Button> */}
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 

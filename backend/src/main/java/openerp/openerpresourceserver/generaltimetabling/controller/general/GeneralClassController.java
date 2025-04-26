@@ -282,23 +282,4 @@ public class GeneralClassController {
         timeTablingClassService.createClassSegmentForSummerSemester(I);
         return ResponseEntity.ok().body(res);
     }
-
-   @PostMapping("/save-schedule-to-version")
-   public ResponseEntity<?> saveScheduleToVersion(
-           @RequestParam("semester") String semester,
-           @RequestParam("versionId") Long versionId
-    ) {
-       log.info("saveScheduleToVersion, semester = " + semester + ", versionId = " + versionId);
-       try {
-           List<TimeTablingClassSegment> savedSegments = timeTablingClassService.saveScheduleToVersion(semester, versionId);
-           return ResponseEntity.ok().body(Map.of(
-               "savedCount", savedSegments.size(),
-               "message", "Đã lưu thành công " + savedSegments.size() + " ca học vào phiên bản."
-           ));
-       } catch (Exception e) {
-           log.error("Error saving schedule to version", e);
-           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-               .body(Map.of("message", e.getMessage()));
-       }
-   }
 }

@@ -113,12 +113,10 @@ const GeneralScheduleScreen = () => {
   };
 
   const handleAutoScheduleSelectedWithClear = async () => {
-    // Lấy versionId từ version hiện tại nếu có
     const currentVersionId = selectedVersion?.id;
     
     console.log("Xếp lịch với version_id:", currentVersionId);
     
-    // Gọi hàm xếp lịch và truyền versionId
     await handlers.handleAutoScheduleSelected(currentVersionId);
     setters.setSelectedRows([]);
   };

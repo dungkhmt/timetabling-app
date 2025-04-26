@@ -47,6 +47,4 @@ public interface TimeTablingClassService {
     public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId);
 
     public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests);
-    
-    public List<TimeTablingClassSegment> saveScheduleToVersion(String semester, Long versionId);
 }

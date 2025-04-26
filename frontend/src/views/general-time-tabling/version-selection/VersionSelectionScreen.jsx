@@ -43,7 +43,6 @@ import {
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import { toast } from "react-toastify";
 import { timeTablingVersionRepository } from "repositories/timeTablingVersionRepository";
-import { useGeneralSchedule } from "services/useGeneralScheduleData"; // Import hook
 
 const VersionSelectionScreen = ({
   selectedSemester,
@@ -75,8 +74,6 @@ const VersionSelectionScreen = ({
   const [editVersionDialog, setEditVersionDialog] = useState(false);
   const [editVersionData, setEditVersionData] = useState({ id: null, name: "", status: "" });
 
-  const { handlers: saveScheduleToVersion } = useGeneralSchedule();
-
   useEffect(() => {
     setSearchNameInput(searchName);
   }, [searchName]);
@@ -85,7 +82,6 @@ const VersionSelectionScreen = ({
     const value = e.target.value;
     setSearchNameInput(value);
     
-    // Clear previous timeout
     if (typingTimeout) {
       clearTimeout(typingTimeout);
     }
@@ -128,12 +124,10 @@ const VersionSelectionScreen = ({
         setNewVersionStatus("DRAFT");
         
         if (onCreateSuccess) {
-          console.log("Refreshing versions list after creation");
           onCreateSuccess(createdVersion);
         }
         
         if (handleVersionSelect) {
-          console.log("Auto-selecting newly created version:", createdVersion);
           handleVersionSelect(createdVersion);
         }
       }
@@ -259,24 +253,19 @@ const VersionSelectionScreen = ({
 
   return (
     <Container maxWidth="xl">
-      <Box sx={{ 
-        py: 4, 
-        display: 'flex', 
-        flexDirection: 'column',
-        height: '100%'
-      }}>
+      <Box sx={{ py: 3, height: '100%' }}>
+        {/* Header Section */}
         <Paper 
-          elevation={0} 
+          elevation={2} 
           sx={{ 
-            p: 3, 
+            p: 2.5, 
             mb: 3, 
             borderRadius: 2,
-            background: theme.palette.background.paper,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
+            boxShadow: '0 0 15px rgba(0,0,0,0.05)'
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
               Quản lý phiên bản thời khóa biểu
             </Typography>
             <Button
@@ -285,19 +274,20 @@ const VersionSelectionScreen = ({
               startIcon={<Add />}
               onClick={() => setOpenNewVersionDialog(true)}
               sx={{ 
-                px: 3,
-                py: 1,
-                borderRadius: 2,
+                px: 2.5,
+                py: 0.8,
+                borderRadius: 1.5,
                 textTransform: 'none',
-                fontWeight: 600
+                fontWeight: 500
               }}
             >
               Tạo phiên bản mới
             </Button>
           </Box>
           
+          {/* Filter Section */}
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} sm={6} md={4} lg={3}>
               <GeneralSemesterAutoComplete
                 selectedSemester={selectedSemester}
                 setSelectedSemester={setSelectedSemester}
@@ -306,18 +296,18 @@ const VersionSelectionScreen = ({
                 size="small"
               />
             </Grid>
-            <Grid item xs={12} md={7}>
+            <Grid item xs={12} sm={6} md={7} lg={8}>
               <TextField
                 fullWidth
                 variant="outlined"
                 size="small"
-                placeholder="Tìm kiếm phiên bản..."
+                placeholder="Tìm kiếm theo tên phiên bản..."
                 value={searchNameInput}
                 onChange={handleSearchInputChange}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search />
+                      <Search color="action" />
                     </InputAdornment>
                   ),
                   endAdornment: searchNameInput && (
@@ -328,25 +318,28 @@ const VersionSelectionScreen = ({
                     </InputAdornment>
                   ),
                 }}
-                sx={{ backgroundColor: '#f5f5f5', borderRadius: 1 }}
+                sx={{ backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: 1 }}
               />
             </Grid>
-            <Grid item xs={12} md={1}>
+            <Grid item xs={12} sm={12} md={1} lg={1}>
               <Tooltip title="Xóa bộ lọc">
-                <Button 
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleResetFilters}
-                  disabled={!selectedSemester && !searchNameInput}
-                  fullWidth
-                  sx={{ height: '40px' }}
-                >
-                  <FilterAlt />
-                </Button>
+                <span>
+                  <Button 
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleResetFilters}
+                    disabled={!selectedSemester && !searchNameInput}
+                    fullWidth
+                    sx={{ height: '40px' }}
+                  >
+                    <FilterAlt />
+                  </Button>
+                </span>
               </Tooltip>
             </Grid>
           </Grid>
           
+          {/* Active Filters */}
           {(selectedSemester || searchNameInput) && (
             <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {selectedSemester && (
@@ -354,26 +347,28 @@ const VersionSelectionScreen = ({
                   label={`Học kỳ: ${selectedSemester.semester}`}
                   onDelete={() => setSelectedSemester(null)}
                   color="primary"
-                  variant="outlined"
                 />
               )}
               {searchNameInput && (
                 <Chip 
-                  label={`Tìm kiếm: ${searchNameInput}`}
+                  label={`Tên phiên bản: ${searchNameInput}`}
                   onDelete={handleClearSearch}
                   color="primary"
-                  variant="outlined"
                 />
               )}
             </Box>
           )}
         </Paper>
 
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8, flexGrow: 1 }}>
+        {/* Content Section - Loading */}
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
             <CircularProgress />
           </Box>
-        ) : versions.length === 0 ? (
+        )}
+
+        {/* Content Section - Empty State */}
+        {!isLoading && versions.length === 0 && (
           <Paper 
             elevation={0} 
             sx={{ 
@@ -381,131 +376,202 @@ const VersionSelectionScreen = ({
               flexDirection: 'column', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              py: 8,
+              py: 10,
               borderRadius: 2,
-              backgroundColor: 'rgba(0,0,0,0.02)',
-              border: '1px dashed rgba(0,0,0,0.15)',
-              flexGrow: 1
+              backgroundColor: 'rgba(0,0,0,0.01)',
+              border: '1px dashed rgba(0,0,0,0.1)',
             }}
           >
-            <CalendarMonth sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" align="center">
+            <CalendarMonth sx={{ fontSize: 70, color: 'text.disabled', mb: 2, opacity: 0.4 }} />
+            <Typography variant="h6" color="text.secondary" align="center" sx={{ maxWidth: 600, px: 2 }}>
               {selectedSemester || searchNameInput 
                 ? `Không tìm thấy phiên bản thời khóa biểu nào ${selectedSemester ? 'cho kỳ học ' + selectedSemester.semester : ''} ${searchNameInput ? 'với từ khóa "' + searchNameInput + '"' : ''}.` 
-                : "Vui lòng chọn học kỳ hoặc nhập từ khóa để tìm kiếm phiên bản thời khóa biểu."}
+                : "Chọn học kỳ hoặc nhập từ khóa để tìm kiếm phiên bản thời khóa biểu."}
             </Typography>
-
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              startIcon={<Add />}
+              onClick={() => setOpenNewVersionDialog(true)}
+              sx={{ mt: 3, textTransform: 'none' }}
+            >
+              Tạo phiên bản mới
+            </Button>
           </Paper>
-        ) : (
-          <Box sx={{ flexGrow: 1 }}>
-            <Grid container spacing={3}>
-              {versions.map((version) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={version.id}>
-                  <Card 
-                    sx={{ 
-                      borderRadius: 2, 
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
-                      }
-                    }}
-                    onClick={() => handleVersionSelect(version)}
-                  >
-                    <CardHeader
-                      avatar={
-                        <Avatar 
-                          sx={{ 
-                            bgcolor: getStatusColor(version.status) + '.main',
-                            width: 40,
-                            height: 40
-                          }}
-                        >
-                          {getStatusIcon(version.status)}
-                        </Avatar>
-                      }
-                      action={
-                        <Tooltip title="Xem thêm tùy chọn">
-                          <IconButton aria-label="settings" onClick={(e) => handleOpenMenu(e, version)}>
-                            <MoreVert />
-                          </IconButton>
-                        </Tooltip>
-                      }
-                      title={
-                        <Typography variant="h6" noWrap sx={{ fontWeight: 600 }}>
-                          {version.name}
-                        </Typography>
-                      }
-                      subheader={
-                        <Chip 
-                          label={getStatusLabel(version.status)}
-                          color={getStatusColor(version.status)}
-                          size="small"
-                          icon={getStatusIcon(version.status)}
-                          sx={{ mt: 0.5 }}
-                        />
-                      }
-                    />
-                    
-                    <CardContent sx={{ pt: 0, flexGrow: 1 }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        mt: 2,
-                        color: 'text.secondary'
-                      }}>
-                        <School fontSize="small" sx={{ mr: 1 }} />
-                        <Typography variant="body2" noWrap>
-                          Học kỳ: <b>{version.semester || "Chưa xác định"}</b>
-                        </Typography>
-                      </Box>
-                      
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        mt: 1,
-                        color: 'text.secondary'
-                      }}>
-                        <AccessTime fontSize="small" sx={{ mr: 1 }} />
-                        <Typography variant="body2">
-                          {new Date(version.createdStamp).toLocaleDateString('vi-VN', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                    
-                    <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
-                      <Button 
-                        size="small" 
-                        variant="contained" 
-                        color="primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVersionSelect(version);
-                        }}
+        )}
+
+        {/* Content Section - Version Cards */}
+        {!isLoading && versions.length > 0 && (
+          <Grid container spacing={2.5}>
+            {versions.map((version) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={version.id}>
+                <Card 
+                  sx={{ 
+                    borderRadius: 2, 
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    border: `1px solid ${theme.palette.divider}`,
+                    overflow: 'hidden', // Add this to prevent content overflow
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                      borderColor: theme.palette.primary.light
+                    }
+                  }}
+                  onClick={() => handleVersionSelect(version)}
+                  elevation={1}
+                >
+                  <CardHeader
+                    avatar={
+                      <Avatar 
                         sx={{ 
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          borderRadius: 1.5
+                          bgcolor: getStatusColor(version.status) + '.main',
+                          width: 36, // Reduced from 40px
+                          height: 36, // Reduced from 40px
+                          fontSize: '1rem' // Smaller icon size
                         }}
                       >
-                        Chọn
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
+                        {getStatusIcon(version.status)}
+                      </Avatar>
+                    }
+                    action={
+                      <IconButton 
+                        aria-label="settings" 
+                        onClick={(e) => handleOpenMenu(e, version)}
+                        size="small"
+                        sx={{ padding: '4px' }} // Smaller padding
+                      >
+                        <MoreVert fontSize="small" />
+                      </IconButton>
+                    }
+                    title={
+                      <Tooltip title={version.name} placement="top">
+                        <Typography 
+                          variant="subtitle1" 
+                          sx={{ 
+                            fontWeight: 600,
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '210px'  // Increased from 180px
+                          }}
+                        >
+                          {version.name}
+                        </Typography>
+                      </Tooltip>
+                    }
+                    subheader={
+                      <Chip 
+                        label={getStatusLabel(version.status)}
+                        color={getStatusColor(version.status)}
+                        size="small"
+                        icon={getStatusIcon(version.status)}
+                        sx={{ 
+                          mt: 0.5, 
+                          height: 22, // Smaller chip height
+                          '& .MuiChip-label': { 
+                            px: 1, 
+                            fontSize: '0.7rem' // Smaller font
+                          },
+                          '& .MuiChip-icon': {
+                            fontSize: '0.85rem' // Smaller icon
+                          }
+                        }}
+                      />
+                    }
+                    sx={{ 
+                      pb: 0,
+                      px: 1.5, // Reduced horizontal padding
+                      '& .MuiCardHeader-content': { 
+                        overflow: 'hidden', 
+                        minWidth: 0,
+                        mr: 1 // Make sure there's margin between content and action
+                      },
+                      '& .MuiCardHeader-action': {
+                        marginRight: 0,
+                        marginTop: 0
+                      },
+                      '& .MuiCardHeader-avatar': {
+                        marginRight: 1.5 // Reduced margin
+                      }
+                    }}
+                  />
+                  
+                  <CardContent sx={{ pt: 1, pb: 1, flexGrow: 1 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mt: 1.5,
+                      color: 'text.secondary'
+                    }}>
+                      <School fontSize="small" sx={{ mr: 1, color: theme.palette.primary.main, opacity: 0.7, flexShrink: 0 }} />
+                      <Tooltip title={version.semester || "Chưa xác định"}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {version.semester || "Chưa xác định"}
+                        </Typography>
+                      </Tooltip>
+                    </Box>
+                    
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mt: 1,
+                      color: 'text.secondary',
+                      fontSize: '0.85rem'
+                    }}>
+                      <AccessTime fontSize="small" sx={{ mr: 1, opacity: 0.6, flexShrink: 0 }} />
+                      <Typography 
+                        variant="caption"
+                        sx={{ 
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {new Date(version.createdStamp).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                  
+                  <CardActions sx={{ justifyContent: 'flex-end', p: 1.5, pt: 0 }}>
+                    <Button 
+                      size="small" 
+                      variant="contained" 
+                      color="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVersionSelect(version);
+                      }}
+                      sx={{ 
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        borderRadius: 1.5,
+                        px: 2
+                      }}
+                    >
+                      Chọn
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
         )}
       </Box>
 
@@ -514,14 +580,23 @@ const VersionSelectionScreen = ({
         anchorEl={menuAnchorEl}
         open={Boolean(menuAnchorEl)}
         onClose={handleCloseMenu}
+        elevation={2}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
       >
-        <MenuItem onClick={handleConfirmDeleteOpen}>
-          <Delete fontSize="small" sx={{ mr: 1 }} />
-          Xóa phiên bản
-        </MenuItem>
         <MenuItem onClick={handleEditDialogOpen}>
-          <Edit fontSize="small" sx={{ mr: 1 }} />
+          <Edit fontSize="small" sx={{ mr: 1.5, color: theme.palette.primary.main }} />
           Chỉnh sửa
+        </MenuItem>
+        <MenuItem onClick={handleConfirmDeleteOpen}>
+          <Delete fontSize="small" sx={{ mr: 1.5, color: theme.palette.error.main }} />
+          Xóa phiên bản
         </MenuItem>
       </Menu>
 
@@ -538,7 +613,7 @@ const VersionSelectionScreen = ({
             Bạn có chắc chắn muốn xóa phiên bản "{selectedVersionForMenu?.name}"? Hành động này không thể hoàn tác.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, pt: 1 }}>
           <Button onClick={handleConfirmDeleteClose} variant="outlined">
             Hủy
           </Button>
@@ -547,9 +622,9 @@ const VersionSelectionScreen = ({
             variant="contained"
             color="error"
             disabled={isDeleting}
-            startIcon={isDeleting && <CircularProgress size={20} />}
+            startIcon={isDeleting && <CircularProgress size={20} color="inherit" />}
           >
-            Xóa
+            {isDeleting ? "Đang xóa..." : "Xóa"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -574,7 +649,7 @@ const VersionSelectionScreen = ({
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
               zIndex: 1,
               borderRadius: 1
             }}>
@@ -610,16 +685,24 @@ const VersionSelectionScreen = ({
               value={newVersionStatus}
               onChange={(e) => setNewVersionStatus(e.target.value)}
               disabled={isCreating}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 200 }
+                  }
+                }
+              }}
             >
               <MenuItem value="DRAFT">Bản nháp</MenuItem>
               <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
             </TextField>
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, pt: 1 }}>
           <Button 
             onClick={() => setOpenNewVersionDialog(false)}
             disabled={isCreating}
+            variant="outlined"
           >
             Hủy
           </Button>
@@ -627,9 +710,9 @@ const VersionSelectionScreen = ({
             onClick={handleCreateVersion} 
             variant="contained" 
             disabled={isCreating || !newVersionName || !selectedSemester}
-            startIcon={isCreating ? <CircularProgress size={20} /> : null}
+            startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            {isCreating ? 'Đang tạo...' : 'Tạo'}
+            {isCreating ? 'Đang tạo...' : 'Tạo phiên bản'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -654,7 +737,7 @@ const VersionSelectionScreen = ({
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
               zIndex: 1,
               borderRadius: 1
             }}>
@@ -681,16 +764,24 @@ const VersionSelectionScreen = ({
               value={editVersionData.status}
               onChange={(e) => setEditVersionData({...editVersionData, status: e.target.value})}
               disabled={isEditing}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 200 }
+                  }
+                }
+              }}
             >
               <MenuItem value="DRAFT">Bản nháp</MenuItem>
               <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
             </TextField>
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, pt: 1 }}>
           <Button 
             onClick={() => setEditVersionDialog(false)} 
             disabled={isEditing}
+            variant="outlined"
           >
             Hủy
           </Button>
@@ -698,9 +789,9 @@ const VersionSelectionScreen = ({
             onClick={handleUpdateVersion} 
             variant="contained"
             disabled={isEditing || !editVersionData.name}
-            startIcon={isEditing ? <CircularProgress size={20} /> : null}
+            startIcon={isEditing ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            {isEditing ? 'Đang cập nhật...' : 'Lưu'}
+            {isEditing ? 'Đang cập nhật...' : 'Lưu thay đổi'}
           </Button>
         </DialogActions>
       </Dialog>

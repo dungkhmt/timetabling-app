@@ -726,46 +726,4 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         return true;
     }
-
-    @Override
-    @Transactional
-    public List<TimeTablingClassSegment> saveScheduleToVersion(String semester, Long versionId) {
-        log.info("saveScheduleToVersion, semester = " + semester + ", versionId = " + versionId);
-        
-        List<TimeTablingClass> classes = timeTablingClassRepo.findAllBySemester(semester);
-        List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
-        
-        List<TimeTablingClassSegment> sourceSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionIdIsNull(classIds);
-        log.info("saveScheduleToVersion: Tìm thấy " + sourceSegments.size() + " segments gốc với version_id = null");
-        
-        List<TimeTablingClassSegment> savedSegments = new ArrayList<>();
-        
-        for (TimeTablingClassSegment originalSegment : sourceSegments) {
-            TimeTablingClassSegment versionSegment = new TimeTablingClassSegment();
-            versionSegment.setClassId(originalSegment.getClassId());
-            versionSegment.setCrew(originalSegment.getCrew());
-            versionSegment.setDuration(originalSegment.getDuration());
-            versionSegment.setParentId(originalSegment.getParentId());
-            
-            versionSegment.setRoom(originalSegment.getRoom());
-            versionSegment.setStartTime(originalSegment.getStartTime());
-            versionSegment.setEndTime(originalSegment.getEndTime());
-            versionSegment.setWeekday(originalSegment.getWeekday());
-            
-            versionSegment.setVersionId(versionId);
-            
-            Long newId = timeTablingClassSegmentRepo.getNextReferenceValue();
-            versionSegment.setId(newId);
-            
-            versionSegment = timeTablingClassSegmentRepo.save(versionSegment);
-            log.info("saveScheduleToVersion: Đã tạo segment mới ID=" + versionSegment.getId() + 
-                " cho class ID=" + versionSegment.getClassId() + " với versionId=" + versionId);
-            
-            savedSegments.add(versionSegment);
-        }
-        
-        log.info("saveScheduleToVersion: Đã lưu thành công " + savedSegments.size() + " segments với versionId=" + versionId);
-        return savedSegments;
-    }
-
 }
