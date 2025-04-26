@@ -697,6 +697,11 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 int cnt = Util.intersect(weeks,LW);
                 log.info("updateTimeTableClassSegment, check CONFLICT, consider class " + c.getClassCode() + " cnt = " + cnt);
                 if(cnt >= 1){
+                    if (c.getTimeSlots() == null) {
+                        log.warn("updateTimeTableClassSegment, timeSlots is null for class " + c.getClassCode());
+                        continue;
+                    }
+                    
                     for(TimeTablingClassSegment cs: c.getTimeSlots()){
                         log.info("updateTimeTableClassSegment, check CONFLICT with class segment " + cs.getId() + " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() + " end = " + cs.getEndTime());
                         if(cs.getRoom()==null) continue;
