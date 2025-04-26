@@ -1,11 +1,15 @@
 package openerp.openerpresourceserver.examtimetabling.algorithm;
 
+import openerp.openerpresourceserver.examtimetabling.algorithm.mapdata.MapDataExamTimeTablingInput;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.AssignmentDetails;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingData;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingSolution;
 import openerp.openerpresourceserver.examtimetabling.entity.*;
 import openerp.openerpresourceserver.examtimetabling.repository.*;
 
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingRoomRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class ExamTimetablingService {
+
+    @Autowired
+    private ClassroomRepo classroomRepo;
 
     @Autowired
     private ExamClassRepository examClassRepository;
@@ -59,6 +66,17 @@ public class ExamTimetablingService {
      * @param timeLimit Maximum time in minutes to run the algorithm
      * @return true if assignment is successful, false otherwise
      */
+
+    private boolean greedyAlgorithmPQD(TimetablingData data, List<String> examDates){
+        List<Classroom> rooms = classroomRepo.findAll();
+        DataMapper DM = new DataMapper();
+        MapDataExamTimeTablingInput I = DM.mapData(data,rooms,examDates);
+        GreedyAlgorithmPQD gSolverPQD = new GreedyAlgorithmPQD();
+        gSolverPQD.solve(I);
+        //I.print();
+        //for(String d: examDates) System.out.println("exam date " + d);
+        return true;
+    }
     @Transactional
     public boolean autoAssignClass(UUID examTimetableId, List<UUID> classIds, 
                                   List<String> examDates, String algorithm, Integer timeLimit) {
@@ -86,11 +104,16 @@ public class ExamTimetablingService {
                     TimetablingData data = processor.processData(examTimetableId, classIds, examDates);
                     log.info("Data processing complete. {} classes, {} time slots, {} rooms", 
                         data.getExamClasses().size(), data.getAvailableTimeSlots().size(), data.getAvailableRooms().size());
-                    
+
+                    if(algorithm.equals("Genetic Algorithm")){
+                        return greedyAlgorithmPQD(data,examDates);
+                    }
+
+
                     // Step 2: Apply algorithm
                     ExamTimetableAlgorithm timetableAlgorithm = new ExamTimetableAlgorithm();
                     TimetablingSolution solution = timetableAlgorithm.assign(data);
-                    
+
                     if (!solution.isComplete()) {
                         log.warn("Failed to find complete assignment. Assigned: {}/{}", 
                             solution.getAssignedClasses().size(), classIds.size());
