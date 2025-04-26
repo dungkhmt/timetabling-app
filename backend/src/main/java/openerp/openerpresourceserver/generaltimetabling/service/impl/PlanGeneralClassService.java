@@ -18,6 +18,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
+import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,12 @@ public class PlanGeneralClassService {
     private ClassGroupRepo classGroupRepo;
 
     @Autowired
+    TimeTablingClassService timeTablingClassService;
+
+    @Autowired
+    private TimeTablingVersionRepo timeTablingVersionRepo;
+
+    @Autowired
     private TimeTablingClassRepo timeTablingClassRepo;
     @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
@@ -52,6 +59,8 @@ public class PlanGeneralClassService {
         planGeneralClassRepository.deleteAllBySemester(semesterId);
         return 0;
     }
+
+    @Transactional
     //public void makeClass(MakeGeneralClassRequest request, String groupName) {
     public void makeClass(MakeGeneralClassRequest request, Long groupId) {
         log.info("makeClass, groupId = " + groupId);
@@ -171,13 +180,20 @@ public class PlanGeneralClassService {
         log.info("makeClass -> SAVE classId " + cls.getId() + " groupId " + groupId);
 
         // create corresponding class-segment
-        TimeTablingClassSegment cs = new TimeTablingClassSegment();
-        Long csId = timeTablingClassSegmentRepo.getNextReferenceValue();
-        cs.setId(csId);
-        cs.setClassId(cls.getId());
-        cs.setCrew(cls.getCrew());
-        cs.setDuration(cls.getDuration());
-        cs  = timeTablingClassSegmentRepo.save(cs);
+        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAll();
+        for(TimeTablingTimeTableVersion v: versions) {
+            TimeTablingClassSegment cs = timeTablingClassService.createClassSegment(cls.getId(),cls.getCrew(),cls.getDuration(),v.getId());
+            /*
+            TimeTablingClassSegment cs = new TimeTablingClassSegment();
+            Long csId = timeTablingClassSegmentRepo.getNextReferenceValue();
+            cs.setId(csId);
+            cs.setClassId(cls.getId());
+            cs.setCrew(cls.getCrew());
+            cs.setDuration(cls.getDuration());
+            cs.setVersionId(v.getId());
+            cs = timeTablingClassSegmentRepo.save(cs);
+            */
+        }
 
     }
 

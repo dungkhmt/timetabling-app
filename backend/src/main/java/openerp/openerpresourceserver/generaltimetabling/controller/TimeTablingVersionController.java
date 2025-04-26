@@ -2,8 +2,11 @@ package openerp.openerpresourceserver.generaltimetabling.controller;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingVersionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +21,9 @@ import java.util.Map;
 public class TimeTablingVersionController {
 
     private final TimeTablingVersionService timeTablingVersionService;
+    @Autowired
+    private TimeTablingClassService timeTablingClassService;
+
 
     @PostMapping("/create")
     public ResponseEntity<TimeTablingTimeTableVersion> createVersion(@RequestBody Map<String, String> payload) {

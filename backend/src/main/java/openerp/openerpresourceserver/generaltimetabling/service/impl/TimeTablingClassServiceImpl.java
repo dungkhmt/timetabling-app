@@ -692,6 +692,25 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     .findAllByVersionIdAndSemesterAndRoomNotNull(versionId,semester);
 
             log.info("updateTimeTableClassSegment, get scheduled class segments size = " + classSegments.size());
+            for(TimeTablingClassSegment cs: classSegments){
+                log.info("updateTimeTableClassSegment, check CONFLICT with class segment " + cs.getId() + " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() + " end = " + cs.getEndTime());
+                if(cs.getRoom()==null) continue;
+                if(!cs.getCrew().equals(ttcs.getCrew())) continue;
+                if(cs.getWeekday() != r.getWeekday()) continue;
+                boolean overLap = Util.overLap(r.getStartTime(),r.getEndTime()-r.getStartTime()+1,cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1);
+                log.info("updateTimeTableClassSegment, check CONFLICT with class segment " + cs.getId() +
+                        " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() +
+                        " end = " + cs.getEndTime() + " overLap = " + overLap);
+
+                if(overLap){
+                    if(cs.getRoom().equals(r.getRoom())){
+                        String msg = "Conflict room " + cs.getRoom() + " scheduled for class " + cs.getClassId();
+                        log.info("updateTimeTableClassSegment, DETECT Conflict room, msg = " + msg);
+                        throw new ConflictScheduleException(msg);
+                    }
+                }
+            }
+            /*
             for(ModelResponseTimeTablingClass c: allClasses){
                 List<Integer> LW = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());
                 int cnt = Util.intersect(weeks,LW);
@@ -722,7 +741,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     }
                 }
             }
-
+            */
             ttcs.setStartTime(r.getStartTime());
             ttcs.setEndTime(r.getEndTime());
             ttcs.setWeekday(r.getWeekday());
@@ -730,5 +749,18 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             ttcs = timeTablingClassSegmentRepo.save(ttcs);
         }
         return true;
+    }
+
+    @Override
+    public TimeTablingClassSegment createClassSegment(Long classId, String crew, Integer duration, Long versionId) {
+        TimeTablingClassSegment cs = new TimeTablingClassSegment();
+        Long csId = timeTablingClassSegmentRepo.getNextReferenceValue();
+        cs.setId(csId);
+        cs.setClassId(classId);
+        cs.setCrew(crew);
+        cs.setDuration(duration);
+        cs.setVersionId(versionId);
+        cs = timeTablingClassSegmentRepo.save(cs);
+        return cs;
     }
 }
