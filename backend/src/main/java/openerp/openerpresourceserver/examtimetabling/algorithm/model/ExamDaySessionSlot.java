@@ -20,6 +20,9 @@ public class ExamDaySessionSlot {
         else session = 1;
         this.slot = slot;
     }
+    public String toString(){
+        return day + "-" + session + "-" + slot;
+    }
 
     public int hash(){
         return (day)*(Constant.examAfternoonSlots+Constant.examMorningSlots) + slot;

@@ -73,6 +73,7 @@ public class ExamTimetablingService {
         MapDataExamTimeTablingInput I = DM.mapData(data,rooms,examDates);
         GreedyAlgorithmPQD gSolverPQD = new GreedyAlgorithmPQD();
         gSolverPQD.solve(I);
+        gSolverPQD.printSolution();
         //I.print();
         //for(String d: examDates) System.out.println("exam date " + d);
         return true;

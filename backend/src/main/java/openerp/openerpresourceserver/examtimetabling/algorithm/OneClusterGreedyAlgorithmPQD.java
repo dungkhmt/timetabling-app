@@ -31,8 +31,8 @@ public class OneClusterGreedyAlgorithmPQD implements ExamTimeTablingSolver{
     private int distance2ScheduledCourses(int startslot, int len){
         int minD = 10000000;
         for(MapDataExamClass c: I.getClasses()){
-            if(solutionMapSlot.get(c) != null){
-                int sl = solutionMapSlot.get(c);
+            if(solutionMapSlot.get(c.getId()) != null){
+                int sl = solutionMapSlot.get(c.getId());
                 for(int j = 0; j < len; j++){
                     int slot = startslot + j;
                     if(Math.abs(sl-slot) < minD) minD = Math.abs(sl-slot);
@@ -45,11 +45,19 @@ public class OneClusterGreedyAlgorithmPQD implements ExamTimeTablingSolver{
 
     private Map<MapDataExamClass, MapDataRoom> findRoomsForClassesAtSlot(int slot, List<MapDataExamClass> CLS){
         Map<MapDataExamClass,MapDataRoom> rooms = new HashMap<>();
+        Set<MapDataRoom> roomUsed = new HashSet<>();
         for(MapDataExamClass c: CLS) {
+            MapDataRoom sel_room = null;
             for (MapDataRoom r : I.getRooms()) {
-                if(!rooms.keySet().contains(r) && r.getCapacity() >= c.getNbStudents()){
-                    rooms.put(c,r); break;
+                if(!roomUsed.contains(r) && r.getCapacity() >= c.getNbStudents() &
+                !I.getMRoom2OccupiedSlots().get(r.getId()).contains(slot)){
+                    sel_room = r; break;
                 }
+            }
+            if(sel_room != null){
+                rooms.put(c,sel_room); roomUsed.add(sel_room);
+            }else{
+                return null;
             }
         }
         if(rooms.keySet().size() < CLS.size()) return null;// not feasible
@@ -74,6 +82,10 @@ public class OneClusterGreedyAlgorithmPQD implements ExamTimeTablingSolver{
                     if (maxD < dis) {
                         maxD = dis;
                         selRooms = R;
+                        //String msg = "";
+                        //for(MapDataExamClass c: selRooms.keySet()) msg = msg + " class " + c.getId() + " is assigned room " + selRooms.get(c).getId() + "; ";
+                        //System.out.println("findSlotAndRoomForCourse, consider course " + crs + " -> update maxD = " + maxD + " AND rooms assignment: " + msg);
+
                         for(MapDataExamClass c: R.keySet()){
                             selSlots.put(c,slot);
                         }
@@ -132,6 +144,11 @@ public class OneClusterGreedyAlgorithmPQD implements ExamTimeTablingSolver{
                 }
             }
         }
+        System.out.println("findSlotAndRoomForCourse, consider course " + crs + " classes = " + CLS.size() + " FOUND maxD = " + maxD);
+        //for(MapDataExamClass c: selRooms.keySet()){
+       //     int slot = selSlots.get(c);
+        //    System.out.println("findSlotAndRoomForCourse, consider course " + crs + " -> class " + c.getId() + " with room " + selRooms.get(c).getCode() + " slot " + slot);
+        //}
         if(maxD == 0) return null;// not found solution
         return new SlotRoom(selRooms,selSlots);
     }
