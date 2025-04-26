@@ -144,6 +144,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             TimeTablingClassSegment cs = new TimeTablingClassSegment();
             cs.setCrew(c.getCrew());
             cs.setDuration(c.getDuration());
+            cs.setVersionId(I.getVersionId());
             Long id = timeTablingClassSegmentRepo.getNextReferenceValue();
             cs.setId(id);
             cs.setClassId(c.getId());
@@ -415,7 +416,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     public int removeClassSegment(ModelInputCreateClassSegment I) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
         List<Long> classIds = cls.stream().map(c -> c.getId()).toList();
-        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, I.getVersionId());
         int cnt = 0;
         for(TimeTablingClassSegment cs: classSegments){
             timeTablingClassSegmentRepo.delete(cs);

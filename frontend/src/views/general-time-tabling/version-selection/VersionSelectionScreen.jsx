@@ -123,17 +123,6 @@ const VersionSelectionScreen = ({
       const createdVersion = await createVersion(versionData);
       
       if (createdVersion) {
-        try {
-          await saveScheduleToVersion.saveScheduleToVersion(
-            selectedSemester.semester,
-            createdVersion.id,
-          );
-          
-        } catch (saveError) {
-          console.error('Error saving schedule to version:', saveError);
-          toast.error("Có lỗi khi lưu lịch học vào phiên bản mới!");
-        }
-
         setOpenNewVersionDialog(false);
         setNewVersionName("");
         setNewVersionStatus("DRAFT");

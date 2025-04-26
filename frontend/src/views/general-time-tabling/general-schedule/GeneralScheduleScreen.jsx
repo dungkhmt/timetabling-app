@@ -140,83 +140,77 @@ const GeneralScheduleScreen = () => {
 
   const displayClasses = selectedCluster ? filteredClasses : states.classes;
   
-  /*
-    function handleRemoveSegment(){
-      let body = {
-        semester: selectedSemester.semester
-      };
-  
-      request(
-        "post",
-        "/general-classes/remove-class-segments",
-        (res) => {
-          console.log('create class-segments returned ',res.data);
-          // Clear selection after operation completes
-          setSelectedIds([]);
-          setSelectedRows([]);
-        },
-        {
-          onError: (e) => {
-            // Still clear selection even if there's an error
-            setSelectedIds([]);
-            setSelectedRows([]);
-          }
-        },
-        body
-      );
-    }
-    
-  */
-
-  // Handle saving the current schedule as a new version
-  const handleSaveVersion = async () => {
-    if (!newVersionName) {
-      toast.error("Vui lòng nhập tên phiên bản!");
+  function handleCreateSegment() {
+    if (!states.selectedSemester || !states.selectedSemester.semester) {
+      toast.error("Vui lòng chọn học kỳ trước khi tạo ca học");
       return;
     }
+    
+    let body = {
+      semester: states.selectedSemester.semester,
+      versionId: selectedVersion?.id || null
+    };
 
-    // Set loading state
-    // setters.setIsSaveVersionLoading(true);
-
-    try {
-      // Step 1: Create a new version
-      const versionData = {
-        name: newVersionName,
-        status: newVersionStatus,
-        semester: states.selectedSemester.semester,
-        userId: "timetablingadmin01" 
-      };
-      
-      const createdVersion = await createVersion(versionData);
-      
-      if (createdVersion) {
-        // Step 2: Save the current schedule with the new version ID
-        const saveResult = await handlers.saveScheduleToVersion(
-          states.selectedSemester.semester,
-          createdVersion.id,
-          displayClasses.filter(cls => cls.room !== null && cls.startTime !== null && cls.endTime !== null)
-        );
-        
-        if (saveResult) {
-          toast.success("Phiên bản thời khóa biểu đã được lưu thành công!");
-          
-          // Update the current selected version to the newly created one
-          setSelectedVersion(createdVersion);
-          setters.setVersionId(createdVersion.id);
-          
-          // Close dialog and reset form
-          setOpenNewVersionDialog(false);
-          setNewVersionName("");
-          setNewVersionStatus("DRAFT");
+    setIsCreateBySemester(true);
+    
+    request(
+      "post",
+      "/general-classes/create-class-segments",
+      (res) => {
+        console.log('create class-segments returned ', res.data);
+        setters.setSelectedRows([]);
+        toast.success("Đã tạo ca học thành công");
+        setTimeout(() => {
+          handlers.handleRefreshClasses();
+          setIsCreateBySemester(false);
+        }, 500);
+      },
+      {
+        onError: (e) => {
+          setters.setSelectedRows([]);
+          toast.error("Có lỗi khi tạo ca học: " + (e.response?.data || e.message));
+          setIsCreateBySemester(false);
         }
-      }
-    } catch (error) {
-      console.error("Error saving version:", error);
-      toast.error("Có lỗi khi lưu phiên bản thời khóa biểu!");
-    } finally {
-      // setters.setIsSaveVersionLoading(false);
+      },
+      body
+    );
+  }
+
+  function handleRemoveSegment() {
+    if (!states.selectedSemester || !states.selectedSemester.semester) {
+      toast.error("Vui lòng chọn học kỳ trước khi xóa ca học");
+      return;
     }
-  };
+    
+    let body = {
+      semester: states.selectedSemester.semester,
+      versionId: selectedVersion?.id || null
+    };
+
+    setIsDeletingBySemester(true);
+    
+    request(
+      "post",
+      "/general-classes/remove-class-segments",
+      (res) => {
+        console.log('remove class-segments returned ', res.data);
+        setters.setSelectedRows([]);
+        toast.success("Đã xóa ca học thành công");
+        setTimeout(() => {
+          handlers.handleRefreshClasses();
+          setIsDeletingBySemester(false);
+        }, 500);
+      },
+      {
+        onError: (e) => {
+          setters.setSelectedRows([]);
+          toast.error("Có lỗi khi xóa ca học: " + (e.response?.data || e.message));
+          setIsDeletingBySemester(false);
+        }
+      },
+      body
+    );
+  }
 
   // Version selection UI
   if (showVersionSelection) {
@@ -489,32 +483,32 @@ const GeneralScheduleScreen = () => {
                   ) : null}
   
                 <Button
-                  //startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                  startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
                   sx={{ 
                     minWidth: '120px',
                     textTransform: 'none',
                     fontSize: '14px'
                   }}
-                  //disabled={isDeletingBySemester || !selectedSemester}
-                  //onClick={handleRemoveSegment}
+                  disabled={isCreateBySemester || !states.selectedSemester || states.loading}
+                  onClick={handleCreateSegment}
                   variant="contained"
                   color="secondary"
                 >
-                  Tạo ca học
+                  {isCreateBySemester ? "Đang tạo..." : "Tạo ca học"}
                 </Button>
                 <Button
-                  //startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                  startIcon={isDeletingBySemester ? <FacebookCircularProgress size={20} /> : null}
                   sx={{ 
                     minWidth: '120px',
                     textTransform: 'none',
                     fontSize: '14px'
                   }}
-                  //disabled={isDeletingBySemester || !selectedSemester}
-                  //onClick={handleRemoveSegment}
+                  disabled={isDeletingBySemester || !states.selectedSemester || states.loading}
+                  onClick={handleRemoveSegment}
                   variant="contained"
                   color="secondary"
                 >
-                  Xóa ca học
+                  {isDeletingBySemester ? "Đang xóa..." : "Xóa ca học"}
                 </Button>
                   <Button
                     disabled={
@@ -715,54 +709,6 @@ const GeneralScheduleScreen = () => {
             sx={{ minWidth: "80px", padding: "6px 16px" }}
           >
             Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Save version dialog */}
-      <Dialog
-        open={openNewVersionDialog}
-        onClose={() => setOpenNewVersionDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Lưu phiên bản thời khóa biểu</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Tên phiên bản"
-              fullWidth
-              variant="outlined"
-              value={newVersionName}
-              onChange={(e) => setNewVersionName(e.target.value)}
-              sx={{ mb: 3 }}
-            />
-            <TextField
-              select
-              margin="dense"
-              label="Trạng thái"
-              fullWidth
-              variant="outlined"
-              value={newVersionStatus}
-              onChange={(e) => setNewVersionStatus(e.target.value)}
-              sx={{ width: "200px" }}
-            >
-              <MenuItem value="DRAFT">Nháp</MenuItem>
-              <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
-            </TextField>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpenNewVersionDialog(false)}>Hủy</Button>
-          <Button 
-            onClick={handleSaveVersion} 
-            variant="contained"
-            disabled={!newVersionName || states.isSaveVersionLoading}
-            startIcon={states.isSaveVersionLoading ? <FacebookCircularProgress size={20} /> : null}
-          >
-            Lưu
           </Button>
         </DialogActions>
       </Dialog>

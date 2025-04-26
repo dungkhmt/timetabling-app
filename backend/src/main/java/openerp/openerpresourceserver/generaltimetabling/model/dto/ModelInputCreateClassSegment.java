@@ -11,5 +11,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ModelInputCreateClassSegment {
     private String semester;
+    private Long versionId;
 }
 
