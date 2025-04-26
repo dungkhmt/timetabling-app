@@ -308,7 +308,7 @@ export const useGeneralSchedule = () => {
       setLoading(true);
 
       try {
-        const response = await generalScheduleRepository.updateTimeSlot(semester, versionId, data);
+        const response = await generalScheduleRepository.updateTimeSlot(semester, data);
         if (!response || response.status >= 400) {
           throw new Error(response?.data || "Lỗi không xác định");
         }
