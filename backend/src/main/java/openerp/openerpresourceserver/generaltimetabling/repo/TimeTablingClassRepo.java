@@ -11,6 +11,8 @@ public interface TimeTablingClassRepo extends JpaRepository<TimeTablingClass, Lo
 
     List<TimeTablingClass> findAllByRefClassId(Long refClassId);
 
+    List<TimeTablingClass> findAllByRefClassIdIn(List<Long> refClassIds);
+
 
     List<TimeTablingClass> findAllByParentClassId(Long parentClassId);
 

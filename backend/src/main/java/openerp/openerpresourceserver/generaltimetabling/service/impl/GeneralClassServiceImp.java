@@ -57,6 +57,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
     private TimeTablingClassService timeTablingClassService;
 
     @Autowired
+    private TimeTablingClassRepo timeTablingClassRepo;
+    @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
     @Autowired
     private TimeTablingConfigParamsRepo timeTablingConfigParamsRepo;
@@ -492,10 +494,12 @@ public class GeneralClassServiceImp implements GeneralClassService {
     }
 
     private void synchronizeCourses(){
-        List<GeneralClass> cls = gcoRepo.findAll();
+        //List<GeneralClass> cls = gcoRepo.findAll();
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAll();
         Set<String> courseCodes = new HashSet<>();
         Map<String, String> mCourseCode2Name = new HashMap<>();
-        for(GeneralClass gc: cls){
+        //for(GeneralClass gc: cls){
+        for(TimeTablingClass gc: CLS){
             String courseCode = gc.getModuleCode();
             courseCodes.add(courseCode);
             mCourseCode2Name.put(courseCode,gc.getModuleName());
@@ -588,7 +592,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Transactional
     @Override
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule, Long versionId) {
-        //synchronizeCourses();
+        synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
 

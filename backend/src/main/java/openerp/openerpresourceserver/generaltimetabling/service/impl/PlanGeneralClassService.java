@@ -16,6 +16,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
@@ -36,6 +37,9 @@ public class PlanGeneralClassService {
     private PlanGeneralClassRepository planGeneralClassRepository;
     private AcademicWeekRepo academicWeekRepo;
     private ClassGroupRepo classGroupRepo;
+
+    @Autowired
+    private TimeTablingCourseRepo timeTablingCourseRepo;
 
     @Autowired
     TimeTablingClassService timeTablingClassService;
@@ -62,7 +66,7 @@ public class PlanGeneralClassService {
 
     @Transactional
     //public void makeClass(MakeGeneralClassRequest request, String groupName) {
-    public void makeClass(MakeGeneralClassRequest request, Long groupId) {
+    public TimeTablingClass makeClass(MakeGeneralClassRequest request, Long groupId) {
         log.info("makeClass, groupId = " + groupId);
         //List<Group> groups = groupRepo.getAllByGroupName(groupName);
         //if (groups == null || groups.isEmpty()) {
@@ -194,7 +198,7 @@ public class PlanGeneralClassService {
             cs = timeTablingClassSegmentRepo.save(cs);
             */
         }
-
+        return cls;
     }
 
     @Transactional
@@ -358,6 +362,58 @@ public class PlanGeneralClassService {
         }
         return classes.size();
     }
+
+    @Transactional
+    public List<TimeTablingClass> generateTimeTablingClassFromPlan(ModelInputGenerateClassesFromPlan I){
+        List<TimeTablingClass> res = new ArrayList<>();
+        List<PlanGeneralClass> plan = planGeneralClassRepository.findAllBySemester(I.getSemester());
+        log.info("generateTimeTablingClassFromPlan, number of plan courses = " + plan.size());
+       // List<GeneralClass> classes = new ArrayList<>();
+        for(PlanGeneralClass pl: plan){
+            if(pl.getGroupId()==null){
+                //throw new NotFoundException("Không tìm thấy nhóm của kế hoạch mở lớp !");
+                return null;
+            }
+        }
+        for(PlanGeneralClass pl: plan){
+            //Group g = groupRepo.findByGroupName(pl.getProgramName()).orElse(null);
+            //Long groupId = null;
+            //if(g != null) {
+            //    groupId = g.getId();
+            //}
+
+            log.info("generateTimeTablingClassFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
+
+            for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
+                MakeGeneralClassRequest r = new MakeGeneralClassRequest();
+                r.setNbClasses(pl.getNumberOfClasses());
+                r.setWeekType(pl.getWeekType());
+                r.setId(pl.getId());
+                r.setProgramName(pl.getProgramName());
+                r.setCrew(pl.getCrew());
+                r.setWeekType(pl.getWeekType());
+                r.setLectureExerciseMaxQuantity(pl.getLectureExerciseMaxQuantity());
+                r.setLectureMaxQuantity(pl.getLectureMaxQuantity());
+                r.setExerciseMaxQuantity(pl.getExerciseMaxQuantity());
+                r.setModuleName(pl.getModuleName());
+                r.setSemester(pl.getSemester());
+                r.setLearningWeeks(pl.getLearningWeeks());
+                r.setModuleCode(pl.getModuleCode());
+                r.setModuleName(pl.getModuleName());
+                r.setDuration(pl.getDuration());
+                r.setQuantityMax(pl.getQuantityMax());
+                r.setMass(pl.getMass());
+
+                TimeTablingClass cls = makeClass(r, pl.getGroupId());
+                res.add(cls);
+            }
+            //}else{
+            //    log.info("generateClassesFromPlan, cannot find group from name " + pl.getProgramName());
+            //}
+        }
+
+        return res;
+    }
     public List<GeneralClass> generateClassesFromPlan(ModelInputGenerateClassesFromPlan I){
         /*
         List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
@@ -482,6 +538,15 @@ public class PlanGeneralClassService {
             throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
         }
         planGeneralClassRepository.deleteAllById(planClassIds);
+        // delete generated classes and class-segments
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllByRefClassIdIn(planClassIds);
+        List<Long> classIds = CLS.stream().map(cls -> cls.getId()).toList();
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(classIds);
+        List<Long> classSegmentIds = classSegments.stream().map(cs -> cs.getId()).toList();
+
+        timeTablingClassSegmentRepo.deleteAllById(classSegmentIds);
+        timeTablingClassRepo.deleteAllById(classIds);
+
         return foundClasses;
     }
 
@@ -493,6 +558,7 @@ public class PlanGeneralClassService {
         return foundClass;
     }
 
+    @Transactional
     public PlanGeneralClass createSingleClass(CreateSingleClassOpenRequest planClass) {
         log.info("Validating and creating single class: {}", planClass);
 
@@ -517,6 +583,13 @@ public class PlanGeneralClassService {
         // Set default values if they're null
         if (planClass.getNumberOfClasses() == null) {
             planClass.setNumberOfClasses(1);
+        }
+        TimeTablingCourse course = timeTablingCourseRepo.findById(planClass.getModuleCode()).orElse(null);
+        if(course == null){// course code does not exist -> create new
+            course = new TimeTablingCourse();
+            course.setId(planClass.getModuleCode());
+            course.setName(planClass.getModuleName());
+            course= timeTablingCourseRepo.save(course);
         }
 
         // Save the PlanGeneralClass entity first

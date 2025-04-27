@@ -7,6 +7,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOc
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.SaveScheduleToVersionRequest;
@@ -49,4 +50,6 @@ public interface TimeTablingClassService {
     public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests);
 
     TimeTablingClassSegment createClassSegment(Long classId, String crew, Integer duration, Long versionId);
+
+    List<TimeTablingClass> createClassFromPlan(PlanGeneralClass p);
 }

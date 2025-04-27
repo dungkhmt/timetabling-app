@@ -74,7 +74,9 @@ public class PlanGeneralClassController {
     @PostMapping("/generate-classes-from-plan")
     public ResponseEntity<?> generateClassesFromPlan(Principal principal, @RequestBody ModelInputGenerateClassesFromPlan I){
         log.info("generate-classes-from-plan, semester = " + I.getSemester());
-        List<GeneralClass> classes = planClassService.generateClassesFromPlan(I);
+        //List<GeneralClass> classes = planClassService.generateClassesFromPlan(I);
+        List<TimeTablingClass> classes = planClassService.generateTimeTablingClassFromPlan(I);
+        if(classes == null) return ResponseEntity.status(401).body("Cannot generated class from plab");
         return ResponseEntity.ok().body(classes);
     }
     @GetMapping("/")

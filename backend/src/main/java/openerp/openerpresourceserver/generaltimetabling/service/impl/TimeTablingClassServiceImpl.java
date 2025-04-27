@@ -8,6 +8,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentClassSolver;
 import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
@@ -773,5 +774,38 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         cs.setVersionId(versionId);
         cs = timeTablingClassSegmentRepo.save(cs);
         return cs;
+    }
+
+    @Override
+    public List<TimeTablingClass> createClassFromPlan(PlanGeneralClass p) {
+        /*
+            log.info("savePlanClasses, start to create class for plan " + p.getModuleCode() + " nbClasses = " + p.getNumberOfClasses());
+            for(int i = 1;i <= p.getNumberOfClasses();i++) {
+                MakeGeneralClassRequest req = new MakeGeneralClassRequest();
+                req.setId(p.getId());
+                req.setNbClasses(p.getNumberOfClasses());
+                req.setClassType(p.getClassType());
+                req.setDuration(p.getDuration());
+                req.setCrew(p.getCrew());
+                req.setMass(p.getMass());
+                req.setLearningWeeks(p.getLearningWeeks());
+                req.setModuleCode(p.getModuleCode());
+                req.setSemester(p.getSemester());
+                req.setModuleName(p.getModuleName());
+                req.setExerciseMaxQuantity(p.getExerciseMaxQuantity());
+                req.setLectureMaxQuantity(p.getLectureMaxQuantity());
+                req.setLectureExerciseMaxQuantity(p.getLectureExerciseMaxQuantity());
+                req.setProgramName(p.getProgramName());
+                req.setWeekType(p.getWeekType());
+                //planGeneralClassService.makeClass(req, groupName);
+                planGeneralClassService.makeClass(req, groupId);
+
+                // create ONE class-segment for the new class
+                //TimeTablingClassSegment cs = new TimeTablingClassSegment();
+
+            }
+        */
+
+        return null;
     }
 }
