@@ -478,6 +478,7 @@ public class BacktrackingOneGroup {
     List<Combination> solutions;
     double t0;
     int timeLimit;
+    boolean LOGGING = false;
     Map<AClass, SolutionClass>[] x;// x[i] is the solution classes for course i
     Map<AClass, SolutionClass>[] best_x;
     int bestObj;
@@ -718,7 +719,8 @@ public class BacktrackingOneGroup {
             }
         }
     }
-    public void solveNew(int maxTime){
+    public void solveNew(int maxTime, boolean LOGGING){
+        this.LOGGING = LOGGING;
         this.timeLimit = maxTime;
         t0 = System.currentTimeMillis();
         List<Combination> combinations = new ArrayList<>();
@@ -755,7 +757,7 @@ public class BacktrackingOneGroup {
         }
         //System.out.println("number solutions = " + solutions.size());
         double t = System.currentTimeMillis() - t0;
-        //System.out.println("bestObj = " + bestObj + " time = " + t*0.001);
+        if(LOGGING) System.out.println("bestObj = " + bestObj + " time = " + t*0.001);
     }
 
     private boolean checkCombinationCoverAllClasses(List<Combination> combinations, boolean PRINT){
@@ -805,7 +807,7 @@ public class BacktrackingOneGroup {
             //}
             //System.out.println("Solution " + info + " mc = " + mc + " f = " + f);
         //}
-        //System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj);
+        if(LOGGING) System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj);
         if(obj < bestObj){
             bestObj = obj;
             best_x= new Map[x.length];
@@ -816,7 +818,7 @@ public class BacktrackingOneGroup {
                 }
             }
             boolean ok = checkCombinationCoverAllClasses(combinations,true);
-            //System.out.println("update best " + bestObj + " checkCombinations = " + ok);
+            if(LOGGING) System.out.println("update best " + bestObj + " checkCombinations = " + ok);
         }
         //System.out.println("-------------------");
 
@@ -864,9 +866,9 @@ public class BacktrackingOneGroup {
     }
     public static void main(String[] args){
         BacktrackingOneGroup solver = new BacktrackingOneGroup();
-        solver.inputFile("data/3.txt");
+        solver.inputFile("data/ch1-3th-s.txt");
         //solver.input();
-        solver.solveNew(1200);
+        solver.solveNew(1200, true);
         //solver.printBestSolution();
         solver.writeSolutionFormat();
     }
