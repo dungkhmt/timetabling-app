@@ -9,6 +9,9 @@ import java.util.List;
 public interface TimeTablingClassRepo extends JpaRepository<TimeTablingClass, Long> {
     List<TimeTablingClass> findAllBySemester(String semester);
 
+    List<TimeTablingClass> findAllByRefClassId(Long refClassId);
+
+
     List<TimeTablingClass> findAllByParentClassId(Long parentClassId);
 
     List<TimeTablingClass> findAllByIdIn(List<Long> ids);

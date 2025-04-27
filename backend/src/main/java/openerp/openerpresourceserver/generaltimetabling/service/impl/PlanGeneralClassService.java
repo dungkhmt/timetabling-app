@@ -321,6 +321,10 @@ public class PlanGeneralClassService {
     public List<GeneralClass> getPlanClassById(String semester, Long planClassId) {
         return generalClassRepository.findClassesByRefClassIdAndSemester(planClassId, semester);
     }
+    public List<TimeTablingClass> getClassOfPlan(String semester, Long planClassId){
+        List<TimeTablingClass> timeTablingClasses = timeTablingClassRepo.findAllByRefClassId(planClassId);
+        return timeTablingClasses;
+    }
 
     @Transactional
     public GeneralClass updateGeneralClass(GeneralClass generalClass) {

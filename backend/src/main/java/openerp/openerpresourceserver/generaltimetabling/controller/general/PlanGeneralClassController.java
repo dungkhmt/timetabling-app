@@ -15,6 +15,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.impl.PlanGeneralClassService;
 import org.aspectj.weaver.ast.Not;
@@ -85,7 +86,9 @@ public class PlanGeneralClassController {
     @GetMapping("/view-class")
     public ResponseEntity requestViewPlanClass(@RequestParam("semester") String semester,
                                                @RequestParam("planClassId") Long planClassId){
-        return ResponseEntity.ok(planClassService.getPlanClassById(semester, planClassId));
+        //return ResponseEntity.ok(planClassService.getPlanClassById(semester, planClassId));
+        List<TimeTablingClass> timeTablingClasses = planClassService.getClassOfPlan(semester, planClassId);
+        return ResponseEntity.ok().body(timeTablingClasses);
     }
 
     @PostMapping("/update-general-class")

@@ -447,13 +447,24 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         return 0;
     }
 
+    @Transactional
     @Override
     public TimeTablingClass updateClass(UpdateGeneralClassRequest r) {
         log.info("updateClass, classId = " + r.getGeneralClass().getId());
         TimeTablingClass cls = timeTablingClassRepo
                 .findById(r.getGeneralClass().getId()).orElse(null);
         if(cls == null) return null;
+
         GeneralClass gc = r.getGeneralClass();
+        if(!gc.getCrew().equals(cls.getCrew())){
+            // update class-segments corresponding to the current cls
+            List<TimeTablingClassSegment> CS = timeTablingClassSegmentRepo.findAllByClassId(cls.getId());
+            for(TimeTablingClassSegment cs: CS){
+                cs.setCrew(gc.getCrew());
+            }
+            timeTablingClassSegmentRepo.saveAll(CS);
+        }
+
         cls.setCrew(gc.getCrew());
         cls.setDuration(gc.getDuration());
         cls.setClassCode(gc.getClassCode());
