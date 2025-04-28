@@ -18,6 +18,13 @@ export const ExamTimeTabling = {
         child: [],
       },
       {
+        id: "MENU_EXAM_TIME_TABLING.EXAM_CONFLICT",
+        path: "/exam-time-tabling/exam-class-conflict",
+        isPublic: true,
+        text: "Thiết lập xung đột",
+        child: [],
+      },
+      {
         id: "MENU_EXAM_TIME_TABLING.EXAM_SESSION",
         path: "/exam-time-tabling/exam-session",
         isPublic: true,
