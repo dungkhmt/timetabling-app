@@ -1,14 +1,20 @@
 package openerp.openerpresourceserver.wms.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
-@Data
 @Entity
 @Table(name = "wms2_delivery_plan")
-public class DeliveryPlan {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class DeliveryPlan extends BaseEntity {
     @Id
     @Column(name = "id", length = 40)
     private String id;
@@ -23,6 +29,12 @@ public class DeliveryPlan {
     @JoinColumn(name = "created_by_user_id")
     private UserLogin createdByUser;
 
-    @Column(name = "created_stamp")
-    private LocalDateTime createdStamp;
+    @Column(name = "total_weight")
+    private BigDecimal totalWeight;
+
+    @Column(name = "delivery_plan_name")
+    private String delveryPlanName;
+
+    @Column(name = "delivery_date")
+    private LocalDate deliveryDate;
 }

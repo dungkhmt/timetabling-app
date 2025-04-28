@@ -9,6 +9,8 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Entity
 @Table(name = "wms2_shipper")
@@ -24,4 +26,10 @@ public class Shipper {
 
     @Column(name = "status_id", length = 100)
     private String statusId;
+
+    @Column(name = "last_latitude")
+    private BigDecimal lastLatitude;
+
+    @Column(name = "last_longitude")
+    private BigDecimal lastLongitude;
 }

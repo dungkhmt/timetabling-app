@@ -1,11 +1,6 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -38,6 +33,10 @@ public class DeliveryBill extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "to_customer_id")
     private Customer toCustomer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id")
+    private UserLogin createdByUser;
 
     private LocalDate expectedDeliveryDate;
 

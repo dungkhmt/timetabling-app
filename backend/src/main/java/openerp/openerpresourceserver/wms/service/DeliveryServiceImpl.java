@@ -14,10 +14,7 @@ import openerp.openerpresourceserver.wms.entity.DeliveryBillItem;
 import openerp.openerpresourceserver.wms.entity.InventoryItemDetail;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
-import openerp.openerpresourceserver.wms.repository.DeliveryBillItemRepo;
-import openerp.openerpresourceserver.wms.repository.DeliveryBillRepo;
-import openerp.openerpresourceserver.wms.repository.InventoryItemDetailRepo;
-import openerp.openerpresourceserver.wms.repository.ShipmentRepo;
+import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
@@ -38,10 +35,13 @@ public class DeliveryServiceImpl implements DeliveryBillService {
     private final ShipmentRepo shipmentRepo;
     private final InventoryItemDetailRepo inventoryItemDetailRepo;
     private final GeneralMapper convert;
+    private final UserLoginRepo userLoginRepo;
     @Override
     public ApiResponse<Void> createDeliveryBill(CreateDeliveryBill req, Principal principal) {
         var shipment = shipmentRepo.findById(req.getShipmentId()).orElseThrow(()
         -> new DataNotFoundException("Shipment not found with id: " + req.getShipmentId()));
+        var userLogin = userLoginRepo.findById(principal.getName()).orElseThrow(
+                () -> new DataNotFoundException("User not found with id: " + principal.getName()));
 
         // Map productId to InventoryItemDetail
         Map<String ,InventoryItemDetail> inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(req.getShipmentId())
@@ -86,6 +86,7 @@ public class DeliveryServiceImpl implements DeliveryBillService {
         });
 
         deliveryBill.setTotalWeight(BigDecimal.valueOf(totalWeight.get()));
+        deliveryBill.setCreatedByUser(userLogin);
         deliveryBillRepo.save(deliveryBill);
         deliveryBillItemRepo.saveAll(deliveryBillItems);
         return ApiResponse.<Void>builder()
