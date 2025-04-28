@@ -19,9 +19,10 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
-import { Clear, ArrowBack, Save } from "@mui/icons-material";
+import { Clear, ArrowBack } from "@mui/icons-material";
 import {toast} from "react-toastify";
 import { request } from "api";
+import { select } from "d3-selection";
 
 
 const GeneralScheduleScreen = () => {
@@ -93,7 +94,7 @@ const GeneralScheduleScreen = () => {
       if (selectedCluster) {
         setters.setSelectedGroup(null);
         
-        const clusterClasses = await handlers.getClassesByCluster(selectedCluster.id);
+        const clusterClasses = await handlers.getClassesByCluster(selectedCluster.id, selectedVersion?.id);
         setFilteredClasses(clusterClasses);
       } else {
         setFilteredClasses(states.classes);

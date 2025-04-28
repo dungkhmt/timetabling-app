@@ -698,7 +698,7 @@ export const useGeneralSchedule = () => {
     }
   }, []);
 
-  const getClassesByCluster = useCallback(async (clusterId) => {
+  const getClassesByCluster = useCallback(async (clusterId, versionId) => {
     if (!clusterId) {
       toast.error("Cluster ID is required!");
       return [];
@@ -708,7 +708,7 @@ export const useGeneralSchedule = () => {
     setLoading(true);
   
     try {
-      const data = await generalScheduleRepository.getClassesByCluster(clusterId);
+      const data = await generalScheduleRepository.getClassesByCluster(clusterId, versionId);
       return processClassData(data);
     } catch (error) {
       toast.error("Không thể tải danh sách lớp theo cụm!");

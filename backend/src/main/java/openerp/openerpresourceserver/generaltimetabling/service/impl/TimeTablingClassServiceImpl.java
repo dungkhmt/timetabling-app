@@ -752,6 +752,26 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         log.info("getClassByCluster(" + clusterId + "), res.sz = " + cls.size());
         return cls;
     }
+    @Override
+    public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId, Long versionId) {
+        List<ClusterClass> clusterClasses = clusterClassRepo.findAllByClusterId(clusterId);
+
+        if (clusterClasses.isEmpty()) {
+            log.info("getClassByCluster(" + clusterId + ", " + versionId + "): No classes found in cluster");
+            return new ArrayList<>();
+        }
+        log.info("getClassByCluster(" + clusterId + ", " + versionId + "), clusterClasses.sz = " + clusterClasses.size());
+
+        // Extract class IDs from the relationships
+        List<Long> classIds = clusterClasses.stream()
+                .map(ClusterClass::getClassId)
+                .collect(Collectors.toList());
+
+        // Use the existing method that supports versionId parameter
+        List<ModelResponseTimeTablingClass> cls = getTimeTablingClassDtos(classIds, versionId);
+        log.info("getClassByCluster(" + clusterId + ", " + versionId + "), res.sz = " + cls.size());
+        return cls;
+    }
 
     @Override
     public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests) {

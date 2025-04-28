@@ -252,8 +252,10 @@ public class GeneralClassController {
     }
 
     @GetMapping("/get-by-cluster/{clusterId}")
-    public ResponseEntity<?> getGeneralClassesByCluster(@PathVariable Long clusterId) {
-        List<ModelResponseTimeTablingClass> classes = timeTablingClassService.getClassByCluster(clusterId);
+    public ResponseEntity<?> getGeneralClassesByCluster(
+        @PathVariable Long clusterId,
+        @RequestParam(required = false) Long versionId) {
+        List<ModelResponseTimeTablingClass> classes = timeTablingClassService.getClassByCluster(clusterId, versionId);
         return ResponseEntity.ok(classes);
     }
 

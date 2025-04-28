@@ -279,11 +279,11 @@ export const generalScheduleRepository = {
     }
   },
 
-  getClassesByCluster: async (clusterId) => {
+  getClassesByCluster: async (clusterId, versionId) => {
     try {
       const response = await request(
         "get",
-        `/general-classes/get-by-cluster/${clusterId}`
+        `/general-classes/get-by-cluster/${clusterId}${versionId ? `?versionId=${versionId}` : ''}`
       );
       return response.data;
     } catch (error) {
