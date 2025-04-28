@@ -6,6 +6,7 @@ import TimetableDetailPage from "views/exam-timetabling/examTimetable/ExamTimeta
 import ExamSessionManagementScreen from "views/exam-timetabling/examSession/ExamSessionScreen"
 import ExamTimeTableView from "views/exam-timetabling/examTimetable/ExamTimetableView"
 import ExamTimeTableStatistic from "views/exam-timetabling/examTimetable/ExamTimetableStatistic"
+import ConflictClassListScreen from "views/exam-timetabling/conflictExamClass/ConflictClassListScreen"
 
 export default function ExamTimeTablingRouter() {
   let { path } = useRouteMatch();
@@ -50,6 +51,11 @@ export default function ExamTimeTablingRouter() {
         <Route
           component={ExamSessionManagementScreen}
           path={`${path}/exam-session`}
+          exact
+        ></Route>
+        <Route
+          component={ConflictClassListScreen}
+          path={`${path}/exam-class-conflict`}
           exact
         ></Route>
       </Switch>

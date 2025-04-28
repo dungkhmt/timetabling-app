@@ -3,6 +3,8 @@ package openerp.openerpresourceserver.examtimetabling.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -35,10 +37,12 @@ public class ConflictExamTimetablingClass {
     @Column(name = "exam_timetabling_class_id_2", nullable = false)
     private UUID examTimetablingClassId2;
     
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_timetabling_class_id_1", insertable = false, updatable = false)
     private ExamClass examClass1;
     
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_timetabling_class_id_2", insertable = false, updatable = false)
     private ExamClass examClass2;
