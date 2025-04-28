@@ -42,30 +42,6 @@ const GeneralUploadScreen = () => {
     }
   } = useGeneralSchedule();
 
-  
-  function handleCreateSegment(){
-    let body = {
-      semester: selectedSemester.semester
-    };
-
-    request(
-      "post",
-      "/general-classes/create-class-segments",
-      (res) => {
-        console.log('create class-segments returned ',res.data);
-        setSelectedIds([]);
-        setSelectedRows([]);
-      },
-      {
-        onError: (e) => {
-          setSelectedIds([]);
-          setSelectedRows([]);
-        }
-      },
-      body
-    );
-  }
-    
   function handleCreateSegmentForSummer(){
     let body = {
       semester: selectedSemester.semester
@@ -81,30 +57,6 @@ const GeneralUploadScreen = () => {
       },
       {
         onError: (e) => {
-          setSelectedIds([]);
-          setSelectedRows([]);
-        }
-      },
-      body
-    );
-  }
-  function handleRemoveSegment(){
-    let body = {
-      semester: selectedSemester.semester
-    };
-
-    request(
-      "post",
-      "/general-classes/remove-class-segments",
-      (res) => {
-        console.log('create class-segments returned ',res.data);
-        // Clear selection after operation completes
-        setSelectedIds([]);
-        setSelectedRows([]);
-      },
-      {
-        onError: (e) => {
-          // Still clear selection even if there's an error
           setSelectedIds([]);
           setSelectedRows([]);
         }
@@ -208,19 +160,17 @@ const GeneralUploadScreen = () => {
   }, [selectedSemester?.semester]); 
 
   useEffect(() => {
-    console.log("Filtering by cluster:", selectedCluster?.id);
-    console.log("Current semester:", selectedSemester?.semester);
-    
     const filterClassesByCluster = async () => {
       setIsLoadingData(true);
-      
       try {
         if (selectedCluster) {
-          console.log("Fetching data for cluster:", selectedCluster.id);
-          const clusterClasses = await getClassesByCluster(selectedCluster.id);
-          console.log("Cluster classes loaded:", clusterClasses?.length || 0);
+          console.log("Filtering classes for cluster:", selectedCluster.id, selectedCluster.name);
+          // Explicitly passing null as versionId
+          const clusterClasses = await getClassesByCluster(selectedCluster.id, null);
+          console.log("Received cluster classes:", clusterClasses ? clusterClasses.length : 0);
           setFilteredClasses(clusterClasses || []);
         } else {
+          console.log("No cluster selected, clearing filtered classes");
           setFilteredClasses([]);
         }
       } catch (error) {

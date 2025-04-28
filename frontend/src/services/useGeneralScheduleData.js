@@ -709,7 +709,7 @@ export const useGeneralSchedule = () => {
   
     try {
       const data = await generalScheduleRepository.getClassesByCluster(clusterId, versionId);
-      return processClassData(data);
+      return versionId ? processClassData(data): data;
     } catch (error) {
       toast.error("Không thể tải danh sách lớp theo cụm!");
       console.error("Failed to fetch classes by cluster", error);
