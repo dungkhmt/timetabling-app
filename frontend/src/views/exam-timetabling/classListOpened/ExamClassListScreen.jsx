@@ -15,8 +15,8 @@ import {
   Tooltip,
   Typography
 } from "@mui/material"
-import { Add, Delete, Download, HelpOutline, Upload, UploadFile } from "@mui/icons-material"
-import { DataGrid } from "@mui/x-data-grid"
+import { Add, Delete, Download, HelpOutline, Upload } from "@mui/icons-material"
+import { DataGrid, GridToolbar } from "@mui/x-data-grid"
 import { useExamClassData } from "services/useExamClassData"
 import EditExamClassModal from './utils/EditExamClassModal'
 import AddExamClassModal from "./utils/AddExamClassModal"
@@ -102,7 +102,6 @@ export default function ExamClassListPage() {
 
   const handleSelectExamPlan = (event, examPlan) => {
     setSelectedExamPlan(examPlan);
-    // Clear selected rows when changing exam plan
     setSelectedRows([]);
   }
 
@@ -209,12 +208,12 @@ export default function ExamClassListPage() {
 
   const handleAddSubmit = async (formData) => {
     try {
-      setIsAddModalOpen(false) // Close the modal first
+      setIsAddModalOpen(false) 
 
       await createExamClass(formData)
     } catch (error) {
       console.error("Error adding exam class:", error)
-      setIsAddModalOpen(false) // Still close modal even if error occurs
+      setIsAddModalOpen(false) 
     }
   }
 
@@ -226,11 +225,46 @@ export default function ExamClassListPage() {
     }
   }
 
-  function DataGridToolbar() {
+  function DataGridTitle() {
     return (
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          pt: 2,
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            color: '#1976d2',
+            position: 'relative',
+          }}
+        >
+          Danh Sách Lớp Thi
+        </Typography>
+      </Box>
+    )
+  }
+
+  return (
+    <div style={{ height: 600, width: "100%" }}>
+      {(isLoadingClasses || isClearing || isExportingConflicts || isExportingClasses || isImporting) && (
+        <CircularProgress
+          style={{ position: "absolute", top: "50%", left: "50%" }}
+        />
+      )}
+      
+      {/* Title */}
+      <DataGridTitle />
+      
+      {/* Control Panel */}
       <Box sx={{ px: 2, pb: 2 }}>
+        {/* ExamPlan selection */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-          {/* ExamPlan selection on the right */}
           <Autocomplete
             options={examPlans}
             getOptionLabel={(option) => option.name}
@@ -242,8 +276,8 @@ export default function ExamClassListPage() {
             )}
           />
         </Box>
-
-        {/* Buttons aligned to the right */}
+        
+        {/* Action buttons */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
           <Button
             variant="contained"
@@ -298,110 +332,30 @@ export default function ExamClassListPage() {
             </Tooltip>
           </Box>
         </Box>
-
-        <Dialog
-          open={isDeleteConfirmOpen}
-          onClose={handleCancelDelete}
-        >
-          <DialogTitle>Xác nhận xóa</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Bạn có chắc chắn muốn xóa các lớp đã chọn không?
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCancelDelete} color="primary">
-              Hủy
-            </Button>
-            <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
-              Xóa
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Dialog
-          open={successDialogOpen || conflictDialogOpen}
-          onClose={handleDialogClose}
-        >
-          <DialogTitle>
-            {successDialogOpen
-              ? "Tải lên danh sách thành công"
-              : "Danh sách lớp bị trùng"}
-          </DialogTitle>
-          <DialogContent>
-            {conflictDialogOpen ? (
-              <ul>
-                {conflictList.map((conflict) => (
-                  <li key={conflict.id}>{conflict.moduleName}</li>
-                ))}
-              </ul>
-            ) : null}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleDialogClose} color="primary" autoFocus>
-              OK
-            </Button>
-            {conflictDialogOpen && (
-              <Button onClick={handleDownloadConflictList} color="primary">
-                Tải xuống
-              </Button>
-            )}
-          </DialogActions>
-        </Dialog>
       </Box>
-    )
-  }
 
-  function DataGridTitle() {
-    return (
-      <Box
-        sx={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          pt: 2,
-        }}
-      >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: '#1976d2',
-            position: 'relative',
-          }}
-        >
-          Danh Sách Lớp Thi
-        </Typography>
-      </Box>
-    )
-  }
-
-  return (
-    <div style={{ height: 600, width: "100%" }}>
-      {(isLoadingClasses || isClearing || isExportingConflicts || isExportingClasses || isImporting) && (
-        <CircularProgress
-          style={{ position: "absolute", top: "50%", left: "50%" }}
-        />
-      )}
+      {/* DataGrid */}
       <DataGrid
         localeText={localText}
-        components={{
-          Toolbar: () => (
-            <>
-              <DataGridTitle />
-              <DataGridToolbar />
-            </>
-          ),
-        }}
         autoHeight
         rows={examClasses}
         columns={COLUMNS}
         pageSizeOptions={[10, 20, 50, 100]}
         onRowClick={handleRowClick}
-        pageSize={10}  // Make sure this matches one of the options
         initialState={{
           pagination: { paginationModel: { pageSize: 10 } },
+        }}
+        slots={{ toolbar: GridToolbar }}
+        slotProps={{
+          toolbar: {
+            showQuickFilter: true,
+            quickFilterProps: { debounceMs: 500 },
+            printOptions: { disableToolbarButton: true },
+            csvOptions: { disableToolbarButton: true },
+            disableColumnFilter: true,
+            disableDensitySelector: true,
+            disableColumnSelector: true,
+          },
         }}
         checkboxSelection
         disableRowSelectionOnClick
@@ -435,7 +389,6 @@ export default function ExamClassListPage() {
         onSubmit={handleSubmitEdit}
       />
 
-
       <AddExamClassModal
         open={isAddModalOpen}
         onClose={handleCloseAddModal}
@@ -446,6 +399,56 @@ export default function ExamClassListPage() {
           })
         }}
       />
+      
+      <Dialog
+        open={isDeleteConfirmOpen}
+        onClose={handleCancelDelete}
+      >
+        <DialogTitle>Xác nhận xóa</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn xóa các lớp đã chọn không?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={successDialogOpen || conflictDialogOpen}
+        onClose={handleDialogClose}
+      >
+        <DialogTitle>
+          {successDialogOpen
+            ? "Tải lên danh sách thành công"
+            : "Danh sách lớp bị trùng"}
+        </DialogTitle>
+        <DialogContent>
+          {conflictDialogOpen ? (
+            <ul>
+              {conflictList.map((conflict) => (
+                <li key={conflict.id}>{conflict.moduleName}</li>
+              ))}
+            </ul>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary" autoFocus>
+            OK
+          </Button>
+          {conflictDialogOpen && (
+            <Button onClick={handleDownloadConflictList} color="primary">
+              Tải xuống
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }
