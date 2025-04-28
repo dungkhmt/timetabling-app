@@ -40,6 +40,8 @@ public interface TimeTablingClassService {
     public String clearTimeTable(List<Long> ids);
 
     public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex);
+    
+    public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndexAndVersionId(String semester, int weekIndex, Long versionId);
 
     public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration, Long versionId);
 

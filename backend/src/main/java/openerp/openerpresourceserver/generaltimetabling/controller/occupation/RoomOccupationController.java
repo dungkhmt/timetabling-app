@@ -53,11 +53,12 @@ public class RoomOccupationController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<RoomOccupationWithModuleCode>> requestGetRoomOccupationsBySemesterAndWeekIndex(@RequestParam("semester")String semester, @RequestParam("weekIndex") int weekIndex) {
-        log.info("requestGetRoomOccupationsBySemesterAndWeekIndex, semester " + semester + " week " + weekIndex);
-        //return ResponseEntity.ok(roomOccupationService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
-        return ResponseEntity.ok(timeTablingClassService.getRoomOccupationsBySemesterAndWeekIndex(semester, weekIndex));
-
+    public ResponseEntity<List<RoomOccupationWithModuleCode>> requestGetRoomOccupationsBySemesterAndWeekIndex(
+            @RequestParam("semester") String semester, 
+            @RequestParam("weekIndex") int weekIndex,
+            @RequestParam(name = "versionId", required = false) Long versionId) {
+        log.info("requestGetRoomOccupationsBySemesterAndWeekIndex, semester " + semester + " week " + weekIndex + " versionId " + versionId);
+        return ResponseEntity.ok(timeTablingClassService.getRoomOccupationsBySemesterAndWeekIndexAndVersionId(semester, weekIndex, versionId));
     }
     
     @PostMapping("/empty-room")

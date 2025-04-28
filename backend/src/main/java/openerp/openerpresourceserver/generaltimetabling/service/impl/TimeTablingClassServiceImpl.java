@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -558,6 +559,75 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         return res;
 
     }
+
+    @Override 
+    public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndexAndVersionId(String semester, int weekIndex, Long versionId) {
+        List<RoomOccupationWithModuleCode> res = new ArrayList<>();
+        log.info("getRoomOccupationsBySemesterAndWeekIndexAndVersionId, semester = {}, weekIndex = {}, versionId = {}", 
+                semester, weekIndex, versionId);
+        try {
+            List<TimeTablingClass> classes = timeTablingClassRepo.findAllBySemester(semester);
+            if (classes.isEmpty()) {
+                log.info("No classes found for semester {}", semester);
+                return res;
+            }
+            log.info("Found {} classes for semester {}", classes.size(), semester);
+            List<TimeTablingClass> classesInWeek = classes.stream()
+                    .filter(c -> {
+                        List<Integer> learningWeeks = TimeTablingClass.extractLearningWeeks(c.getLearningWeeks());
+                        return learningWeeks.contains(weekIndex);
+                    })
+                    .collect(Collectors.toList());
+            if (classesInWeek.isEmpty()) {
+                log.info("No classes found for week {} in semester {}", weekIndex, semester);
+                return res;
+            }
+            log.info("Found {} classes for week {} in semester {}", classesInWeek.size(), weekIndex, semester);
+            List<Long> classIds = classesInWeek.stream()
+                    .map(TimeTablingClass::getId)
+                    .collect(Collectors.toList());
+            List<TimeTablingClassSegment> segments;
+            if (versionId != null) {
+                segments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
+                log.info("Found {} segments with versionId={} for classes in week {}", segments.size(), versionId, weekIndex);
+            } else {
+                segments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionIdIsNull(classIds);
+                log.info("Found {} segments with NULL versionId for classes in week {}", segments.size(), weekIndex);
+            }
+            List<TimeTablingClassSegment> assignedSegments = segments.stream()
+                    .filter(s -> s.getRoom() != null && 
+                                s.getWeekday() != null && 
+                                s.getStartTime() != null && 
+                                s.getEndTime() != null)
+                    .collect(Collectors.toList());
+            log.info("Found {} assigned segments", assignedSegments.size());
+            Map<Long, TimeTablingClass> classIdToClass = classesInWeek.stream()
+                    .collect(Collectors.toMap(TimeTablingClass::getId, Function.identity()));
+            for (TimeTablingClassSegment segment : assignedSegments) {
+                TimeTablingClass cls = classIdToClass.get(segment.getClassId());
+                if (cls == null) continue; 
+                
+                RoomOccupationWithModuleCode occupation = new RoomOccupationWithModuleCode();
+                occupation.setSemester(semester);
+                occupation.setClassRoom(segment.getRoom());
+                occupation.setWeekIndex(weekIndex);
+                occupation.setDayIndex(segment.getWeekday());
+                occupation.setClassCode(cls.getClassCode());
+                occupation.setEndPeriod(segment.getEndTime());
+                occupation.setStartPeriod(segment.getStartTime());
+                occupation.setModuleCode(cls.getModuleCode());
+                occupation.setCrew(cls.getCrew());
+                
+                res.add(occupation);
+            }
+            
+            return res;
+        } catch (Exception e) {
+            log.error("Error getting room occupations: ", e);
+            return res;
+        }
+    }
+
 
     @Override
     public ModelResponseTimeTablingClass splitNewClassSegment(Long classId, Long parentClassSegmentId, Integer duration, Long versionId) {

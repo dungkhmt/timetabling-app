@@ -4,27 +4,29 @@ import { useRoomOccupations } from "./hooks/useRoomOccupations";
 import FilterSelectBox from "./components/FilterSelectBox";
 import { Button, TablePagination, Autocomplete, TextField, CircularProgress } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-const RoomOccupationScreen = ({ selectedSemester, setSelectedSemester }) => {
+const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
+
+  console.log(selectedVersion)
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-
-  const { data, loading, error, refresh } = useRoomOccupations(selectedSemester?.semester, selectedWeek);
+  const { data, loading, error, refresh } = useRoomOccupations(selectedSemester?.semester, selectedWeek, selectedVersion?.id);
 
   useEffect(() => {
     console.log("Current state:", {
       selectedSemester,
+      selectedVersion,
       selectedWeek,
       dataLength: data?.length,
       loading,
       error
     });
-  }, [selectedSemester, selectedWeek, data, loading, error]);
+  }, [selectedSemester, selectedVersion, selectedWeek, data, loading, error]);
 
-  console.log(data, selectedSemester, selectedWeek);
+  console.log(data, selectedSemester, selectedWeek, selectedVersion);
   useEffect(() => {
     if (selectedSemester && selectedWeek) refresh();
-  }, [selectedSemester, selectedWeek, refresh]);
+  }, [selectedSemester, selectedWeek, selectedVersion, refresh]);
 
   const handleExportExcel = () => {
     if (!selectedSemester || !selectedWeek) {

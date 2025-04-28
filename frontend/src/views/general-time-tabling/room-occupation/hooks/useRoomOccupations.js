@@ -2,7 +2,7 @@ import { request } from "api";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-export const useRoomOccupations = (semester, selectedWeek) => {
+export const useRoomOccupations = (semester, selectedWeek, versionId) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState([]);
@@ -107,9 +107,11 @@ const convertSchedule = (schedule) => {
     setLoading(true);
     setError(null);
 
+    const versionParam = versionId ? `&versionId=${versionId}` : '';
+    
     request(
       "get",
-      `/room-occupation/?semester=${semester}&weekIndex=${selectedWeek.weekIndex}`,
+      `/room-occupation/?semester=${semester}&weekIndex=${selectedWeek.weekIndex}${versionParam}`,
       (res) => {
         try {
           console.log(res);
@@ -130,7 +132,7 @@ const convertSchedule = (schedule) => {
     ).finally(() => {
       setLoading(false);
     });
-  }, [semester, selectedWeek]);
+  }, [semester, selectedWeek, versionId]);
 
   useEffect(() => {
     if (!semester || !selectedWeek) { 
@@ -138,7 +140,7 @@ const convertSchedule = (schedule) => {
       return;
     }
     fetchRoomOccupations();
-  }, [semester, selectedWeek]);
+  }, [semester, selectedWeek, versionId]);
 
   return { loading, error, data, refresh: fetchRoomOccupations };
 };

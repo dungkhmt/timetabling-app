@@ -48,7 +48,6 @@ const TimeTable = ({
   const [draggedClass, setDraggedClass] = useState(null);
   const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState(null);
-  const dragRef = useRef(null);
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const savedSettings = localStorage.getItem("timetable-column-visibility");
     return savedSettings

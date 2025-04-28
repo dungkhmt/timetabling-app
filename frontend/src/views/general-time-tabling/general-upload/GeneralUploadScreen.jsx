@@ -202,21 +202,16 @@ const GeneralUploadScreen = () => {
     }
     
     if (selectedSemester) {
-      // Using a function form prevents dependency on classesNoSchedule itself
       setClassesNoSchedule(() => []);
       
-      // No need to call fetchClassesNoSchedule here as it is already triggered
-      // when selectedSemester changes via the useEffect in useGeneralScheduleData
     }
-  }, [selectedSemester?.semester]); // Only depend on the semester value itself
+  }, [selectedSemester?.semester]); 
 
-  // Effect for filtering by cluster
   useEffect(() => {
     console.log("Filtering by cluster:", selectedCluster?.id);
     console.log("Current semester:", selectedSemester?.semester);
     
     const filterClassesByCluster = async () => {
-      // Always set loading state when filter changes
       setIsLoadingData(true);
       
       try {
@@ -224,22 +219,18 @@ const GeneralUploadScreen = () => {
           console.log("Fetching data for cluster:", selectedCluster.id);
           const clusterClasses = await getClassesByCluster(selectedCluster.id);
           console.log("Cluster classes loaded:", clusterClasses?.length || 0);
-          // Always set to an empty array if result is falsy
           setFilteredClasses(clusterClasses || []);
         } else {
-          // If no cluster is selected, no need to do anything with filteredClasses
           setFilteredClasses([]);
         }
       } catch (error) {
         console.error("Error fetching filtered classes:", error);
-        // In case of error, explicitly set to empty array
         setFilteredClasses([]);
       } finally {
         setIsLoadingData(false);
       }
     };
     
-    // Only run the filter if we have a semester selected
     if (selectedSemester?.semester) {
       filterClassesByCluster();
     } else {
@@ -248,31 +239,19 @@ const GeneralUploadScreen = () => {
     }
   }, [selectedCluster, getClassesByCluster, selectedSemester]);
 
-  // Determine the appropriate loading state based on current operation
   const tableLoadingState = isClassesNoScheduleLoading || isLoadingData || isLoadingClusterClasses;
 
-  // Create a variable to determine which data to show in the table
   const displayClasses = useMemo(() => {
-    // Debugging logs
-    console.log("Display classes calculation:");
-    console.log("- Selected cluster:", selectedCluster?.id);
-    console.log("- Filtered classes length:", filteredClasses?.length || 0);
-    console.log("- Classes no schedule length:", classesNoSchedule?.length || 0);
-    console.log("- Is loading:", tableLoadingState);
-    
-    // When loading, return empty array to prevent showing stale data
     if (tableLoadingState) {
       console.log("Returning empty array because loading");
       return [];
     }
     
-    // If a cluster is selected, use filtered classes
     if (selectedCluster !== null) {
       console.log("Returning filtered classes for cluster");
       return filteredClasses || [];
     }
     
-    // Otherwise, use regular classesNoSchedule
     console.log("Returning general classes");
     return classesNoSchedule || [];
   }, [

@@ -17,8 +17,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  TextField,
-
 } from "@mui/material";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { Clear, ArrowBack, Save } from "@mui/icons-material";
@@ -74,7 +72,6 @@ const GeneralScheduleScreen = () => {
     handlers: { fetchVersions, createVersion }
   } = useTimeTablingVersionData();
 
-  // Handle selecting a version
   const handleVersionSelect = (version) => {
     setSelectedVersion(version);
     setters.setVersionId(version.id);
@@ -344,7 +341,6 @@ const GeneralScheduleScreen = () => {
                   selectedGroup={states.selectedGroup}
                   setSelectedGroup={(group) => {
                     setters.setSelectedGroup(group);
-                    // Clear cluster selection when group changes
                     setSelectedCluster(null);
                   }}
                   sx={{
@@ -605,6 +601,7 @@ const GeneralScheduleScreen = () => {
             <RoomOccupationScreen
               selectedSemester={states.selectedSemester}
               setSelectedSemester={setters.setSelectedSemester}
+              selectedVersion={selectedVersion}
             />
           </div>
         ) : viewTab === 3 ? (
