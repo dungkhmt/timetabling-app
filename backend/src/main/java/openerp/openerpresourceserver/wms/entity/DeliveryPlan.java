@@ -37,4 +37,8 @@ public class DeliveryPlan extends BaseEntity {
 
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id")
+    private Facility facility;
 }
