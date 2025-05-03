@@ -24,4 +24,6 @@ public interface ShipmentService {
     ApiResponse<InboundDetailRes> getInBoundDetail(String shipmentId);
 
     void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin, Map<String, List<InventoryItem>> inventoryItemMap);
+
+    ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit);
 }

@@ -11,4 +11,6 @@ public interface ShipmentRepo extends JpaRepository<Shipment, String> {
     Page<Shipment> findByOrderId(String orderId, PageRequest pageRequest);
 
     List<Shipment> findByShipmentStatusIdAndShipmentTypeId(String name, String outbound);
+
+    Page<Shipment> findByShipmentStatusId(String name, PageRequest pageRequest);
 }

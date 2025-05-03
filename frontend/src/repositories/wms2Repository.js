@@ -88,5 +88,11 @@ export const wms2Service = {
   },
   getLowStockForecast : () => {
     return request("get", `/forecast/daily-low-stock`);
+  },
+  createDeliveryBill: (data) => {
+    return request("post", "/delivery-bill/create", null, null, data);
+  },
+  getOutBoundsForDeliveryBill : (page, limit) => {
+    return request("get", `/shipment/for-delivery?page=${page}&limit=${limit}`);
   }
 };

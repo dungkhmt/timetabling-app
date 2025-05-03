@@ -350,6 +350,28 @@ export const useWms2Data = () => {
     }
   };
 
+  const createDeliveryBill = async (data) => {
+    try {
+      const res = await wms2Service.createDeliveryBill(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating delivery bill:", error);
+      toast.error("Không thể tạo phiếu giao hàng");
+      return { data: {} };
+    }
+  };
+
+  const getOutBoundsForDeliveryBill = async (page, limit) => {
+    try {
+      const response = await wms2Service.getOutBoundsForDeliveryBill(page, limit);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching outbound order:", error);
+      toast.error("Không thể tải thông tin phiếu giao hàng");
+      return { data: {} };
+    }
+  };
+
   // Trả về các hàm thay vì dữ liệu
   return {
     createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -381,5 +403,7 @@ export const useWms2Data = () => {
     getInBoundDetail,
     exportInBoundShipment,
     getLowStockForecast,
+    createDeliveryBill,
+    getOutBoundsForDeliveryBill,
   };
 };

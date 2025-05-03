@@ -1,18 +1,21 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.shipment.*;
 import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
+import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final InventoryItemRepo inventoryItemRepo;
     private final ProductRepo productRepo;
     private final OrderHeaderRepo orderHeaderRepo;
+    private final GeneralMapper generalMapper;
 
     @Override
     public ApiResponse<Void> createOutboundSaleOrder(CreateOutBoundReq req, String name) {
@@ -70,7 +74,6 @@ public class ShipmentServiceImpl implements ShipmentService {
             }
 
 
-
             var inventoryItemDetail = InventoryItemDetail.builder()
                     .inventoryItem(inventoryItem)
                     .quantity(product.getQuantity())
@@ -81,7 +84,6 @@ public class ShipmentServiceImpl implements ShipmentService {
                     .build();
 
             inventoryItemDetailDOs.add(inventoryItemDetail);
-
 
 
         }
@@ -103,12 +105,12 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         var outBoundByOrderPageRes = shipments.getContent().stream()
                 .map(shipment -> OutBoundByOrderRes.builder()
-                            .id(shipment.getId())
+                        .id(shipment.getId())
                         .shipmentType(shipment.getShipmentTypeId())
-                            .shipmentName(shipment.getShipmentName())
-                            .customerName(shipment.getToCustomer().getName())
-                            .statusId(shipment.getShipmentStatusId())
-                            .build()
+                        .shipmentName(shipment.getShipmentName())
+                        .customerName(shipment.getToCustomer().getName())
+                        .statusId(shipment.getShipmentStatusId())
+                        .build()
                 ).toList();
 
         return ApiResponse.<Pagination<OutBoundByOrderRes>>builder()
@@ -202,7 +204,6 @@ public class ShipmentServiceImpl implements ShipmentService {
             }
 
 
-
             var inventoryItemDetail = InventoryItemDetail.builder()
                     .inventoryItem(inventoryItem)
                     .quantity(product.getQuantity())
@@ -213,7 +214,6 @@ public class ShipmentServiceImpl implements ShipmentService {
                     .build();
 
             inventoryItemDetailDOs.add(inventoryItemDetail);
-
 
 
         }
@@ -343,6 +343,32 @@ public class ShipmentServiceImpl implements ShipmentService {
             // Log error but continue processing
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit) {
+        var pageRequest = CommonUtil.getPageRequest(page, limit);
+        var shipments = shipmentRepo.findByShipmentStatusId(ShipmentStatus.EXPORTED.name(), pageRequest);
+
+        var shipmentForDeliveryPageRes = shipments.getContent().stream()
+                .map(shipment -> {
+                            var res = generalMapper.convertToDto(shipment, ShipmentForDeliveryRes.class);
+                            res.setCustomerName(shipment.getToCustomer().getName());
+                            return res;
+                        }
+                ).toList();
+
+        return ApiResponse.<Pagination<ShipmentForDeliveryRes>>builder()
+                .code(200)
+                .message("Get shipment for delivery success")
+                .data(Pagination.<ShipmentForDeliveryRes>builder()
+                        .page(page)
+                        .size(limit)
+                        .data(shipmentForDeliveryPageRes)
+                        .totalElements(shipments.getTotalElements())
+                        .totalPages(shipments.getTotalPages())
+                        .build())
+                .build();
     }
 
 

@@ -50,6 +50,13 @@ public class ShipmentController {
         return shipmentService.getInBoundDetail(shipmentId);
     }
 
+    @GetMapping("/for-delivery")
+    public ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(
+            @RequestParam int page,
+            @RequestParam int limit) {
+        return shipmentService.getShipmentForDelivery(page, limit);
+    }
+
 
 
 }

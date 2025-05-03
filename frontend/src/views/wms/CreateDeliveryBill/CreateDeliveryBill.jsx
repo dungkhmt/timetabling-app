@@ -6,7 +6,7 @@ import {
   Typography,
 } from "@mui/material";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useWms2Data } from "services/useWms2Data";
 import { DeliveryBillFormProvider } from "../common/context/DeliveryBillFormContext";
 import ShipmentSelector from "./components/ShipmentSelector";
@@ -15,7 +15,7 @@ import ShipmentProductTable from "./components/ShipmentProductTable";
 
 const CreateDeliveryBill = () => {
   const { createDeliveryBill } = useWms2Data();
-  const navigate = useNavigate();
+  const navigate = useHistory();
   
   // State for form data
   const [deliveryBill, setDeliveryBill] = useState({
