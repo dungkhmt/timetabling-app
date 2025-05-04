@@ -8,6 +8,7 @@ import PurchaseOrderListPage from "../views/wms/PurchaseOrderListPage/PurchaseOr
 import ApprovedPurchaseOrderDetail from "../views/wms/ApprovedPurchaseOrder/ApprovedPurchaseOrderDetail";
 import InBoundDetail from "views/wms/ApprovedPurchaseOrder/components/InBoundDetail";
 import CreateDeliveryBill from "views/wms/CreateDeliveryBill/CreateDeliveryBill";
+import DeliveryBillListPage from "views/wms/DeliveryBillListPage/DeliveryBillListPage";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -58,8 +59,14 @@ export default function WMSRouter() {
         ></Route>
 
         <Route
-          component={CreateDeliveryBill}
+          component={DeliveryBillListPage}
+          exact
           path={`${path}/logistics/deliverybill`}
+        ></Route>
+
+        <Route
+          component={CreateDeliveryBill}
+          path={`${path}/logistics/deliverybill/create`}
         ></Route>
       </Switch>
     </div>

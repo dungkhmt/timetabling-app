@@ -94,5 +94,8 @@ export const wms2Service = {
   },
   getOutBoundsForDeliveryBill : (page, limit) => {
     return request("get", `/shipment/for-delivery?page=${page}&limit=${limit}`);
-  }
+  },
+  getDeliveryBills: (page, limit, filters) => {
+    return request("post", `/delivery-bill/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
 };

@@ -372,6 +372,18 @@ export const useWms2Data = () => {
     }
   };
 
+  const getDeliveryBills = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getDeliveryBills(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching delivery bills:", error);
+      toast.error("Không thể tải danh sách phiếu giao hàng");
+      return { data: {} };
+    }
+  };
+
+
   // Trả về các hàm thay vì dữ liệu
   return {
     createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -405,5 +417,6 @@ export const useWms2Data = () => {
     getLowStockForecast,
     createDeliveryBill,
     getOutBoundsForDeliveryBill,
+    getDeliveryBills,
   };
 };
