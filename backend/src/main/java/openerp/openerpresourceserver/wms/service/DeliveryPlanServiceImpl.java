@@ -29,12 +29,16 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
     private final DeliveryBillRepo deliveryBillRepo;
     private final GeneralMapper generalMapper;
     private final UserLoginRepo userLoginRepo;
+    private final FacilityRepo facilityRepo;
     @Override
     public ApiResponse<Void> createDeliveryPlan(CreateDeliveryPlan req, Principal principal) {
         List<DeliveryPlanOrder> deliveryPlanOrders = new ArrayList<>();
         List<DeliveryPlanShipper> deliveryPlanShippers = new ArrayList<>();
         List<DeliveryBill> deliveryBills = deliveryBillRepo.findAllById(req.getDeliveryBillIds());
         List<Shipper> shippers = shipperRepo.findAllById(req.getShipperIds());
+        var facility = facilityRepo.findById(req.getFacilityId()).orElseThrow(
+                () -> new DataNotFoundException("Facility not found with id: " + req.getFacilityId())
+        );
         var userLogin = userLoginRepo.findById(principal.getName()).orElseThrow(
                 () -> new DataNotFoundException("User not found with id: " + principal.getName())
         );
@@ -73,6 +77,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
         deliveryPlan.setTotalWeight(totalWeight);
         deliveryPlan.setStatusId(DeliveryBillStatus.CREATED.name());
         deliveryPlan.setCreatedByUser(userLogin);
+        deliveryPlan.setFacility(facility);
 
         deliveryPlanRepo.save(deliveryPlan);
         deliveryPlanOrderRepo.saveAll(deliveryPlanOrders);
