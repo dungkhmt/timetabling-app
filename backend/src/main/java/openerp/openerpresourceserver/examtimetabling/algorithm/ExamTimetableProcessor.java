@@ -1,9 +1,9 @@
 package openerp.openerpresourceserver.examtimetabling.algorithm;
 
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.*;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.entity.*;
 import openerp.openerpresourceserver.examtimetabling.repository.*;
-import openerp.openerpresourceserver.examtimetabling.entity.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class ExamTimetableProcessor {
 
     private final ExamClassRepository examClassRepository;
-    private final ExamRoomRepository examRoomRepository;
+    private final ClassroomRepository examRoomRepository;
     private final ExamTimetableSessionRepository sessionRepository;
     private final ExamTimetableAssignmentRepository assignmentRepository;
     private final ConflictExamTimetablingClassRepository conflictRepository;
@@ -24,7 +24,7 @@ public class ExamTimetableProcessor {
     
     public ExamTimetableProcessor(
         ExamClassRepository examClassRepository,
-        ExamRoomRepository examRoomRepository,
+        ClassroomRepository examRoomRepository,
         ExamTimetableSessionRepository sessionRepository,
         ExamTimetableAssignmentRepository assignmentRepository,
         ConflictExamTimetablingClassRepository conflictRepository,
@@ -64,7 +64,7 @@ public class ExamTimetableProcessor {
             .collect(Collectors.groupingBy(ExamClass::getGroupId));
         data.setClassesByGroupId(classesByGroupId);
         
-        List<ExamRoom> rooms = examRoomRepository.findAll();
+        List<ExamRoom> rooms = examRoomRepository.findAllAsExamRoomDTO();
         data.setAvailableRooms(rooms);
         
         List<TimeSlot> timeSlots = generateTimeSlots(examTimetableId, dates);

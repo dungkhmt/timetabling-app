@@ -22,7 +22,7 @@ public class TimetablingSolution {
     private Map<UUID, List<UUID>> timeSlotClassAssignments;
     
     // Maps room ID to number of times it's used
-    private Map<UUID, Integer> roomUsageCounts;
+    private Map<String, Integer> roomUsageCounts;
     
     // Maps time slot ID to number of times it's used
     private Map<UUID, Integer> timeSlotUsageCounts;
@@ -54,7 +54,7 @@ public class TimetablingSolution {
     /**
      * Add an assignment to the solution
      */
-    public void addAssignment(UUID classId, UUID timeSlotId, UUID roomId, 
+    public void addAssignment(UUID classId, UUID timeSlotId, String roomId, 
                               String courseId, LocalDate date) {
         AssignmentDetails details = new AssignmentDetails();
         details.setTimeSlotId(timeSlotId);

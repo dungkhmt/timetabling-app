@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.examtimetabling.algorithm;
 
 import openerp.openerpresourceserver.examtimetabling.entity.*;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.*;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -105,7 +106,7 @@ public class ExamTimetablingUtils {
      * Check if a room is available at a particular time slot
      */
     public static boolean isRoomAvailable(
-            UUID roomId, 
+            String roomId, 
             TimeSlot timeSlot, 
             Set<TimeSlotRoomPair> prohibitedSlots,
             Map<TimeSlotRoomPair, Boolean> assignedRooms) {

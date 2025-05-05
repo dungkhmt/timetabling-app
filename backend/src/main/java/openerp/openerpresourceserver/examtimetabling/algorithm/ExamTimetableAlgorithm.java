@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.examtimetabling.algorithm;
 
 import openerp.openerpresourceserver.examtimetabling.entity.*;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.*;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -173,8 +174,8 @@ public class ExamTimetableAlgorithm {
             }
         }
         
-        for (Map.Entry<UUID, Integer> entry : newSolution.getRoomUsageCounts().entrySet()) {
-            UUID roomId = entry.getKey();
+        for (Map.Entry<String, Integer> entry : newSolution.getRoomUsageCounts().entrySet()) {
+            String roomId = entry.getKey();
             Integer count = entry.getValue();
             
             existingSolution.getRoomUsageCounts().put(roomId, 
@@ -961,8 +962,8 @@ public class ExamTimetableAlgorithm {
         AssignmentDetails details1 = solution.getAssignedClasses().get(class1);
         AssignmentDetails details2 = solution.getAssignedClasses().get(class2);
         
-        UUID room1 = details1.getRoomId();
-        UUID room2 = details2.getRoomId();
+        String room1 = details1.getRoomId();
+        String room2 = details2.getRoomId();
         
         // Check if rooms are suitable (capacity)
         ExamClass examClass1 = null;
@@ -1001,7 +1002,7 @@ public class ExamTimetableAlgorithm {
         details2.setRoomId(room1);
         
         // Update room usage counts
-        Map<UUID, Integer> roomUsage = solution.getRoomUsageCounts();
+        Map<String, Integer> roomUsage = solution.getRoomUsageCounts();
         roomUsage.put(room1, roomUsage.getOrDefault(room1, 0));
         roomUsage.put(room2, roomUsage.getOrDefault(room2, 0));
     }

@@ -5,15 +5,15 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import openerp.openerpresourceserver.examtimetabling.entity.ExamRoom;
-import openerp.openerpresourceserver.examtimetabling.repository.ExamRoomRepository;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
+import openerp.openerpresourceserver.examtimetabling.repository.ClassroomRepository;
 
 @Service
 @RequiredArgsConstructor
 public class ExamRoomService {
-    private final ExamRoomRepository examRoomRepository;
+    private final ClassroomRepository examRoomRepository;
     
     public List<ExamRoom> getAllRooms() {
-        return examRoomRepository.findAll();
+        return examRoomRepository.findAllAsExamRoomDTO();
     }
 }

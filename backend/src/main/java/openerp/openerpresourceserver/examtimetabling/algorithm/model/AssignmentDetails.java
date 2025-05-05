@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class AssignmentDetails {
     private UUID timeSlotId;
     
-    private UUID roomId;
+    private String roomId;
     
     private UUID sessionId;
     

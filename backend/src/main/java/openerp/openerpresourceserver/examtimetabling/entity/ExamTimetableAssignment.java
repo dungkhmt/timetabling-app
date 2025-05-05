@@ -36,7 +36,7 @@ public class ExamTimetableAssignment {
     private ExamClass examClass;
     
     @Column(name = "room_id")
-    private UUID roomId;
+    private String roomId;
     
     @Column(name = "exam_session_id")
     private UUID examSessionId;

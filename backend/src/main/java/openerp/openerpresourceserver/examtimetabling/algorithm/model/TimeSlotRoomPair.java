@@ -17,7 +17,7 @@ public class TimeSlotRoomPair {
     
     private LocalDate date;
     
-    private UUID roomId;
+    private String roomId;
     
     @Override
     public boolean equals(Object o) {

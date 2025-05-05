@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
-import openerp.openerpresourceserver.examtimetabling.entity.ExamRoom;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.service.ExamRoomService;
 
 @RestController
@@ -19,7 +19,7 @@ public class ExamRoomController {
     
     @GetMapping
     public ResponseEntity<List<ExamRoom>> getAllRooms() {
-        List<ExamRoom> rooms = examRoomService.getAllRooms();
+        List<openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom> rooms = examRoomService.getAllRooms();
         return ResponseEntity.ok(rooms);
     }
 }

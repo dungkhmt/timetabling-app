@@ -101,7 +101,7 @@ public class ExamTimetableSolution extends TimetablingSolution {
      * (Should be as equal as possible)
      */
     private void calculateRoomBalanceMetric() {
-        Map<UUID, Integer> roomUsage = getRoomUsageCounts();
+        Map<String, Integer> roomUsage = getRoomUsageCounts();
         
         if (roomUsage.isEmpty()) {
             setRoomBalanceMetric(1.0); // Perfect balance if no rooms used
@@ -242,7 +242,7 @@ public class ExamTimetableSolution extends TimetablingSolution {
      * Override the add assignment method to update usage counts
      */
     @Override
-    public void addAssignment(UUID classId, UUID timeSlotId, UUID roomId, 
+    public void addAssignment(UUID classId, UUID timeSlotId, String roomId, 
                               String courseId, LocalDate date) {
         super.addAssignment(classId, timeSlotId, roomId, courseId, date);
         

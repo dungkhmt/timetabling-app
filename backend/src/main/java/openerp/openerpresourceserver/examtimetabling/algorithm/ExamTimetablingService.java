@@ -39,7 +39,7 @@ public class ExamTimetablingService {
     private ExamClassRepository examClassRepository;
     
     @Autowired
-    private ExamRoomRepository examRoomRepository;
+    private ClassroomRepository examRoomRepository;
     
     @Autowired
     private ExamTimetableSessionRepository examTimetableSessionRepository;

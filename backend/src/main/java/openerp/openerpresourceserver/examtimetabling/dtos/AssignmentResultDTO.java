@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class AssignmentResultDTO {
     private final UUID assignmentId;
-    private final UUID roomId;
+    private final String roomId;
     private final UUID sessionId;
     private final LocalDate date;
     private final int weekNumber;

@@ -39,12 +39,12 @@ import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.BusyCombinationDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.dtos.ScheduleSlotDTO;
-import openerp.openerpresourceserver.examtimetabling.entity.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableSession;
-import openerp.openerpresourceserver.examtimetabling.repository.ExamRoomRepository;
+import openerp.openerpresourceserver.examtimetabling.repository.ClassroomRepository;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableAssignmentRepository;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableRepository;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableSessionRepository;
@@ -54,7 +54,7 @@ import openerp.openerpresourceserver.examtimetabling.repository.ExamTimetableSes
 public class ExamTimetableAssignmentService {
     private final ExamTimetableAssignmentRepository assignmentRepository;
     private final ExamTimetableRepository examTimetableRepository;
-    private final ExamRoomRepository roomRepository;
+    private final ClassroomRepository roomRepository;
     private final ExamTimetableSessionRepository sessionRepository;
     private final EntityManager entityManager;
     
@@ -188,7 +188,7 @@ public class ExamTimetableAssignmentService {
                     "UPDATE exam_timetable_assignment SET updated_at = NOW()");
                 
                 if (change.getRoomId() != null) {
-                    queryBuilder.append(", room_id = CAST(:roomId AS UUID)");
+                    queryBuilder.append(", room_id = CAST(:roomId AS TEXT)");
                 }
                 
                 if (change.getSessionId() != null) {
@@ -344,10 +344,9 @@ public class ExamTimetableAssignmentService {
             "c.number_students, c.period, '' as managerid, c.management_code, " +
             "'' as teachunitid, c.school, c.exam_class_id, " +
             "a.date, a.week_number, s.name as session_name, " +
-            "r.name as room_name " +
+            "a.room_id as room_name " +
             "FROM exam_timetable_assignment a " +
             "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
-            "LEFT JOIN exam_room r ON CAST(a.room_id AS VARCHAR) = CAST(r.id AS VARCHAR) " +
             "LEFT JOIN exam_timetable_session s ON CAST(a.exam_session_id AS VARCHAR) = CAST(s.id AS VARCHAR) " +
             "WHERE CAST(a.id AS VARCHAR) IN :assignmentIds " +
             "AND a.deleted_at IS NULL";
@@ -495,7 +494,7 @@ public class ExamTimetableAssignmentService {
             .orElseThrow(() -> new RuntimeException("Timetable not found"));
         
         // Get available rooms
-        List<ExamRoom> availableRooms = roomRepository.findAll();
+        List<ExamRoom> availableRooms = roomRepository.findAllAsExamRoomDTO();
         if (availableRooms.isEmpty()) {
             throw new RuntimeException("No rooms available for assignment");
         }

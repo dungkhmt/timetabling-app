@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.examtimetabling.algorithm.model;
 import java.time.LocalDate;
 import java.util.*;
 
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.entity.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
