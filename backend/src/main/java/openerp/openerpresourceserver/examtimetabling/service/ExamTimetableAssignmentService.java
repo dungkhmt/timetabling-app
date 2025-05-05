@@ -193,6 +193,7 @@ public class ExamTimetableAssignmentService {
                 
                 if (change.getSessionId() != null) {
                     queryBuilder.append(", exam_session_id = CAST(:sessionId AS UUID)");
+                    queryBuilder.append(", session = (SELECT name FROM exam_timetable_session WHERE id = CAST(:sessionId AS UUID))");
                 }
                 
                 if (change.getWeekNumber() != null) {
@@ -320,6 +321,7 @@ public class ExamTimetableAssignmentService {
         String sql = "UPDATE exam_timetable_assignment " +
                      "SET room_id = NULL, " +
                      "    exam_session_id = NULL, " +
+                     "    session = NULL, " +
                      "    date = NULL, " +
                      "    week_number = NULL, " +
                      "    updated_at = NOW() " +

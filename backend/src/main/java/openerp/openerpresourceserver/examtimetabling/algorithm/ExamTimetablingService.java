@@ -173,7 +173,12 @@ public class ExamTimetablingService {
         
         ExamPlan examPlan = examPlanRepository.findById(examTimetable.getExamPlanId())
             .orElseThrow(() -> new RuntimeException("Exam plan not found: " + examTimetable.getExamPlanId()));
-        
+
+        Map<UUID, String> sessionNames = examTimetableSessionRepository.findAll().stream()
+            .collect(Collectors.toMap(
+                ExamTimetableSession::getId, 
+                session -> session.getName()
+            ));
         List<ExamTimetableAssignment> existingAssignments = 
             examTimetableAssignmentRepository.findByExamTimetableId(examTimetableId);
         
@@ -195,6 +200,8 @@ public class ExamTimetablingService {
             if (assignment != null) {
                 assignment.setRoomId(details.getRoomId());
                 assignment.setExamSessionId(details.getSessionId());
+                assignment.setSession(sessionNames.get(details.getSessionId()));
+
                 assignment.setDate(details.getDate());
                 
                 // Calculate week number based on exam plan
