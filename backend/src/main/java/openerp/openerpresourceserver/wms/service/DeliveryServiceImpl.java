@@ -15,6 +15,7 @@ import openerp.openerpresourceserver.wms.entity.InventoryItemDetail;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
+import openerp.openerpresourceserver.wms.repository.specification.DeliveryBillSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
@@ -98,7 +99,8 @@ public class DeliveryServiceImpl implements DeliveryBillService {
     @Override
     public ApiResponse<Pagination<DeliveryListPageRes>> getDeliveryBills(int page, int limit, DeliveryBillGetListFilter filters) {
         var pageReq = CommonUtil.getPageRequest(page, limit);
-        var deliveryBills = deliveryBillRepo.findAll(pageReq);
+        var specification = new DeliveryBillSpecification(filters);
+        var deliveryBills = deliveryBillRepo.findAll(specification,pageReq);
 
         List<DeliveryListPageRes> deliveryBillList = deliveryBills.getContent().stream()
                 .map(deliveryBill -> {
