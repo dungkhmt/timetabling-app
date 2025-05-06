@@ -5,16 +5,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeliveryPlanGetListFilter {
-    private String statusId;
+public class ShipperGetListFilter {
     private String keyword;
-    private LocalDateTime startCreatedAt;
-    private LocalDateTime endCreatedAt;
-    private String facilityId;
+    private String statusId;
 }

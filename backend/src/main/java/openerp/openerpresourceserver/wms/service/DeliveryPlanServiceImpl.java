@@ -6,11 +6,13 @@ import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryPlan;
+import openerp.openerpresourceserver.wms.dto.delivery.DeliveryPlanPageRes;
 import openerp.openerpresourceserver.wms.dto.filter.DeliveryPlanGetListFilter;
 import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
+import openerp.openerpresourceserver.wms.repository.specification.DeliveryPlanSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
@@ -91,8 +93,31 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
     }
 
     @Override
-    public ApiResponse<Pagination<DeliveryPlan>> getAllDeliveryPlans(int page, int limit, DeliveryPlanGetListFilter filters) {
-        return null;
+    public ApiResponse<Pagination<DeliveryPlanPageRes>> getAllDeliveryPlans(int page, int limit, DeliveryPlanGetListFilter filters) {
+        var pageable = CommonUtil.getPageRequest(page, limit);
+        var deliveryPlanSpec = new DeliveryPlanSpecification(filters);
+        var deliveryPlans = deliveryPlanRepo.findAll(deliveryPlanSpec, pageable);
+
+        var deliveryPlanList = deliveryPlans.getContent().stream().map(deliveryPlan -> {
+            var deliveryPlanPageRes = generalMapper.convertToDto(deliveryPlan, DeliveryPlanPageRes.class);
+            deliveryPlanPageRes.setFacilityName(deliveryPlan.getFacility().getName());
+            deliveryPlanPageRes.setCreatedByUserName(deliveryPlan.getCreatedByUser().getFullName());
+            return deliveryPlanPageRes;
+        }).toList();
+
+        var pagination = Pagination.<DeliveryPlanPageRes>builder()
+                .page(page)
+                .size(limit)
+                .data(deliveryPlanList)
+                .totalElements(deliveryPlans.getTotalElements())
+                .totalPages(deliveryPlans.getTotalPages())
+                .build();
+
+        return ApiResponse.<Pagination<DeliveryPlanPageRes>>builder()
+                .code(200)
+                .message("Delivery Plans Retrieved Successfully")
+                .data(pagination)
+                .build();
     }
 
 }

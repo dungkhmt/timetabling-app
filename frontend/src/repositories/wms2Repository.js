@@ -98,4 +98,7 @@ export const wms2Service = {
   getDeliveryBills: (page, limit, filters) => {
     return request("post", `/delivery-bill/get-all?page=${page}&limit=${limit}`, null, null, filters);
   },
+  getDeliveryPlans : (page, limit, filters) => {
+    return request("post", `/delivery-plan/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  }
 };

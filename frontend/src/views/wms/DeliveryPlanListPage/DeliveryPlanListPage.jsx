@@ -1,38 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
-import DeliveryBillListHeader from "./components/DeliveryBillListHeader";
-import DeliveryBillFilters from "./components/DeliveryBillFilters";
-import DeliveryBillTable from "./components/DeliveryBillTable";
+import DeliveryPlanListHeader from "./components/DeliveryPlanListHeader";
+import DeliveryPlanFilters from "./components/DeliveryPlanFilters";
+import DeliveryPlanTable from "./components/DeliveryPlanTable";
 import { useWms2Data } from "services/useWms2Data";
 import { toast } from "react-toastify";
 
-// Delivery bill status definitions to be shared across components
-export const DELIVERY_BILL_STATUSES = {
-  "CREATED": { label: "Đã tạo", color: "info" },
-  "IN_PROGRESS": { label: "Đang vận chuyển", color: "warning" },
+// Delivery plan status definitions to be shared across components
+export const DELIVERY_PLAN_STATUSES = {
+  "DRAFT": { label: "Nháp", color: "default" },
+  "PENDING": { label: "Chờ duyệt", color: "info" },
+  "APPROVED": { label: "Đã duyệt", color: "success" },
+  "IN_PROGRESS": { label: "Đang thực hiện", color: "warning" },
   "COMPLETED": { label: "Hoàn thành", color: "success" },
   "CANCELLED": { label: "Đã hủy", color: "error" }
 };
 
-// Priority levels
-export const PRIORITY_LEVELS = {
-  1: { label: "Thấp", color: "default" },
-  2: { label: "Trung bình", color: "primary" },
-  3: { label: "Cao", color: "error" }
-};
-
-const DeliveryBillListPage = () => {
-  const { getDeliveryBills } = useWms2Data();
+const DeliveryPlanListPage = () => {
+  const { getDeliveryPlans } = useWms2Data();
 
   // State
   const [loading, setLoading] = useState(false);
-  const [deliveryBills, setDeliveryBills] = useState([]);
+  const [deliveryPlans, setDeliveryPlans] = useState([]);
   const [filters, setFilters] = useState({
     keyword: "",
     status: "",
     startDate: null,
     endDate: null,
-    priority: ""
+    facilityId: ""
   });
   const [pagination, setPagination] = useState({
     page: 0,
@@ -41,33 +36,33 @@ const DeliveryBillListPage = () => {
     totalPages: 0
   });
 
-  // Fetch delivery bills on mount and when filters or pagination change
+  // Fetch delivery plans on mount and when filters or pagination change
   useEffect(() => {
-    fetchDeliveryBills();
+    fetchDeliveryPlans();
   }, [pagination.page, pagination.size]);
 
-  const fetchDeliveryBills = async () => {
+  const fetchDeliveryPlans = async () => {
     setLoading(true);
     try {
-      const response = await getDeliveryBills(
-        pagination.page, // API pagination is 1-indexed
+      const response = await getDeliveryPlans(
+        pagination.page,
         pagination.size,
         filters
       );
 
       if (response && response.code === 200) {
-        setDeliveryBills(response.data.data || []);
+        setDeliveryPlans(response.data.data || []);
         setPagination(prev => ({
           ...prev,
           totalElements: response.data.totalElements || 0,
           totalPages: response.data.totalPages || 0
         }));
       } else {
-        toast.error("Không thể tải danh sách phiếu giao hàng");
+        toast.error("Không thể tải danh sách kế hoạch giao hàng");
       }
     } catch (error) {
-      console.error("Error fetching delivery bills:", error);
-      toast.error("Lỗi khi tải danh sách phiếu giao hàng");
+      console.error("Error fetching delivery plans:", error);
+      toast.error("Lỗi khi tải danh sách kế hoạch giao hàng");
     } finally {
       setLoading(false);
     }
@@ -97,7 +92,7 @@ const DeliveryBillListPage = () => {
   // Apply filters
   const handleApplyFilters = () => {
     setPagination(prev => ({ ...prev, page: 0 }));
-    fetchDeliveryBills();
+    fetchDeliveryPlans();
   };
 
   // Reset filters
@@ -107,37 +102,35 @@ const DeliveryBillListPage = () => {
       status: "",
       startDate: null,
       endDate: null,
-      priority: ""
+      facilityId: ""
     });
     setPagination(prev => ({ ...prev, page: 0 }));
-    fetchDeliveryBills();
+    fetchDeliveryPlans();
   };
 
   return (
     <Box p={3}>
-      <DeliveryBillListHeader
+      <DeliveryPlanListHeader
         onResetFilters={handleResetFilters}
       />
 
-      <DeliveryBillFilters
+      <DeliveryPlanFilters
         filters={filters}
         onFilterChange={handleFilterChange}
         onApplyFilters={handleApplyFilters}
-        statuses={DELIVERY_BILL_STATUSES}
-        priorityLevels={PRIORITY_LEVELS}
+        statuses={DELIVERY_PLAN_STATUSES}
       />
 
-      <DeliveryBillTable
+      <DeliveryPlanTable
         loading={loading}
-        deliveryBills={deliveryBills}
+        deliveryPlans={deliveryPlans}
         pagination={pagination}
         onChangePage={handleChangePage}
         onChangeRowsPerPage={handleChangeRowsPerPage}
-        statuses={DELIVERY_BILL_STATUSES}
-        priorityLevels={PRIORITY_LEVELS}
+        statuses={DELIVERY_PLAN_STATUSES}
       />
     </Box>
   );
 };
 
-export default DeliveryBillListPage;
+export default DeliveryPlanListPage;

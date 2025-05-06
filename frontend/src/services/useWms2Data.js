@@ -383,6 +383,17 @@ export const useWms2Data = () => {
     }
   };
 
+  const getDeliveryPlans = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getDeliveryPlans(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching delivery plans:", error);
+      toast.error("Không thể tải danh sách kế hoạch giao hàng");
+      return { data: {} };
+    }
+  };
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -418,5 +429,6 @@ export const useWms2Data = () => {
     createDeliveryBill,
     getOutBoundsForDeliveryBill,
     getDeliveryBills,
+    getDeliveryPlans
   };
 };

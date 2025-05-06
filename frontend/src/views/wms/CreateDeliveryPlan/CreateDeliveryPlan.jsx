@@ -177,7 +177,7 @@ const CreateDeliveryPlan = () => {
             <Tab label="Thông tin chung" {...a11yProps(0)} />
             <Tab label="Danh sách vận đơn" {...a11yProps(1)} />
             <Tab label="Danh sách shipper" {...a11yProps(2)} />
-            <Tab label="Danh sách chuyến" {...a11yProps(3)} />
+            {/*<Tab label="Danh sách chuyến" {...a11yProps(3)} />*/}
           </Tabs>
           
           <Divider />
@@ -195,9 +195,9 @@ const CreateDeliveryPlan = () => {
               <ShippersTab />
             </TabPanel>
             
-            <TabPanel value={activeTab} index={3}>
-              <RoutesTab />
-            </TabPanel>
+            {/*<TabPanel value={activeTab} index={3}>*/}
+            {/*  <RoutesTab />*/}
+            {/*</TabPanel>*/}
             
             <Box mt={4} display="flex" justifyContent="space-between">
               <Button

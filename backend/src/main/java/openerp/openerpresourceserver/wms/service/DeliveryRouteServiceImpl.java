@@ -28,13 +28,14 @@ import java.util.Map;
 @Slf4j
 public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
-    private final DeliveryRouteRepo deliveryRouteRepository;
-    private final DeliveryRouteItemRepo deliveryRouteItemRepository;
-    private final DeliveryPlanRepo deliveryPlanRepository;
-    private final DeliveryBillRepo deliveryBillRepository;
-    private final DeliveryPlanOrderRepo deliveryPlanOrderRepository;
-    private final ShipperRepo shipperRepository;
-    private final FacilityRepo facilityRepository;
+    private final DeliveryRouteRepo deliveryRouteRepo;
+    private final DeliveryRouteItemRepo deliveryRouteItemRepo;
+    private final DeliveryPlanRepo deliveryPlanRepo;
+    private final DeliveryBillRepo deliveryBillRepo;
+    private final DeliveryPlanOrderRepo deliveryPlanOrderRepo;
+    private final ShipperRepo shipperRepo;
+    private final FacilityRepo facilityRepo;
+    private final DeliveryPlanShipperRepo deliveryPlanShipperRepo;
 
     // Services
     private final RouteOptimizer routeOptimizer;
@@ -45,17 +46,18 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
     public ApiResponse<DeliveryRouteResponseDTO> autoAssignDeliveryRoutesForPlan(String deliveryPlanId) {
         try {
             // Fetch delivery plan
-            DeliveryPlan deliveryPlan = deliveryPlanRepository.findById(deliveryPlanId)
+            DeliveryPlan deliveryPlan = deliveryPlanRepo.findById(deliveryPlanId)
                     .orElseThrow(() -> new DataNotFoundException("Delivery plan not found with id: " + deliveryPlanId));
 
             // Get facility (depot) location
             Facility facility = deliveryPlan.getFacility();
 
             // Get delivery bills associated with this delivery plan
-            List<String> deliveryBillIds = deliveryPlanOrderRepository.findByDeliveryPlanId(deliveryPlan.getId());
+            List<String> deliveryBillIds = deliveryPlanOrderRepo.findByDeliveryPlanId(deliveryPlan.getId());
+            List<String> shipperIds = deliveryPlanShipperRepo.findByDeliveryPlanId(deliveryPlan.getId());
 
 
-            List<DeliveryBill> deliveryBills = deliveryBillRepository.findAllById(deliveryBillIds);
+            List<DeliveryBill> deliveryBills = deliveryBillRepo.findAllById(deliveryBillIds);
             if (deliveryBills.isEmpty()) {
                 return ApiResponse.<DeliveryRouteResponseDTO>builder()
                         .code(400)
@@ -65,8 +67,8 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
 
             // Get available shippers for this facility
-            List<Shipper> availableShippers = shipperRepository.findByStatusId(ShipperStatus.ACTIVE.name());
-            if (availableShippers.isEmpty()) {
+            List<Shipper> shippers = shipperRepo.findAllById(shipperIds);
+            if (shippers.isEmpty()) {
                 return ApiResponse.<DeliveryRouteResponseDTO>builder()
                         .code(400)
                         .message("No available shippers found for this facility")
@@ -78,10 +80,10 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             deliveryRoute.setId(CommonUtil.getUUID());
             deliveryRoute.setDelivery(deliveryPlan);
             deliveryRoute.setStatusId("CREATED");
-            deliveryRouteRepository.save(deliveryRoute);
+            deliveryRouteRepo.save(deliveryRoute);
 
             // Set up VRP problem
-            CVRPInput vrpInput = routeOptimizer.setupVRPInput(facility, deliveryBills, availableShippers);
+            CVRPInput vrpInput = routeOptimizer.setupVRPInput(facility, deliveryBills, shippers);
 
             // Solve the VRP problem
             CVRPSolution solution = routeOptimizer.optimizeRoutes(vrpInput);
@@ -121,14 +123,14 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
     private void saveRoutingSolution(DeliveryRoute deliveryRoute, CVRPSolution solution, CVRPInput input) {
         // Update delivery route status
         deliveryRoute.setStatusId("ASSIGNED");
-        deliveryRouteRepository.save(deliveryRoute);
+        deliveryRouteRepo.save(deliveryRoute);
 
         Map<Integer, DeliveryBill> nodeToDeliveryBill = (Map<Integer, DeliveryBill>) input.getData();
         List<Node> nodes = input.getNodes();
         List<Vehicle> vehicles = input.getVehicles();
 
         // First, delete any existing route items for this route to avoid duplicates
-        deliveryRouteItemRepository.deleteByDeliveryRouteId(deliveryRoute.getId());
+        deliveryRouteItemRepo.deleteByDeliveryRouteId(deliveryRoute.getId());
 
         // Process each route (one per shipper)
         for (VRPRoute route : solution.getRoutes()) {
@@ -142,16 +144,16 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
             // Get shipper for this route
             String shipperId = vehicles.get(vehicleId).getDriverId();
-            Shipper shipper = shipperRepository.findById(shipperId)
+            Shipper shipper = shipperRepo.findById(shipperId)
                     .orElseThrow(() -> new RuntimeException("Shipper not found: " + shipperId));
 
             // Update shipper status and assign to route
             shipper.setStatusId("ASSIGNED");
-            shipperRepository.save(shipper);
+            shipperRepo.save(shipper);
 
             // Update route with assigned shipper
             deliveryRoute.setAssignToShipper(shipper);
-            deliveryRouteRepository.save(deliveryRoute);
+            deliveryRouteRepo.save(deliveryRoute);
 
             // Create delivery route items for each node in sequence
             int seq = 1;
@@ -182,20 +184,20 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
                 // Update delivery bill status
                 deliveryBill.setStatusId("ASSIGNED_TO_ROUTE");
-                deliveryBillRepository.save(deliveryBill);
+                deliveryBillRepo.save(deliveryBill);
 
                 seq++;
             }
 
             // Save all route items
             if (!routeItems.isEmpty()) {
-                deliveryRouteItemRepository.saveAll(routeItems);
+                deliveryRouteItemRepo.saveAll(routeItems);
             }
         }
 
         // Update delivery plan status
         DeliveryPlan deliveryPlan = deliveryRoute.getDelivery();
         deliveryPlan.setStatusId("ROUTING_COMPLETED");
-        deliveryPlanRepository.save(deliveryPlan);
+        deliveryPlanRepo.save(deliveryPlan);
     }
 }
