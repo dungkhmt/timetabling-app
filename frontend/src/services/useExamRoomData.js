@@ -1,7 +1,6 @@
-import { useQuery, useMutation} from 'react-query';
-import { toast } from 'react-toastify';
+import { useQuery, } from 'react-query';
+import {  } from 'react-toastify';
 import { examRoomService } from "repositories/examRoomRepository";
-import { queryClient } from 'queryClient';
 
 export const useExamRoomData = () => {
   
@@ -14,45 +13,9 @@ export const useExamRoomData = () => {
     }
   );
 
-  const createMutation = useMutation(examRoomService.createExamRoom, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('examRooms');
-      toast.success('Tạo kế hoạc thi mới thành công!');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kế hoạch thi');
-    }
-  });
-
-  const updateMutation = useMutation(examRoomService.updateExamRoom, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('examRooms');
-      toast.success('Cập nhật kế hoạch thi thành công!');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kế hoạc thi');
-    }
-  });
-
-  const deleteMutation = useMutation(examRoomService.deleteExamRoom, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('examRooms');
-      toast.success('Xóa kế hoạc thi thành công!');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kế hoạc thi');
-    }
-  });
-
   return {
     examRooms: examRooms?.data || [],
     isLoading,
     error,
-    createExamRoom: createMutation.mutateAsync,
-    updateExamRoom: updateMutation.mutateAsync,
-    deleteExamRoom: deleteMutation.mutateAsync,
-    isCreating: createMutation.isLoading,
-    isUpdating: updateMutation.isLoading,
-    isDeleting: deleteMutation.isLoading,
   };
 };

@@ -10,7 +10,12 @@ import {
   Grid,
   CircularProgress,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -18,13 +23,14 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { vi } from 'date-fns/locale';
 
-const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
+const AddExamPlanModal = ({ open, onClose, onSave, isSaving, semesters }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    startTime: null, // Match the field name used in DatePicker
-    endTime: null,   // Match the field name used in DatePicker
-    startWeek: '',   // Add startWeek field with empty string as initial value
+    startTime: null, 
+    endTime: null,   
+    startWeek: '',   
+    semesterId: '',  
   });
 
   const [errors, setErrors] = useState({});
@@ -32,9 +38,7 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Special handling for startWeek to ensure it's a positive number
     if (name === 'startWeek') {
-      // Only allow positive numbers or empty string (for backspace/delete)
       const regex = /^[1-9]\d*$/;
       if (value === '' || regex.test(value)) {
         setFormData({
@@ -49,7 +53,6 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
       });
     }
     
-    // Clear error when user types
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -64,7 +67,6 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
       [name]: date
     });
     
-    // Clear error when user selects a date
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -92,11 +94,14 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
       newErrors.endTime = 'Ngày kết thúc phải sau ngày bắt đầu';
     }
     
-    // Validate startWeek
     if (!formData.startWeek) {
       newErrors.startWeek = 'Tuần bắt đầu không được để trống';
     } else if (parseInt(formData.startWeek) <= 0) {
       newErrors.startWeek = 'Tuần bắt đầu phải là số dương';
+    }
+    
+    if (!formData.semesterId) {
+      newErrors.semesterId = 'Học kỳ không được để trống';
     }
     
     setErrors(newErrors);
@@ -105,10 +110,10 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      // Convert startWeek from string to number before saving
       const formDataToSubmit = {
         ...formData,
-        startWeek: parseInt(formData.startWeek)
+        startWeek: parseInt(formData.startWeek),
+        semesterId: parseInt(formData.semesterId)  
       };
       
       onSave(formDataToSubmit);
@@ -118,7 +123,8 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
         description: '',
         startTime: null,
         endTime: null,
-        startWeek: ''
+        startWeek: '',
+        semesterId: ''
       });
       setErrors({});
     }
@@ -130,7 +136,8 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
       description: '',
       startTime: null,
       endTime: null,
-      startWeek: ''
+      startWeek: '',
+      semesterId: ''
     });
     setErrors({});
     onClose();
@@ -187,27 +194,56 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
                   required
                 />
               </Grid>
-              
-              {/* Start Week Field */}
+
+              {/* Row with Semester Select and Start Week Fields */}
               <Grid item xs={12}>
-                <TextField
-                  name="startWeek"
-                  label="Tuần bắt đầu"
-                  type="text"
-                  fullWidth
-                  value={formData.startWeek}
-                  onChange={handleChange}
-                  error={!!errors.startWeek}
-                  helperText={errors.startWeek}
-                  required
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">tuần</InputAdornment>,
-                  }}
-                  inputProps={{
-                    inputMode: 'numeric',
-                    pattern: '[1-9][0-9]*'
-                  }}
-                />
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <FormControl 
+                      fullWidth 
+                      error={!!errors.semesterId}
+                      required
+                    >
+                      <InputLabel id="semester-select-label">Học kỳ</InputLabel>
+                      <Select
+                        labelId="semester-select-label"
+                        name="semesterId"
+                        value={formData.semesterId}
+                        label="Học kỳ"
+                        onChange={handleChange}
+                      >
+                        {semesters && semesters.map((semester) => (
+                          <MenuItem key={semester.id} value={semester.id}>
+                            {semester.semester}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.semesterId && (
+                        <FormHelperText>{errors.semesterId}</FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      name="startWeek"
+                      label="Tuần bắt đầu"
+                      type="text"
+                      fullWidth
+                      value={formData.startWeek}
+                      onChange={handleChange}
+                      error={!!errors.startWeek}
+                      helperText={errors.startWeek}
+                      required
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">tuần</InputAdornment>,
+                      }}
+                      inputProps={{
+                        inputMode: 'numeric',
+                        pattern: '[1-9][0-9]*'
+                      }}
+                    />
+                  </Grid>
+                </Grid>
               </Grid>
               
               <Grid item xs={12}>
@@ -222,7 +258,7 @@ const AddExamPlanModal = ({ open, onClose, onSave, isSaving }) => {
                 />
               </Grid>
               
-         {/* Row with date pickers */}
+              {/* Row with date pickers */}
               <Grid item xs={12}>
                 <Grid container spacing={2}>
                   <Grid item xs={6}>

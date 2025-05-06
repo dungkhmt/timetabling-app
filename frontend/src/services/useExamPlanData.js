@@ -17,7 +17,7 @@ export const useExamPlanData = (examPlanId = null) => {
   const createMutation = useMutation(examPlanService.createExamPlan, {
     onSuccess: () => {
       queryClient.invalidateQueries('examPlans');
-      toast.success('Tạo kế hoạc thi mới thành công!');
+      toast.success('Tạo kế hoạch thi mới thành công!');
     },
     onError: (error) => {
       toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kế hoạch thi');
@@ -27,20 +27,20 @@ export const useExamPlanData = (examPlanId = null) => {
   const updateMutation = useMutation(examPlanService.updateExamPlan, {
     onSuccess: () => {
       queryClient.invalidateQueries('examPlans');
-      toast.success('Cập nhật kế hoạc thi thành công!');
+      toast.success('Cập nhật kế hoạch thi thành công!');
     },
     onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kế hoạc thi');
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kế hoạch thi');
     }
   });
 
   const deleteMutation = useMutation(examPlanService.deleteExamPlan, {
     onSuccess: () => {
       queryClient.invalidateQueries('examPlans');
-      toast.success('Xóa kế hoạc thi thành công!');
+      toast.success('Xóa kế hoạch thi thành công!');
     },
     onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kế hoạc thi');
+      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kế hoạch thi');
     }
   });
 
@@ -78,7 +78,10 @@ export const useExamPlanData = (examPlanId = null) => {
     isCreating: createMutation.isLoading,
     isUpdating: updateMutation.isLoading,
     isDeleting: deleteMutation.isLoading,
-    examPlan: examPlan?.data || null,
+    examPlan: examPlan?.data || {
+      examPlan: {},
+      semester: {},
+    },
     isSingleLoading,
     singleError,
     planStatistics: planStatistics?.data || null,

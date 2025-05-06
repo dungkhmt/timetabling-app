@@ -3,9 +3,14 @@ package openerp.openerpresourceserver.examtimetabling.service;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamPlanStatisticsDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamPlanStatisticsDTO.SchoolStatistic;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamPlanWithSemesterDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamPlan;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamClassRepository;
 import openerp.openerpresourceserver.examtimetabling.repository.ExamPlanRepository;
+import openerp.openerpresourceserver.examtimetabling.repository.SemesterRepository;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Semester;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -21,10 +26,25 @@ import java.util.stream.Collectors;
 public class ExamPlanService {
   private final ExamPlanRepository examPlanRepository;
   private final ExamClassRepository examClassRepository;
+  private final SemesterRepository semesterRepository;
 
   public List<ExamPlan> getAllExamPlans() {
     return examPlanRepository.findAll();
   }
+
+  public ExamPlanWithSemesterDTO getExamPlanById(UUID id) {
+    ExamPlan plan = examPlanRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Exam plan not found with id: " + id));
+
+    if (plan.getSemesterId() == null) {
+        throw new RuntimeException("Semester ID is null in ExamPlan");
+    }
+
+    Semester semester = semesterRepository.findById(plan.getSemesterId())
+        .orElseThrow(() -> new RuntimeException("Semester not found with id: " + plan.getSemesterId()));
+
+    return new ExamPlanWithSemesterDTO(plan, semester);
+}
 
   public ExamPlan createExamPlan(ExamPlan examPlan) {
     examPlan.setId(UUID.randomUUID());
@@ -56,11 +76,6 @@ public class ExamPlanService {
 
   public List<ExamPlan> findAllActivePlans() {
     return examPlanRepository.findByDeleteAtIsNull();
-  }
-
-  public ExamPlan getExamPlanById(UUID id) {
-    return examPlanRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Exam plan not found with id: " + id));
   }
 
   public ExamPlanStatisticsDTO getExamPlanStatistics(UUID examPlanId) {

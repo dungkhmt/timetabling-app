@@ -5,9 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Semester;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
@@ -34,7 +37,10 @@ public class ExamPlan {
 
     @Column(name = "start_week")
     private Integer startWeek;
-    
+
+    @Column(name = "semester_id")
+    private Long semesterId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

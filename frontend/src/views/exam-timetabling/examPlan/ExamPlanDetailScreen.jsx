@@ -26,7 +26,10 @@ import { useExamTimetableData } from 'services/useExamTimetableData'
 const ExamPlanDetailPage = () => {
   const history = useHistory();
   const { id } = useParams();
-  const { examPlan, isLoading, deleteExamPlan, updateExamPlan, planStatistics, isLoadingPlanStatistics } = useExamPlanData(id);
+  const { examPlan: {
+    examPlan,
+    semester
+  }, isLoading, deleteExamPlan, updateExamPlan, planStatistics, isLoadingPlanStatistics } = useExamPlanData(id);
   const {
     examTimetables,
     isLoading: isLoadingTimetables,
@@ -150,14 +153,15 @@ const ExamPlanDetailPage = () => {
 
               </Box>
             </Box>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Typography variant="body1" fontWeight={600} color="#1976D2">
-                  📅 {new Date(examPlan.startTime).toLocaleDateString('en-GB')} (Tuần {examPlan.startWeek}) → {new Date(examPlan.endTime).toLocaleDateString('en-GB')}
-                </Typography>
-              </Box>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="body1" fontWeight={600} color="#1976D2" marginBottom={1}>
+              📅 Kì {semester.semester} 
+              </Typography>
+              <Typography variant="body1" fontWeight={600} color="#1976D2" marginBottom={1}>
+              📅 {new Date(examPlan.startTime).toLocaleDateString('en-GB')} (Tuần {examPlan.startWeek}) → {new Date(examPlan.endTime).toLocaleDateString('en-GB')}
+              </Typography>
               <Typography variant="body1" color="text.secondary">
-                {examPlan.description || 'Chưa có mô tả'}
+                Mô tả: {examPlan.description || 'Chưa có mô tả'}
               </Typography>
             </CardContent>
           </Card>

@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.examtimetabling.controller;
 
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamPlanStatisticsDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ExamPlanWithSemesterDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamPlan;
 import openerp.openerpresourceserver.examtimetabling.service.ExamPlanService;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +25,9 @@ public class ExamPlanController {
     private final ExamPlanService examPlanService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ExamPlan> getExamPlanById(@PathVariable UUID id) {
+    public ResponseEntity<ExamPlanWithSemesterDTO> getExamPlanById(@PathVariable UUID id) {
         try {
-            ExamPlan examPlan = examPlanService.getExamPlanById(id);
+            ExamPlanWithSemesterDTO examPlan = examPlanService.getExamPlanById(id);
             return ResponseEntity.ok(examPlan);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
