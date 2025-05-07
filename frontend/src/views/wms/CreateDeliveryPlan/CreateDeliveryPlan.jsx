@@ -131,29 +131,45 @@ const CreateDeliveryPlan = () => {
   };
 
   // Handle submit
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateCurrentTab()) {
       return;
     }
 
     setSubmitting(true);
-    
-    createDeliveryPlan(deliveryPlan)
-      .then(response => {
-        if (response && (response.code === 200 || response.code === 201)) {
-          toast.success("Tạo kế hoạch giao hàng thành công");
-          history.push("/wms/delivery/plans");
-        } else {
-          toast.error("Lỗi khi tạo kế hoạch giao hàng: " + (response?.message || "Lỗi không xác định"));
-        }
-      })
-      .catch(error => {
-        console.error("Error creating delivery plan:", error);
-        toast.error("Lỗi khi tạo kế hoạch giao hàng: " + (error.message || "Lỗi không xác định"));
-      })
-      .finally(() => {
-        setSubmitting(false);
-      });
+
+    // createDeliveryPlan(deliveryPlan)
+    //   .then(response => {
+    //     if (response && (response.code === 200 || response.code === 201)) {
+    //       toast.success("Tạo kế hoạch giao hàng thành công");
+    //       history.push("/wms/delivery/plans");
+    //     } else {
+    //       toast.error("Lỗi khi tạo kế hoạch giao hàng: " + (response?.message || "Lỗi không xác định"));
+    //     }
+    //   })
+    //   .catch(error => {
+    //     console.error("Error creating delivery plan:", error);
+    //     toast.error("Lỗi khi tạo kế hoạch giao hàng: " + (error.message || "Lỗi không xác định"));
+    //   })
+    //   .finally(() => {
+    //     setSubmitting(false);
+    //   });
+
+    // using try catch for async/await
+
+    try {
+      const response = await createDeliveryPlan(deliveryPlan);
+      if (response && (response.code === 200 || response.code === 201)) {
+        toast.success("Tạo kế hoạch giao hàng thành công");
+      } else {
+        toast.error("Lỗi khi tạo kế hoạch giao hàng: " + (response?.message || "Lỗi không xác định"));
+      }
+    } catch (error) {
+      console.error("Error creating delivery plan:", error);
+      toast.error("Lỗi khi tạo kế hoạch giao hàng: " + (error.message || "Lỗi không xác định"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

@@ -53,7 +53,7 @@ const DeliveryBillsTab = () => {
         status: "CREATED" // Only show created delivery bills that haven't been assigned yet
       };
       
-      const response = await getDeliveryBills(pagination.page + 1, pagination.size, filters);
+      const response = await getDeliveryBills(pagination.page, pagination.size, filters);
       
       if (response && response.code === 200) {
         setEntities(prev => ({

@@ -49,10 +49,10 @@ const ShippersTab = () => {
     try {
       const filters = {
         keyword: search,
-        status: "AVAILABLE" // Only show available shippers
+        status: "ACTIVE" // Only show available shippers
       };
       
-      const response = await getShippers(pagination.page + 1, pagination.size, filters);
+      const response = await getShippers(pagination.page, pagination.size, filters);
       
       if (response && response.code === 200) {
         setEntities(prev => ({

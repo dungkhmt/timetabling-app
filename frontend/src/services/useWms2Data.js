@@ -394,6 +394,27 @@ export const useWms2Data = () => {
     }
   };
 
+  const getShippers = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getShippers(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shippers:", error);
+      toast.error("Không thể tải danh sách nhà vận chuyển");
+      return { data: {} };
+    }
+  };
+
+  const createDeliveryPlan = async (data) => {
+    try {
+      const res = await wms2Service.createDeliveryPlan(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating delivery plan:", error);
+      toast.error("Không thể tạo kế hoạch giao hàng");
+      return { data: {} };
+    }
+  };
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -429,6 +450,8 @@ export const useWms2Data = () => {
     createDeliveryBill,
     getOutBoundsForDeliveryBill,
     getDeliveryBills,
-    getDeliveryPlans
+    getDeliveryPlans,
+    getShippers,
+    createDeliveryPlan,
   };
 };

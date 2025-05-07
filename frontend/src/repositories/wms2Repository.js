@@ -100,5 +100,11 @@ export const wms2Service = {
   },
   getDeliveryPlans : (page, limit, filters) => {
     return request("post", `/delivery-plan/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getShippers : (page, limit, filters) => {
+    return request("post", `/shipper/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  createDeliveryPlan : (data) => {
+    return request("post", "/delivery-plan/create", null, null, data);
   }
 };

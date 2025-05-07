@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class ShipperController {
     private final ShipperService shipperService;
 
-    @GetMapping("/get-all")
+    @PostMapping("/get-all")
     public ApiResponse<Pagination<Shipper>> getAll(@RequestParam int page, @RequestParam int limit, @RequestBody ShipperGetListFilter filters) {
         return shipperService.getAll(page, limit, filters);
     }

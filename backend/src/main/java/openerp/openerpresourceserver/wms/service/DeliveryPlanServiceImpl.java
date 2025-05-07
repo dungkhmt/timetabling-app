@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.DriverRole;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
@@ -56,6 +57,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
         for (var deliveryBill: deliveryBills) {
             deliveryBill.setStatusId(DeliveryBillStatus.IN_PROGRESS.name());
             var deliveryPlanOrder = DeliveryPlanOrder.builder()
+                    .id(CommonUtil.getUUID())
                     .deliveryPlanId(deliveryPlan.getId())
                     .deliveryBillId(deliveryBill.getId())
                     .deliveryPlanOrderSeqId(CommonUtil.getSequenceId("DPO", 5 ,delveryPlanOrderSeq++))
@@ -68,9 +70,11 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
         for (var shipper: shippers) {
             shipper.setStatusId(ShipperStatus.ASSIGNED.name());
             var deliveryPlanShipper = DeliveryPlanShipper.builder()
+                    .id(CommonUtil.getUUID())
                     .deliveryPlanId(deliveryPlan.getId())
                     .shipperId(shipper.getUserLoginId())
                     .deliveryPlanShipperSeqId(CommonUtil.getSequenceId("DPS", 5 ,deliveryPlanShipperSeq++))
+                    .driverRoleId(DriverRole.DRIVER.name())
                     .build();
             deliveryPlanShippers.add(deliveryPlanShipper);
         }
@@ -98,7 +102,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
         var deliveryPlanSpec = new DeliveryPlanSpecification(filters);
         var deliveryPlans = deliveryPlanRepo.findAll(deliveryPlanSpec, pageable);
 
-        var deliveryPlanList = deliveryPlans.getContent().stream().map(deliveryPlan -> {
+        List<DeliveryPlanPageRes> deliveryPlanList = deliveryPlans.getContent().stream().map(deliveryPlan -> {
             var deliveryPlanPageRes = generalMapper.convertToDto(deliveryPlan, DeliveryPlanPageRes.class);
             deliveryPlanPageRes.setFacilityName(deliveryPlan.getFacility().getName());
             deliveryPlanPageRes.setCreatedByUserName(deliveryPlan.getCreatedByUser().getFullName());
