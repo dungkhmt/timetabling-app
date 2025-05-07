@@ -20,10 +20,12 @@ import {
 } from '@mui/icons-material';
 import ExamPlanRow from './utils/ExamPlanRow';
 import AddExamPlanModal from './utils/AddExamPlanModal';
+import { useExamSemesterData } from 'services/useExamSemesterData'
 
 const ExamPlanListPage = () => {
   const history = useHistory();
   const { examPlans, isLoading, createExamPlan } = useExamPlanData();
+  const { examSemesters } = useExamSemesterData();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -196,6 +198,7 @@ const ExamPlanListPage = () => {
       {/* Add the modal */}
       <AddExamPlanModal
         open={isAddModalOpen}
+        semesters={examSemesters}
         onClose={handleCloseAddModal}
         onSave={handleSaveNewPlan}
         isSaving={isSaving}

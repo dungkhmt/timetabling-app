@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Button, 
   Dialog, 
@@ -7,7 +7,8 @@ import {
   DialogTitle, 
   TextField,
   Grid,
-  IconButton
+  IconButton,
+  Autocomplete
 } from "@mui/material";
 import { Close } from '@mui/icons-material'
 
@@ -16,13 +17,96 @@ const EditExamClassModal = ({
   onClose, 
   formData, 
   onChange, 
-  onSubmit 
+  onSubmit,
+  examCourses,
+  examClassGroups,
+  managementCodes,
+  schools
 }) => {
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedDescription, setSelectedDescription] = useState(null);
+
+  useEffect(() => {
+    if (formData && examCourses) {
+      const matchedCourse = examCourses.find(
+        course => course.id === formData.courseId
+      );
+      setSelectedCourse(matchedCourse || null);
+    }
+
+    if (formData && examClassGroups) {
+      const matchedGroup = examClassGroups.find(
+        group => group.name === formData.description
+      );
+      setSelectedDescription(matchedGroup || null);
+    }
+  }, [formData, examCourses, examClassGroups]);
+
+  const handleCourseChange = (event, newValue) => {
+    setSelectedCourse(newValue);
+    
+    if (newValue) {
+      const courseIdEvent = { target: { name: 'courseId', value: newValue.id } };
+      const courseNameEvent = { target: { name: 'courseName', value: newValue.name } };
+      
+      onChange(courseIdEvent);
+      onChange(courseNameEvent);
+    } else {
+      const courseIdEvent = { target: { name: 'courseId', value: '' } };
+      const courseNameEvent = { target: { name: 'courseName', value: '' } };
+      
+      onChange(courseIdEvent);
+      onChange(courseNameEvent);
+    }
+  };
+
+  const handleDescriptionChange = (event, newValue) => {
+    setSelectedDescription(newValue);
+    
+    if (newValue) {
+      const descriptionEvent = { 
+        target: { 
+          name: 'description', 
+          value: newValue.name 
+        } 
+      };
+      onChange(descriptionEvent);
+    } else {
+      const descriptionEvent = { 
+        target: { 
+          name: 'description', 
+          value: '' 
+        } 
+      };
+      onChange(descriptionEvent);
+    }
+  };
+
+  const handleManagementCodeChange = (event, newValue) => {
+    const managementCodeEvent = { 
+      target: { 
+        name: 'managementCode', 
+        value: newValue || ''
+      } 
+    };
+    onChange(managementCodeEvent);
+  };
+
+  const handleSchoolChange = (event, newValue) => {
+    const schoolEvent = { 
+      target: { 
+        name: 'school', 
+        value: newValue || ''
+      } 
+    };
+    onChange(schoolEvent);
+  };
+  
   return (
     <Dialog 
       open={open} 
       onClose={onClose}
-      maxWidth="md"  // Changed to md for more width
+      maxWidth="md"  
       fullWidth
     >
       <DialogTitle 
@@ -31,7 +115,7 @@ const EditExamClassModal = ({
           textAlign: 'center',
           borderBottom: '1px solid #e0e0e0',
           mb: 1,
-          position: 'relative'  // Added for absolute positioning of close button
+          position: 'relative'  
         }}
       >
         Chỉnh sửa thông tin lớp thi
@@ -50,7 +134,6 @@ const EditExamClassModal = ({
 
       <DialogContent>
         <Grid container spacing={2} sx={{ pt: 1 }}>
-          {/* First row - IDs */}
           <Grid item xs={4}>
             <TextField
               name="examClassId"
@@ -72,39 +155,41 @@ const EditExamClassModal = ({
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
-              name="managementCode"
-              label="Mã quản lý"
+            <Autocomplete
+              options={managementCodes || []}
+              getOptionLabel={(option) => option}
+              value={formData.managementCode || null}
+              onChange={handleManagementCodeChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Mã quản lý"
+                  size="small"
+                />
+              )}
+              freeSolo
               fullWidth
-              value={formData.managementCode}
-              onChange={onChange}
-              size="small"
             />
           </Grid>
 
-          {/* Second row - Course info */}
-          <Grid item xs={4}>
-            <TextField
-              name="courseId"
-              label="Mã học phần"
+          <Grid item xs={12}>
+            <Autocomplete
+              options={examCourses || []}
+              getOptionLabel={(option) => `${option.id} - ${option.name}`}
+              value={selectedCourse}
+              onChange={handleCourseChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Học phần"
+                  size="small"
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option && value && option.id === value.id}
               fullWidth
-              value={formData.courseId}
-              onChange={onChange}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={8}>
-            <TextField
-              name="courseName"
-              label="Tên học phần"
-              fullWidth
-              value={formData.courseName}
-              onChange={onChange}
-              size="small"
             />
           </Grid>
 
-          {/* Third row - Group info */}
           <Grid item xs={4}>
             <TextField
               name="groupId"
@@ -137,28 +222,41 @@ const EditExamClassModal = ({
             />
           </Grid>
 
-          {/* Fourth row - School */}
           <Grid item xs={12}>
-            <TextField
-              name="school"
-              label="Trường/Khoa"
+            <Autocomplete
+              options={schools || []}
+              getOptionLabel={(option) => option.name}
+              value={formData.school || null}
+              onChange={handleSchoolChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Trường/Khoa"
+                  size="small"
+                />
+              )}
+              freeSolo
               fullWidth
-              value={formData.school}
-              onChange={onChange}
-              size="small"
             />
           </Grid>
 
-          {/* Fifth row - Description */}
           <Grid item xs={12}>
-            <TextField
-              name="description"
-              label="Ghi chú"
+            <Autocomplete
+              options={examClassGroups || []}
+              getOptionLabel={(option) => option.name}
+              value={selectedDescription}
+              onChange={handleDescriptionChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Ghi chú"
+                  multiline
+                  rows={2}
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option && value && option.name === value.name}
+              freeSolo
               fullWidth
-              multiline
-              rows={2}
-              value={formData.description}
-              onChange={onChange}
             />
           </Grid>
         </Grid>

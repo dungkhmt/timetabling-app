@@ -7,14 +7,19 @@ import {
   DialogTitle, 
   Grid, 
   IconButton, 
-  TextField 
+  TextField,
+  Autocomplete
 } from "@mui/material";
 import { Close } from '@mui/icons-material'
 
 const AddExamClassModal = ({ 
   open, 
   onClose, 
-  onSubmit 
+  onSubmit,
+  examCourses,
+  examClassGroups,
+  managementCodes,
+  schools,
 }) => {
   const [formData, setFormData] = useState({
     examClassId: '',
@@ -30,6 +35,9 @@ const AddExamClassModal = ({
   });
 
   const [errors, setErrors] = useState({});
+  
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedDescription, setSelectedDescription] = useState(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -37,11 +45,102 @@ const AddExamClassModal = ({
       ...prev,
       [name]: value
     }));
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
+      }));
+    }
+  };
+
+  const handleCourseChange = (event, newValue) => {
+    setSelectedCourse(newValue);
+    
+    if (newValue) {
+      setFormData(prev => ({
+        ...prev,
+        courseId: newValue.id,
+        courseName: newValue.name
+      }));
+      
+      if (errors.courseId || errors.courseName) {
+        setErrors(prev => ({
+          ...prev,
+          courseId: '',
+          courseName: ''
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        courseId: '',
+        courseName: ''
+      }));
+    }
+  };
+
+  const handleDescriptionChange = (event, selectedGroup) => {
+    setSelectedDescription(selectedGroup);
+    
+    if (selectedGroup) {
+      setFormData(prev => ({
+        ...prev,
+        description: selectedGroup.name,
+        examClassGroupId: selectedGroup.id
+      }));
+      
+      if (errors.description) {
+        setErrors(prev => ({
+          ...prev,
+          description: ''
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        description: ''
+      }));
+    }
+  };
+
+  const handleManagementCodeChange = (event, newValue) => {
+    if (newValue) {
+      setFormData(prev => ({
+        ...prev,
+        managementCode: newValue
+      }));
+      
+      if (errors.managementCode) {
+        setErrors(prev => ({
+          ...prev,
+          managementCode: ''
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        managementCode: ''
+      }));
+    }
+  };
+
+  const handleSchoolChange = (event, newValue) => {
+    if (newValue) {
+      setFormData(prev => ({
+        ...prev,
+        school: newValue
+      }));
+      
+      if (errors.school) {
+        setErrors(prev => ({
+          ...prev,
+          school: ''
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        school: ''
       }));
     }
   };
@@ -60,6 +159,7 @@ const AddExamClassModal = ({
   const handleSubmit = () => {
     if (validateForm()) {
       onSubmit(formData);
+      
       setFormData({
         examClassId: '',
         classId: '',
@@ -72,13 +172,35 @@ const AddExamClassModal = ({
         period: '',
         managementCode: ''
       });
+      
+      setSelectedCourse(null);
+      setSelectedDescription(null);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      examClassId: '',
+      classId: '',
+      courseId: '',
+      courseName: '',
+      description: '',
+      groupId: '',
+      numberOfStudents: '',
+      school: '',
+      period: '',
+      managementCode: ''
+    });
+    setErrors({});
+    setSelectedCourse(null);
+    setSelectedDescription(null);
+    onClose();
   };
 
   return (
     <Dialog 
       open={open} 
-      onClose={onClose}
+      onClose={resetForm}
       maxWidth="md"
       fullWidth
     >
@@ -93,7 +215,7 @@ const AddExamClassModal = ({
       >
         Thêm lớp thi mới
         <IconButton
-          onClick={onClose}
+          onClick={resetForm}
           sx={{
             position: 'absolute',
             right: 8,
@@ -106,7 +228,6 @@ const AddExamClassModal = ({
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ pt: 1 }}>
-          {/* First row - IDs */}
           <Grid item xs={4}>
             <TextField
               name="examClassId"
@@ -134,48 +255,47 @@ const AddExamClassModal = ({
             />
           </Grid>
           <Grid item xs={4}>
-            <TextField
-              name="managementCode"
-              label="Mã quản lý"
+            <Autocomplete
+              options={managementCodes || []}
+              getOptionLabel={(option) => option}
+              value={formData.managementCode || null}
+              onChange={handleManagementCodeChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Mã quản lý"
+                  required
+                  error={!!errors.managementCode}
+                  helperText={errors.managementCode}
+                  size="small"
+                />
+              )}
+              freeSolo
               fullWidth
-              value={formData.managementCode}
-              onChange={handleChange}
-              error={!!errors.managementCode}
-              helperText={errors.managementCode}
-              required
-              size="small"
             />
           </Grid>
 
-          {/* Second row - Course info */}
-          <Grid item xs={4}>
-            <TextField
-              name="courseId"
-              label="Mã học phần"
+          <Grid item xs={12}>
+            <Autocomplete
+              options={examCourses || []}
+              getOptionLabel={(option) => `${option.id} - ${option.name}`}
+              value={selectedCourse}
+              onChange={handleCourseChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Học phần"
+                  required
+                  error={!!errors.courseId || !!errors.courseName}
+                  helperText={errors.courseId || errors.courseName}
+                  size="small"
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option && value && option.id === value.id}
               fullWidth
-              value={formData.courseId}
-              onChange={handleChange}
-              error={!!errors.courseId}
-              helperText={errors.courseId}
-              required
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={8}>
-            <TextField
-              name="courseName"
-              label="Tên học phần"
-              fullWidth
-              value={formData.courseName}
-              onChange={handleChange}
-              error={!!errors.courseName}
-              helperText={errors.courseName}
-              required
-              size="small"
             />
           </Grid>
 
-          {/* Third row - Group info */}
           <Grid item xs={4}>
             <TextField
               name="groupId"
@@ -217,40 +337,52 @@ const AddExamClassModal = ({
             />
           </Grid>
 
-          {/* Fourth row - School */}
           <Grid item xs={12}>
-            <TextField
-              name="school"
-              label="Trường/Khoa"
+            <Autocomplete
+              options={schools || []}
+              getOptionLabel={(option) => option.name}
+              value={formData.school || null}
+              onChange={handleSchoolChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Trường/Khoa"
+                  required
+                  error={!!errors.school}
+                  helperText={errors.school}
+                  size="small"
+                />
+              )}
+              freeSolo
               fullWidth
-              value={formData.school}
-              onChange={handleChange}
-              error={!!errors.school}
-              helperText={errors.school}
-              required
-              size="small"
             />
           </Grid>
 
-          {/* Fifth row - Description */}
           <Grid item xs={12}>
-            <TextField
-              name="description"
-              label="Ghi chú"
+            <Autocomplete
+              options={examClassGroups || []}
+              getOptionLabel={(option) => option.name}
+              value={selectedDescription}
+              onChange={handleDescriptionChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Ghi chú"
+                  multiline
+                  required
+                  error={!!errors.description}
+                  helperText={errors.description}
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option && value && option.name === value.name}
+              freeSolo
               fullWidth
-              multiline
-              rows={2}
-              value={formData.description}
-              onChange={handleChange}
-              error={!!errors.description}
-              helperText={errors.description}
-              required
             />
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} variant="outlined" color="inherit">
+        <Button onClick={resetForm} variant="outlined" color="inherit">
           Hủy
         </Button>
         <Button onClick={handleSubmit} variant="contained" color="primary">

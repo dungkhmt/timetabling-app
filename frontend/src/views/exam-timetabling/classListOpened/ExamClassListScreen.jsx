@@ -21,6 +21,9 @@ import { useExamClassData } from "services/useExamClassData"
 import EditExamClassModal from './utils/EditExamClassModal'
 import AddExamClassModal from "./utils/AddExamClassModal"
 import localText from "./utils/LocalText"
+import { useExamCourseData } from "services/useExamCourseData"
+import { useExamClassGroupData } from "services/useExamClassGroupData"
+import { useExamFacultyData } from "services/useExamFacultyData"
 
 export default function ExamClassListPage() {
   const [selectedExamPlan, setSelectedExamPlan] = useState(null)
@@ -62,6 +65,25 @@ export default function ExamClassListPage() {
     downloadSample,
     isImporting,
   } = useExamClassData(selectedExamPlan?.id)
+
+  let {
+    examCourses,
+    isLoading: isLoadingCourses,
+  } = useExamCourseData()
+
+  let {
+    examClassGroups
+  } = useExamClassGroupData()
+
+  let {
+    examFaculties,
+  } = useExamFacultyData()
+
+  const managementCodes = [
+    'Elitech',
+    'CT Chuẩn',
+    'CT Tài năng',
+  ]
 
   const { examPlans } = useExamPlanData();
 
@@ -175,7 +197,10 @@ export default function ExamClassListPage() {
   }
 
   const handleSubmitEdit = async () => {
-    await updateExamClass(editFormData)
+    await updateExamClass({
+      ...editFormData,
+      school: editFormData.school.name,
+    })
     handleCloseEditModal()
   }
 
@@ -210,7 +235,10 @@ export default function ExamClassListPage() {
     try {
       setIsAddModalOpen(false) 
 
-      await createExamClass(formData)
+      await createExamClass({
+        ...formData,
+        school: formData.school.name,
+      })
     } catch (error) {
       console.error("Error adding exam class:", error)
       setIsAddModalOpen(false) 
@@ -387,11 +415,19 @@ export default function ExamClassListPage() {
         formData={editFormData}
         onChange={handleFormChange}
         onSubmit={handleSubmitEdit}
+        examCourses={examCourses}
+        examClassGroups={examClassGroups}
+        schools={examFaculties}
+        managementCodes={managementCodes}
       />
 
       <AddExamClassModal
         open={isAddModalOpen}
         onClose={handleCloseAddModal}
+        examCourses={examCourses}
+        examClassGroups={examClassGroups}
+        schools={examFaculties}
+        managementCodes={managementCodes}
         onSubmit={(editFormData) => {
           handleAddSubmit({
             ...editFormData,

@@ -57,6 +57,9 @@ public class ExamClass {
     @Column(name="school")
     private String school;
 
+    @Column(name="exam_group_id")
+    private Integer examClassGroupId;
+
     @Column(name="exam_plan_id", nullable = true)
     private UUID examPlanId;
     
