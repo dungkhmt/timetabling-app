@@ -4,5 +4,7 @@ public enum DeliveryBillStatus {
     CREATED,
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED;
+    CANCELLED,
+    UNASSIGNED,
+    ASSIGNED,
 }

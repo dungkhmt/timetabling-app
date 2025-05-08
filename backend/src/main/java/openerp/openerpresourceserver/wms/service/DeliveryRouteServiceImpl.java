@@ -2,7 +2,10 @@ package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryPlanStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.VehicleStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.delivery.DeliveryRouteResponseDTO;
 import openerp.openerpresourceserver.wms.entity.*;
@@ -20,8 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
     private final ShipperRepo shipperRepo;
     private final FacilityRepo facilityRepo;
     private final DeliveryPlanShipperRepo deliveryPlanShipperRepo;
+    private final VehicleRepo vehicleRepo;
 
     // Services
     private final RouteOptimizer routeOptimizer;
@@ -51,11 +57,22 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
             // Get facility (depot) location
             Facility facility = deliveryPlan.getFacility();
+            if (facility == null) {
+                return ApiResponse.<DeliveryRouteResponseDTO>builder()
+                        .code(400)
+                        .message("Delivery plan does not have a facility assigned")
+                        .build();
+            }
 
             // Get delivery bills associated with this delivery plan
-            List<String> deliveryBillIds = deliveryPlanOrderRepo.findByDeliveryPlanId(deliveryPlan.getId());
-            List<String> shipperIds = deliveryPlanShipperRepo.findByDeliveryPlanId(deliveryPlan.getId());
-
+            List<String> deliveryBillIds = deliveryPlanOrderRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                    .stream()
+                    .map(DeliveryPlanOrder::getDeliveryBillId)
+                    .toList();
+            List<String> shipperIds = deliveryPlanShipperRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                    .stream()
+                    .map(DeliveryPlanShipper::getShipperId)
+                    .toList();
 
             List<DeliveryBill> deliveryBills = deliveryBillRepo.findAllById(deliveryBillIds);
             if (deliveryBills.isEmpty()) {
@@ -65,22 +82,28 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                         .build();
             }
 
-
             // Get available shippers for this facility
             List<Shipper> shippers = shipperRepo.findAllById(shipperIds);
             if (shippers.isEmpty()) {
                 return ApiResponse.<DeliveryRouteResponseDTO>builder()
                         .code(400)
-                        .message("No available shippers found for this facility")
+                        .message("No available shippers found for this delivery plan")
                         .build();
             }
 
-            // Create a new delivery route for this plan
-            DeliveryRoute deliveryRoute = new DeliveryRoute();
-            deliveryRoute.setId(CommonUtil.getUUID());
-            deliveryRoute.setDelivery(deliveryPlan);
-            deliveryRoute.setStatusId("CREATED");
-            deliveryRouteRepo.save(deliveryRoute);
+            // Find available vehicles for the facility
+            List<openerp.openerpresourceserver.wms.entity.Vehicle> availableVehicles =
+                    vehicleRepo.findByStatusId(VehicleStatus.AVAILABLE.name());
+            if (availableVehicles.size() < shippers.size()) {
+                log.warn("Not enough vehicles available for all shippers. Some routes may not have vehicles assigned.");
+            }
+
+            // First, delete any existing routes for this delivery plan to avoid duplicates
+            List<DeliveryRoute> existingRoutes = deliveryRouteRepo.findByDeliveryPlanId(deliveryPlan.getId());
+            for (DeliveryRoute route : existingRoutes) {
+                deliveryRouteItemRepo.deleteByDeliveryRouteId(route.getId());
+            }
+            deliveryRouteRepo.deleteAll(existingRoutes);
 
             // Set up VRP problem
             CVRPInput vrpInput = routeOptimizer.setupVRPInput(facility, deliveryBills, shippers);
@@ -96,7 +119,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             }
 
             // Save the routing solution to the database
-            saveRoutingSolution(deliveryRoute, solution, vrpInput);
+            saveRoutingSolution(deliveryPlan, solution, vrpInput, availableVehicles);
 
             // Prepare response with detailed route paths
             DeliveryRouteResponseDTO responseDTO = visualizationService.prepareRouteVisualization(solution, vrpInput);
@@ -118,19 +141,24 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
     /**
      * Save the routing solution to the database
+     * Creates one delivery route per shipper with assigned deliveries
      */
     @SuppressWarnings("unchecked")
-    private void saveRoutingSolution(DeliveryRoute deliveryRoute, CVRPSolution solution, CVRPInput input) {
-        // Update delivery route status
-        deliveryRoute.setStatusId("ASSIGNED");
-        deliveryRouteRepo.save(deliveryRoute);
+    private void saveRoutingSolution(
+            DeliveryPlan deliveryPlan,
+            CVRPSolution solution,
+            CVRPInput input,
+            List<openerp.openerpresourceserver.wms.entity.Vehicle> availableVehicles) {
 
         Map<Integer, DeliveryBill> nodeToDeliveryBill = (Map<Integer, DeliveryBill>) input.getData();
         List<Node> nodes = input.getNodes();
         List<Vehicle> vehicles = input.getVehicles();
 
-        // First, delete any existing route items for this route to avoid duplicates
-        deliveryRouteItemRepo.deleteByDeliveryRouteId(deliveryRoute.getId());
+        // Track assigned bills to avoid duplicates
+        Map<String, Boolean> assignedBills = new HashMap<>();
+
+        // Track vehicle assignments
+        int vehicleIndex = 0;
 
         // Process each route (one per shipper)
         for (VRPRoute route : solution.getRoutes()) {
@@ -147,12 +175,29 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             Shipper shipper = shipperRepo.findById(shipperId)
                     .orElseThrow(() -> new RuntimeException("Shipper not found: " + shipperId));
 
-            // Update shipper status and assign to route
-            shipper.setStatusId("ASSIGNED");
+            // Update shipper status
+            shipper.setStatusId(ShipperStatus.ASSIGNED.name());
             shipperRepo.save(shipper);
 
-            // Update route with assigned shipper
+            // Create a new delivery route for this shipper
+            DeliveryRoute deliveryRoute = new DeliveryRoute();
+            deliveryRoute.setId(CommonUtil.getUUID());
+            deliveryRoute.setDeliveryPlan(deliveryPlan);
+            deliveryRoute.setStatusId("ASSIGNED");
             deliveryRoute.setAssignToShipper(shipper);
+
+            // Assign a vehicle if available
+            if (vehicleIndex < availableVehicles.size()) {
+                openerp.openerpresourceserver.wms.entity.Vehicle vehicle = availableVehicles.get(vehicleIndex++);
+                deliveryRoute.setAssignToVehicle(vehicle);
+
+                // Update vehicle status
+                vehicle.setStatusId(VehicleStatus.IN_USE.name());
+                vehicleRepo.save(vehicle);
+            } else {
+                log.warn("No vehicle available for shipper: {}", shipper.getUserLoginId());
+            }
+
             deliveryRouteRepo.save(deliveryRoute);
 
             // Create delivery route items for each node in sequence
@@ -171,6 +216,12 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                     continue;
                 }
 
+                // Skip if already assigned to avoid duplicates
+                if (assignedBills.containsKey(deliveryBill.getId())) {
+                    log.warn("Delivery bill {} already assigned to another route", deliveryBill.getId());
+                    continue;
+                }
+
                 // Create route item
                 DeliveryRouteItem routeItem = new DeliveryRouteItem();
                 routeItem.setId(CommonUtil.getUUID());
@@ -183,8 +234,11 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                 routeItems.add(routeItem);
 
                 // Update delivery bill status
-                deliveryBill.setStatusId("ASSIGNED_TO_ROUTE");
+                deliveryBill.setStatusId(DeliveryBillStatus.ASSIGNED.name());
                 deliveryBillRepo.save(deliveryBill);
+
+                // Mark as assigned
+                assignedBills.put(deliveryBill.getId(), true);
 
                 seq++;
             }
@@ -192,12 +246,29 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             // Save all route items
             if (!routeItems.isEmpty()) {
                 deliveryRouteItemRepo.saveAll(routeItems);
+            } else {
+                // If no items were assigned to this route, delete it and free up the vehicle
+                if (deliveryRoute.getAssignToVehicle() != null) {
+                    openerp.openerpresourceserver.wms.entity.Vehicle vehicle = deliveryRoute.getAssignToVehicle();
+                    vehicle.setStatusId(VehicleStatus.AVAILABLE.name());
+                    vehicleRepo.save(vehicle);
+                }
+                deliveryRouteRepo.delete(deliveryRoute);
             }
         }
 
+        // Handle unassigned delivery bills
+        for (DeliveryBill bill : deliveryBillRepo.findAllById(nodeToDeliveryBill.values().stream()
+                .map(DeliveryBill::getId)
+                .filter(id -> !assignedBills.containsKey(id))
+                .toList())) {
+            // Mark unassigned bills
+            bill.setStatusId(DeliveryBillStatus.UNASSIGNED.name());
+            deliveryBillRepo.save(bill);
+        }
+
         // Update delivery plan status
-        DeliveryPlan deliveryPlan = deliveryRoute.getDelivery();
-        deliveryPlan.setStatusId("ROUTING_COMPLETED");
+        deliveryPlan.setStatusId(DeliveryPlanStatus.COMPLETED.name());
         deliveryPlanRepo.save(deliveryPlan);
     }
 }

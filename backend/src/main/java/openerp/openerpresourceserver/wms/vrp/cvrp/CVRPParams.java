@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class CVRPParams {
     // General parameters
     private int maxIterations = 1000;
-    private int timeLimit = 30; // seconds
+    private int timeLimit = 120; // seconds
     
     // Greedy algorithm parameters
     private boolean useCapacityConstraints = true;
@@ -22,7 +22,7 @@ public class CVRPParams {
     public static CVRPParams getDefaultParams() {
         return CVRPParams.builder()
             .maxIterations(1000)
-            .timeLimit(30)
+            .timeLimit(120)
             .useCapacityConstraints(true)
             .useBestFit(true)
             .build();

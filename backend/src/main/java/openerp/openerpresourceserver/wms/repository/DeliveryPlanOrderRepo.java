@@ -8,5 +8,5 @@ import java.util.Arrays;
 import java.util.List;
 
 public interface DeliveryPlanOrderRepo extends JpaRepository<DeliveryPlanOrder, String> {
-    List<String> findByDeliveryPlanId(String id);
+    List<DeliveryPlanOrder> findByDeliveryPlanId(String id);
 }

@@ -18,7 +18,7 @@ public class Address {
     @Column(name = "entity_id", length = 40, nullable = false)
     private String entityId;
 
-    @Column(name = "emtity_type", length = 20, nullable = false)
+    @Column(name = "entity_type", length = 20, nullable = false)
     private String entityType;
 
     @Column(name = "address_type", length = 20)

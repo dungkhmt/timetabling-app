@@ -106,5 +106,11 @@ export const wms2Service = {
   },
   createDeliveryPlan : (data) => {
     return request("post", "/delivery-plan/create", null, null, data);
-  }
+  },
+  autoAssignDeliveryRoutes: (deliveryPlanId) => {
+    return request("get", `delivery-route/auto-assign/${deliveryPlanId}`, null, null, null);
+  },
+  getDeliveryPlanById: (deliveryPlanId) => {
+    return request("get", `delivery-plan/details/${deliveryPlanId}`, null, null, null);
+  },
 };

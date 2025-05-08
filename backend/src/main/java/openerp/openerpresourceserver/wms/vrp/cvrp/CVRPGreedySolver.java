@@ -93,7 +93,7 @@ public class CVRPGreedySolver implements CVRPSolver {
                 
             } while (addedNode);
             
-            // Only add route if it visited at least one customer
+            // If we have added nodes to the route, finalize it
             if (nodeSequence.size() > 1) {
                 // Return to depot
                 TimeDistance returnTd = input.findTimeDistance(currentNodeIndex, 0);

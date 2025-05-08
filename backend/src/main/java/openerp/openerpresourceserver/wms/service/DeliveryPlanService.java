@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.wms.service;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryPlan;
+import openerp.openerpresourceserver.wms.dto.delivery.DeliveryPlanDetailRes;
 import openerp.openerpresourceserver.wms.dto.delivery.DeliveryPlanPageRes;
 import openerp.openerpresourceserver.wms.dto.filter.DeliveryPlanGetListFilter;
 import openerp.openerpresourceserver.wms.entity.DeliveryPlan;
@@ -15,4 +16,6 @@ public interface DeliveryPlanService {
     ApiResponse<Void> createDeliveryPlan(CreateDeliveryPlan req, Principal principal);
 
     ApiResponse<Pagination<DeliveryPlanPageRes>> getAllDeliveryPlans(int page, int limit, DeliveryPlanGetListFilter filters);
+
+    ApiResponse<DeliveryPlanDetailRes> getDeliveryPlanById(String deliveryPlanId);
 }

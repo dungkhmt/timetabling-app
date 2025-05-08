@@ -28,7 +28,7 @@ const DeliveryPlanTable = ({
 
   // Navigate to delivery plan detail page
   const handleViewDetails = (id) => {
-    history.push(`/wms/delivery/plans/details/${id}`);
+    history.push(`/wms/logistics/delivery/details/${id}`);
   };
 
   // Get status chip

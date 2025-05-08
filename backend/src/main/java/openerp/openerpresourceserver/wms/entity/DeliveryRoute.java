@@ -17,12 +17,16 @@ public class DeliveryRoute {
     private String id;
 
     @ManyToOne
-    @JoinColumn(name = "delivery_id")
-    private DeliveryPlan delivery;
+    @JoinColumn(name = "delivery_plan_id")
+    private DeliveryPlan deliveryPlan;
 
     @ManyToOne
     @JoinColumn(name = "assign_to_shipper_id")
     private Shipper assignToShipper;
+
+    @ManyToOne
+    @JoinColumn(name = "assign_to_vehicle_id")
+    private Vehicle assignToVehicle;
 
     @Column(name = "status_id", length = 100)
     private String statusId;

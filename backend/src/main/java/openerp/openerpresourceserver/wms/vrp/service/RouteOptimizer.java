@@ -66,7 +66,7 @@ public class RouteOptimizer {
         int nodeId = 1;
 
         List<String> customerIds = deliveryBills.stream().map(
-            deliveryBill -> deliveryBill.getToCustomer().getName()
+            deliveryBill -> deliveryBill.getToCustomer().getId()
         ).toList();
 
         List<Address> addresses = addressRepo.findAllByEntityIdInAndEntityType(customerIds, EntityType.CUSTOMER.name());

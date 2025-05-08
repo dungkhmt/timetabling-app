@@ -6,8 +6,7 @@ import openerp.openerpresourceserver.wms.constant.enumrator.DriverRole;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
-import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryPlan;
-import openerp.openerpresourceserver.wms.dto.delivery.DeliveryPlanPageRes;
+import openerp.openerpresourceserver.wms.dto.delivery.*;
 import openerp.openerpresourceserver.wms.dto.filter.DeliveryPlanGetListFilter;
 import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
@@ -33,6 +32,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
     private final GeneralMapper generalMapper;
     private final UserLoginRepo userLoginRepo;
     private final FacilityRepo facilityRepo;
+    private final DeliveryRouteRepo deliveryRouteRepo;
     @Override
     public ApiResponse<Void> createDeliveryPlan(CreateDeliveryPlan req, Principal principal) {
         List<DeliveryPlanOrder> deliveryPlanOrders = new ArrayList<>();
@@ -121,6 +121,67 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                 .code(200)
                 .message("Delivery Plans Retrieved Successfully")
                 .data(pagination)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<DeliveryPlanDetailRes> getDeliveryPlanById(String deliveryPlanId) {
+        var deliveryPlan = deliveryPlanRepo.findById(deliveryPlanId).orElseThrow(() ->
+                new DataNotFoundException("Delivery Plan not found with id: " + deliveryPlanId));
+
+        var deliveryPlanDetailRes = generalMapper.convertToDto(deliveryPlan, DeliveryPlanDetailRes.class);
+        deliveryPlanDetailRes.setFacilityName(deliveryPlan.getFacility().getName());
+        deliveryPlanDetailRes.setCreatedByUserName(deliveryPlan.getCreatedByUser().getFullName());
+
+        List<String> deliveryBillIds = deliveryPlanOrderRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                .stream()
+                .map(DeliveryPlanOrder::getDeliveryBillId)
+                .toList();
+
+        List<String> shipperIds = deliveryPlanShipperRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                .stream()
+                .map(DeliveryPlanShipper::getShipperId)
+                .toList();
+
+        List<DeliveryBillPlanRes> deliveryBills = deliveryBillRepo.findAllById(deliveryBillIds)
+                .stream()
+                .map(deliveryBill -> {
+                    var deliveryBillPlanRes = generalMapper.convertToDto(deliveryBill, DeliveryBillPlanRes.class);
+                    deliveryBillPlanRes.setShipmentId(deliveryBill.getShipment().getId());
+                    deliveryBillPlanRes.setShipmentName(deliveryBill.getShipment().getShipmentName());
+                    return deliveryBillPlanRes;
+                })
+                .toList();
+        List<ShipperDeliveryPlanRes> shippers = shipperRepo.findAllById(shipperIds)
+                .stream()
+                .map(shipper -> {
+                    var shipperDeliveryPlanRes = generalMapper.convertToDto(shipper, ShipperDeliveryPlanRes.class);
+                    shipperDeliveryPlanRes.setShipperName(shipper.getUserLogin().getFullName());
+                    return shipperDeliveryPlanRes;
+                })
+                .toList();
+
+        List<DeliveryRoutePlanRes> existingRoutes = deliveryRouteRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                .stream()
+                .map(deliveryRoute -> {
+                    var deliveryRoutePlanRes = generalMapper.convertToDto(deliveryRoute, DeliveryRoutePlanRes.class);
+                    deliveryRoutePlanRes.setDeliveryPlanId(deliveryPlan.getId());
+                    deliveryRoutePlanRes.setAssignToShipperName(deliveryRoute.getAssignToShipper().getUserLogin().getFullName());
+                    deliveryRoutePlanRes.setAssignToVehicleName(deliveryRoute.getAssignToVehicle().getVehicleName());
+                    deliveryRoutePlanRes.setAssignToVehicleId(deliveryRoute.getAssignToVehicle().getId());
+                    deliveryRoutePlanRes.setStatusId(deliveryRoute.getStatusId());
+                    return deliveryRoutePlanRes;
+                })
+                .toList();
+
+        deliveryPlanDetailRes.setDeliveryBills(deliveryBills);
+        deliveryPlanDetailRes.setShippers(shippers);
+        deliveryPlanDetailRes.setExistingRoutes(existingRoutes);
+
+        return ApiResponse.<DeliveryPlanDetailRes>builder()
+                .code(200)
+                .message("Delivery Plan Retrieved Successfully")
+                .data(deliveryPlanDetailRes)
                 .build();
     }
 

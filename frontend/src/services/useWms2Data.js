@@ -416,6 +416,31 @@ export const useWms2Data = () => {
     }
   };
 
+  const getDeliveryPlanById = async (id) => {
+    try {
+      const response = await wms2Service.getDeliveryPlanById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching delivery plan by ID:", error);
+      toast.error("Không thể tải thông tin kế hoạch giao hàng");
+      return { data: {} };
+    }
+  };
+
+  const autoAssignDeliveryRoutes = async (deliveryPlanId) => {
+    try {
+      const response = await wms2Service.autoAssignDeliveryRoutes(
+        deliveryPlanId
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error auto-assigning delivery routes:", error);
+      toast.error("Không thể tự động phân bổ lộ trình giao hàng");
+      return { data: {} };
+    }
+  }
+
+
   // Trả về các hàm thay vì dữ liệu
   return {
     createSalesOrder: createSalesOrderMutation.mutateAsync,
@@ -451,6 +476,8 @@ export const useWms2Data = () => {
     getOutBoundsForDeliveryBill,
     getDeliveryBills,
     getDeliveryPlans,
+    getDeliveryPlanById,
+    autoAssignDeliveryRoutes,
     getShippers,
     createDeliveryPlan,
   };

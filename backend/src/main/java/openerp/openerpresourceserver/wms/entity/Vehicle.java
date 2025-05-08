@@ -18,6 +18,9 @@ public class Vehicle {
     @Column(name = "id", nullable = false, length = 40)
     private String id;
 
+    @Column(name = "vehicle_name", length = 255)
+    private String vehicleName;
+
     @Column(name = "vehicle_type_id", length = 40)
     private String vehicleTypeId;
 
