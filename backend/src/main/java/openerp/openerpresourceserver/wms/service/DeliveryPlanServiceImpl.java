@@ -62,7 +62,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                     .deliveryBillId(deliveryBill.getId())
                     .deliveryPlanOrderSeqId(CommonUtil.getSequenceId("DPO", 5 ,delveryPlanOrderSeq++))
                     .build();
-            totalWeight.add(deliveryBill.getTotalWeight());
+            totalWeight = totalWeight.add(deliveryBill.getTotalWeight());
             deliveryPlanOrders.add(deliveryPlanOrder);
         }
 

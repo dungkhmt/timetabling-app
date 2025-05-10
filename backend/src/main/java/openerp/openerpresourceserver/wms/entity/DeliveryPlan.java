@@ -2,7 +2,6 @@ package openerp.openerpresourceserver.wms.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,7 +32,7 @@ public class DeliveryPlan extends BaseEntity {
     private BigDecimal totalWeight;
 
     @Column(name = "delivery_plan_name")
-    private String delveryPlanName;
+    private String deliveryPlanName;
 
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;

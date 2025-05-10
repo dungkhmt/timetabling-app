@@ -33,7 +33,7 @@ public class RouteOptimizer {
     private final AddressRepo addressRepo;
 
     public RouteOptimizer(
-            @Qualifier("haversineDistanceCalculator") DistanceCalculator distanceCalculator,
+            @Qualifier("graphHopperDistanceCalculator") DistanceCalculator distanceCalculator,
             CVRPSolverFactory solverFactory,
             AddressRepo addressRepo) {
         this.distanceCalculator = distanceCalculator;
@@ -110,7 +110,7 @@ public class RouteOptimizer {
                 vehicleId,
                 shipper.getUserLoginId(),
                 shipper.getUserLogin().getFullName(),
-                1000.0,
+                500,
                 0
             );
             

@@ -105,9 +105,9 @@ public class CVRPGreedySolver implements CVRPSolver {
                 nodeSequence.add(0); // Return to depot
                 
                 // Add return path to full path
-                if (returnTd.getPath() != null) {
-                    pathPoints.addAll(returnTd.getPath());
-                }
+//                if (returnTd.getPath() != null) {
+//                    pathPoints.addAll(returnTd.getPath());
+//                }
                 
                 route.setNodeSequence(nodeSequence);
                 route.setDistance(routeDistance);
