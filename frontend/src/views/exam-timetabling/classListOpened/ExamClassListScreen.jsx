@@ -204,7 +204,7 @@ export default function ExamClassListPage() {
   const handleSubmitEdit = async () => {
     await updateExamClass({
       ...editFormData,
-      school: editFormData.school.name,
+      school: editFormData.school,
     })
     handleCloseEditModal()
   }
