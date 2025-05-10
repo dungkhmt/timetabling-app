@@ -25,6 +25,7 @@ const EditExamClassModal = ({
 }) => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedDescription, setSelectedDescription] = useState(null);
+  const [selectedSchool, setSelectedSchool] = useState(null);
 
   useEffect(() => {
     if (formData && examCourses) {
@@ -40,7 +41,14 @@ const EditExamClassModal = ({
       );
       setSelectedDescription(matchedGroup || null);
     }
-  }, [formData, examCourses, examClassGroups]);
+
+    if (formData && schools) {
+      const matchedSchool = schools.find(
+        school => school.name === formData.school
+      );
+      setSelectedSchool(matchedSchool || null);
+    }
+  }, [formData, examCourses, examClassGroups, schools]);
 
   const handleCourseChange = (event, newValue) => {
     setSelectedCourse(newValue);
@@ -93,13 +101,25 @@ const EditExamClassModal = ({
   };
 
   const handleSchoolChange = (event, newValue) => {
-    const schoolEvent = { 
-      target: { 
-        name: 'school', 
-        value: newValue || ''
-      } 
-    };
-    onChange(schoolEvent);
+    setSelectedSchool(newValue);
+    
+    if (newValue) {
+      const schoolEvent = { 
+        target: { 
+          name: 'school', 
+          value: newValue.name 
+        } 
+      };
+      onChange(schoolEvent);
+    } else {
+      const schoolEvent = { 
+        target: { 
+          name: 'school', 
+          value: '' 
+        } 
+      };
+      onChange(schoolEvent);
+    }
   };
   
   return (
@@ -226,7 +246,7 @@ const EditExamClassModal = ({
             <Autocomplete
               options={schools || []}
               getOptionLabel={(option) => option.name}
-              value={formData.school || null}
+              value={selectedSchool}
               onChange={handleSchoolChange}
               renderInput={(params) => (
                 <TextField
@@ -235,7 +255,8 @@ const EditExamClassModal = ({
                   size="small"
                 />
               )}
-              freeSolo
+              isOptionEqualToValue={(option, value) => option && value && option.name === value.name}
+              disableClearable
               fullWidth
             />
           </Grid>
@@ -255,7 +276,7 @@ const EditExamClassModal = ({
                 />
               )}
               isOptionEqualToValue={(option, value) => option && value && option.name === value.name}
-              freeSolo
+              disableClearable
               fullWidth
             />
           </Grid>

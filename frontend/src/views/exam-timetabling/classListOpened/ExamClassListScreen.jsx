@@ -20,6 +20,7 @@ import { DataGrid, GridToolbar } from "@mui/x-data-grid"
 import { useExamClassData } from "services/useExamClassData"
 import EditExamClassModal from './utils/EditExamClassModal'
 import AddExamClassModal from "./utils/AddExamClassModal"
+import UploadExamClassesModal from "./utils/UploadExamClassesModal" // Import the new modal
 import localText from "./utils/LocalText"
 import { useExamCourseData } from "services/useExamCourseData"
 import { useExamClassGroupData } from "services/useExamClassGroupData"
@@ -35,6 +36,7 @@ export default function ExamClassListPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false) // New state for upload modal
   const [editFormData, setEditFormData] = useState({
     examClassId: '',
     classId: '',
@@ -93,33 +95,36 @@ export default function ExamClassListPage() {
     }
   }, [examPlans, selectedExamPlan]);
 
+  const handleOpenUploadModal = () => {
+    setIsUploadModalOpen(true);
+  }
 
-  const handleImportExcel = () => {
-    const input = document.createElement("input")
-    input.setAttribute("type", "file")
-    input.setAttribute("accept", ".xlsx, .xls")
+  const handleCloseUploadModal = () => {
+    setIsUploadModalOpen(false);
+  }
 
-    input.onchange = async (e) => {
-      const file = e.target.files[0]
-      if (file && selectedExamPlan) {
-        const formData = new FormData()
-        formData.append("file", file)
+  const handleUploadSubmit = async (uploadData) => {
+    if (uploadData.file && selectedExamPlan) {
+      const formData = new FormData();
+      formData.append("file", uploadData.file);
+      formData.append("groupId", uploadData.groupId); 
+      formData.append("groupName", uploadData.groupName); 
 
-        try {
-          const result = await importExcel(formData)
-          if (result.data.length === 0) {
-            setSuccessDialogOpen(true)
-          } else {
-            setConflictList(result.data.map(examClass => examClass.id))
-            setConflictDialogOpen(true)
-          }
-        } catch (error) {
-          console.error("Error uploading file", error)
+      console.log("Form data:", formData.get("file"), formData.get("groupId"));
+      try {
+        const result = await importExcel(formData);
+        handleCloseUploadModal();
+        if (result.data.length === 0) {
+          setSuccessDialogOpen(true);
+        } else {
+          setConflictList(result.data.map(examClass => examClass.id));
+          setConflictDialogOpen(true);
         }
+      } catch (error) {
+        console.error("Error uploading file", error);
+        handleCloseUploadModal();
       }
     }
-
-    input.click()
   }
 
   const handleSelectExamPlan = (event, examPlan) => {
@@ -199,7 +204,7 @@ export default function ExamClassListPage() {
   const handleSubmitEdit = async () => {
     await updateExamClass({
       ...editFormData,
-      school: editFormData.school.name,
+      school: editFormData.school,
     })
     handleCloseEditModal()
   }
@@ -338,27 +343,18 @@ export default function ExamClassListPage() {
           >
             Tải xuống DS lớp
           </Button>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Button
-              color="success"
-              variant="contained"
-              startIcon={<Upload />}
-              size="small"
-              onClick={handleImportExcel}
-              disabled={!selectedExamPlan || isClearing || isImporting || isExportingClasses || isExportingConflicts}
-            >
-              Tải lên DS lớp
-            </Button>
-            <Tooltip title="Tải xuống file mẫu">
-              <IconButton
-                onClick={handleDownloadSample}
-                size="small"
-                sx={{ ml: 0 }}
-              >
-                <HelpOutline fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
+          
+          {/* Updated Upload Button */}
+          <Button
+            color="success"
+            variant="contained"
+            startIcon={<Upload />}
+            size="small"
+            onClick={handleOpenUploadModal}
+            disabled={!selectedExamPlan || isClearing || isImporting || isExportingClasses || isExportingConflicts}
+          >
+            Tải lên DS lớp
+          </Button>
         </Box>
       </Box>
 
@@ -409,6 +405,7 @@ export default function ExamClassListPage() {
         }}
       />
 
+      {/* Edit Modal */}
       <EditExamClassModal
         open={isEditModalOpen}
         onClose={handleCloseEditModal}
@@ -421,6 +418,7 @@ export default function ExamClassListPage() {
         managementCodes={managementCodes}
       />
 
+      {/* Add Modal */}
       <AddExamClassModal
         open={isAddModalOpen}
         onClose={handleCloseAddModal}
@@ -436,6 +434,17 @@ export default function ExamClassListPage() {
         }}
       />
       
+      {/* New Upload Modal */}
+      <UploadExamClassesModal
+        open={isUploadModalOpen}
+        onClose={handleCloseUploadModal}
+        onSubmit={handleUploadSubmit}
+        examClassGroups={examClassGroups}
+        isUploading={isImporting}
+        handleDownloadSample={handleDownloadSample}
+      />
+      
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={isDeleteConfirmOpen}
         onClose={handleCancelDelete}
@@ -456,6 +465,7 @@ export default function ExamClassListPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Success/Conflict Dialog */}
       <Dialog
         open={successDialogOpen || conflictDialogOpen}
         onClose={handleDialogClose}
