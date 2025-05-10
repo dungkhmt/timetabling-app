@@ -29,9 +29,9 @@ import java.util.List;
 public class GraphHopperDistanceCalculator implements DistanceCalculator {
 
     private final DistanceCalculator fallbackCalculator = new HaversineDistanceCalculator();
-    @Value("${graphhopper.osm.file}")
+    @Value("${graphhopper.osm.file:/home/ubuntu/Hust/timetabling-app/backend/src/main/resources/vietnam-latest.osm.pbf}")
     private String osmFile;
-    @Value("${graphhopper.graph.location}")
+    @Value("${graphhopper.graph.location:target/graph-cache}")
     private String graphLocation;
     private GraphHopper graphHopper;
 
