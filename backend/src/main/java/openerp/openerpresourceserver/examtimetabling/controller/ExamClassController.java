@@ -59,9 +59,11 @@ public class ExamClassController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadExcelFile(
             @RequestParam("file") MultipartFile file,
+            @RequestParam("groupId") Integer groupId,
+            @RequestParam("groupName") String groupName,
             @RequestParam(value = "examPlanId", required = true) UUID examPlanId) throws EncryptedDocumentException, InvalidFormatException {
         try {
-            List<ExamClass> result = examClassService.bulkCreateFromExcel(file, examPlanId);
+            List<ExamClass> result = examClassService.bulkCreateFromExcel(file, examPlanId, groupId, groupName);
 
             return ResponseEntity.ok(result);
         } catch (IOException e) {

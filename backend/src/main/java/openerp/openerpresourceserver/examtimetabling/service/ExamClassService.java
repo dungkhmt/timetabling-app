@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -111,7 +112,7 @@ public class ExamClassService {
     }
 
     @Transactional
-    public List<ExamClass> bulkCreateFromExcel(MultipartFile file, UUID examPlanId) throws IOException, EncryptedDocumentException, InvalidFormatException {
+    public List<ExamClass> bulkCreateFromExcel(MultipartFile file, UUID examPlanId, Integer groupDescriptionId, String groupName) throws IOException, EncryptedDocumentException, InvalidFormatException {
         Workbook workbook = WorkbookFactory.create(file.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
         
@@ -139,16 +140,17 @@ public class ExamClassService {
                 String courseId = getStringValue(row.getCell(2));
                 String groupId = getStringValue(row.getCell(5));
                 String courseName = getStringValue(row.getCell(3));
-                String description = getStringValue(row.getCell(4));
+                String description = groupName;
                 Integer numberOfStudents = getIntValue(row.getCell(8));
                 String period = getStringValue(row.getCell(9));
                 String managementCode = getStringValue(row.getCell(11));
                 String school = getStringValue(row.getCell(13));
+                Integer examClassGroupId = groupDescriptionId;
                 
                 batchParams.add(new Object[]{
                     id, examClassId, classId, courseId, groupId, courseName, 
                     description, numberOfStudents, period, managementCode, 
-                    school, examPlanId
+                    school, examPlanId, examClassGroupId
                 });
             } catch (Exception e) {
                 System.out.println("Error processing row " + i + ": " + e.getMessage());
@@ -173,8 +175,8 @@ public class ExamClassService {
         
         String sql = "INSERT INTO exam_timetabling_class (id, exam_class_id, class_id, course_id, " +
             "group_id, course_name, description, number_students, period, management_code, " +
-            "school, exam_plan_id) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "school, exam_plan_id, exam_group_id) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
@@ -192,6 +194,7 @@ public class ExamClassService {
                 ps.setString(10, (String)params[9]);
                 ps.setString(11, (String)params[10]); 
                 ps.setObject(12, params[11]); 
+                ps.setObject(13, params[12]); 
             }
 
             @Override
