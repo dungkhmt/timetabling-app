@@ -1,8 +1,32 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext } from 'react';
 
-const DeliveryPlanFormContext = createContext();
+export const DeliveryPlanFormContext = createContext({
+  deliveryPlan: {
+    deliveryPlanName: '',
+    description: '',
+    deliveryDate: null,
+    facilityId: '',
+    deliveryBillIds: [],
+    shipperIds: [],
+    vehicleIds: [], // Add vehicleIds
+  },
+  setDeliveryPlan: () => {},
+  entities: {
+    facilities: [],
+    deliveryBills: [],
+    totalDeliveryBills: 0,
+    selectedDeliveryBills: [],
+    shippers: [],
+    totalShippers: 0,
+    selectedShippers: [],
+    vehicles: [], // Add vehicles
+    totalVehicles: 0,
+    selectedVehicles: [], // Add selectedVehicles
+  },
+  setEntities: () => {}
+});
 
-export const DeliveryPlanFormProvider = ({ value, children }) => {
+export const DeliveryPlanFormProvider = ({ children, value }) => {
   return (
     <DeliveryPlanFormContext.Provider value={value}>
       {children}

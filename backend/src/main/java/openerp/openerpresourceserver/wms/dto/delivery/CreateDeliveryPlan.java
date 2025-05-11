@@ -20,5 +20,7 @@ public class CreateDeliveryPlan {
     private List<String> deliveryBillIds;
     @Size(min = 1, message = "At least one shipper ID is required")
     private List<String> shipperIds;
+    @Size(min = 1, message = "At least one vehicle ID is required")
+    private List<String> vehicleIds;
     private String facilityId;
 }

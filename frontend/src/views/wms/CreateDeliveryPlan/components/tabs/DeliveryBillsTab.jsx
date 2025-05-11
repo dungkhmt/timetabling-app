@@ -78,6 +78,20 @@ const DeliveryBillsTab = () => {
     fetchDeliveryBills();
   }, [pagination.page, pagination.size]);
 
+  // Calculate totalWeight when selectedDeliveryBills change
+  useEffect(() => {
+    let weight = 0;
+    entities.selectedDeliveryBills.forEach(bill => {
+      weight += parseFloat(bill.totalWeight || 0);
+    });
+    
+    // Update the deliveryPlan with totalWeight for validation in other tabs
+    setDeliveryPlan({
+      ...deliveryPlan,
+      totalWeight: weight
+    });
+  }, [entities.selectedDeliveryBills]);
+
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
   };
@@ -184,6 +198,14 @@ const DeliveryBillsTab = () => {
           <Box mb={2}>
             <Typography variant="body2" fontWeight="bold">
               Đã chọn: {deliveryPlan.deliveryBillIds.length} phiếu giao hàng
+            </Typography>
+          </Box>
+
+          {/* Total weight */}
+          <Box mb={2}>
+            <Typography variant="subtitle2">
+              Selected Delivery Bills: {deliveryPlan.deliveryBillIds.length} | 
+              Total Weight: {deliveryPlan.totalWeight || '0'}
             </Typography>
           </Box>
           

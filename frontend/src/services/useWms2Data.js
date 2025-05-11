@@ -440,6 +440,17 @@ export const useWms2Data = () => {
     }
   }
 
+  const getVehicles = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getVehicles(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+      toast.error("Không thể tải danh sách xe");
+      return { data: {} };
+    }
+  };
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -480,5 +491,6 @@ export const useWms2Data = () => {
     autoAssignDeliveryRoutes,
     getShippers,
     createDeliveryPlan,
+    getVehicles
   };
 };

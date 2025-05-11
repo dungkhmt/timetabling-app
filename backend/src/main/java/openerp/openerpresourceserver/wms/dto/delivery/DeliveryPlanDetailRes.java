@@ -35,5 +35,7 @@ public class DeliveryPlanDetailRes {
 
     List<DeliveryBillPlanRes> deliveryBills;
 
+    List<VehicleDeliveryPlanRes> vehicles;
+
     List<DeliveryRoutePlanRes> existingRoutes;
 }

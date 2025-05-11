@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 public class Vehicle {
-    private int id;              // Internal ID for VRP algorithm
+    private int id;          // Internal ID for VRP algorithm
+    private String vehicleId;   // ID of the vehicle in the system
     private String driverId;     // ID of the shipper/driver
     private String driverName;   // Name of the shipper/driver
     private double capacity;     // Maximum weight capacity
@@ -18,8 +19,9 @@ public class Vehicle {
     /**
      * Basic constructor with essential fields
      */
-    public Vehicle(int id, String driverId, String driverName, double capacity, double currentLoad) {
+    public Vehicle(int id, String vehicleId, String driverId, String driverName, double capacity, double currentLoad) {
         this.id = id;
+        this.vehicleId = vehicleId;
         this.driverId = driverId;
         this.driverName = driverName;
         this.capacity = capacity;
@@ -29,10 +31,11 @@ public class Vehicle {
     /**
      * Create a Vehicle instance from an entity
      */
-    public static Vehicle fromEntity(openerp.openerpresourceserver.wms.entity.Vehicle entity, int id, String driverName) {
+    public static Vehicle fromEntity(openerp.openerpresourceserver.wms.entity.Vehicle entity, int id, String driverId, String driverName) {
         return Vehicle.builder()
             .id(id)
-            .driverId(entity.getId())
+            .vehicleId(entity.getId())
+            .driverId(driverId)
             .driverName(driverName)
             .capacity(entity.getCapacity() != null ? entity.getCapacity().doubleValue() : 1000.0)
             .currentLoad(0.0)

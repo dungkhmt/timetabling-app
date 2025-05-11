@@ -113,4 +113,7 @@ export const wms2Service = {
   getDeliveryPlanById: (deliveryPlanId) => {
     return request("get", `delivery-plan/details/${deliveryPlanId}`, null, null, null);
   },
+  getVehicles : (page, limit, filters) => {
+    return request("get", `/vehicle/get-all?page=${page}&limit=${limit}&statusId=${filters.statusId}`, null, null, null);
+  }
 };

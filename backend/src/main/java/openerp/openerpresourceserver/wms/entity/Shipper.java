@@ -32,4 +32,8 @@ public class Shipper {
 
     @Column(name = "last_longitude")
     private BigDecimal lastLongitude;
+
+    public String getFullName() {
+        return userLogin.getFullName();
+    }
 }

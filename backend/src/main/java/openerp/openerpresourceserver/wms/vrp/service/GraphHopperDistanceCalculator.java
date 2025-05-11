@@ -5,8 +5,6 @@ import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.config.CHProfile;
 import com.graphhopper.config.Profile;
-import com.graphhopper.json.Statement;
-import com.graphhopper.util.CustomModel;
 import com.graphhopper.util.GHUtility;
 import com.graphhopper.util.PointList;
 import jakarta.annotation.PostConstruct;

@@ -1,7 +1,5 @@
 package openerp.openerpresourceserver.wms.vrp.service;
 
-import lombok.RequiredArgsConstructor;
-import openerp.openerpresourceserver.wms.constant.enumrator.AddressType;
 import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.repository.AddressRepo;
@@ -12,7 +10,6 @@ import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPInput;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPParams;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPSolution;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPSolver;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -45,9 +42,9 @@ public class RouteOptimizer {
      * Build the VRP input model from delivery data
      */
     public CVRPInput setupVRPInput(
-            Facility facility, 
-            List<DeliveryBill> deliveryBills, 
-            List<Shipper> shippers) {
+            Facility facility,
+            List<DeliveryBill> deliveryBills,
+            List<Shipper> shippers, List<openerp.openerpresourceserver.wms.entity.Vehicle> availableVehicles) {
         var facilityAddress = addressRepo.findByEntityIdAndEntityType(facility.getId(), EntityType.FACILITY.name());
         // Create nodes list
         List<Node> nodes = new ArrayList<>();
@@ -105,17 +102,13 @@ public class RouteOptimizer {
         int vehicleId = 0;
         
         for (Shipper shipper : shippers) {
-                
-            Vehicle vehicle = new Vehicle(
-                vehicleId,
-                shipper.getUserLoginId(),
-                shipper.getUserLogin().getFullName(),
-                500,
-                0
-            );
+
+            var availableVehicle  = availableVehicles.get(vehicleId);
+            Vehicle vehicle = Vehicle.fromEntity(availableVehicle, vehicleId++
+                    ,shipper.getUserLoginId(),
+                    shipper.getFullName());
             
             vehicles.add(vehicle);
-            vehicleId++;
         }
         
         // Calculate distance matrix

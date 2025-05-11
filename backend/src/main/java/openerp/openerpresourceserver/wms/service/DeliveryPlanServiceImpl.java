@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.DriverRole;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.VehicleStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.*;
@@ -27,7 +28,9 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
     private final DeliveryPlanRepo deliveryPlanRepo;
     private final DeliveryPlanOrderRepo deliveryPlanOrderRepo;
     private final DeliveryPlanShipperRepo deliveryPlanShipperRepo;
+    private final DeliveryPlanVehicleRepo deliveryPlanVehicleRepo;
     private final ShipperRepo shipperRepo;
+    private final VehicleRepo vehicleRepo;
     private final DeliveryBillRepo deliveryBillRepo;
     private final GeneralMapper generalMapper;
     private final UserLoginRepo userLoginRepo;
@@ -37,8 +40,10 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
     public ApiResponse<Void> createDeliveryPlan(CreateDeliveryPlan req, Principal principal) {
         List<DeliveryPlanOrder> deliveryPlanOrders = new ArrayList<>();
         List<DeliveryPlanShipper> deliveryPlanShippers = new ArrayList<>();
+        List<DeliveryPlanVehicle> deliveryPlanVehicles = new ArrayList<>();
         List<DeliveryBill> deliveryBills = deliveryBillRepo.findAllById(req.getDeliveryBillIds());
         List<Shipper> shippers = shipperRepo.findAllById(req.getShipperIds());
+        List<Vehicle> vehicles = vehicleRepo.findAllById(req.getVehicleIds());
         var facility = facilityRepo.findById(req.getFacilityId()).orElseThrow(
                 () -> new DataNotFoundException("Facility not found with id: " + req.getFacilityId())
         );
@@ -79,6 +84,18 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
             deliveryPlanShippers.add(deliveryPlanShipper);
         }
 
+        var deliveryPlanVehicleSeq = 1;
+        for(var vehicle: vehicles) {
+            vehicle.setStatusId(VehicleStatus.ASSIGNED.name());
+            var deliveryPlanVehicle = DeliveryPlanVehicle.builder()
+                    .id(CommonUtil.getUUID())
+                    .deliveryPlanId(deliveryPlan.getId())
+                    .vehicleId(vehicle.getId())
+                    .deliveryPlanVehicleSeqId(CommonUtil.getSequenceId("DPV", 5 ,deliveryPlanVehicleSeq++))
+                    .build();
+            deliveryPlanVehicles.add(deliveryPlanVehicle);
+        }
+
         //Set Details for Delivery Plan
         deliveryPlan.setTotalWeight(totalWeight);
         deliveryPlan.setStatusId(DeliveryBillStatus.CREATED.name());
@@ -88,6 +105,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
         deliveryPlanRepo.save(deliveryPlan);
         deliveryPlanOrderRepo.saveAll(deliveryPlanOrders);
         deliveryPlanShipperRepo.saveAll(deliveryPlanShippers);
+        deliveryPlanVehicleRepo.saveAll(deliveryPlanVehicles);
 
         return ApiResponse.<Void>builder()
                 .code(201)
@@ -143,12 +161,18 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                 .map(DeliveryPlanShipper::getShipperId)
                 .toList();
 
+        List<String> vehicleIds = deliveryPlanVehicleRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                .stream()
+                .map(DeliveryPlanVehicle::getVehicleId)
+                .toList();
+
         List<DeliveryBillPlanRes> deliveryBills = deliveryBillRepo.findAllById(deliveryBillIds)
                 .stream()
                 .map(deliveryBill -> {
                     var deliveryBillPlanRes = generalMapper.convertToDto(deliveryBill, DeliveryBillPlanRes.class);
                     deliveryBillPlanRes.setShipmentId(deliveryBill.getShipment().getId());
                     deliveryBillPlanRes.setShipmentName(deliveryBill.getShipment().getShipmentName());
+                    deliveryBillPlanRes.setToCustomerName(deliveryBill.getToCustomer().getName());
                     return deliveryBillPlanRes;
                 })
                 .toList();
@@ -174,9 +198,18 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                 })
                 .toList();
 
+        List<VehicleDeliveryPlanRes> vehicles = vehicleRepo.findAllById(vehicleIds)
+                .stream()
+                .map(vehicle -> {
+                    var vehicleDeliveryPlanRes = generalMapper.convertToDto(vehicle, VehicleDeliveryPlanRes.class);
+                    return vehicleDeliveryPlanRes;
+                })
+                .toList();
+
         deliveryPlanDetailRes.setDeliveryBills(deliveryBills);
         deliveryPlanDetailRes.setShippers(shippers);
         deliveryPlanDetailRes.setExistingRoutes(existingRoutes);
+        deliveryPlanDetailRes.setVehicles(vehicles);
 
         return ApiResponse.<DeliveryPlanDetailRes>builder()
                 .code(200)

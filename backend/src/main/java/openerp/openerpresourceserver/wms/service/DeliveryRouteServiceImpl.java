@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +43,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
     private final ShipperRepo shipperRepo;
     private final FacilityRepo facilityRepo;
     private final DeliveryPlanShipperRepo deliveryPlanShipperRepo;
+    private final DeliveryPlanVehicleRepo deliveryPlanVehicleRepo;
     private final VehicleRepo vehicleRepo;
 
     // Services
@@ -73,6 +76,10 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                     .stream()
                     .map(DeliveryPlanShipper::getShipperId)
                     .toList();
+            List<String> vehicleIds = deliveryPlanVehicleRepo.findByDeliveryPlanId(deliveryPlan.getId())
+                    .stream()
+                    .map(DeliveryPlanVehicle::getVehicleId)
+                    .toList();
 
             List<DeliveryBill> deliveryBills = deliveryBillRepo.findAllById(deliveryBillIds);
             if (deliveryBills.isEmpty()) {
@@ -91,11 +98,12 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                         .build();
             }
 
-            // Find available vehicles for the facility
-            List<openerp.openerpresourceserver.wms.entity.Vehicle> availableVehicles =
-                    vehicleRepo.findByStatusId(VehicleStatus.AVAILABLE.name());
-            if (availableVehicles.size() < shippers.size()) {
-                log.warn("Not enough vehicles available for all shippers. Some routes may not have vehicles assigned.");
+            List<openerp.openerpresourceserver.wms.entity.Vehicle> vehicles = vehicleRepo.findAllById(vehicleIds);
+            if (vehicles.isEmpty()) {
+                return ApiResponse.<DeliveryRouteResponseDTO>builder()
+                        .code(400)
+                        .message("No available vehicles found for this delivery plan")
+                        .build();
             }
 
             // First, delete any existing routes for this delivery plan to avoid duplicates
@@ -106,7 +114,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             deliveryRouteRepo.deleteAll(existingRoutes);
 
             // Set up VRP problem
-            CVRPInput vrpInput = routeOptimizer.setupVRPInput(facility, deliveryBills, shippers);
+            CVRPInput vrpInput = routeOptimizer.setupVRPInput(facility, deliveryBills, shippers, vehicles);
 
             // Solve the VRP problem
             CVRPSolution solution = routeOptimizer.optimizeRoutes(vrpInput);
@@ -119,7 +127,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             }
 
             // Save the routing solution to the database
-            saveRoutingSolution(deliveryPlan, solution, vrpInput, availableVehicles);
+            saveRoutingSolution(deliveryPlan, solution, vrpInput, vehicles);
 
             // Prepare response with detailed route paths
             DeliveryRouteResponseDTO responseDTO = visualizationService.prepareRouteVisualization(solution, vrpInput);
@@ -156,6 +164,9 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
         // Track assigned bills to avoid duplicates
         Map<String, Boolean> assignedBills = new HashMap<>();
+        Map<String, openerp.openerpresourceserver.wms.entity.Vehicle> vehicleMap = availableVehicles.stream().collect(
+                Collectors.toMap(openerp.openerpresourceserver.wms.entity.Vehicle::getId, Function.identity())
+        );
 
         // Track vehicle assignments
         int vehicleIndex = 0;
@@ -176,7 +187,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                     .orElseThrow(() -> new RuntimeException("Shipper not found: " + shipperId));
 
             // Update shipper status
-            shipper.setStatusId(ShipperStatus.ASSIGNED.name());
+            shipper.setStatusId(ShipperStatus.IN_TRIP.name());
             shipperRepo.save(shipper);
 
             // Create a new delivery route for this shipper
@@ -187,15 +198,25 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             deliveryRoute.setAssignToShipper(shipper);
 
             // Assign a vehicle if available
-            if (vehicleIndex < availableVehicles.size()) {
-                openerp.openerpresourceserver.wms.entity.Vehicle vehicle = availableVehicles.get(vehicleIndex++);
-                deliveryRoute.setAssignToVehicle(vehicle);
+//            if (vehicleIndex < availableVehicles.size()) {
+//                openerp.openerpresourceserver.wms.entity.Vehicle vehicle = availableVehicles.get(vehicleIndex++);
+//                deliveryRoute.setAssignToVehicle(vehicle);
+//
+//                // Update vehicle status
+//                vehicle.setStatusId(VehicleStatus.IN_USE.name());
+//                vehicleRepo.save(vehicle);
+//            } else {
+//                log.warn("No vehicle available for shipper: {}", shipper.getUserLoginId());
+//            }
 
-                // Update vehicle status
-                vehicle.setStatusId(VehicleStatus.IN_USE.name());
-                vehicleRepo.save(vehicle);
+            // Assign vehicle from the map
+            openerp.openerpresourceserver.wms.entity.Vehicle vehicleEntity = vehicleMap.get(vehicles.get(vehicleId).getVehicleId());
+            if (vehicleEntity != null) {
+                deliveryRoute.setAssignToVehicle(vehicleEntity);
+                vehicleEntity.setStatusId(VehicleStatus.IN_USE.name());
+                vehicleRepo.save(vehicleEntity);
             } else {
-                log.warn("No vehicle available for shipper: {}", shipper.getUserLoginId());
+                log.warn("No vehicle found for vehicle ID: {}", vehicleId);
             }
 
             deliveryRouteRepo.save(deliveryRoute);
@@ -268,7 +289,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
         }
 
         // Update delivery plan status
-        deliveryPlan.setStatusId(DeliveryPlanStatus.COMPLETED.name());
+        deliveryPlan.setStatusId(DeliveryPlanStatus.IN_PROGRESS.name());
         deliveryPlanRepo.save(deliveryPlan);
     }
 }

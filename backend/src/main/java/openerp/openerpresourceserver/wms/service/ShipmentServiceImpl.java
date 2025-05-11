@@ -350,7 +350,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         var pageRequest = CommonUtil.getPageRequest(page, limit);
         var shipments = shipmentRepo.findByShipmentStatusId(ShipmentStatus.EXPORTED.name(), pageRequest);
 
-        var shipmentForDeliveryPageRes = shipments.getContent().stream()
+        List<ShipmentForDeliveryRes> shipmentForDeliveryPageRes = shipments.getContent().stream()
                 .map(shipment -> {
                             var res = generalMapper.convertToDto(shipment, ShipmentForDeliveryRes.class);
                             res.setCustomerName(shipment.getToCustomer().getName());
