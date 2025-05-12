@@ -3,12 +3,16 @@ package openerp.openerpresourceserver.wms.service;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.ProductGetListFilter;
 import openerp.openerpresourceserver.wms.dto.product.CreateProductReq;
+import openerp.openerpresourceserver.wms.dto.product.ProductGetListRes;
 import openerp.openerpresourceserver.wms.entity.Product;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.ProductCategoryRepo;
 import openerp.openerpresourceserver.wms.repository.ProductRepo;
+import openerp.openerpresourceserver.wms.repository.specification.ProductSpecification;
+import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -67,6 +71,29 @@ public class ProductServiceImpl implements ProductService {
         return ApiResponse.<Void>builder()
                 .code(200)
                 .message("Product created successfully")
+                .build();
+    }
+
+    @Override
+    public ApiResponse<Pagination<ProductGetListRes>> getProducts(int page, int limit, ProductGetListFilter filters) {
+        var pageReq = CommonUtil.getPageRequest(page, limit);
+        var productSpec = new ProductSpecification(filters);
+        var productPage = productRepo.findAll(productSpec, pageReq);
+        var productList = productPage.getContent().stream()
+                .map(product -> generalMapper.convertToDto(product, ProductGetListRes.class))
+                .toList();
+        var pagination = Pagination.<ProductGetListRes>builder()
+                .data(productList)
+                .page(page)
+                .size(limit)
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
+
+        return ApiResponse.<Pagination<ProductGetListRes>>builder()
+                .code(200)
+                .message("Get product list successfully")
+                .data(pagination)
                 .build();
     }
 }

@@ -13,6 +13,7 @@ import CreateDeliveryPlan from "views/wms/CreateDeliveryPlan/CreateDeliveryPlan"
 import DeliveryPlanListPage from "views/wms/DeliveryPlanListPage/DeliveryPlanListPage";
 import DeliveryPlanDetail from "views/wms/DeliveryPlanDetail/DeliveryPlanDetail";
 import CreateProduct from "../views/wms/CreateProduct/CreateProduct";
+import ProductListPage from "../views/wms/ProductListPage/ProductListPage";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -90,8 +91,14 @@ export default function WMSRouter() {
         ></Route>
 
         <Route
-          component={CreateProduct}
+          component={ProductListPage}
+            exact
             path={`${path}/admin/product`}
+        ></Route>
+
+        <Route
+            component={CreateProduct}
+            path={`${path}/admin/product/create`}
         ></Route>
       </Switch>
     </div>

@@ -68,7 +68,7 @@ const CreateProduct = () => {
       const response = await createProduct(payload);
       if(response && (response.code === 200 || response.code === 201)) {
         toast.success("Tạo sản phẩm thành công");
-        navigate.push("/wms/products");
+        navigate.push("/wms/admin/product");
       } else {
         toast.error("Tạo sản phẩm thất bại: " + (response.message || "Lỗi không xác định"));
       }
@@ -105,7 +105,7 @@ const CreateProduct = () => {
           <Button 
             variant="outlined" 
             color="secondary" 
-            onClick={() => navigate.push("/wms/products")}
+            onClick={() => navigate.push("/wms/admin/product")}
             sx={{ mr: 2 }}
             disabled={submitting}
           >
