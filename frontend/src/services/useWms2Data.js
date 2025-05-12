@@ -484,6 +484,17 @@ export const useWms2Data = () => {
     }
   };
 
+  const getProductById = async (id) => {
+    try {
+      const response = await wms2Service.getProductById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product by ID:", error);
+      toast.error("Không thể tải thông tin sản phẩm");
+      return { data: {} };
+    }
+  };
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -528,5 +539,6 @@ export const useWms2Data = () => {
     createProduct,
     getProductCategories,
     getProductsWithFilters,
+    getProductById,
   };
 };

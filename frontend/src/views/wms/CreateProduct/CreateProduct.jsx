@@ -51,6 +51,16 @@ const CreateProduct = () => {
       toast.warning("Vui lòng nhập đơn vị tính");
       return;
     }
+
+    if(!product.weight) {
+      toast.warning("Vui lòng nhập trọng lượng sản phẩm");
+      return;
+    }
+
+    if(!product.wholeSalePrice) {
+      toast.warning("Vui lòng nhập giá bán buôn");
+      return;
+    }
     
     // Định dạng dữ liệu gửi đi
     const payload = {

@@ -120,7 +120,7 @@ const ProductListPage = () => {
 
   // Navigate to product detail page
   const handleViewProductDetail = (productId) => {
-    history.push(`/wms/product/detail/${productId}`);
+    history.push(`/wms/admin/product/details/${productId}`);
   };
 
   return (

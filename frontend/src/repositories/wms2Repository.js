@@ -124,5 +124,8 @@ export const wms2Service = {
   },
   getProductsWithFilters : (page, limit, filters) => {
     return request("post", `/product/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getProductById : (productId) => {
+    return request("get", `/product/details/${productId}`);
   }
 };
