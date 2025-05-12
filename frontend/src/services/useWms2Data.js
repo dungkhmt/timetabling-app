@@ -451,6 +451,28 @@ export const useWms2Data = () => {
     }
   };
 
+  const createProduct = async (data) => {
+    try {
+      const res = await wms2Service.createProduct(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating product:", error);
+      toast.error("Không thể tạo sản phẩm");
+      return { data: {} };
+    }
+  }
+
+  const getProductCategories = async () => {
+    try {
+      const response = await wms2Service.getProductCategories();
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product categories:", error);
+      toast.error("Không thể tải danh mục sản phẩm");
+      return { data: {} };
+    }
+  };
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -491,6 +513,8 @@ export const useWms2Data = () => {
     autoAssignDeliveryRoutes,
     getShippers,
     createDeliveryPlan,
-    getVehicles
+    getVehicles,
+    createProduct,
+    getProductCategories
   };
 };

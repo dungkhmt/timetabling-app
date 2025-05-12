@@ -115,5 +115,11 @@ export const wms2Service = {
   },
   getVehicles : (page, limit, filters) => {
     return request("get", `/vehicle/get-all?page=${page}&limit=${limit}&statusId=${filters.statusId}`, null, null, null);
+  },
+  createProduct : (data) => {
+    return request("post", "/product/create", null, null, data);
+  },
+  getProductCategories : () => {
+    return request("get", "/product-category/get-all");
   }
 };

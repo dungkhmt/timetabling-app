@@ -38,6 +38,7 @@ import { scheduleInformation } from "./menuconfig/scheduleInformation";
 import {wms_purchase} from "./menuconfig/wms_purchase";
 import {wms_sales} from "./menuconfig/wms_sales";
 import {wms_logistics} from "./menuconfig/wms_logistics";
+import { wms_logistics_admin } from "./menuconfig/wms_logistics_admin";
 
 
 // import {schedulePerformance} from "./menuconfig/schedulePerformance"
@@ -65,6 +66,7 @@ MENUS.push(ExamTimeTabling);
 MENUS.push(wms_purchase);
 MENUS.push(wms_sales);
 MENUS.push(wms_logistics);
+MENUS.push(wms_logistics_admin);
 
 
 

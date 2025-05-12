@@ -3,12 +3,10 @@ package openerp.openerpresourceserver.wms.controller;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.product.CreateProductReq;
 import openerp.openerpresourceserver.wms.entity.Product;
 import openerp.openerpresourceserver.wms.service.ProductService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,5 +22,10 @@ public class ProductController {
     @GetMapping("/search")
     public ApiResponse<Pagination<Product>> searchProducts(@RequestParam String query, @RequestParam Integer page, @RequestParam Integer limit) {
         return productService.searchProducts(query, page, limit);
+    }
+
+    @PostMapping("/create")
+    public ApiResponse<Void> createProduct(@RequestBody CreateProductReq req) {
+        return productService.createProduct(req);
     }
 }
