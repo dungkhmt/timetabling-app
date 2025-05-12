@@ -236,6 +236,8 @@ const GeneralScheduleScreen = () => {
   }
 
   // Main scheduling UI (original content)
+  const numberSlotsToDisplay = selectedVersion?.numberSlotsPerSession ?? 6;
+
   return (
     <div className="flex flex-col gap-3">
       <Paper elevation={1} className="p-3">
@@ -629,6 +631,7 @@ const GeneralScheduleScreen = () => {
                 selectedRows={states.selectedRows}
                 onSelectedRowsChange={setters.setSelectedRows}
                 selectedVersion={selectedVersion}
+                numberSlotsToDisplay={numberSlotsToDisplay}
               />
             )}
             {viewTab === 1 && (
@@ -641,6 +644,7 @@ const GeneralScheduleScreen = () => {
                 selectedRows={states.selectedRows}
                 onSelectedRowsChange={setters.setSelectedRows}
                 selectedVersion={selectedVersion}
+                numberSlotsToDisplay={numberSlotsToDisplay}
               />
             )}
           </div>

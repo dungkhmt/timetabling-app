@@ -2,6 +2,8 @@ package openerp.openerpresourceserver.generaltimetabling.controller;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelRequestTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelRequestUpdateVersion;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
@@ -22,24 +24,25 @@ public class TimeTablingVersionController {
 
     private final TimeTablingVersionService timeTablingVersionService;
     @Autowired
-    private TimeTablingClassService timeTablingClassService;
-
-
+    private TimeTablingClassService timeTablingClassService;    
+    
     @PostMapping("/create")
-    public ResponseEntity<TimeTablingTimeTableVersion> createVersion(@RequestBody Map<String, String> payload) {
-        log.info("Received request to create new timetabling version: {}", payload);
+    public ResponseEntity<TimeTablingTimeTableVersion> createVersion(@RequestBody ModelRequestTimeTableVersion request) {
+        log.info("Received request to create new timetabling version: {}", request);
         
-        String name = payload.get("name");
-        String status = payload.get("status");
-        String semester = payload.get("semester");
-        String userId = payload.get("userId");
-        
-        if (name == null || status == null || semester == null || userId == null) {
+        if (request.getName() == null || request.getStatus() == null || request.getSemester() == null || request.getUserId() == null) {
             log.error("Missing required fields in request");
             return ResponseEntity.badRequest().build();
         }
         
-        TimeTablingTimeTableVersion createdVersion = timeTablingVersionService.createVersion(name, status, semester, userId);
+        TimeTablingTimeTableVersion createdVersion = timeTablingVersionService.createVersion(
+            request.getName(), 
+            request.getStatus(), 
+            request.getSemester(), 
+            request.getUserId(),
+            request.getNumberSlotsPerSession()
+        );
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(createdVersion);
     }
 
@@ -74,25 +77,29 @@ public class TimeTablingVersionController {
             List<TimeTablingTimeTableVersion> versions = timeTablingVersionService.getAllVersionsBySemesterAndName(semester, name);
             return ResponseEntity.ok(versions);
         }
-    }
-
+    }    
+    
     @PutMapping("/{id}")
     public ResponseEntity<TimeTablingTimeTableVersion> updateVersion(
             @PathVariable Long id,
-            @RequestBody Map<String, String> payload) {
-        log.info("Received request to update timetabling version with id {}: {}", id, payload);
+            @RequestBody ModelRequestUpdateVersion request) {
+        log.info("Received request to update timetabling version with id {}: {}", id, request);
         
-        String name = payload.get("name");
-        String status = payload.get("status");
-        
-        if (name == null || status == null) {
-            log.error("Missing required fields in update request");
-            return ResponseEntity.badRequest().build();
-        }
-        
+        // Name and status can be optional for updates, but numberSlotsPerSession might also be optional
+        // Depending on requirements, you might want to validate if at least one field is present for an update.
+        // For now, we assume that if they are provided, they should be updated.
+
         try {
-            TimeTablingTimeTableVersion updatedVersion = timeTablingVersionService.updateVersion(id, name, status);
+            TimeTablingTimeTableVersion updatedVersion = timeTablingVersionService.updateVersion(
+                id, 
+                request.getName(), 
+                request.getStatus(),
+                request.getNumberSlotsPerSession() // Pass the new field
+            );
             return ResponseEntity.ok(updatedVersion);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid argument updating timetabling version with id: {}", id, e);
+            return ResponseEntity.badRequest().body(null); // Or a more specific error response
         } catch (Exception e) {
             log.error("Error updating timetabling version with id: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

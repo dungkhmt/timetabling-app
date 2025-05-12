@@ -30,7 +30,7 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
 
     @Override
     @Transactional
-    public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId) {
+    public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot) {
         log.info("Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}", 
                 name, status, semester, userId);
         
@@ -39,6 +39,7 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
         version.setStatus(status);
         version.setSemester(semester);
         version.setCreatedByUserId(userId);
+        version.setNumberSlotsPerSession(numOfSlot);
         // ID sẽ được tự động tạo bởi cơ sở dữ liệu
         
         version = timeTablingVersionRepo.save(version);
@@ -76,16 +77,24 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     }
 
     @Override
-    public TimeTablingTimeTableVersion updateVersion(Long id, String name, String status) {
-        log.info("Updating timetabling version with id: {}, name: {}, status: {}", 
-                id, name, status);
+    @Transactional
+    public TimeTablingTimeTableVersion updateVersion(Long id, String name, String status, Integer numberSlotsPerSession) {
+        log.info("Updating timetabling version with id: {}, name: {}, status: {}, numberSlotsPerSession: {}", 
+                id, name, status, numberSlotsPerSession);
         
-        TimeTablingTimeTableVersion existingVersion = timeTablingVersionRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy phiên bản thời khóa biểu với ID: " + id));
+        TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Version not found with id: " + id));
         
-        existingVersion.setName(name);
-        existingVersion.setStatus(status);
-
-        return timeTablingVersionRepo.save(existingVersion);
+        if (name != null && !name.isEmpty()) {
+            version.setName(name);
+        }
+        if (status != null && !status.isEmpty()) {
+            version.setStatus(status);
+        }
+        if (numberSlotsPerSession != null) {
+            version.setNumberSlotsPerSession(numberSlotsPerSession);
+        }
+        
+        return timeTablingVersionRepo.save(version);
     }
 }

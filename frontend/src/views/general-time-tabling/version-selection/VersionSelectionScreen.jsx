@@ -69,15 +69,19 @@ const VersionSelectionScreen = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchNameInput, setSearchNameInput] = useState(searchName);
   const [typingTimeout, setTypingTimeout] = useState(null);
-  
   const [isEditing, setIsEditing] = useState(false);
   const [editVersionDialog, setEditVersionDialog] = useState(false);
-  const [editVersionData, setEditVersionData] = useState({ id: null, name: "", status: "" });
-
+  const [editVersionData, setEditVersionData] = useState({ id: null, name: "", status: "", numberSlotsPerSession: 6 });
+  const [numberSlotsPerSession, setNumberSlotsPerSession] = useState(6);
+  const [newVersionSemester, setNewVersionSemester] = useState(selectedSemester);
   useEffect(() => {
     setSearchNameInput(searchName);
   }, [searchName]);
   
+  // Cập nhật newVersionSemester khi selectedSemester thay đổi 
+  useEffect(() => {
+    setNewVersionSemester(selectedSemester);
+  }, [selectedSemester]);
   const handleSearchInputChange = (e) => {
     const value = e.target.value;
     setSearchNameInput(value);
@@ -96,10 +100,9 @@ const VersionSelectionScreen = ({
   const handleClearSearch = () => {
     setSearchNameInput("");
     setSearchName("");
-  };
-
+  };  
   const handleCreateVersion = async () => {
-    if (!selectedSemester?.semester) {
+    if (!newVersionSemester?.semester) {
       toast.error("Vui lòng chọn học kỳ trước khi tạo phiên bản!");
       return;
     }
@@ -111,18 +114,19 @@ const VersionSelectionScreen = ({
     const versionData = {
       name: newVersionName,
       status: newVersionStatus,
-      semester: selectedSemester.semester,
-      userId: "timetablingadmin01" 
+      semester: newVersionSemester.semester,
+      userId: "timetablingadmin01",
+      numberSlotsPerSession: numberSlotsPerSession 
     };
     
     try {
       const createdVersion = await createVersion(versionData);
-      
-      if (createdVersion) {
-        setOpenNewVersionDialog(false);
-        setNewVersionName("");
-        setNewVersionStatus("DRAFT");
-        
+      console.log("Created version:", createdVersion);
+        if (createdVersion) {
+          setOpenNewVersionDialog(false);
+          setNewVersionName("");
+          setNewVersionStatus("DRAFT");
+          // setNumberSlotsPerSession(numberSlotsPerSession);
         if (onCreateSuccess) {
           onCreateSuccess(createdVersion);
         }
@@ -184,7 +188,8 @@ const VersionSelectionScreen = ({
       setEditVersionData({
         id: selectedVersionForMenu.id,
         name: selectedVersionForMenu.name,
-        status: selectedVersionForMenu.status
+        status: selectedVersionForMenu.status,
+        numberSlotsPerSession: selectedVersionForMenu.numberSlotsPerSession || 6
       });
       setEditVersionDialog(true);
       setMenuAnchorEl(null);
@@ -196,6 +201,10 @@ const VersionSelectionScreen = ({
       toast.error("Vui lòng nhập tên phiên bản!");
       return;
     }
+    if (editVersionData.numberSlotsPerSession === null || editVersionData.numberSlotsPerSession === undefined || parseInt(editVersionData.numberSlotsPerSession, 10) <= 0) {
+      toast.error("Số tiết mỗi buổi phải là một số dương!");
+      return;
+    }
 
     try {
       setIsEditing(true);
@@ -203,7 +212,8 @@ const VersionSelectionScreen = ({
       await timeTablingVersionRepository.updateVersion(
         editVersionData.id,
         editVersionData.name,
-        editVersionData.status
+        editVersionData.status,
+        parseInt(editVersionData.numberSlotsPerSession, 10)
       );
       
       setEditVersionDialog(false);
@@ -500,8 +510,7 @@ const VersionSelectionScreen = ({
                     }}
                   />
                   
-                  <CardContent sx={{ pt: 1, pb: 1, flexGrow: 1 }}>
-                    <Box sx={{ 
+                  <CardContent sx={{ pt: 1, pb: 1, flexGrow: 1 }}>                    <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'center', 
                       mt: 1.5,
@@ -521,6 +530,27 @@ const VersionSelectionScreen = ({
                         </Typography>
                       </Tooltip>
                     </Box>
+                    
+                    {version.numberSlotsPerSession && (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        mt: 1,
+                        color: 'text.secondary'
+                      }}>
+                        <AccessTime fontSize="small" sx={{ mr: 1, color: theme.palette.primary.main, opacity: 0.7, flexShrink: 0 }} />
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {version.numberSlotsPerSession} tiết/buổi
+                        </Typography>
+                      </Box>
+                    )}
                     
                     <Box sx={{ 
                       display: 'flex', 
@@ -655,11 +685,10 @@ const VersionSelectionScreen = ({
             }}>
               <CircularProgress />
             </Box>
-          )}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          )}          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <GeneralSemesterAutoComplete
-              selectedSemester={selectedSemester}
-              setSelectedSemester={setSelectedSemester}
+              selectedSemester={newVersionSemester}
+              setSelectedSemester={setNewVersionSemester}
               label="Học kỳ"
               size="small"
               required
@@ -676,8 +705,7 @@ const VersionSelectionScreen = ({
               required
               disabled={isCreating}
             />
-            
-            <TextField
+              <TextField
               select
               label="Trạng thái"
               size="small"
@@ -696,6 +724,20 @@ const VersionSelectionScreen = ({
               <MenuItem value="DRAFT">Bản nháp</MenuItem>
               <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
             </TextField>
+            
+            <TextField
+              label="Số tiết mỗi buổi học"
+              type="number"
+              size="small"
+              fullWidth
+              value={numberSlotsPerSession}
+              onChange={(e) => setNumberSlotsPerSession(e.target.value)}
+              required
+              disabled={isCreating}
+              InputProps={{
+                inputProps: { min: 1 }
+              }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 1 }}>
@@ -705,11 +747,11 @@ const VersionSelectionScreen = ({
             variant="outlined"
           >
             Hủy
-          </Button>
+          </Button>          
           <Button 
             onClick={handleCreateVersion} 
             variant="contained" 
-            disabled={isCreating || !newVersionName || !selectedSemester}
+            disabled={isCreating || !newVersionName || !newVersionSemester || !numberSlotsPerSession || parseInt(numberSlotsPerSession) < 1}
             startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : null}
           >
             {isCreating ? 'Đang tạo...' : 'Tạo phiên bản'}
@@ -754,6 +796,29 @@ const VersionSelectionScreen = ({
               onChange={(e) => setEditVersionData({...editVersionData, name: e.target.value})}
               required
               disabled={isEditing}
+            />
+            
+            <TextField
+              margin="dense"
+              label="Số tiết tối đa mỗi buổi (*)"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={editVersionData.numberSlotsPerSession}
+              onChange={(e) => {
+                const val = e.target.value;
+                 if (val === "" || (parseInt(val, 10) > 0 && parseInt(val, 10) <= 20)) {
+                  setEditVersionData({ ...editVersionData, numberSlotsPerSession: val === "" ? "" : parseInt(val,10) });
+                }
+              }}
+              InputProps={{
+                inputProps: { 
+                  min: 1,
+                  max: 20
+                }
+              }}
+              size="small"
+              helperText="Giá trị từ 1 đến 20."
             />
             
             <TextField

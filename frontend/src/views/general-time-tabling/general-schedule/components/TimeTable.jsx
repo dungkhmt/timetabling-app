@@ -31,6 +31,7 @@ const TimeTable = ({
   loading,
   selectedRows,
   onSelectedRowsChange,
+  numberSlotsToDisplay, // Ensure this prop is destructured
 }) => {
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
@@ -133,7 +134,10 @@ const TimeTable = ({
   }, [debouncedSearchTerm, classDetails]);
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const periods = [1, 2, 3, 4, 5, 6];
+  // Generate periods dynamically based on numberSlotsToDisplay
+  // If numberSlotsToDisplay is undefined or null, default to 6 for safety, though GeneralScheduleScreen should provide a default.
+  const effectiveSlots = typeof numberSlotsToDisplay === 'number' && numberSlotsToDisplay > 0 ? numberSlotsToDisplay : 6;
+  const periods = Array.from({ length: effectiveSlots }, (_, i) => i + 1);
 
   const convertWeekdayToDay = (weekday) => {
     const dayMap = {
@@ -157,6 +161,12 @@ const TimeTable = ({
 
     const calculatedEndTime =
       selectedClass.startTime + selectedClass.numberOfPeriods - 1;
+
+    if (calculatedEndTime > effectiveSlots) {
+      toast.error(`Tiết kết thúc không thể vượt quá tổng số tiết cho phép (Tiết ${effectiveSlots}).`);
+      return;
+    }
+
     const { numberOfPeriods, code, ...filteredSelectedClass } = selectedClass;
 
     const selectedClassData = {
@@ -417,11 +427,22 @@ const handleDrop = (targetIndex, targetDay, targetPeriod) => {
 };
 
 const handleConfirmMove = async () => {
-  if (!moveTarget || !selectedSemester) {
+  if (!moveTarget || !draggedClass) return;
+
+  const { targetRoom, targetStartTime, targetDay, originalClassInfo, targetClassId, originalRoomReservationId } = moveTarget;
+  const duration = draggedClass.classInfo.duration; // Assuming duration is on draggedClass.classInfo
+
+  const endTime = targetStartTime + duration - 1;
+
+  if (endTime > effectiveSlots) {
+    toast.error(`Tiết kết thúc sau khi di chuyển (Tiết ${endTime}) không thể vượt quá tổng số tiết cho phép (Tiết ${effectiveSlots}).`);
     setMoveConfirmOpen(false);
+    setDraggedClass(null);
+    setIsDragging(false);
     return;
   }
 
+  // If validation passes, proceed with the move operation
   try {
     // Calculate the end time based on the starting period and number of periods
     const endTime = moveTarget.targetStartTime + moveTarget.numberOfPeriods - 1;
@@ -713,7 +734,7 @@ const handleCancelMove = () => {
               {days.map((day) => (
                 <th
                   key={day}
-                  colSpan={6}
+                  colSpan={effectiveSlots} // Sử dụng effectiveSlots
                   className="border-[1px] border-solid border-gray-300 p-2 text-center min-w-40"
                 >
                   {day}
@@ -878,7 +899,7 @@ const handleCancelMove = () => {
                 {days.map((day) => (
                   <th
                     key={day}
-                    colSpan={6}
+                    colSpan={effectiveSlots} // Sử dụng effectiveSlots
                     className="border-[1px] border-solid border-gray-300 p-2 text-center min-w-32"
                     style={{ padding: "8px 0" }}
                   >

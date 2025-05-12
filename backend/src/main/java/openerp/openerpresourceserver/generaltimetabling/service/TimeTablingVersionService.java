@@ -5,9 +5,9 @@ import java.util.List;
 
 public interface TimeTablingVersionService {
 
-    TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId);
-
-    TimeTablingTimeTableVersion updateVersion(Long id, String name, String status);
+    TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numberSlotsPerSession);
+    
+    TimeTablingTimeTableVersion updateVersion(Long id, String name, String status, Integer numberSlotsPerSession);
 
     void deleteVersion(Long id);
     

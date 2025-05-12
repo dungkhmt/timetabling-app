@@ -1,8 +1,12 @@
 import { request } from "api";
 
-export const timeTablingVersionRepository = {
-  createVersion: async (versionData) => {
+export const timeTablingVersionRepository = {  createVersion: async (versionData) => {
     try {
+      // Chuyển đổi numberSlotsPerSession từ string sang integer nếu cần
+      if (versionData.numberSlotsPerSession && typeof versionData.numberSlotsPerSession === 'string') {
+        versionData.numberSlotsPerSession = parseInt(versionData.numberSlotsPerSession, 10);
+      }
+      
       const response = await request(
         "post",
         "/timetabling-versions/create",
@@ -29,15 +33,19 @@ export const timeTablingVersionRepository = {
       throw error;
     }
   },
-  
-  updateVersion: async (versionId, name, status) => {
+  updateVersion: async (versionId, name, status, numberSlotsPerSession) => {
     try {
+      const payload = {
+        name,
+        status,
+        numberSlotsPerSession
+      }
       const response = await request(
         "put",
         `/timetabling-versions/${versionId}`,
         null,
         null,
-        { name, status }
+        payload
       );
       return response.data;
     } catch (error) {
