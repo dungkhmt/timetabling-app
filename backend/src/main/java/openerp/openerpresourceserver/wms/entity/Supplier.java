@@ -26,9 +26,6 @@ public class Supplier {
     @Column(name = "phone", length = 200)
     private String phone;
 
-    @Column(name = "note", length = 200)
-    private String note;
-
-    @Column(name = "state_id", length = 200)
-    private String stateId;
+    @Column(name = "status_id", length = 40)
+    private String statusId;
 }

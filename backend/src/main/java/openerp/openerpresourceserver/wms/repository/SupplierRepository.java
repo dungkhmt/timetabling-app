@@ -4,10 +4,9 @@ import openerp.openerpresourceserver.wms.entity.Supplier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
+public interface SupplierRepository extends JpaRepository<Supplier, String>, JpaSpecificationExecutor<Supplier> {
 
-public interface SupplierRepository extends JpaRepository<Supplier, Long> {
-
-    Page<Supplier> findAllByStateId(PageRequest pageReq, String statusId);
+    Page<Supplier> findAllByStatusId(PageRequest pageReq, String statusId);
 }

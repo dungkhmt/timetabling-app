@@ -10,26 +10,30 @@ import {
   Grid,
   Paper,
   TextField,
-  Typography
+  Typography,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { useHistory } from 'react-router-dom';
-import CustomerInfoForm from './components/CustomerInfoForm';
-import AddressForm from './components/AddressForm';
 import LocationPicker from '../common/components/LocationPicker';
-import {useWms2Data} from "../../../services/useWms2Data";
+import { useWms2Data } from "../../../services/useWms2Data";
+import FacilityInfoForm from './components/FacilityInfoForm';
+import AddressForm from './components/AddressForm';
 
-const CreateCustomer = () => {
+const CreateFacility = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
-  const {createCustomer} = useWms2Data();
-  // Customer form state
-  const [customer, setCustomer] = useState({
+  const { createFacility } = useWms2Data();
+  
+  // Facility form state
+  const [facility, setFacility] = useState({
     name: '',
-    email: '',
+    isDefault: false,
     phone: '',
+    postalCode: '',
     address: {
-      addressType: 'SHIPPING',
+      addressType: 'WAREHOUSE',
       latitude: null,
       longitude: null,
       isDefault: true,
@@ -40,17 +44,19 @@ const CreateCustomer = () => {
   // Error state for validation
   const [errors, setErrors] = useState({
     name: '',
-    email: '',
     phone: '',
+    postalCode: '',
     fullAddress: ''
   });
 
-  // Handle input change for customer info
-  const handleCustomerChange = (e) => {
-    const { name, value } = e.target;
-    setCustomer(prev => ({
+  // Handle input change for facility info
+  const handleFacilityChange = (e) => {
+    const { name, value, checked } = e.target;
+    const newValue = name === 'isDefault' ? checked : value;
+    
+    setFacility(prev => ({
       ...prev,
-      [name]: value
+      [name]: newValue
     }));
     
     // Clear error when field is updated
@@ -65,7 +71,7 @@ const CreateCustomer = () => {
   // Handle change for address fields
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
-    setCustomer(prev => ({
+    setFacility(prev => ({
       ...prev,
       address: {
         ...prev.address,
@@ -84,7 +90,7 @@ const CreateCustomer = () => {
 
   // Handle location selection from the map
   const handleLocationSelect = (lat, lng, address) => {
-    setCustomer(prev => ({
+    setFacility(prev => ({
       ...prev,
       address: {
         ...prev.address,
@@ -93,6 +99,14 @@ const CreateCustomer = () => {
         fullAddress: address || prev.address.fullAddress
       }
     }));
+    
+    // Clear address error if we have a valid address now
+    if (address && errors.fullAddress) {
+      setErrors(prev => ({
+        ...prev,
+        fullAddress: ''
+      }));
+    }
   };
 
   // Validate the form
@@ -101,33 +115,20 @@ const CreateCustomer = () => {
     let isValid = true;
 
     // Validate name
-    if (!customer.name.trim()) {
-      newErrors.name = 'Tên khách hàng không được để trống';
+    if (!facility.name.trim()) {
+      newErrors.name = 'Tên cơ sở không được để trống';
       isValid = false;
     }
 
-    // Validate email with regex
-    const emailRegex = /^[A-Za-z0-9+_.-]+@(.+)$/;
-    if (!customer.email.trim()) {
-      newErrors.email = 'Email không được để trống';
-      isValid = false;
-    } else if (!emailRegex.test(customer.email)) {
-      newErrors.email = 'Email không hợp lệ';
-      isValid = false;
-    }
-
-    // Validate phone with regex
+    // Validate phone (optional)
     const phoneRegex = /^(\+\d{1,3}[- ]?)?\d{10}$/;
-    if (!customer.phone.trim()) {
-      newErrors.phone = 'Số điện thoại không được để trống';
-      isValid = false;
-    } else if (!phoneRegex.test(customer.phone)) {
+    if (facility.phone.trim() && !phoneRegex.test(facility.phone)) {
       newErrors.phone = 'Số điện thoại không hợp lệ';
       isValid = false;
     }
 
     // Validate address
-    if (!customer.address.fullAddress.trim()) {
+    if (!facility.address.fullAddress.trim()) {
       newErrors.fullAddress = 'Địa chỉ không được để trống';
       isValid = false;
     }
@@ -146,17 +147,17 @@ const CreateCustomer = () => {
     setLoading(true);
 
     try {
-      const response = await createCustomer(customer);
+      const response = await createFacility(facility);
       
       if (response && (response.code === 200 || response.code === 201)) {
-        toast.success('Tạo khách hàng thành công');
-        history.push('/wms/sales/customers');
+        toast.success('Tạo cơ sở thành công');
+        history.push('/wms/admin/facility');
       } else {
-        toast.error(`Lỗi khi tạo khách hàng: ${response?.message || 'Lỗi không xác định'}`);
+        toast.error(`Lỗi khi tạo cơ sở: ${response?.message || 'Lỗi không xác định'}`);
       }
     } catch (error) {
-      console.error('Error creating customer:', error);
-      toast.error(`Lỗi khi tạo khách hàng: ${error?.message || 'Lỗi không xác định'}`);
+      console.error('Error creating facility:', error);
+      toast.error(`Lỗi khi tạo cơ sở: ${error?.message || 'Lỗi không xác định'}`);
     } finally {
       setLoading(false);
     }
@@ -166,7 +167,7 @@ const CreateCustomer = () => {
     <Container maxWidth="lg">
       <Paper elevation={1} sx={{ p: 3, my: 3 }}>
         <Typography variant="h5" component="h1" gutterBottom>
-          Tạo mới khách hàng
+          Tạo mới cơ sở
         </Typography>
         <Divider sx={{ mb: 3 }} />
 
@@ -175,12 +176,12 @@ const CreateCustomer = () => {
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Thông tin khách hàng
+                  Thông tin cơ sở
                 </Typography>
-                <CustomerInfoForm 
-                  customer={customer}
+                <FacilityInfoForm 
+                  facility={facility}
                   errors={errors}
-                  onChange={handleCustomerChange}
+                  onChange={handleFacilityChange}
                 />
               </CardContent>
             </Card>
@@ -193,7 +194,7 @@ const CreateCustomer = () => {
                   Thông tin địa chỉ
                 </Typography>
                 <AddressForm 
-                  address={customer.address}
+                  address={facility.address}
                   errors={errors}
                   onChange={handleAddressChange}
                 />
@@ -205,11 +206,11 @@ const CreateCustomer = () => {
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Vị trí khách hàng
+                  Vị trí cơ sở
                 </Typography>
                 <LocationPicker
-                  latitude={customer.address.latitude}
-                  longitude={customer.address.longitude}
+                  latitude={facility.address.latitude}
+                  longitude={facility.address.longitude}
                   onLocationSelect={handleLocationSelect}
                 />
               </CardContent>
@@ -240,4 +241,4 @@ const CreateCustomer = () => {
   );
 };
 
-export default CreateCustomer;
+export default CreateFacility;

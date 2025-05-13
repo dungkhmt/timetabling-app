@@ -18,6 +18,12 @@ import ProductDetail from "../views/wms/ProductDetail/ProductDetail";
 import CreateCustomer from "../views/wms/CreateCustomer/CreateCustomer";
 import CustomerListPage from "../views/wms/CustomerListPage/CustomerListPage";
 import CustomerDetail from "../views/wms/CustomerDetail/CustomerDetail";
+import CreateSupplier from "../views/wms/CreateSupplier/CreateSupplier";
+import SupplierListPage from "../views/wms/SupplierListPage/SupplierListPage";
+import SupplierDetail from "views/wms/SupplierDetail/SupplierDetail";
+import CreateFacility from "views/wms/CreateFacility/CreateFacility";
+import FacilityListPage from "views/wms/FacilityListPage/FacilityListPage";
+import FacilityDetail from "views/wms/FacilityDetail/FacilityDetail";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -124,6 +130,38 @@ export default function WMSRouter() {
         <Route
             component={CustomerDetail}
             path={`${path}/sales/customers/details/:id`}
+        ></Route>
+
+        <Route
+          component={SupplierListPage}
+            exact
+          path={`${path}/purchase/suppliers`}
+        ></Route>
+
+        <Route
+            component={CreateSupplier}
+                path={`${path}/purchase/suppliers/create`}
+        ></Route>
+
+        <Route
+            component={SupplierDetail}
+            path={`${path}/purchase/suppliers/details/:id`}
+        ></Route>
+
+        <Route
+        component={FacilityListPage }
+        exact
+          path={`${path}/admin/facility`}
+        ></Route>
+
+        <Route
+          component={CreateFacility}
+          path={`${path}/admin/facility/create`}
+        ></Route>
+
+        <Route
+          component={FacilityDetail}
+          path={`${path}/admin/facility/details/:id`}
         ></Route>
       </Switch>
     </div>

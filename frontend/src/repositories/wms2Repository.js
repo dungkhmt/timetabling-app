@@ -136,5 +136,23 @@ export const wms2Service = {
   },
   getCustomerById : (customerId) => {
     return request("get", `/customer/details/${customerId}`);
-  }
+  },
+  createSupplier : (data) => {
+    return request("post", "/supplier/create", null, null, data);
+  },
+  getSuppliersWithFilters : (page, limit, filters) => {
+    return request("post", `/supplier/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  }, 
+  getSupplierById : (id) => {
+    return request("get", `/supplier/details/${id}`);
+  },
+  createFacility : (data) => {
+    return request("post", "/facility/create", null, null, data);
+  },
+  getFacilitiesWithFilters : (page, limit, filters) => {
+    return request("post", `/facility/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getFacilityById : (facilityId) => {
+    return request("get", `/facility/details/${facilityId}`);
+  },
 };

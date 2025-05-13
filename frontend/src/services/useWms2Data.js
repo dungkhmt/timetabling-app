@@ -528,6 +528,72 @@ export const useWms2Data = () => {
     }
   }
 
+  const createSupplier = async (data) => {
+    try {
+      const res = await wms2Service.createSupplier(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating supplier:", error);
+      toast.error("Không thể tạo nhà cung cấp");
+      return { data: {} };
+    }
+  }
+
+  const getSuppliersWithFilters = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getSuppliersWithFilters(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching suppliers with filters:", error);
+      toast.error("Không thể tải danh sách nhà cung cấp");
+      return { data: {} };
+    }
+  }
+
+  const getSupplierById = async (id) => {
+    try {
+      const response = await wms2Service.getSupplierById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching supplier by ID:", error);
+      toast.error("Không thể tải thông tin nhà cung cấp");
+      return { data: {} };
+    }
+  }
+
+  const createFacility = async (data) => {
+    try {
+      const res = await wms2Service.createFacility(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating facility:", error);
+      toast.error("Không thể tạo kho hàng");
+      return { data: {} };
+    }
+  }
+
+  const getFacilitiesWithFilters = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getFacilitiesWithFilters(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facilities with filters:", error);
+      toast.error("Không thể tải danh sách kho hàng");
+      return { data: {} };
+    }
+  }
+
+  const getFacilityById = async (id) => {
+    try {
+      const response = await wms2Service.getFacilityById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facility by ID:", error);
+      toast.error("Không thể tải thông tin kho hàng");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -575,6 +641,12 @@ export const useWms2Data = () => {
     getProductById,
     createCustomer,
     getCustomersWithFilters,
-    getCustomerById
+    getCustomerById,
+    createSupplier,
+    getSuppliersWithFilters,
+    getSupplierById,
+    createFacility,
+    getFacilitiesWithFilters,
+    getFacilityById
   };
 };

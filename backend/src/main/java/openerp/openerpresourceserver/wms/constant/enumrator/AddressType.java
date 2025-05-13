@@ -4,5 +4,9 @@ public enum AddressType {
     HOME,
     WORK,
     SHIPPING,
+    BUSINESS,
+    BRANCH,
+    FACILITY,
+    DISTRIBUTION_CENTER,
     OTHER,
 }
