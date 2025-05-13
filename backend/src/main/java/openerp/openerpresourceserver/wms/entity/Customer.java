@@ -17,14 +17,14 @@ public class Customer {
     @Column(name = "name", length = 200, nullable = false)
     private String name;
 
+    @Column(name = "email", length = 200)
+    private String email;
+
     @Column(name = "address", length = 200)
     private String address;
 
-    @Column(name = "location", length = 40)
-    private String location;
-
-    @Column(name = "state_id", length = 200)
-    private String stateId;
+    @Column(name = "status_id", length = 40)
+    private String statusId;
 
     @Column(name = "phone", length = 40)
     private String phone;

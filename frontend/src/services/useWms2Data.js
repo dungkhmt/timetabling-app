@@ -495,6 +495,17 @@ export const useWms2Data = () => {
     }
   };
 
+  const createCustomer = async (data) => {
+    try {
+      const res = await wms2Service.createCustomer(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      toast.error("Không thể tạo khách hàng");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -540,5 +551,6 @@ export const useWms2Data = () => {
     getProductCategories,
     getProductsWithFilters,
     getProductById,
+    createCustomer
   };
 };

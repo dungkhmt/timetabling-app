@@ -1,7 +1,13 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "wms2_address")
@@ -10,7 +16,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Address {
-
     @Id
     @Column(length = 40)
     private String id;

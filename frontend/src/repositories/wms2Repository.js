@@ -127,5 +127,8 @@ export const wms2Service = {
   },
   getProductById : (productId) => {
     return request("get", `/product/details/${productId}`);
-  }
+  },
+  createCustomer : (data) => {
+    return request("post", "/customer/create", null, null, data);
+  },
 };

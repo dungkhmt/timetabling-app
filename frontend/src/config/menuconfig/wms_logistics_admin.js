@@ -28,7 +28,7 @@ export const wms_logistics_admin = {
       id: "MENU_WMS_LOGISTICS_ADMIN.DASHBOARD",
       path: "/wms/admin/dashboard",
       isPublic: false,
-      text: "Danh sách kho",
+      text: "Dashboard",
       child: [],
     },
   ],
