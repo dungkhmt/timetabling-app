@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ExamClassGroupRepository extends JpaRepository<ExamClassGroup, Integer> {
+  boolean existsByName(String name);
 }

@@ -22,7 +22,6 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
     endTime: ''
   });
   
-  // Convert ISO string to Date object for TimePicker
   const [startTimeDate, setStartTimeDate] = useState(null);
   const [endTimeDate, setEndTimeDate] = useState(null);
   
@@ -55,7 +54,6 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
   const handleTimeChange = (type, newValue) => {
     if (type === 'startTime') {
       setStartTimeDate(newValue);
-      // Convert to ISO string and update form data
       if (newValue) {
         const date = new Date(formData.startTime || new Date());
         date.setHours(newValue.getHours());
@@ -63,13 +61,12 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
         onChange({
           target: {
             name: 'startTime',
-            value: date.toISOString()
+            value: new Date.toISOString()
           }
         });
       }
     } else if (type === 'endTime') {
       setEndTimeDate(newValue);
-      // Convert to ISO string and update form data
       if (newValue) {
         const date = new Date(formData.endTime || new Date());
         date.setHours(newValue.getHours());
@@ -83,14 +80,12 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
       }
     }
     
-    // Clear error
     setErrors({
       ...errors,
       [type]: ''
     });
   };
 
-  // Validate form before submission
   const validateForm = () => {
     let isValid = true;
     const newErrors = { name: '', startTime: '', endTime: '' };
@@ -114,7 +109,6 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
       const start = new Date(formData.startTime);
       const end = new Date(formData.endTime);
       
-      // Compare only hours and minutes
       const startTime = new Date();
       startTime.setHours(start.getHours());
       startTime.setMinutes(start.getMinutes());
@@ -133,10 +127,8 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
     return isValid;
   };
 
-  // Handle form submission
   const handleSubmit = () => {
     if (validateForm()) {
-      // Update displayName with formatted times
       const start = new Date(formData.startTime);
       const end = new Date(formData.endTime);
       
@@ -146,7 +138,6 @@ const EditSessionModal = ({ open, onClose, formData, onChange, onSubmit }) => {
       
       const displayName = `${formData.name} (${formatTimeString(start)} - ${formatTimeString(end)})`;
       
-      // Submit with updated displayName
       onSubmit({
         ...formData,
         displayName

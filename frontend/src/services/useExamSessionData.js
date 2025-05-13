@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { examSessionService } from "repositories/examSessionRepository";
 import { queryClient } from 'queryClient';
 
-export const useExamSessionData = (collectionId = null) => {
+export const useExamSessionData = () => {
   
   const { data: examSessions, isLoading, error, refetch } = useQuery(
     'examSessions',
@@ -16,10 +16,8 @@ export const useExamSessionData = (collectionId = null) => {
 
   const createSessionMutation = useMutation(examSessionService.createExamSession, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examSessions');
       refetch();
       toast.success('Tạo kíp thi mới thành công!');
-      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kíp thi');
@@ -28,9 +26,8 @@ export const useExamSessionData = (collectionId = null) => {
 
   const updateSessionMutation = useMutation(examSessionService.updateExamSession, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examSessions');
+      refetch();
       toast.success('Cập nhật kíp thi thành công!');
-      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật kíp thi');
@@ -39,9 +36,9 @@ export const useExamSessionData = (collectionId = null) => {
 
   const deleteSessionMutation = useMutation(examSessionService.deleteExamSession, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examSessions');
+      refetch();
+
       toast.success('Xóa kíp thi thành công!');
-      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kíp thi');
@@ -50,9 +47,9 @@ export const useExamSessionData = (collectionId = null) => {
 
   const createCollectionMutation = useMutation(examSessionService.createExamSessionCollection, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examSessions');
+      refetch();
+
       toast.success('Tạo kíp thi mới thành công!');
-      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.response?.data || 'Có lỗi xảy ra khi tạo kíp thi');
@@ -61,9 +58,9 @@ export const useExamSessionData = (collectionId = null) => {
 
   const updateCollectionMutation = useMutation(examSessionService.updateExamSessionCollection, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examSessions');
+      refetch();
+
       toast.success('Cập nhật kíp thi thành công!');
-      window.location.reload();
 
     },
     onError: (error) => {
@@ -73,9 +70,9 @@ export const useExamSessionData = (collectionId = null) => {
 
   const deleteCollectionMutation = useMutation(examSessionService.deleteExamSessionCollection, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examSessions');
+      refetch();
+
       toast.success('Xóa kíp thi thành công!');
-      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa kíp thi');

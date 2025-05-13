@@ -23,18 +23,4 @@ public class ExamCourse {
 
     @Column(name = "name")
     private String name;
-    
-    @Column(name = "slots_priority")
-    private String slotsPriority;
-
-    @UpdateTimestamp
-    @Column(name = "last_updated")
-    private LocalDateTime lastUpdatedStamp;
-
-    @CreationTimestamp
-    @Column(name = "created_stamp")
-    private LocalDateTime createdStamp;
-
-    @Column(name = "max_teacher_in_charge")
-    private Integer maxTeacherInCharge;
 }
