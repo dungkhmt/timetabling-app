@@ -130,9 +130,62 @@ class SolutionClass{
 }
 interface ClassSolver{
     public List<SolutionClass> solve(int indexClass, AClass cls, int startSlot, SolutionClass[] x, List<Combination> combinations, boolean checkCombination);
-
+    public List<SolutionClass> solve(AClass cls);
 }
+class ClassSolverLazyCheck implements  ClassSolver{
+    AClass cls;
+    List<SolutionClass> solutionClass;// solutionClass[i] is a map of assignment c
+    int nbClassSegments;
+    List<AClassSegment> classSegments;
+    int[] x_session;// x[i] is the start slot of class segment i
+    int[] x_slot;
+    @Override
+    public List<SolutionClass> solve(int indexClass, AClass cls, int startSlot, SolutionClass[] x, List<Combination> combinations, boolean checkCombination) {
+        return null;
+    }
+    private void solution(){
+        List<int[]> periods = new ArrayList<>();
+        for(int i = 0; i < classSegments.size(); i++){
+            int[] S = new int[3];
+            S[0] = x_slot[i]; S[1] = x_slot[i] + classSegments.get(i).duration-1;
+            S[2] = x_session[i];
+            periods.add(S);
+        }
+        SolutionClass sc = new SolutionClass(cls,periods);
+        //System.out.println("ClassSolver, got solutionclass " + sc);
+        solutionClass.add(sc);
+    }
+    private boolean check(int i, int ses, int sl){
+        return true;
+    }
+    private void tryClassSegment(int i, int startSlot){
+        AClassSegment cs = classSegments.get(i);
+        for(int s = startSlot; s <= Constants.nbSessions*Constants.nbSlotPerSession;s++){
+            SessionSlot ss = new SessionSlot(s);
+            if(ss.slot + cs.duration - 1 <= Constants.nbSlotPerSession){
+                if(check(i,ss.session,ss.slot)){
+                    x_session[i] = ss.session; x_slot[i] = ss.slot;
+                    if(i == classSegments.size()-1){
+                        solution();
+                    }else{
+                        tryClassSegment(i+1,s + cs.duration);
+                    }
+                }
+            }
+        }
+    }
 
+    @Override
+    public List<SolutionClass> solve(AClass cls) {
+        this.cls = cls;
+        solutionClass = new ArrayList<>();
+        classSegments = cls.classSegments;
+        x_session = new int[classSegments.size()];
+        x_slot = new int[classSegments.size()];
+        tryClassSegment(0,1);
+        return solutionClass;
+    }
+}
 class ClassSolverNaive implements ClassSolver{
     List<Combination> combinations;
     boolean checkCombination;
@@ -180,6 +233,7 @@ class ClassSolverNaive implements ClassSolver{
         solutionClass.add(sc);
     }
     private void tryClassSegment(int i, int startSlot){
+
         AClassSegment cs= classSegments.get(i);
         for(int s = startSlot; s <= Constants.nbSessions*Constants.nbSlotPerSession;s++){
             SessionSlot ss = new SessionSlot(s);
@@ -215,7 +269,9 @@ class ClassSolverNaive implements ClassSolver{
         }
         */
     }
+    public static final String name= "ClassSolverNaive";
     public List<SolutionClass> solve(int indexClass, AClass cls, int startSlot, SolutionClass[] x, List<Combination> combinations, boolean checkCombination){
+        //System.out.println(name + "::solve");
         this.cls = cls;
         this.combinations = combinations;
         this.checkCombination = checkCombination;
@@ -225,6 +281,11 @@ class ClassSolverNaive implements ClassSolver{
         x_slot = new int[classSegments.size()];
         tryClassSegment(0,startSlot);
         return solutionClass;
+    }
+
+    @Override
+    public List<SolutionClass> solve(AClass cls) {
+        return null;
     }
 }
 class ClassSolverSorted implements ClassSolver{
@@ -240,6 +301,7 @@ class ClassSolverSorted implements ClassSolver{
     List<AClassSegment> classSegments;
     int[] x_session;// x[i] is the start slot of class segment i
     int[] x_slot;
+    public static final String name= "ClassSolverSorted";
     private boolean check(int i, int ses, int sl){
         AClassSegment cs = classSegments.get(i);
         if(checkCombination) {
@@ -338,6 +400,7 @@ class ClassSolverSorted implements ClassSolver{
         }
     }
     public List<SolutionClass> solve(int indexClass, AClass cls, int startSlot, SolutionClass[] x, List<Combination> combinations, boolean checkCombination){
+        //System.out.println(name + "::solve");
         this.cls = cls;
         this.indexClass = indexClass;
         this.x = x;
@@ -350,6 +413,11 @@ class ClassSolverSorted implements ClassSolver{
 
         tryClassSegment(0,startSlot);
         return solutionClass;
+    }
+
+    @Override
+    public List<SolutionClass> solve(AClass cls) {
+        return null;
     }
 }
 class Constants{
@@ -408,11 +476,16 @@ class Combination{
     }
 }
 class CourseSolver{
+    //public static final String SOLVE_CLASS_WITH_SORTED_DOMAIN = "SOLVE_CLASS_WITH_SORTED_DOMAIN";
+    //public static final String SOLVE_CLASS_WITH_NON_SORTED_DOMAIN = "SOLVE_CLASS_WITH_NON_SORTED_DOMAIN";
+
     List<AClass> classes;
     List<Combination> combinations;
     boolean checkCombination;
     List<Map<AClass, SolutionClass>> solutionCourse; // solutionCourse[i] is a map of assignment for classes
     SolutionClass[] x;
+    int nbTries = 0;
+    public String strategy = BacktrackingOneGroup.SOLVE_CLASS_WITH_SORTED_DOMAIN;
 
     private void solution(){
         Map m = new HashMap();
@@ -423,10 +496,14 @@ class CourseSolver{
         solutionCourse.add(m);
     }
     private void tryClass(int i, int startSlot){
+        nbTries ++;
         //System.out.println("tryClass(" + i + "/" + classes.size());
         AClass cls = classes.get(i);
-        //ClassSolver CS = new ClassSolverNaive();
-        ClassSolver CS = new ClassSolverSorted();
+        ClassSolver CS = null;
+        if(strategy.equals(BacktrackingOneGroup.SOLVE_CLASS_WITH_NON_SORTED_DOMAIN))
+            CS = new ClassSolverNaive();
+        else if(strategy.equals(BacktrackingOneGroup.SOLVE_CLASS_WITH_SORTED_DOMAIN))
+            CS = new ClassSolverSorted();
 
         List<SolutionClass> sol = CS.solve(i,cls,startSlot,x,combinations,checkCombination);
         for(SolutionClass sc: sol){
@@ -452,6 +529,9 @@ class CourseSolver{
                 return o1.classSegments.size() - o2.classSegments.size();
             }
         });
+        //for(AClass cls: classes){
+        //    System.out.println("class " + cls.id + ", nbClassSegments = " + cls.classSegments.size());
+        //}
         x = new SolutionClass[classes.size()];
         solutionCourse = new ArrayList();
         tryClass(0,1);
@@ -459,6 +539,9 @@ class CourseSolver{
     }
 }
 public class BacktrackingOneGroup {
+    public static final String SOLVE_CLASS_WITH_SORTED_DOMAIN = "SOLVE_CLASS_WITH_SORTED_DOMAIN";
+    public static final String SOLVE_CLASS_WITH_NON_SORTED_DOMAIN = "SOLVE_CLASS_WITH_NON_SORTED_DOMAIN";
+
     List<AClassSegment> classSegments;
     List<AClass> classes;
     int nbClasses;// number of class segments
@@ -479,11 +562,17 @@ public class BacktrackingOneGroup {
     double t0;
     int timeLimit;
     boolean LOGGING = false;
+    boolean postCheck = false;
+    public boolean BRANCH_AND_BOUND = true;
+    public String STRATEGY = SOLVE_CLASS_WITH_SORTED_DOMAIN;
     Map<AClass, SolutionClass>[] x;// x[i] is the solution classes for course i
     Map<AClass, SolutionClass>[] best_x;
     int bestObj;
     int obj;
     int nbSolutions;
+    int maxCombinationLength = 0;
+    int maxSolutions4Course = 0;
+    int nbTries = 0;
     public void inputFile(String filename){
         try{
             BufferedReader in = new BufferedReader(new InputStreamReader( new FileInputStream(filename)));
@@ -493,6 +582,7 @@ public class BacktrackingOneGroup {
             nbSessions = Integer.valueOf(s[1]);
             line = in.readLine();
             nbClasses = Integer.valueOf(line);
+            if(LOGGING) System.out.println("Number classes = " + nbClasses);
             classSegments = new ArrayList<>();
             mCourse2ClassSegments = new HashMap<>();
             mCourse2Classes = new HashMap<>();
@@ -540,6 +630,10 @@ public class BacktrackingOneGroup {
             for(String course: mCourse2Classes.keySet()){
                 courses.add(course);
             }
+            System.out.println("data " + filename);
+            System.out.println("#Courses = " + courses.size());
+            System.out.println("#Classes = " + classes.size());
+            System.out.println("#ClassSegments = " + classSegments.size());
             in.close();
         }catch (Exception e){
             e.printStackTrace();
@@ -618,6 +712,11 @@ public class BacktrackingOneGroup {
     private List<Combination> checkFeasibleCombination(int idxCourse, Map<AClass,SolutionClass> m,List<Combination> combinations){
         //System.out.println("checkFeasibleCombination, course " + courses.get(idxCourse));
         List<Combination> res = new ArrayList<>();
+        Map<AClass, List<Combination>> mClass2Combinations = new HashMap<>();
+        for(AClass cls: m.keySet()){
+            mClass2Combinations.put(cls,new ArrayList<>());
+        }
+        /*
         boolean ok = true;
         for(AClass cls: m.keySet()){
             SolutionClass sc = m.get(cls);
@@ -632,7 +731,9 @@ public class BacktrackingOneGroup {
             if(!okcls){ ok = false; break; }
         }
         if(!ok) return new ArrayList<>();// not feasible
+        */
         // establish new combination
+
         for(AClass cls: m.keySet()){
             SolutionClass sc = m.get(cls);
             //boolean okcls = false;
@@ -645,9 +746,11 @@ public class BacktrackingOneGroup {
                     //}
                     Combination newCom = new Combination(com, sc);
                     //if(!newCom.valid()) System.out.println("Combination " + newCom + " -> not valid, BUG????");
+                    mClass2Combinations.get(cls).add(newCom);
                     res.add(newCom);
                 }
             }
+            if(mClass2Combinations.get(cls).size()==0) return new ArrayList<>();// not feasible
             //if(!okcls){ ok = false; break; }
         }
         // check if res cover all classes already scheduled or not
@@ -657,7 +760,7 @@ public class BacktrackingOneGroup {
                 ids.add(sc.cls.id);
             }
         }
-        ok = true;
+        boolean ok = true;
         for(int j = 0; j <= idxCourse; j++){
             String crs = courses.get(j);
             for(AClass cls: mCourse2Classes.get(crs)){
@@ -671,6 +774,7 @@ public class BacktrackingOneGroup {
         return res;
     }
     private void tryCourse(int i,List<Combination> combinations){
+        if(combinations.size() >maxCombinationLength) maxCombinationLength = combinations.size();
         //if(i == 1){
         //    System.out.println("tryCourse(" + i + "), level 1 -> combinations = ");
         //    for(Combination com: combinations) System.out.println(com);
@@ -684,10 +788,14 @@ public class BacktrackingOneGroup {
         String crs = courses.get(i);
         List<AClass> CLS = mCourse2Classes.get(crs);
         CourseSolver CS = new CourseSolver();
+        CS.strategy = STRATEGY;
 
         List<Map<AClass, SolutionClass>> solutionCourse = CS.solve(crs,CLS,combinations,true);
+        if(maxSolutions4Course < solutionCourse.size()) maxSolutions4Course = solutionCourse.size();
         for(Map<AClass,SolutionClass> m: solutionCourse){
             List<Combination> childCombinations = checkFeasibleCombination(i,m,combinations);
+            if(maxCombinationLength < childCombinations.size()) maxCombinationLength = childCombinations.size();
+
             if(childCombinations.size() > 0) {
                 // admit a solution class
                 x[i] = m;
@@ -709,10 +817,15 @@ public class BacktrackingOneGroup {
                 if (i == courses.size() - 1) {
                     solution(childCombinations);
                 } else {
-                    if (obj + courses.size() - (i + 1) < bestObj) {
+                    if(BRANCH_AND_BOUND) {// branch and bound applied
+                        if (obj + courses.size() - (i + 1) < bestObj) {
+                            tryCourse(i + 1, childCombinations);
+                        } else {
+                            //System.out.println("tryCourse(" + i + "/" + courses.size() + ") obj = " + obj + " bestObj = " + bestObj + " -> BOUND!!!") ;
+                        }
+                    }else{// pure exhaustive search
+                        //System.out.println("Not BB");
                         tryCourse(i + 1, childCombinations);
-                    } else {
-                        //System.out.println("tryCourse(" + i + "/" + courses.size() + ") obj = " + obj + " bestObj = " + bestObj + " -> BOUND!!!") ;
                     }
                 }
                 obj = obj - mc;
@@ -730,12 +843,14 @@ public class BacktrackingOneGroup {
         //System.out.println("course " + crs + ", classes = ");
         //for(AClass cls: CLS) System.out.println(cls);
         List<Map<AClass, SolutionClass>> solutionCourse = CS.solve(crs,CLS,combinations,false);
+        nbTries += CS.nbTries;
         solutions = new ArrayList<>();
         x = new Map[courses.size()];
         bestObj = 100000000;
         nbSolutions = 0;
         obj = 0;
         //for(int i = 0; i < courses.size(); i++) System.out.println("course[" + i + "] = " + courses.get(i));
+        if(maxSolutions4Course < solutionCourse.size()) maxSolutions4Course = solutionCourse.size();
         for(Map<AClass, SolutionClass> sol: solutionCourse){
             x[0] = sol;
             MaxClique MCSolver = new MaxClique();
@@ -748,10 +863,15 @@ public class BacktrackingOneGroup {
                 childCombinations.add(newCom);
                 //System.out.println(sc);
             }
-            if(obj  + courses.size() -1 < bestObj) {
-                tryCourse(1, childCombinations);
+            if(BRANCH_AND_BOUND) {
+                if (obj + courses.size() - 1 < bestObj) {
+                    tryCourse(1, childCombinations);
+                } else {
+                    //System.out.println("BOUND!!!") ;
+                }
             }else{
-                //System.out.println("BOUND!!!") ;
+                //System.out.println("Not BB");
+                tryCourse(1, childCombinations);
             }
             obj -= mc;
         }
@@ -782,9 +902,11 @@ public class BacktrackingOneGroup {
         return ok;
     }
     private void solution(List<Combination> combinations){
-        if(!checkCombinationCoverAllClasses(combinations,false)){
-            System.out.println("solution, BUT checkCombinationCoverAllClasses failed???");
-            return;
+        if(postCheck) {
+            if (!checkCombinationCoverAllClasses(combinations, false)) {
+                System.out.println("solution, BUT checkCombinationCoverAllClasses failed???");
+                return;
+            }
         }
         nbSolutions += 1;
         //System.out.println("FOUND solutions " + combinations.size());
@@ -807,7 +929,7 @@ public class BacktrackingOneGroup {
             //}
             //System.out.println("Solution " + info + " mc = " + mc + " f = " + f);
         //}
-        if(LOGGING) System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj);
+        if(LOGGING) System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj + " maxCombinationLength = " + maxCombinationLength);
         if(obj < bestObj){
             bestObj = obj;
             best_x= new Map[x.length];
@@ -825,6 +947,9 @@ public class BacktrackingOneGroup {
         //for(Combination com: combinations) solutions.add(com);
     }
     public void printBestSolution(){
+        if(best_x == null){
+            System.out.println("Cannot find any solution, maxCombinationLength = " + maxCombinationLength); return;
+        }
         System.out.println("Best Solution: ");
         for(int i = 0; i < best_x.length; i++){
             String info = "";
@@ -834,8 +959,12 @@ public class BacktrackingOneGroup {
             }
             System.out.println(info);
         }
+        System.out.println("maxCombinationLength = " + maxCombinationLength);
     }
     public void writeSolutionFormat(){
+        if(best_x == null){
+            System.out.println(-1); return;
+        }
         System.out.println(classes.size());
         for(int i = 0; i < best_x.length; i++){
             //String info = "";
@@ -864,12 +993,85 @@ public class BacktrackingOneGroup {
             System.out.println(info);
         }
     }
-    public static void main(String[] args){
+    public void statistic(){
+        System.out.println("nbTries = " + nbTries);
+        System.out.println("maxCombinationLength = " + maxCombinationLength);
+        System.out.println("maxSolution4Course = " + maxSolutions4Course);
+        double t = System.currentTimeMillis() - t0;
+        t = t*0.001;
+        System.out.println("BestObj = " + bestObj + ", Time = " + t);
+    }
+    public static void BranchAndBoundSolveClassSortedDomain(String filename, int timeLimit){
         BacktrackingOneGroup solver = new BacktrackingOneGroup();
-        solver.inputFile("data/ch1-3th-s.txt");
+        solver.BRANCH_AND_BOUND = true;
+        solver.STRATEGY = BacktrackingOneGroup.SOLVE_CLASS_WITH_SORTED_DOMAIN;
+        //solver.postCheck = true;
+        solver.inputFile(filename);
         //solver.input();
-        solver.solveNew(1200, true);
-        //solver.printBestSolution();
+        solver.solveNew(timeLimit, false);
+        solver.printBestSolution();
         solver.writeSolutionFormat();
+        solver.statistic();
+    }
+    public static void BranchAndBoundSolveClassNonSortedDomain(String filename,  int timeLimit){
+        BacktrackingOneGroup solver = new BacktrackingOneGroup();
+        solver.BRANCH_AND_BOUND = true;
+        solver.STRATEGY = BacktrackingOneGroup.SOLVE_CLASS_WITH_NON_SORTED_DOMAIN;
+        //solver.postCheck = true;
+        solver.inputFile(filename);
+        //solver.input();
+        solver.solveNew(timeLimit, false);
+        solver.printBestSolution();
+        solver.writeSolutionFormat();
+        solver.statistic();
+    }
+    public static void pureExhaustiveSearch(String filename, int timeLimit){
+        BacktrackingOneGroup solver = new BacktrackingOneGroup();
+        solver.BRANCH_AND_BOUND = false;
+        solver.STRATEGY = BacktrackingOneGroup.SOLVE_CLASS_WITH_NON_SORTED_DOMAIN;
+        //solver.postCheck = true;
+        solver.inputFile(filename);
+        //solver.input();
+
+        solver.solveNew(timeLimit, false);
+        solver.printBestSolution();
+        solver.writeSolutionFormat();
+        solver.statistic();
+    }
+
+
+    public static void main(String[] args){
+        int timeLimit = 600;// 5  minutes;
+        String filename = "data/it1-2nd.txt";
+        //String filename = "data/em4-2nd-s.txt";
+        String[] FN = {
+            "em4-2nd-s",
+            "fl2-2nd-s",
+            "fl2-3th-c",
+            "fl2-4th-s",
+            "he1-3th-s",
+            "it1-2nd",
+            "it2-2nd",
+            "it2-3th-c",
+            "it2-5th-c",
+            "me1-2nd",
+            "mi1-3th",
+                "mi1-5th-s",
+                "ph1-3th-s",
+                "ph2-3th-s",
+                "te2-3th-c",
+                "te2-3th-s",
+                "ch1-3th-s",
+                "et1-3th-s",
+        };
+        String fn = "it2-3th-c-ext1";
+        //for(String fn: FN) {
+            filename = "data/" + fn + ".txt";
+            BranchAndBoundSolveClassSortedDomain(filename, timeLimit);
+            System.out.println("------------------");
+            //BranchAndBoundSolveClassNonSortedDomain(filename, timeLimit);
+            //System.out.println("------------------");
+            //pureExhaustiveSearch(filename, timeLimit);
+       // }
     }
 }
