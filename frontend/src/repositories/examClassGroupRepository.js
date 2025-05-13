@@ -1,13 +1,31 @@
-import { request } from "api";
+import { request } from 'api';
 
-const API_ENDPOINTS = {
-  GET_ALL: "/exam-class-group",
+export const examClassGroupService = {
+  getAllExamClassGroups: async () => {
+    return await request('get', '/exam-class-group');
+  },
+
+  deleteExamClassGroups: async (examClassGroupIds) => {
+    return await request('post', '/exam-class-group/delete', null, null, examClassGroupIds, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  },
+
+  createExamClassGroup: async (examClassGroupNames) => {
+    return await request('post', '/exam-class-group/bulk-create', null, null, examClassGroupNames, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  },
+
+  updateExamClassGroup: async (examClassGroup) => {
+    return await request('post', `/exam-class-group/update/${examClassGroup.id}`, null, null, examClassGroup, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  },
 };
-
-class ExamClassGroupService {
-  async getAllExamClassGroups() {
-    return await request("get", `${API_ENDPOINTS.GET_ALL}`);
-  }
-}
-
-export const examClassGroupService = new ExamClassGroupService();
