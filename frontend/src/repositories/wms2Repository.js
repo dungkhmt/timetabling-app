@@ -142,5 +142,8 @@ export const wms2Service = {
   },
   getSuppliersWithFilters : (page, limit, filters) => {
     return request("post", `/supplier/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  }, 
+  getSupplierById : (id) => {
+    return request("get", `/supplier/details/${id}`);
   }
 };

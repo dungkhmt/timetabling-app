@@ -31,4 +31,9 @@ public class SupplierController {
                                                            @RequestBody SupplierGetListFilter filters) {
         return supplierService.getSuppliers(page, limit, filters);
     }
+
+    @GetMapping("/details/{id}")
+    public ApiResponse<Supplier> getSupplierDetails(@PathVariable String id) {
+        return supplierService.getSupplierById(id);
+    }
 }

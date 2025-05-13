@@ -70,7 +70,7 @@ const SupplierTable = ({
               </TableRow>
             ) : (
               suppliers.map((supplier, index) => (
-                <TableRow key={supplier.id} hover sx = {{ cursor: "pointer" }}>
+                <TableRow key={supplier.id} hover sx = {{ cursor: "pointer" }} onClick={() => onViewDetail(supplier.id)}>
                   <TableCell>
                     {pagination.page * pagination.size + index + 1}
                   </TableCell>

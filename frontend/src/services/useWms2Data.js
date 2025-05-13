@@ -550,6 +550,17 @@ export const useWms2Data = () => {
     }
   }
 
+  const getSupplierById = async (id) => {
+    try {
+      const response = await wms2Service.getSupplierById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching supplier by ID:", error);
+      toast.error("Không thể tải thông tin nhà cung cấp");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -599,6 +610,7 @@ export const useWms2Data = () => {
     getCustomersWithFilters,
     getCustomerById,
     createSupplier,
-    getSuppliersWithFilters
+    getSuppliersWithFilters,
+    getSupplierById,
   };
 };

@@ -13,4 +13,6 @@ public interface SupplierService {
     ApiResponse<Void> createSupplier(CreateSupplierReq supplier);
 
     ApiResponse<Pagination<Supplier>> getSuppliers(int page, int limit, SupplierGetListFilter filters);
+
+    ApiResponse<Supplier> getSupplierById(String id);
 }

@@ -10,6 +10,7 @@ import openerp.openerpresourceserver.wms.dto.supplier.CreateSupplierReq;
 import openerp.openerpresourceserver.wms.dto.supplier.SupplierListRes;
 import openerp.openerpresourceserver.wms.entity.Address;
 import openerp.openerpresourceserver.wms.entity.Supplier;
+import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.AddressRepo;
 import openerp.openerpresourceserver.wms.repository.SupplierRepository;
@@ -96,5 +97,16 @@ public class SupplierServiceImpl implements SupplierService {
                 .data(pagination)
                 .build();
 
+    }
+
+    @Override
+    public ApiResponse<Supplier> getSupplierById(String id) {
+        return ApiResponse.<Supplier>builder()
+                .code(200)
+                .message("Get supplier successfully")
+                .data(supplierRepository.findById(id).orElseThrow(
+                        () -> new DataNotFoundException("Supplier not found with id: " + id)
+                ))
+                .build();
     }
 }
