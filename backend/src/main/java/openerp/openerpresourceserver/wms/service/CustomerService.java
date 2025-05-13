@@ -12,4 +12,6 @@ public interface CustomerService {
     ApiResponse<Void> createCustomer(CreateCustomerReq customer);
 
     ApiResponse<Pagination<Customer>> getCustomers(Integer page, Integer limit, CustomerGetListFilter filters);
+
+    ApiResponse<Customer> getCustomerById(String id);
 }

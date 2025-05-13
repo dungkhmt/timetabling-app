@@ -517,6 +517,17 @@ export const useWms2Data = () => {
     }
   };
 
+  const getCustomerById = async (id) => {
+    try {
+      const response = await wms2Service.getCustomerById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching customer by ID:", error);
+      toast.error("Không thể tải thông tin khách hàng");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -564,5 +575,6 @@ export const useWms2Data = () => {
     getProductById,
     createCustomer,
     getCustomersWithFilters,
+    getCustomerById
   };
 };

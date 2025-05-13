@@ -133,5 +133,8 @@ export const wms2Service = {
   },
   getCustomersWithFilters : (page, limit, filters) => {
     return request("post", `/customer/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getCustomerById : (customerId) => {
+    return request("get", `/customer/details/${customerId}`);
   }
 };

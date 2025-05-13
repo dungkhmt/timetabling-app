@@ -29,4 +29,9 @@ public class CustomerController {
     CustomerGetListFilter filters) {
         return customerService.getCustomers(page, limit, filters);
     }
+
+    @GetMapping("/details/{id}")
+    public ApiResponse<Customer> getCustomerDetails(@PathVariable String id) {
+        return customerService.getCustomerById(id);
+    }
 }

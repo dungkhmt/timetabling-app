@@ -9,6 +9,7 @@ import openerp.openerpresourceserver.wms.dto.customer.CreateCustomerReq;
 import openerp.openerpresourceserver.wms.dto.filter.CustomerGetListFilter;
 import openerp.openerpresourceserver.wms.entity.Address;
 import openerp.openerpresourceserver.wms.entity.Customer;
+import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.AddressRepo;
 import openerp.openerpresourceserver.wms.repository.CustomerRepo;
@@ -90,6 +91,17 @@ public class CustomerServiceImpl implements CustomerService {
                 .code(200)
                 .message("Get customer list successfully")
                 .data(pagination)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<Customer> getCustomerById(String id) {
+        return ApiResponse.<Customer>builder()
+                .code(200)
+                .message("Get customer successfully")
+                .data(customerRepo.findById(id).orElseThrow(
+                        () -> new DataNotFoundException("Customer not found with id: " + id)
+                ))
                 .build();
     }
 }
