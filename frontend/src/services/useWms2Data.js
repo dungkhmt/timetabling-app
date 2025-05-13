@@ -561,6 +561,39 @@ export const useWms2Data = () => {
     }
   }
 
+  const createFacility = async (data) => {
+    try {
+      const res = await wms2Service.createFacility(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating facility:", error);
+      toast.error("Không thể tạo kho hàng");
+      return { data: {} };
+    }
+  }
+
+  const getFacilitiesWithFilters = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getFacilitiesWithFilters(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facilities with filters:", error);
+      toast.error("Không thể tải danh sách kho hàng");
+      return { data: {} };
+    }
+  }
+
+  const getFacilityById = async (id) => {
+    try {
+      const response = await wms2Service.getFacilityById(id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facility by ID:", error);
+      toast.error("Không thể tải thông tin kho hàng");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -612,5 +645,8 @@ export const useWms2Data = () => {
     createSupplier,
     getSuppliersWithFilters,
     getSupplierById,
+    createFacility,
+    getFacilitiesWithFilters,
+    getFacilityById
   };
 };

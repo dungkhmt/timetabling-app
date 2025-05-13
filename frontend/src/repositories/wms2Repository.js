@@ -145,5 +145,14 @@ export const wms2Service = {
   }, 
   getSupplierById : (id) => {
     return request("get", `/supplier/details/${id}`);
-  }
+  },
+  createFacility : (data) => {
+    return request("post", "/facility/create", null, null, data);
+  },
+  getFacilitiesWithFilters : (page, limit, filters) => {
+    return request("post", `/facility/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getFacilityById : (facilityId) => {
+    return request("get", `/facility/details/${facilityId}`);
+  },
 };
