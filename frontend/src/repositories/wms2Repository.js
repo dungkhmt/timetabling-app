@@ -131,4 +131,7 @@ export const wms2Service = {
   createCustomer : (data) => {
     return request("post", "/customer/create", null, null, data);
   },
+  getCustomersWithFilters : (page, limit, filters) => {
+    return request("post", `/customer/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  }
 };

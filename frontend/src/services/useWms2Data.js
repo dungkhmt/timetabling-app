@@ -506,6 +506,17 @@ export const useWms2Data = () => {
     }
   }
 
+  const getCustomersWithFilters = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getCustomersWithFilters(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching customers with filters:", error);
+      toast.error("Không thể tải danh sách khách hàng");
+      return { data: {} };
+    }
+  };
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -551,6 +562,7 @@ export const useWms2Data = () => {
     getProductCategories,
     getProductsWithFilters,
     getProductById,
-    createCustomer
+    createCustomer,
+    getCustomersWithFilters,
   };
 };

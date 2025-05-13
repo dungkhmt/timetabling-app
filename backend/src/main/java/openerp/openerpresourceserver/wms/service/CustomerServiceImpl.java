@@ -6,11 +6,13 @@ import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.customer.CreateCustomerReq;
+import openerp.openerpresourceserver.wms.dto.filter.CustomerGetListFilter;
 import openerp.openerpresourceserver.wms.entity.Address;
 import openerp.openerpresourceserver.wms.entity.Customer;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.AddressRepo;
 import openerp.openerpresourceserver.wms.repository.CustomerRepo;
+import openerp.openerpresourceserver.wms.repository.specification.CustomerSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -66,6 +68,28 @@ public class CustomerServiceImpl implements CustomerService {
         return ApiResponse.<Void>builder()
                 .code(200)
                 .message("Created customer successfully")
+                .build();
+    }
+
+    @Override
+    public ApiResponse<Pagination<Customer>> getCustomers(Integer page, Integer limit, CustomerGetListFilter filters) {
+        var pageRequest = CommonUtil.getPageRequest(page, limit);
+        var customerSpec = new CustomerSpecification(filters);
+
+        var customerPage = customerRepo.findAll(customerSpec, pageRequest);
+
+        var pagination = Pagination.<Customer>builder()
+                .data(customerPage.getContent())
+                .page(page)
+                .size(limit)
+                .totalElements(customerPage.getTotalElements())
+                .totalPages(customerPage.getTotalPages())
+                .build();
+
+        return ApiResponse.<Pagination<Customer>>builder()
+                .code(200)
+                .message("Get customer list successfully")
+                .data(pagination)
                 .build();
     }
 }
