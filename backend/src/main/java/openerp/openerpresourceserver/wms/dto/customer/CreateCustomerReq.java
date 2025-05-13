@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import openerp.openerpresourceserver.wms.dto.address.AddressReq;
 
 @Getter
 @Setter
@@ -27,5 +28,5 @@ public class CreateCustomerReq {
     private String phone;
 
     @NotNull
-    private CustomerAddressReq address;
+    private AddressReq address;
 }

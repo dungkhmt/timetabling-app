@@ -528,6 +528,17 @@ export const useWms2Data = () => {
     }
   }
 
+  const createSupplier = async (data) => {
+    try {
+      const res = await wms2Service.createSupplier(data);
+      return res.data;
+    } catch (error) {
+      console.error("Error creating supplier:", error);
+      toast.error("Không thể tạo nhà cung cấp");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -575,6 +586,7 @@ export const useWms2Data = () => {
     getProductById,
     createCustomer,
     getCustomersWithFilters,
-    getCustomerById
+    getCustomerById,
+    createSupplier
   };
 };

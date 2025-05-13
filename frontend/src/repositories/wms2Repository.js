@@ -136,5 +136,8 @@ export const wms2Service = {
   },
   getCustomerById : (customerId) => {
     return request("get", `/customer/details/${customerId}`);
+  },
+  createSupplier : (data) => {
+    return request("post", "/supplier/create", null, null, data);
   }
 };

@@ -9,27 +9,27 @@ import {
   Divider,
   Grid,
   Paper,
-  TextField,
   Typography
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { useHistory } from 'react-router-dom';
-import CustomerInfoForm from './components/CustomerInfoForm';
+import SupplierInfoForm from './components/SupplierInfoForm';
 import AddressForm from './components/AddressForm';
 import LocationPicker from '../common/components/LocationPicker';
-import {useWms2Data} from "../../../services/useWms2Data";
+import { useWms2Data } from "../../../services/useWms2Data";
 
-const CreateCustomer = () => {
+const CreateSupplier = () => {
   const history = useHistory();
   const [loading, setLoading] = useState(false);
-  const {createCustomer} = useWms2Data();
-  // Customer form state
-  const [customer, setCustomer] = useState({
+  const { createSupplier } = useWms2Data();
+  
+  // Supplier form state
+  const [supplier, setSupplier] = useState({
     name: '',
     email: '',
     phone: '',
     address: {
-      addressType: 'SHIPPING',
+      addressType: 'BUSINESS',
       latitude: null,
       longitude: null,
       isDefault: true,
@@ -45,10 +45,10 @@ const CreateCustomer = () => {
     fullAddress: ''
   });
 
-  // Handle input change for customer info
-  const handleCustomerChange = (e) => {
+  // Handle input change for supplier info
+  const handleSupplierChange = (e) => {
     const { name, value } = e.target;
-    setCustomer(prev => ({
+    setSupplier(prev => ({
       ...prev,
       [name]: value
     }));
@@ -65,7 +65,7 @@ const CreateCustomer = () => {
   // Handle change for address fields
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
-    setCustomer(prev => ({
+    setSupplier(prev => ({
       ...prev,
       address: {
         ...prev.address,
@@ -84,7 +84,7 @@ const CreateCustomer = () => {
 
   // Handle location selection from the map
   const handleLocationSelect = (lat, lng, address) => {
-    setCustomer(prev => ({
+    setSupplier(prev => ({
       ...prev,
       address: {
         ...prev.address,
@@ -93,6 +93,14 @@ const CreateCustomer = () => {
         fullAddress: address || prev.address.fullAddress
       }
     }));
+    
+    // Clear address error if we have a valid address now
+    if (address && errors.fullAddress) {
+      setErrors(prev => ({
+        ...prev,
+        fullAddress: ''
+      }));
+    }
   };
 
   // Validate the form
@@ -101,33 +109,30 @@ const CreateCustomer = () => {
     let isValid = true;
 
     // Validate name
-    if (!customer.name.trim()) {
-      newErrors.name = 'Tên khách hàng không được để trống';
+    if (!supplier.name.trim()) {
+      newErrors.name = 'Tên nhà cung cấp không được để trống';
       isValid = false;
     }
 
     // Validate email with regex
     const emailRegex = /^[A-Za-z0-9+_.-]+@(.+)$/;
-    if (!customer.email.trim()) {
-      newErrors.email = 'Email không được để trống';
-      isValid = false;
-    } else if (!emailRegex.test(customer.email)) {
+    if (supplier.email.trim() && !emailRegex.test(supplier.email)) {
       newErrors.email = 'Email không hợp lệ';
       isValid = false;
     }
 
     // Validate phone with regex
     const phoneRegex = /^(\+\d{1,3}[- ]?)?\d{10}$/;
-    if (!customer.phone.trim()) {
+    if (!supplier.phone.trim()) {
       newErrors.phone = 'Số điện thoại không được để trống';
       isValid = false;
-    } else if (!phoneRegex.test(customer.phone)) {
+    } else if (!phoneRegex.test(supplier.phone)) {
       newErrors.phone = 'Số điện thoại không hợp lệ';
       isValid = false;
     }
 
     // Validate address
-    if (!customer.address.fullAddress.trim()) {
+    if (!supplier.address.fullAddress.trim()) {
       newErrors.fullAddress = 'Địa chỉ không được để trống';
       isValid = false;
     }
@@ -146,17 +151,17 @@ const CreateCustomer = () => {
     setLoading(true);
 
     try {
-      const response = await createCustomer(customer);
+      const response = await createSupplier(supplier);
       
       if (response && (response.code === 200 || response.code === 201)) {
-        toast.success('Tạo khách hàng thành công');
-        history.push('/wms/sales/customers');
+        toast.success('Tạo nhà cung cấp thành công');
+        history.push('/wms/purchase/suppliers');
       } else {
-        toast.error(`Lỗi khi tạo khách hàng: ${response?.message || 'Lỗi không xác định'}`);
+        toast.error(`Lỗi khi tạo nhà cung cấp: ${response?.message || 'Lỗi không xác định'}`);
       }
     } catch (error) {
-      console.error('Error creating customer:', error);
-      toast.error(`Lỗi khi tạo khách hàng: ${error?.message || 'Lỗi không xác định'}`);
+      console.error('Error creating supplier:', error);
+      toast.error(`Lỗi khi tạo nhà cung cấp: ${error?.message || 'Lỗi không xác định'}`);
     } finally {
       setLoading(false);
     }
@@ -166,7 +171,7 @@ const CreateCustomer = () => {
     <Container maxWidth="lg">
       <Paper elevation={1} sx={{ p: 3, my: 3 }}>
         <Typography variant="h5" component="h1" gutterBottom>
-          Tạo mới khách hàng
+          Tạo mới nhà cung cấp
         </Typography>
         <Divider sx={{ mb: 3 }} />
 
@@ -175,12 +180,12 @@ const CreateCustomer = () => {
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Thông tin khách hàng
+                  Thông tin nhà cung cấp
                 </Typography>
-                <CustomerInfoForm 
-                  customer={customer}
+                <SupplierInfoForm 
+                  supplier={supplier}
                   errors={errors}
-                  onChange={handleCustomerChange}
+                  onChange={handleSupplierChange}
                 />
               </CardContent>
             </Card>
@@ -193,7 +198,7 @@ const CreateCustomer = () => {
                   Thông tin địa chỉ
                 </Typography>
                 <AddressForm 
-                  address={customer.address}
+                  address={supplier.address}
                   errors={errors}
                   onChange={handleAddressChange}
                 />
@@ -205,11 +210,11 @@ const CreateCustomer = () => {
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Vị trí khách hàng
+                  Vị trí nhà cung cấp
                 </Typography>
                 <LocationPicker
-                  latitude={customer.address.latitude}
-                  longitude={customer.address.longitude}
+                  latitude={supplier.address.latitude}
+                  longitude={supplier.address.longitude}
                   onLocationSelect={handleLocationSelect}
                 />
               </CardContent>
@@ -240,4 +245,4 @@ const CreateCustomer = () => {
   );
 };
 
-export default CreateCustomer;
+export default CreateSupplier;
