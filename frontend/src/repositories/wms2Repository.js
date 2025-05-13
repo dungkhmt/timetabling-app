@@ -139,5 +139,8 @@ export const wms2Service = {
   },
   createSupplier : (data) => {
     return request("post", "/supplier/create", null, null, data);
+  },
+  getSuppliersWithFilters : (page, limit, filters) => {
+    return request("post", `/supplier/get-all?page=${page}&limit=${limit}`, null, null, filters);
   }
 };

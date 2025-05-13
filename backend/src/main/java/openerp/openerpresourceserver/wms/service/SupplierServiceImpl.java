@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.constant.enumrator.SupplierStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.SupplierGetListFilter;
 import openerp.openerpresourceserver.wms.dto.supplier.CreateSupplierReq;
 import openerp.openerpresourceserver.wms.dto.supplier.SupplierListRes;
 import openerp.openerpresourceserver.wms.entity.Address;
@@ -12,6 +13,7 @@ import openerp.openerpresourceserver.wms.entity.Supplier;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.AddressRepo;
 import openerp.openerpresourceserver.wms.repository.SupplierRepository;
+import openerp.openerpresourceserver.wms.repository.specification.SupplierSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
@@ -72,5 +74,27 @@ public class SupplierServiceImpl implements SupplierService {
                 .code(201)
                 .message("Create supplier successfully")
                 .build();
+    }
+
+    @Override
+    public ApiResponse<Pagination<Supplier>> getSuppliers(int page, int limit, SupplierGetListFilter filters) {
+        var pageReq = CommonUtil.getPageRequest(page, limit);
+        var supplierSpec = new SupplierSpecification(filters);
+        var supplierPage = supplierRepository.findAll(supplierSpec, pageReq);
+
+        var pagination = Pagination.<Supplier>builder()
+                .page(page)
+                .size(limit)
+                .totalPages(supplierPage.getTotalPages())
+                .totalElements(supplierPage.getTotalElements())
+                .data(supplierPage.getContent())
+                .build();
+
+        return ApiResponse.<Pagination<Supplier>>builder()
+                .code(200)
+                .message("Get suppliers successfully")
+                .data(pagination)
+                .build();
+
     }
 }
