@@ -48,7 +48,7 @@ public class ExamPlanController {
     @PostMapping("/delete/{id}")
     public ResponseEntity<?> softDeleteExamPlan(@PathVariable UUID id) {
         try {
-            examPlanService.softDeleteExamPlan(id);
+            examPlanService.deleteExamPlan(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();

@@ -86,7 +86,7 @@ public class ExamTimetableController {
     @PostMapping("/delete/{id}")
     public ResponseEntity<Void> deleteTimetable(@PathVariable UUID id) {
         try {
-            examTimetableService.softDeleteTimetable(id);
+            examTimetableService.deleteTimetable(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

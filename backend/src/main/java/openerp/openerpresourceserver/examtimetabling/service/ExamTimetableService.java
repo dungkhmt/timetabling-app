@@ -107,22 +107,27 @@ public class ExamTimetableService {
     }
 
     @Transactional
-    public void softDeleteTimetable(UUID timetableId) {
-        ExamTimetable timetable = examTimetableRepository.findById(timetableId)
-            .orElseThrow(() -> new RuntimeException("Timetable not found with id: " + timetableId));
+    public void deleteTimetable(UUID timetableId) {
+        if (!examTimetableRepository.existsById(timetableId)) {
+            throw new RuntimeException("Timetable not found with id: " + timetableId);
+        }
         
-        Query assignmentsQuery = entityManager.createNativeQuery(
-            "UPDATE exam_timetable_assignment " +
-            "SET deleted_at = NOW() " +
-            "WHERE exam_timetable_id = :timetableId AND deleted_at IS NULL"
-        );
+        String deleteAssignmentsSql = "DELETE FROM exam_timetable_assignment " +
+                                    "WHERE exam_timetable_id = :timetableId";
         
-        assignmentsQuery.setParameter("timetableId", timetableId);
-        assignmentsQuery.executeUpdate();
+        Query deleteAssignmentsQuery = entityManager.createNativeQuery(deleteAssignmentsSql);
+        deleteAssignmentsQuery.setParameter("timetableId", timetableId);
+        int deletedAssignments = deleteAssignmentsQuery.executeUpdate();
         
-        // Soft delete the timetable
-        timetable.setDeletedAt(LocalDateTime.now());
-        examTimetableRepository.save(timetable);
+        String deleteTimetableSql = "DELETE FROM exam_timetable WHERE id = :timetableId";
+        
+        Query deleteTimetableQuery = entityManager.createNativeQuery(deleteTimetableSql);
+        deleteTimetableQuery.setParameter("timetableId", timetableId);
+        int deletedTimetables = deleteTimetableQuery.executeUpdate();
+        
+        if (deletedTimetables == 0) {
+            throw new RuntimeException("Failed to delete timetable with id: " + timetableId);
+        }
     }
 
     @Transactional
