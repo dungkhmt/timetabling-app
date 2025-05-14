@@ -6,7 +6,8 @@ import {
   IconButton,
   Typography,
   Tooltip,
-  Chip
+  Chip,
+  Paper
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Add, Delete, Edit, LockOutlined } from "@mui/icons-material";
@@ -92,52 +93,6 @@ const ExamSessionTable = ({
   onDeleteSession,
   selectedCollection,
 }) => {
-  function DataGridTitle() {
-    return (
-      <Box
-        sx={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          pt:2,
-          pb:6.5,
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 700,
-            color: '#1976d2',
-            position: 'relative',
-          }}
-        >
-          Danh Sách Kíp Thi
-        </Typography>
-      </Box>
-    );
-  }
-
-  function DataGridToolbar() {
-    return (
-      <Box sx={{ px: 2, pb: 2 }}>
-        {/* Session actions */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            size="small"
-            onClick={onAddSession}
-            disabled={!selectedCollection || isLoading}
-            startIcon={<Add />}
-          >
-            Thêm kíp thi
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
-
   const actionColumn = {
     headerName: "Thao tác",
     field: "actions",
@@ -190,54 +145,96 @@ const ExamSessionTable = ({
   };
 
   return (
-    <div style={{ height: 600, width: "100%" }}>
-      {isLoading && (
-        <CircularProgress
-          style={{ position: "absolute", top: "50%", left: "50%" }}
-        />
-      )}
-      <DataGrid
-        localeText={localText}
-        components={{
-          Toolbar: () => (
-            <>
-              <DataGridTitle />
-              <DataGridToolbar />
-            </>
-          ),
-        }}
-        autoHeight
-        rows={sessions || []}
-        columns={[...COLUMNS, actionColumn]}
-        pageSizeOptions={[10, 20, 50, 100]}
-        initialState={{
-          pagination: { paginationModel: { pageSize: 10 } },
-          sorting: {
-            sortModel: [{ field: 'startTime', sort: 'asc' }],
-          },
-        }}
-        disableRowSelectionOnClick
-        sx={{
-          '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#5495e8',
-            color: '#fff',
-            fontSize: '15px',
-            fontWeight: 'bold',
-          },
-          '& .MuiDataGrid-row:nth-of-type(even)': {
-            backgroundColor: '#f9f9f9',
-          },
-          '& .MuiDataGrid-columnHeader': {
-            '&:focus': {
-              outline: 'none',
+        <Paper sx={{ width: "100%", p: 1.5, overflow: 'hidden' }}>
+      {/* Title */}
+      <Box sx={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        mb: 6 
+      }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 700,
+            color: '#1976d2',
+          }}
+        >
+          Danh Sách Kíp Thi
+        </Typography>
+      </Box>
+
+      {/* Buttons */}
+      <Box sx={{ 
+        display: "flex", 
+        justifyContent: "flex-end", 
+        alignItems: "center", 
+        mb: 3 
+      }}>
+        <Button
+          variant="contained"
+          color="primary"
+          size="small"
+          onClick={onAddSession}
+          disabled={!selectedCollection || isLoading}
+          startIcon={<Add />}
+        >
+          Thêm kíp thi
+        </Button>
+      </Box>
+      
+      {/* DataGrid */}
+      <Box sx={{ width: "100%", position: "relative" }}>
+        {isLoading && (
+          <CircularProgress
+            style={{ position: "absolute", top: "50%", left: "50%", zIndex: 1 }}
+          />
+        )}
+        <DataGrid
+          localeText={localText}
+          autoHeight
+          rows={sessions || []}
+          columns={[...COLUMNS, actionColumn]}
+          pageSizeOptions={[10, 20, 50, 100]}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+            sorting: {
+              sortModel: [{ field: 'startTime', sort: 'asc' }],
             },
-          },
-          '& .MuiDataGrid-columnHeaderTitle': {
-            fontWeight: 'bold',
-          },
-        }}
-      />
-    </div>
+          }}
+          disableRowSelectionOnClick
+          sx={{
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#5495e8',
+              color: '#fff',
+              fontSize: '15px',
+              fontWeight: 'bold',
+            },
+            '& .MuiDataGrid-row:nth-of-type(even)': {
+              backgroundColor: '#f9f9f9',
+            },
+            '& .MuiDataGrid-columnHeader': {
+              '&:focus': {
+                outline: 'none',
+              },
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 'bold',
+            },
+            '& .MuiDataGrid-main': {
+              overflow: 'hidden',
+            },
+            '& .MuiDataGrid-virtualScroller': {
+              overflow: 'auto',
+            },
+            '& .MuiDataGrid-cell': {
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+            }
+          }}
+        />
+      </Box>
+    </Paper>
   );
 };
 

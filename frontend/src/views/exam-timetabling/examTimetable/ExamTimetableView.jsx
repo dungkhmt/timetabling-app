@@ -164,7 +164,7 @@ const ExamTimeTableView = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ flex: 1, overflow: 'auto', overflowX: 'auto', overflowY: 'hidden'  }}>
+        <Box sx={{ flex: 1, overflow: 'auto', overflowX: 'hidden', overflowY: 'hidden'  }}>
           {viewMode === 'room-based' ? (
             <RoomBasedAssignmentView 
               rooms={examRooms}
