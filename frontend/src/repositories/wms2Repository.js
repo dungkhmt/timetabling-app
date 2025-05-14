@@ -155,4 +155,7 @@ export const wms2Service = {
   getFacilityById : (facilityId) => {
     return request("get", `/facility/details/${facilityId}`);
   },
+  getOrderReport : (orderType) => {
+    return request("get", `/report/order/monthly?orderTypeId=${orderType}`);
+  }
 };

@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +65,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setOrderItemSeqId(CommonUtil.getSequenceId("ORDITEM", 5, seq.getAndIncrement()));
             orderItem.setProduct(product);
             orderItem.setId(CommonUtil.getUUID());
+            orderItem.setAmount(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             orderItemList.add(orderItem);
         });
 

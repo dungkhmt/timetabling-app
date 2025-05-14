@@ -24,6 +24,8 @@ import SupplierDetail from "views/wms/SupplierDetail/SupplierDetail";
 import CreateFacility from "views/wms/CreateFacility/CreateFacility";
 import FacilityListPage from "views/wms/FacilityListPage/FacilityListPage";
 import FacilityDetail from "views/wms/FacilityDetail/FacilityDetail";
+import OrderDashBoard from "../views/wms/OrderDashBoard/OrderDashBoard";
+import {ORDER_TYPE_ID} from "../views/wms/common/constants/constants";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -163,6 +165,16 @@ export default function WMSRouter() {
           component={FacilityDetail}
           path={`${path}/admin/facility/details/:id`}
         ></Route>
+
+        <Route
+            path={`${path}/purchase/dashboard`}
+            render={(props) => <OrderDashBoard {...props} orderTypeId={ORDER_TYPE_ID.PURCHASE_ORDER} />}
+        />
+
+        <Route
+            path={`${path}/sales/dashboard`}
+            render={(props) => <OrderDashBoard {...props} orderTypeId={ORDER_TYPE_ID.SALES_ORDER} />}
+        />
       </Switch>
     </div>
   );

@@ -594,6 +594,17 @@ export const useWms2Data = () => {
     }
   }
 
+  const getOrderReport = async (orderTypeId) => {
+    try {
+      const response = await wms2Service.getOrderReport(orderTypeId);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order report:", error);
+      toast.error("Không thể tải báo cáo đơn hàng");
+      return { data: {} };
+    }
+  };
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -647,6 +658,7 @@ export const useWms2Data = () => {
     getSupplierById,
     createFacility,
     getFacilitiesWithFilters,
-    getFacilityById
+    getFacilityById,
+    getOrderReport,
   };
 };
