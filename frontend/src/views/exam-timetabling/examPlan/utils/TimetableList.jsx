@@ -36,7 +36,11 @@ const TimetableList = ({
   };
 
   const handleCreateTimetableSubmit = async (data) => {
-    return await onCreateTimetable(data);
+    const {
+      data: { id }
+    } = await onCreateTimetable(data);
+
+    history.push(`/exam-time-tabling/exam-timetable/${id}`);
   };
 
   // Columns for timetable list

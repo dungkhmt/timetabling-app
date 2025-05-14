@@ -4,15 +4,17 @@ import {
   Button,
   CircularProgress,
   IconButton,
-  Typography
+  Typography,
+  Tooltip,
+  Chip
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { Add, Delete, Edit } from "@mui/icons-material";
+import { Add, Delete, Edit, LockOutlined } from "@mui/icons-material";
 import localText from "./LocalText.js";
 
 const COLUMNS = [
   {
-    headerName: "Kíp thi",
+    headerName: "Kíp",
     field: "name",
     width: 100,
     headerAlign: 'center',
@@ -52,6 +54,33 @@ const COLUMNS = [
         minute: '2-digit',
       });
     }
+  },
+  {
+    headerName: "Trạng thái",
+    field: "using",
+    width: 150,
+    headerAlign: 'center',
+    align: 'center',
+    renderCell: (params) => {
+      return params.value ? (
+        <Chip 
+          label="Đang sử dụng" 
+          color="success" 
+          size="small" 
+          sx={{ 
+            fontSize: '0.75rem',
+            fontWeight: 'bold'
+          }} 
+        />
+      ) : (
+        <Chip 
+          label="Không sử dụng" 
+          color="default" 
+          size="small" 
+          sx={{ fontSize: '0.75rem' }} 
+        />
+      );
+    },
   },
 ];
 
@@ -130,16 +159,31 @@ const ExamSessionTable = ({
           >
             <Edit fontSize="small" />
           </IconButton>
-          <IconButton 
-            size="small" 
-            color="error"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDeleteSession(params);
-            }}
-          >
-            <Delete fontSize="small" />
-          </IconButton>
+          
+          {params.row.using ? (
+            <Tooltip title="Kíp thi đang được sử dụng, không thể xóa">
+              <span>
+                <IconButton 
+                  size="small" 
+                  color="default"
+                  disabled
+                >
+                  <LockOutlined fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          ) : (
+            <IconButton 
+              size="small" 
+              color="error"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteSession(params);
+              }}
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          )}
         </Box>
       );
     }

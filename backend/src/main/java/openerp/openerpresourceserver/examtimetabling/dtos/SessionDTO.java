@@ -12,4 +12,5 @@ public class SessionDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String displayName;
+    private boolean isUsing;
 }
