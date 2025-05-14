@@ -13,6 +13,8 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Semester;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
@@ -27,6 +29,9 @@ public class ExamPlanService {
   private final ExamPlanRepository examPlanRepository;
   private final ExamClassRepository examClassRepository;
   private final SemesterRepository semesterRepository;
+  private final EntityManager entityManager;
+  private final ExamTimetableService examTimetableService;
+
 
   public List<ExamPlan> getAllExamPlans() {
     return examPlanRepository.findAll();
@@ -66,12 +71,45 @@ public class ExamPlanService {
   }
 
   @Transactional
-  public void softDeleteExamPlan(UUID id) {
-    ExamPlan examPlan = examPlanRepository.findById(id)
-        .orElseThrow();
-
-    examPlan.setDeleteAt(LocalDateTime.now());
-    examPlanRepository.save(examPlan);
+  public void deleteExamPlan(UUID id) {
+      if (!examPlanRepository.existsById(id)) {
+          throw new RuntimeException("Exam plan not found with id: " + id);
+      }
+      
+      String timetablesSql = "SELECT id FROM exam_timetable WHERE exam_plan_id = :examPlanId";
+      Query timetablesQuery = entityManager.createNativeQuery(timetablesSql);
+      timetablesQuery.setParameter("examPlanId", id);
+      
+      @SuppressWarnings("unchecked")
+      List<Object> timetableIds = timetablesQuery.getResultList();
+      
+      int deletedTimetables = 0;
+      
+      for (Object timetableIdObj : timetableIds) {
+          if (timetableIdObj != null) {
+              UUID timetableId = UUID.fromString(timetableIdObj.toString());
+              try {
+                  examTimetableService.deleteTimetable(timetableId);
+                  deletedTimetables++;
+              } catch (Exception e) {
+                  System.err.println("Error deleting timetable " + timetableId + ": " + e.getMessage());
+              }
+          }
+      }
+      
+      String deleteClassesSql = "DELETE FROM exam_timetabling_class WHERE exam_plan_id = :examPlanId";
+      Query deleteClassesQuery = entityManager.createNativeQuery(deleteClassesSql);
+      deleteClassesQuery.setParameter("examPlanId", id);
+      int deletedClasses = deleteClassesQuery.executeUpdate();
+      
+      String deletePlanSql = "DELETE FROM exam_plan WHERE id = :examPlanId";
+      Query deletePlanQuery = entityManager.createNativeQuery(deletePlanSql);
+      deletePlanQuery.setParameter("examPlanId", id);
+      int deletedPlans = deletePlanQuery.executeUpdate();
+      
+      if (deletedPlans == 0) {
+          throw new RuntimeException("Failed to delete exam plan with id: " + id);
+      }
   }
 
   public List<ExamPlan> findAllActivePlans() {

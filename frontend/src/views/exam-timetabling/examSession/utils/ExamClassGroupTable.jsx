@@ -6,9 +6,10 @@ import {
   IconButton,
   Typography,
   Paper,
+  Chip
 } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
-import { Add, Delete, Edit, LockOutlined } from "@mui/icons-material";
+import { Add, Delete, Edit } from "@mui/icons-material";
 import localText from "./LocalText";
 
 const COLUMNS = [
@@ -25,8 +26,26 @@ const COLUMNS = [
     width: 150,
     headerAlign: 'center',
     align: 'center',
-    valueFormatter: (params) => params.value ? "Đang sử dụng" : "Không sử dụng",
-    cellClassName: (params) => params.value ? "status-active" : "status-inactive",
+    renderCell: (params) => {
+      return params.value ? (
+        <Chip 
+          label="Đang sử dụng" 
+          color="success" 
+          size="small" 
+          sx={{ 
+            fontSize: '0.75rem',
+            fontWeight: 'bold'
+          }} 
+        />
+      ) : (
+        <Chip 
+          label="Không sử dụng" 
+          color="default" 
+          size="small" 
+          sx={{ fontSize: '0.75rem' }} 
+        />
+      );
+    },
   },
 ];
 
@@ -54,14 +73,14 @@ const ExamClassGroupTable = ({
   const actionColumn = {
     headerName: "Thao tác",
     field: "actions",
-    width: 120,
+    width: 80,
     sortable: false,
     filterable: false,
     headerAlign: 'center',
     align: 'center',
     renderCell: (params) => {
       return (
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <IconButton 
             size="small" 
             color="primary"
@@ -78,7 +97,7 @@ const ExamClassGroupTable = ({
   };
 
   return (
-    <Paper sx={{ width: "100%", p: 2 }}>
+    <Paper sx={{ width: "100%", p: 1.5, overflow: 'hidden' }}>
       <Box sx={{ 
         display: "flex", 
         justifyContent: "center", 
@@ -127,7 +146,7 @@ const ExamClassGroupTable = ({
         </Box>
       </Box>
       
-      <div style={{ height: 600, width: "100%", position: "relative" }}>
+      <Box sx={{ width: "100%", position: "relative" }}>
         {isLoading && (
           <CircularProgress
             style={{ position: "absolute", top: "50%", left: "50%", zIndex: 1 }}
@@ -175,16 +194,19 @@ const ExamClassGroupTable = ({
             '& .MuiDataGrid-columnHeaderTitle': {
               fontWeight: 'bold',
             },
-            '& .status-active': {
-              color: 'green',
-              fontWeight: 'bold',
+            '& .MuiDataGrid-main': {
+              overflow: 'hidden',
             },
-            '& .status-inactive': {
-              color: 'grey',
+            '& .MuiDataGrid-virtualScroller': {
+              overflow: 'auto',
             },
+            '& .MuiDataGrid-cell': {
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+            }
           }}
         />
-      </div>
+      </Box>
     </Paper>
   );
 };

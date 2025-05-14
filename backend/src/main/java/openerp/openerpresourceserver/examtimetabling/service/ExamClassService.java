@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -119,8 +120,8 @@ public class ExamClassService {
         // For conflicts check
         Set<String> excelExamClassIds = new HashSet<>();
         
-        StringBuilder insertValuesBuilder = new StringBuilder();
         List<Object[]> batchParams = new ArrayList<>();
+        List<UUID> newClassIds = new ArrayList<>(); // Store IDs of new classes for assignment creation
         
         // Skip header row and process Excel data
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
@@ -136,6 +137,8 @@ public class ExamClassService {
                 excelExamClassIds.add(examClassId);
                 
                 UUID id = UUID.randomUUID();
+                newClassIds.add(id); // Store the ID for later use
+                
                 String classId = getStringValue(row.getCell(0));
                 String courseId = getStringValue(row.getCell(2));
                 String groupId = getStringValue(row.getCell(5));
@@ -170,7 +173,7 @@ public class ExamClassService {
             return conflictClasses;
         }
         
-        // No conflicts
+        // No conflicts - insert exam classes
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         
         String sql = "INSERT INTO exam_timetabling_class (id, exam_class_id, class_id, course_id, " +
@@ -203,7 +206,72 @@ public class ExamClassService {
             }
         });
         
+        if (!newClassIds.isEmpty()) {
+            List<UUID> timetableIds = getTimetableIdsForExamPlan(examPlanId);
+            
+            if (!timetableIds.isEmpty()) {
+                LocalDateTime now = LocalDateTime.now();
+                
+                for (UUID timetableId : timetableIds) {
+                    createAssignmentsForTimetable(timetableId, newClassIds, now);
+                }
+            }
+        }
+        
         return new ArrayList<>();
+    }
+
+    private List<UUID> getTimetableIdsForExamPlan(UUID examPlanId) {
+        String sql = "SELECT id FROM exam_timetable WHERE exam_plan_id = :examPlanId AND deleted_at IS NULL";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("examPlanId", examPlanId);
+        
+        @SuppressWarnings("unchecked")
+        List<Object> results = query.getResultList();
+        
+        List<UUID> timetableIds = new ArrayList<>();
+        for (Object result : results) {
+            if (result != null) {
+                timetableIds.add(UUID.fromString(result.toString()));
+            }
+        }
+        
+        return timetableIds;
+    }
+
+    private void createAssignmentsForTimetable(UUID timetableId, List<UUID> classIds, LocalDateTime timestamp) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        
+        String insertSql = "INSERT INTO exam_timetable_assignment " +
+                        "(id, exam_timetable_id, exam_timtabling_class_id, created_at, updated_at) " +
+                        "VALUES (?, ?, ?, ?, ?)";
+        
+        List<Object[]> batchParams = classIds.stream()
+            .map(classId -> new Object[] {
+                UUID.randomUUID(),  
+                timetableId,        
+                classId,            
+                timestamp,         
+                timestamp           
+            })
+            .collect(Collectors.toList());
+        
+        jdbcTemplate.batchUpdate(insertSql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                Object[] params = batchParams.get(i);
+                ps.setObject(1, params[0]);  
+                ps.setObject(2, params[1]);  
+                ps.setObject(3, params[2]);  
+                ps.setObject(4, params[3]);  
+                ps.setObject(5, params[4]);  
+            }
+
+            @Override
+            public int getBatchSize() {
+                return batchParams.size();
+            }
+        });
     }
     
    public ByteArrayInputStream loadExamClasses(List<UUID> ids) {

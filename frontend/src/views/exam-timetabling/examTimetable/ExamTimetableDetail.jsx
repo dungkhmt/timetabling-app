@@ -273,8 +273,7 @@ const TimetableDetailPage = () => {
   const handleConfirmDelete = async (timetableId, examPlanId) => {
     await deleteExamTimetable(timetableId);
     setIsDeleteDialogOpen(false);
-    history.push(`/exam-time-tabling/exam-plan/${examPlanId}`);
-    window.location.reload();
+    window.location.replace(`/exam-time-tabling/exam-plan/${examPlanId}`);
   };
 
   const handleCloseInvalidModal = () => {

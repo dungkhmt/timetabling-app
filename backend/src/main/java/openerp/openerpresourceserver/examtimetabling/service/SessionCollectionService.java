@@ -2,6 +2,8 @@ package openerp.openerpresourceserver.examtimetabling.service;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,21 @@ public class SessionCollectionService {
     public List<SessionCollectionDTO> getAllSessionCollections() {
         List<ExamTimetableSessionCollection> collections = sessionCollectionRepository.findAll();
         
+        // First, fetch all sessions used in assignments in a single query
+        String usedSessionsSql = "SELECT DISTINCT exam_session_id FROM exam_timetable_assignment " +
+                                "WHERE exam_session_id IS NOT NULL AND deleted_at IS NULL";
+        
+        Query query = entityManager.createNativeQuery(usedSessionsSql);
+        
+        // Convert the result to a Set of UUIDs
+        @SuppressWarnings("unchecked")
+        List<Object> resultList = query.getResultList();
+        Set<UUID> usedSessionIds = resultList.stream()
+            .filter(Objects::nonNull)
+            .map(id -> UUID.fromString(id.toString()))
+            .collect(Collectors.toSet());
+        
+        // Now map collections with this information
         return collections.stream().map(collection -> {
             SessionCollectionDTO dto = new SessionCollectionDTO();
             dto.setId(collection.getId());
@@ -38,7 +55,7 @@ public class SessionCollectionService {
             
             List<ExamTimetableSession> sessions = sessionRepository
                 .findByExamTimetableSessionCollectionId(collection.getId());
-                
+            
             List<SessionDTO> sessionDTOs = sessions.stream().map(session -> {
                 SessionDTO sessionDTO = new SessionDTO();
                 sessionDTO.setId(session.getId());
@@ -51,6 +68,9 @@ public class SessionCollectionService {
                 sessionDTO.setStartTime(session.getStartTime());
                 sessionDTO.setEndTime(session.getEndTime());
                 sessionDTO.setDisplayName(session.getName() + " (" + startTime + " - " + endTime + ")");
+                
+                // Set isUsing based on whether this session ID is in the used sessions set
+                sessionDTO.setUsing(usedSessionIds.contains(session.getId()));
                 
                 return sessionDTO;
             }).collect(Collectors.toList());

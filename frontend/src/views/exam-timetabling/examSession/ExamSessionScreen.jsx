@@ -229,7 +229,16 @@ export default function ExamSessionListPage() {
     try {
       await createExamSession({
         ...formData,
+        startTime: new Date(new Date(formData.startTime).getTime() + 7 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(new Date(formData.endTime).getTime() + 7 * 60 * 60 * 1000).toISOString(),
         examTimetableSessionCollectionId: sessionCollections[0].id
+      });
+      setSessionFormData({
+        id: '',
+        name: '',
+        startTime: '',
+        endTime: '',
+        displayName: ''
       });
       setIsAddSessionModalOpen(false);
     } catch (error) {
