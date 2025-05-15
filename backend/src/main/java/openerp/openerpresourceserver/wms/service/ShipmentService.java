@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.wms.service;
 
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.ShipmentGetListFilter;
 import openerp.openerpresourceserver.wms.dto.shipment.*;
 import openerp.openerpresourceserver.wms.entity.InventoryItem;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
@@ -26,4 +27,6 @@ public interface ShipmentService {
     void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin, Map<String, List<InventoryItem>> inventoryItemMap);
 
     ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit);
+
+    ApiResponse<Pagination<ShipmentGetListRes>> getAll(int page, int limit, ShipmentGetListFilter filters);
 }

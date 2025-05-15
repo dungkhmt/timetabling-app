@@ -157,5 +157,8 @@ export const wms2Service = {
   },
   getOrderReport : (orderType) => {
     return request("get", `/report/order/monthly?orderTypeId=${orderType}`);
+  },
+  getAllShipments : (page, limit, filters) => {
+    return request("post", `/shipment/get-all?page=${page}&limit=${limit}`, null, null, filters);
   }
 };

@@ -605,6 +605,17 @@ export const useWms2Data = () => {
     }
   };
 
+  const getAllShipments = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getAllShipments(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all shipments:", error);
+      toast.error("Không thể tải danh sách phiếu xuất");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -660,5 +671,6 @@ export const useWms2Data = () => {
     getFacilitiesWithFilters,
     getFacilityById,
     getOrderReport,
+    getAllShipments,
   };
 };

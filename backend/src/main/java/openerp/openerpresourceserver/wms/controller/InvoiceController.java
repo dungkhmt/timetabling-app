@@ -17,11 +17,11 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
     @PutMapping("/export-outbound/{shipmentId}")
     public ApiResponse<Void> exportOutBound(@PathVariable String shipmentId, Principal principal) {
-        return invoiceService.exportOunBound(shipmentId, principal.getName());
+        return invoiceService.exportOutBound(shipmentId, principal.getName());
     }
 
     @PutMapping("/export-inbound/{shipmentId}")
-    public ApiResponse<Void> exportInBound(@PathVariable String shipmentId, Principal principal) {
-        return invoiceService.exportInBound(shipmentId, principal.getName());
+    public ApiResponse<Void> importInBound(@PathVariable String shipmentId, Principal principal) {
+        return invoiceService.importInBound(shipmentId, principal.getName());
     }
 }

@@ -4,13 +4,10 @@ import openerp.openerpresourceserver.wms.entity.Shipment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
-
-public interface ShipmentRepo extends JpaRepository<Shipment, String> {
+public interface ShipmentRepo extends JpaRepository<Shipment, String>, JpaSpecificationExecutor<Shipment> {
     Page<Shipment> findByOrderId(String orderId, PageRequest pageRequest);
 
-    List<Shipment> findByShipmentStatusIdAndShipmentTypeId(String name, String outbound);
-
-    Page<Shipment> findByShipmentStatusId(String name, PageRequest pageRequest);
+    Page<Shipment> findByStatusId(String name, PageRequest pageRequest);
 }

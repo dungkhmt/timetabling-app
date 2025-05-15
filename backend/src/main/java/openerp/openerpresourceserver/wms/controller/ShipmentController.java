@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.wms.controller;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.filter.ShipmentGetListFilter;
 import openerp.openerpresourceserver.wms.dto.shipment.*;
 import openerp.openerpresourceserver.wms.service.ShipmentService;
 import org.springframework.web.bind.annotation.*;
@@ -58,5 +59,12 @@ public class ShipmentController {
     }
 
 
+    @PostMapping("/get-all")
+    public ApiResponse<Pagination<ShipmentGetListRes>> getAll(
+            @RequestParam int page,
+            @RequestParam int limit,
+            @RequestBody ShipmentGetListFilter filters) {
+        return shipmentService.getAll(page, limit, filters);
+    }
 
 }

@@ -33,8 +33,8 @@ public class Shipment extends BaseEntity {
     @Column(name = "shipment_name", length = 255)
     private String shipmentName;
 
-    @Column(name = "shipment_status_id", length = 40)
-    private String shipmentStatusId;
+    @Column(name = "status_id", length = 40)
+    private String statusId;
 
     @Column(name = "note")
     private String note;
@@ -50,22 +50,22 @@ public class Shipment extends BaseEntity {
     @Column(name = "expected_delivery_date")
     private LocalDate expectedDeliveryDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "created_by_user_id")
     private UserLogin createdByUser;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exported_by_user_id")
-    private UserLogin exportedByUser;
+    @ManyToOne
+    @JoinColumn(name = "handled_by_user_id")
+    private UserLogin handledByUser;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "order_id")
     private OrderHeader order;
 
     @Override
     public void customPrePersist() {
-       if(shipmentStatusId == null || shipmentStatusId.isEmpty()) {
-           shipmentStatusId = ShipmentStatus.CREATED.name();
+       if(statusId == null || statusId.isEmpty()) {
+           statusId = ShipmentStatus.CREATED.name();
        }
     }
 }

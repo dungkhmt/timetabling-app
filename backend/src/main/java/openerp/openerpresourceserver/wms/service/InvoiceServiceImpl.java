@@ -5,7 +5,6 @@ import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.entity.Invoice;
 import openerp.openerpresourceserver.wms.entity.InvoiceItem;
-import openerp.openerpresourceserver.wms.entity.InvoiceItemPK;
 import openerp.openerpresourceserver.wms.entity.OrderItemBilling;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.repository.*;
@@ -30,7 +29,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional
-    public ApiResponse<Void> exportOunBound(String shipmentId, String name) {
+    public ApiResponse<Void> exportOutBound(String shipmentId, String name) {
         var shipment = shipmentRepo.findById(shipmentId)
                 .orElseThrow(() -> new DataNotFoundException("Shipment not found with id: " + shipmentId));
 
@@ -79,8 +78,8 @@ public class InvoiceServiceImpl implements InvoiceService {
         orderItemBillingRepo.saveAll(newOrderItemBillings);
 
 
-        shipment.setShipmentStatusId(ShipmentStatus.EXPORTED.name());
-        shipment.setExportedByUser(userLoginRepo.findById(name)
+        shipment.setStatusId(ShipmentStatus.EXPORTED.name());
+        shipment.setHandledByUser(userLoginRepo.findById(name)
                 .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name)));
 
         shipmentRepo.save(shipment);
@@ -92,7 +91,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
-    public ApiResponse<Void> exportInBound(String shipmentId, String name) {
+    public ApiResponse<Void> importInBound(String shipmentId, String name) {
         // Logic is similar to exportOutBound but increseases the quantity
         var shipment = shipmentRepo.findById(shipmentId)
                 .orElseThrow(() -> new DataNotFoundException("Shipment not found with id: " + shipmentId));
@@ -138,8 +137,8 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoiceRepo.save(newInvoice);
         invoiceItemRepo.saveAll(newInvoiceItems);
         orderItemBillingRepo.saveAll(newOrderItemBillings);
-        shipment.setShipmentStatusId(ShipmentStatus.IMPORTED.name());
-        shipment.setExportedByUser(userLoginRepo.findById(name)
+        shipment.setStatusId(ShipmentStatus.IMPORTED.name());
+        shipment.setHandledByUser(userLoginRepo.findById(name)
                 .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name)));
         shipmentRepo.save(shipment);
         return ApiResponse.<Void>builder()

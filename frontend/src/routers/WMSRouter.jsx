@@ -25,7 +25,8 @@ import CreateFacility from "views/wms/CreateFacility/CreateFacility";
 import FacilityListPage from "views/wms/FacilityListPage/FacilityListPage";
 import FacilityDetail from "views/wms/FacilityDetail/FacilityDetail";
 import OrderDashBoard from "../views/wms/OrderDashBoard/OrderDashBoard";
-import {ORDER_TYPE_ID} from "../views/wms/common/constants/constants";
+import ShipmentListPage from "../views/wms/ShipmentListPage/ShipmentListPage";
+import {ORDER_TYPE_ID, SHIPMENT_TYPE_ID} from "../views/wms/common/constants/constants";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -174,6 +175,16 @@ export default function WMSRouter() {
         <Route
             path={`${path}/sales/dashboard`}
             render={(props) => <OrderDashBoard {...props} orderTypeId={ORDER_TYPE_ID.SALES_ORDER} />}
+        />
+
+        <Route
+        path={`${path}/logistics/saleshipment`}
+        render={(props) => <ShipmentListPage {...props} shipmentTypeId={SHIPMENT_TYPE_ID.OUTBOUND} />}
+        />
+
+        <Route
+        path={`${path}/logistics/purchaseshipment`}
+        render={(props) => <ShipmentListPage {...props} shipmentTypeId={SHIPMENT_TYPE_ID.INBOUND} />}
         />
       </Switch>
     </div>

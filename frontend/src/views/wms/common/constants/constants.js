@@ -252,3 +252,14 @@ export const SHIPMENT_TYPE_ID = {
   INBOUND: "INBOUND",
     OUTBOUND: "OUTBOUND",
 }
+
+export const SHIPMENT_STATUSES = [
+  { id: "CREATED", name: "Đã tạo" },
+  { id: "PENDING", name: "Chờ xử lý" },
+  { id: "EXPORTED", name: "Đã xuất kho" },
+  { id: "SHIPPED", name: "Đang vận chuyển" },
+  { id: "PARTIALLY_DELIVERED", name: "Giao một phần" },
+  { id: "DELIVERED", name: "Đã giao hàng" },
+  { id: "CANCELLED", name: "Đã hủy" },
+  { id: "IMPORTED", name: "Đã nhập kho" },
+];
