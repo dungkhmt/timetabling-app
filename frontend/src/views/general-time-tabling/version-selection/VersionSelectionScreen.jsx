@@ -268,15 +268,29 @@ const VersionSelectionScreen = ({
         <Paper 
           elevation={2} 
           sx={{ 
-            p: 2.5, 
+            p: { xs: 1.5, sm: 2, md: 2.5 }, // Responsive padding
             mb: 3, 
             borderRadius: 2,
             boxShadow: '0 0 15px rgba(0,0,0,0.05)'
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-              Quản lý phiên bản thời khóa biểu
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'flex-start', sm: 'center' }, 
+            mb: { xs: 1.5, sm: 2, md: 2.5 },
+            gap: { xs: 1.5, sm: 0 } // Add gap for mobile
+          }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 600, 
+                color: theme.palette.primary.main,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' } // Smaller on mobile
+              }}
+            >
+              Quản lý phiên bản TKB
             </Typography>
             <Button
               variant="contained"
@@ -284,24 +298,27 @@ const VersionSelectionScreen = ({
               startIcon={<Add />}
               onClick={() => setOpenNewVersionDialog(true)}
               sx={{ 
-                px: 2.5,
-                py: 0.8,
+                px: { xs: 1.5, sm: 2, md: 2.5 }, // Responsive padding
+                py: { xs: 0.6, md: 0.8 }, // Smaller height on mobile
                 borderRadius: 1.5,
                 textTransform: 'none',
-                fontWeight: 500
+                fontWeight: 500,
+                fontSize: { xs: '0.8rem', sm: '0.875rem' }, // Smaller font on mobile
+                whiteSpace: 'nowrap'
               }}
             >
-              Tạo phiên bản mới
+              Tạo phiên bản TKB
             </Button>
           </Box>
           
-          {/* Filter Section */}
-          <Grid container spacing={2} alignItems="center">
+          {/* Filter Section - more responsive */}
+          <Grid container spacing={{ xs: 1, sm: 2 }} alignItems="center">
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <GeneralSemesterAutoComplete
                 selectedSemester={selectedSemester}
                 setSelectedSemester={setSelectedSemester}
                 sx={{ width: "100%" }}
+                disabled
                 label="Lọc theo học kỳ"
                 size="small"
               />
@@ -311,7 +328,7 @@ const VersionSelectionScreen = ({
                 fullWidth
                 variant="outlined"
                 size="small"
-                placeholder="Tìm kiếm theo tên phiên bản..."
+                placeholder="Tìm kiếm theo tên phiên bản TKB..."
                 value={searchNameInput}
                 onChange={handleSearchInputChange}
                 InputProps={{
@@ -357,6 +374,7 @@ const VersionSelectionScreen = ({
                   label={`Học kỳ: ${selectedSemester.semester}`}
                   onDelete={() => setSelectedSemester(null)}
                   color="primary"
+                  size="small"
                 />
               )}
               {searchNameInput && (
@@ -364,6 +382,7 @@ const VersionSelectionScreen = ({
                   label={`Tên phiên bản: ${searchNameInput}`}
                   onDelete={handleClearSearch}
                   color="primary"
+                  size="small"
                 />
               )}
             </Box>
@@ -395,8 +414,8 @@ const VersionSelectionScreen = ({
             <CalendarMonth sx={{ fontSize: 70, color: 'text.disabled', mb: 2, opacity: 0.4 }} />
             <Typography variant="h6" color="text.secondary" align="center" sx={{ maxWidth: 600, px: 2 }}>
               {selectedSemester || searchNameInput 
-                ? `Không tìm thấy phiên bản thời khóa biểu nào ${selectedSemester ? 'cho kỳ học ' + selectedSemester.semester : ''} ${searchNameInput ? 'với từ khóa "' + searchNameInput + '"' : ''}.` 
-                : "Chọn học kỳ hoặc nhập từ khóa để tìm kiếm phiên bản thời khóa biểu."}
+                ? `Không tìm thấy phiên bản TKB nào ${selectedSemester ? 'cho kỳ học ' + selectedSemester.semester : ''} ${searchNameInput ? 'với từ khóa "' + searchNameInput + '"' : ''}.` 
+                : "Chọn học kỳ hoặc nhập từ khóa để tìm kiếm phiên bản TKB."}
             </Typography>
             <Button 
               variant="outlined" 
@@ -405,14 +424,14 @@ const VersionSelectionScreen = ({
               onClick={() => setOpenNewVersionDialog(true)}
               sx={{ mt: 3, textTransform: 'none' }}
             >
-              Tạo phiên bản mới
+              Tạo phiên bản TKB mới
             </Button>
           </Paper>
         )}
 
         {/* Content Section - Version Cards */}
         {!isLoading && versions.length > 0 && (
-          <Grid container spacing={2.5}>
+          <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
             {versions.map((version) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={version.id}>
                 <Card 
@@ -424,7 +443,7 @@ const VersionSelectionScreen = ({
                     display: 'flex',
                     flexDirection: 'column',
                     border: `1px solid ${theme.palette.divider}`,
-                    overflow: 'hidden', // Add this to prevent content overflow
+                    overflow: 'hidden',
                     '&:hover': {
                       transform: 'translateY(-4px)',
                       boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
@@ -592,7 +611,8 @@ const VersionSelectionScreen = ({
                         textTransform: 'none',
                         fontWeight: 500,
                         borderRadius: 1.5,
-                        px: 2
+                        px: 2,
+                        fontSize: { xs: '0.75rem', sm: '0.8rem' } // Smaller font on mobile
                       }}
                     >
                       Chọn
@@ -640,7 +660,7 @@ const VersionSelectionScreen = ({
         <DialogTitle>Xác nhận xóa</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Bạn có chắc chắn muốn xóa phiên bản "{selectedVersionForMenu?.name}"? Hành động này không thể hoàn tác.
+            Bạn có chắc chắn muốn xóa phiên bản TKB "{selectedVersionForMenu?.name}"? Hành động này không thể hoàn tác.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 1 }}>
@@ -667,7 +687,7 @@ const VersionSelectionScreen = ({
         fullWidth
         disableEscapeKeyDown={isCreating}
       >
-        <DialogTitle>Tạo phiên bản mới</DialogTitle>
+        <DialogTitle sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>Tạo phiên bản TKB mới</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           {isCreating && (
             <Box sx={{ 
@@ -740,11 +760,12 @@ const VersionSelectionScreen = ({
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 1 }}>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1 } }}>
           <Button 
             onClick={() => setOpenNewVersionDialog(false)}
             disabled={isCreating}
             variant="outlined"
+            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
           >
             Hủy
           </Button>          
@@ -753,8 +774,9 @@ const VersionSelectionScreen = ({
             variant="contained" 
             disabled={isCreating || !newVersionName || !newVersionSemester || !numberSlotsPerSession || parseInt(numberSlotsPerSession) < 1}
             startIcon={isCreating ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
           >
-            {isCreating ? 'Đang tạo...' : 'Tạo phiên bản'}
+            {isCreating ? 'Đang tạo...' : 'Tạo phiên bản TKB'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -767,7 +789,7 @@ const VersionSelectionScreen = ({
         fullWidth
         disableEscapeKeyDown={isEditing}
       >
-        <DialogTitle>Chỉnh sửa phiên bản</DialogTitle>
+        <DialogTitle>Chỉnh sửa phiên bản TKB</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           {isEditing && (
             <Box sx={{ 

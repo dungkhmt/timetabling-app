@@ -9,6 +9,7 @@ import { Button, Tabs, Tab, Chip, Divider, Paper, Typography, Box } from "@mui/m
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
 import ConsolidatedTimeTable from "./components/ConsolidatedTimeTable";
+import SessionTimeTable from "./components/SessionTimeTable";
 import RoomOccupationScreen from "../room-occupation/RoomOccupationScreen";
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -33,6 +34,7 @@ const GeneralScheduleScreen = () => {
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [filteredClasses, setFilteredClasses] = useState([]);
   const [consolidatedCount, setConsolidatedCount] = useState(0);
+  const [sessionViewCount, setSessionViewCount] = useState(0);
   
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [showVersionSelection, setShowVersionSelection] = useState(true);
@@ -121,6 +123,10 @@ const GeneralScheduleScreen = () => {
 
   const handleSetConsolidatedCount = (count) => {
     setConsolidatedCount(count);
+  };
+
+  const handleSetSessionViewCount = (count) => {
+    setSessionViewCount(count);
   };
 
   const isSchedulingInProgress =
@@ -246,22 +252,43 @@ const GeneralScheduleScreen = () => {
             startIcon={<ArrowBack />}
             onClick={handleBackToVersionSelection}
             variant="outlined"
+            size="small"
+            sx={{
+              textTransform: 'none',
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+            }}
           >
-            Trở lại danh sách phiên bản
+            Quay lại
           </Button>
           
           {selectedVersion && (
             <Box className="flex flex-col items-end">
-              <Box className="flex items-center gap-2">
-              <Typography variant="h6" className="font-semibold">
-                {selectedVersion.name}
-              </Typography>
+              <Box className="flex items-center gap-2 flex-wrap">
+                <Typography 
+                  variant="h6" 
+                  className="font-semibold"
+                  sx={{
+                    fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                    maxWidth: { xs: '120px', sm: '200px', md: '300px' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {selectedVersion.name}
+                </Typography>
                 <Chip 
                   label={selectedVersion.status} 
                   color={selectedVersion.status === "DRAFT" ? "default" : "success"} 
                   size="small" 
                 />
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{
+                    fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' }
+                  }}
+                >
                   Học kỳ: {selectedVersion.semester}
                 </Typography>
               </Box>
@@ -323,9 +350,21 @@ const GeneralScheduleScreen = () => {
               </div>
             }
           />
+          <Tab
+            label={
+              <div className="flex items-center gap-2">
+                <span>Xem theo buổi</span>
+                <Chip
+                  size="small"
+                  label={sessionViewCount || displayClasses?.length || 0}
+                  color="default"
+                />
+              </div>
+            }
+          />
         </Tabs>
 
-        {(viewTab === 0 || viewTab === 1 || viewTab === 3) && (
+        {(viewTab === 0 || viewTab === 1 || viewTab === 3 || viewTab === 4) && (
           <div className="mt-3">
             <Paper variant="outlined" className="p-3">
               <div className="flex gap-3 items-center flex-wrap">
@@ -337,7 +376,7 @@ const GeneralScheduleScreen = () => {
                     "& .MuiInputBase-root": { height: "40px" },
                   }}
                   label="Chọn học kỳ"
-                  disabled={!!selectedVersion} 
+                  disabled={!!selectedVersion} // Disable if selectedVersion exists
                 />
 
                 <GeneralGroupAutoComplete
@@ -353,7 +392,7 @@ const GeneralScheduleScreen = () => {
                   disabled={selectedCluster !== null}
                 />
 
-                {viewTab === 3 && (
+                {(viewTab === 3 || viewTab === 4) && (
                   <GeneralClusterAutoComplete
                     selectedCluster={selectedCluster}
                     setSelectedCluster={setSelectedCluster}
@@ -365,7 +404,7 @@ const GeneralScheduleScreen = () => {
                   />
                 )}
 
-                {viewTab !== 3 && (
+                {viewTab !== 3 && viewTab !== 4 && (
                   <>
                     <FormControl
                       sx={{
@@ -459,7 +498,7 @@ const GeneralScheduleScreen = () => {
 
             <div className="sticky top-0 z-10 bg-white py-3 mt-3 border-b">
               <div className="flex justify-between gap-2">
-                {viewTab !== 3 && (
+                {viewTab !== 3 && viewTab !== 4 && (
                   <GeneralClusterAutoComplete
                     selectedCluster={selectedCluster}
                     setSelectedCluster={setSelectedCluster}
@@ -470,7 +509,7 @@ const GeneralScheduleScreen = () => {
                     }}
                   />
                 )}
-                <div className={`flex md:flex-row flex-col ${viewTab !== 3 ? 'justify-end' : 'justify-end w-full'} gap-2`}>
+                <div className={`flex md:flex-row flex-col ${viewTab !== 3 && viewTab !== 4 ? 'justify-end' : 'justify-end w-full'} gap-2`}>
                   {states.selectedRows.length > 0 ? (
                     <div className="flex-grow flex items-center px-3 bg-blue-50 rounded">
                       <span className="text-blue-700">
@@ -537,7 +576,7 @@ const GeneralScheduleScreen = () => {
                     Xuất File Excel
                   </Button>
                   
-                  {viewTab !== 3 && (
+                  {viewTab !== 3 && viewTab !== 4 && (
                     <>
                       <Button
                         disabled={
@@ -619,6 +658,18 @@ const GeneralScheduleScreen = () => {
                 selectedVersion={selectedVersion}
               />
           </div>
+        ) : viewTab === 4 ? (
+          <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
+              <SessionTimeTable
+                selectedSemester={states.selectedSemester}
+                classes={displayClasses}
+                selectedGroup={states.selectedGroup}
+                onSaveSuccess={handlers.handleRefreshClasses}
+                loading={states.loading || isSchedulingInProgress}
+                onRowCountChange={handleSetSessionViewCount}
+                selectedVersion={selectedVersion}
+              />
+          </div>
         ) : (
           <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
             {viewTab === 0 && (
@@ -652,24 +703,6 @@ const GeneralScheduleScreen = () => {
       </div>
 
       <div>
-        {/* <AutoScheduleDialog
-          title={"Tự động xếp lịch học của kì học"}
-          open={states.isOpenTimeslotDialog}
-          closeDialog={() => setters.setOpenTimeslotDialog(false)}
-          timeLimit={states.timeSlotTimeLimit}
-          setTimeLimit={setters.setTimeSlotTimeLimit}
-          submit={handlers.handleAutoScheduleTimeSlotTimeTabling}
-          selectedAlgorithm={states.selectedAlgorithm}
-        /> */}
-        {/* <AutoScheduleDialog
-          title={"Tự động xếp phòng học"}
-          open={states.isOpenClassroomDialog}
-          closeDialog={() => setters.setOpenClassroomDialog(false)}
-          setTimeLimit={setters.setClassroomTimeLimit}
-          timeLimit={states.classroomTimeLimit}
-          submit={handlers.handleAutoScheduleClassroomTimeTabling}
-          selectedAlgorithm={states.selectedAlgorithm}
-        /> */}
         <AutoScheduleDialog
           title={"Tự động xếp lịch các lớp đã chọn"}
           open={states.isOpenSelectedDialog}
