@@ -15,7 +15,7 @@ class CombinationChecker{
     private int[] y;//
     private boolean ans;
 
-    private boolean check(int v, int i){
+    private boolean check(int v, int i){// objective Y[0], Y[1], .. pair-wise not-overlap
         for(int j = 0; j <= i-1; j++){
             if(overlap[y[j]][v]) return false;
         }
@@ -24,7 +24,7 @@ class CombinationChecker{
     private void solution(){
         ans = true;
     }
-    private void tryY(int i){
+    private void tryY(int i){// try all values for Y[i]
         if(ans) return;
         if(i == idxCourse){
             if(check(idxClass,i)){
@@ -70,26 +70,34 @@ class CombinationChecker{
         this.idxClass = idxClass;
         idxCourse = courseOfClass[idxClass];
         ans = false;
-        y = new int[nbCourses];
+        y = new int[nbCourses];// Y[i] index class of course i selected in the combination
         tryY(0);
         return ans;
     }
 }
+
 public class BacktrackingNotMaintainCombinations extends BacktrackingOneGroup{
     List<Integer>[] classIndicesOfCourse;
     Map<AClass, Integer> mClass2Index;
     int[] courseOfClass;
     private SolutionClass[] x;
 
+    private CombinationConstraint comCtrs;
+
     private void solution(){
         CombinationChecker CC = new CombinationChecker(classIndicesOfCourse,classes,x);
+        for(int i = 0; i < x.length; i++){
+            //System.out.println("solution x[" + i + "] = " + x[i]);
+        }
         boolean ok = true;
         for(int i = 0; i < classes.size(); i++){
             if(!CC.checkInCombination(i)){
                 ok  = false; break;
             }
         }
+        //System.out.println("Check = " + ok);
         if(ok){// each class belongs to at least one combination
+            nbSolutions ++;
             // compute objective function
             obj = 0;
             for(int i = 0; i < courses.size(); i++){
@@ -115,20 +123,29 @@ public class BacktrackingNotMaintainCombinations extends BacktrackingOneGroup{
                     }
                 }
 
-                if(LOGGING) System.out.println("update best " + bestObj + " checkCombinations = " + ok);
+                System.out.println("update best " + bestObj + " checkCombinations = " + ok);
             }
+        }else{// failure
+            nbFailures ++;
         }
     }
+    private boolean check(SolutionClass sc, int i){
+        return true;
+    }
     private void tryClass(int i){
+        nbTries++;
         AClass cls = classes.get(i);
-        ClassSolver CS = new ClassSolverLazyCheck();
+        ClassSolver CS = new ClassSolverLazyCheck(0,0,null);
         List<SolutionClass> sol = CS.solve(cls);
+        //System.out.println("tryClass(" + i + "), sol.sz = " + sol.size());
         for(SolutionClass sc: sol){
-            x[i] = sc;
-            if(i == classes.size()-1){
-                solution();
-            }else{
-                tryClass(i+1);
+            if(check(sc,i)) {
+                x[i] = sc;
+                if (i == classes.size() - 1) {
+                    solution();
+                } else {
+                    tryClass(i + 1);
+                }
             }
         }
     }
@@ -146,12 +163,19 @@ public class BacktrackingNotMaintainCombinations extends BacktrackingOneGroup{
                 classIndicesOfCourse[i].add(j);
             }
         }
+        t0 = System.currentTimeMillis();
         x = new SolutionClass[classes.size()];
+        bestObj = 10000000;
+        nbSolutions = 0;
+        nbFailures = 0;
+        nbTries = 0;
         tryClass(0);
     }
     public static void main(String[] args){
         BacktrackingNotMaintainCombinations solver = new BacktrackingNotMaintainCombinations();
-        String filename = "data/fl2-3th-c.txt";
+        String filename = "data/fl2-3th-c-ext2.txt";
+        //String filename = "data/fl2-4th-s.txt";
+
         int timeLimit = 300;
         solver.inputFile(filename);
         //solver.input();

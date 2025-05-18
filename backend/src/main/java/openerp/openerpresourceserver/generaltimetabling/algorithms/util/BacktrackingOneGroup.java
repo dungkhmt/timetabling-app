@@ -2,10 +2,9 @@ package openerp.openerpresourceserver.generaltimetabling.algorithms.util;
 
 //import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+
+import java.io.*;
 import java.util.*;
 
 class MaxClique{
@@ -91,6 +90,29 @@ class AClass{
         this.id = id;
         this.course = course;
         this.classSegments = classSegments;
+        sortClassSegment();
+    }
+    public void sortClassSegment(){
+        classSegments.sort(new Comparator<AClassSegment>() {
+            @Override
+            public int compare(AClassSegment o1, AClassSegment o2) {
+                return o1.duration - o2.duration;
+            }
+        });
+    }
+    public boolean identicalClassSegment(){
+        for(int i = 0; i < classSegments.size()-1; i++)
+            if(classSegments.get(i).duration != classSegments.get(i+1).duration)
+                return false;
+        return true;
+    }
+    public boolean sameClassSegmentsWith(AClass cls){
+        if(classSegments.size() != cls.classSegments.size()) return false;
+        for(int i = 0; i < classSegments.size(); i++){
+            if(classSegments.get(i).duration != cls.classSegments.get(i).duration)
+                return false;
+        }
+        return true;
     }
 }
 class SolutionClass{
@@ -122,8 +144,8 @@ class SolutionClass{
     }
     public boolean overlap(int start, int end, int session){
         for(int[] p: periods) {
-                if(p[2] != session) continue;
-                if(SolutionClass.overLap(p[0],p[1]+1-p[0],start,end-start+1)) return true;
+            if(p[2] != session) continue;
+            if(SolutionClass.overLap(p[0],p[1]+1-p[0],start,end-start+1)) return true;
         }
         return false;
     }
@@ -131,14 +153,102 @@ class SolutionClass{
 interface ClassSolver{
     public List<SolutionClass> solve(int indexClass, AClass cls, int startSlot, SolutionClass[] x, List<Combination> combinations, boolean checkCombination);
     public List<SolutionClass> solve(AClass cls);
+    public List<SolutionClass> solve(AClass cls, int startSlot);
+
 }
 class ClassSolverLazyCheck implements  ClassSolver{
     AClass cls;
     List<SolutionClass> solutionClass;// solutionClass[i] is a map of assignment c
     int nbClassSegments;
     List<AClassSegment> classSegments;
+    List<List<Integer>> domains;// domains[i] is the list of sorted values of class-segment i
     int[] x_session;// x[i] is the start slot of class segment i
     int[] x_slot;
+    public int startSlot = 1;
+    public int idxClass;
+    public int idxCourse;
+    public BacktrackingMaintainCombinations solver;
+
+    public ClassSolverLazyCheck(int idxClass, int idxCourse, BacktrackingMaintainCombinations backtrackingMaintainCombinations){
+        this.idxClass = idxClass; this.idxCourse = idxCourse;
+        this.solver = backtrackingMaintainCombinations;
+        int i = backtrackingMaintainCombinations.classIndicesOfCourse[idxCourse].get(idxClass);
+        this.cls = backtrackingMaintainCombinations.classes.get(i);
+        classSegments = cls.classSegments;
+        domains = new ArrayList<>();
+        for(int j = 0; j < classSegments.size(); j++){
+            AClassSegment cs = classSegments.get(j);
+            List<Integer> D = new ArrayList<>();
+            if(!solver.SORT_DOMAIN) {
+                for(int s = startSlot; s <= solver.nbSessions*solver.nbSlotPerSession;s++) {
+                    SessionSlot ss = new SessionSlot(s);
+                    if(ss.slot + cs.duration - 1 <= solver.nbSlotPerSession) {
+                        D.add(s);
+                    }
+                }
+            }else {
+                if (idxClass == 0) {
+                    //for(int s = startSlot; s <= Constants.nbSessions*Constants.nbSlotPerSession;s++) {
+                    for (int s = startSlot; s <= solver.nbSessions * solver.nbSlotPerSession; s++) {
+                        SessionSlot ss = new SessionSlot(s);
+                        if (ss.slot + cs.duration - 1 <= solver.nbSlotPerSession) {
+                            D.add(s);
+                        }
+                    }
+                } else {
+                    // try FIRST consecutive-same session with scheduled classes (same course) slots
+                    for (int k = 0; k < idxClass; k++) {
+                        int ik = backtrackingMaintainCombinations.classIndicesOfCourse[idxCourse].get(k);
+                        SolutionClass sc = backtrackingMaintainCombinations.x[ik];
+                        // find appropriate slot right-before or after scheduled class j
+                        for (int[] p : sc.periods) {// p[0] is start, p[1] is end, p[2] is session
+                            int sl = p[1] + 1;
+                            SessionSlot ss = new SessionSlot(p[2], sl);
+                            //log("sl = " + sl + ", ss.slot = " + ss.slot + ", cs.dur = " + cs.duration + ", slotPerSession = " + solver.nbSlotPerSession);
+                            if (ss.slot + cs.duration - 1 <= solver.nbSlotPerSession) {
+                                //    log("ACCEPT sl = " + sl + ", ss.slot = " + ss.slot + ", cs.dur = " + cs.duration + ", slotPerSession = " + solver.nbSlotPerSession);
+                                if (ss.hash() >= startSlot) D.add(ss.hash());
+                            }
+                            sl = p[0] - cs.duration;
+                            if (sl >= 1) {
+                                ss = new SessionSlot(p[2], sl);
+                                if (ss.hash() >= startSlot) D.add(ss.hash());
+                            }
+                        }
+                    }
+                    //
+                    for (int sl = startSlot; sl <= solver.nbSessions * solver.nbSlotPerSession - cs.duration + 1; sl++) {
+                        SessionSlot ss = new SessionSlot(sl);
+                        if (ss.slot + cs.duration - 1 <= solver.nbSlotPerSession) {
+                            boolean ok = true;
+                            for (int k = 0; k < idxClass; k++) {
+                                int ik = backtrackingMaintainCombinations.classIndicesOfCourse[idxCourse].get(k);
+                                SolutionClass sc = backtrackingMaintainCombinations.x[ik];
+                                //SessionSlot ss = new SessionSlot(sl);
+                                if (sc.overlap(ss.slot, cs.duration + ss.slot - 1, ss.session)) {
+                                    ok = false;
+                                    break;
+                                }
+                            }
+                            if (ok) {
+                                //log("ACCEPT " + sl);
+                                if (!D.contains(sl)) D.add(sl);
+                            }
+                        }
+                    }
+                    for (int sl = startSlot; sl <= solver.nbSessions * solver.nbSlotPerSession - cs.duration + 1; sl++) {
+                        SessionSlot ss = new SessionSlot(sl);
+                        if (ss.slot + cs.duration - 1 <= solver.nbSlotPerSession) {
+                            if (!D.contains(sl)) D.add(sl);
+                        }
+                    }
+                }
+            }
+            domains.add(D);
+        }
+        // sort domains
+
+    }
     @Override
     public List<SolutionClass> solve(int indexClass, AClass cls, int startSlot, SolutionClass[] x, List<Combination> combinations, boolean checkCombination) {
         return null;
@@ -156,11 +266,24 @@ class ClassSolverLazyCheck implements  ClassSolver{
         solutionClass.add(sc);
     }
     private boolean check(int i, int ses, int sl){
+        AClassSegment csi = classSegments.get(i);
+        for(int j = 0; j <= i-1; j++){
+            AClassSegment csj = classSegments.get(j);
+            if(ses == x_session[j] && Util.overLap(sl,csi.duration,x_slot[j],csj.duration))
+                return false;
+        }
         return true;
     }
+    public void log(String msg){
+        if(solver.LOGGING && solver.log != null) solver.log.println(msg);
+    }
+
     private void tryClassSegment(int i, int startSlot){
         AClassSegment cs = classSegments.get(i);
-        for(int s = startSlot; s <= Constants.nbSessions*Constants.nbSlotPerSession;s++){
+        //for(int s = startSlot; s <= Constants.nbSessions*Constants.nbSlotPerSession;s++){
+        //solver.log.println("tryClassSegment(" + i + "), domain = " + domains.get(i));
+        log("tryClassSegment(" + i + "), domain = " + domains.get(i));
+        for(int s: domains.get(i)){
             SessionSlot ss = new SessionSlot(s);
             if(ss.slot + cs.duration - 1 <= Constants.nbSlotPerSession){
                 if(check(i,ss.session,ss.slot)){
@@ -168,7 +291,8 @@ class ClassSolverLazyCheck implements  ClassSolver{
                     if(i == classSegments.size()-1){
                         solution();
                     }else{
-                        tryClassSegment(i+1,s + cs.duration);
+                        //tryClassSegment(i+1,s + cs.duration);
+                        tryClassSegment(i+1,startSlot);// startSlot does matter in this case
                     }
                 }
             }
@@ -182,8 +306,15 @@ class ClassSolverLazyCheck implements  ClassSolver{
         classSegments = cls.classSegments;
         x_session = new int[classSegments.size()];
         x_slot = new int[classSegments.size()];
-        tryClassSegment(0,1);
+        //tryClassSegment(0,1);
+        tryClassSegment(0,startSlot);
         return solutionClass;
+    }
+
+    @Override
+    public List<SolutionClass> solve(AClass cls, int startSlot) {
+        this.startSlot = startSlot;
+        return solve(cls);
     }
 }
 class ClassSolverNaive implements ClassSolver{
@@ -285,6 +416,11 @@ class ClassSolverNaive implements ClassSolver{
 
     @Override
     public List<SolutionClass> solve(AClass cls) {
+        return null;
+    }
+
+    @Override
+    public List<SolutionClass> solve(AClass cls, int startSlot) {
         return null;
     }
 }
@@ -419,6 +555,11 @@ class ClassSolverSorted implements ClassSolver{
     public List<SolutionClass> solve(AClass cls) {
         return null;
     }
+
+    @Override
+    public List<SolutionClass> solve(AClass cls, int startSlot) {
+        return null;
+    }
 }
 class Constants{
     public static int nbSessions = 5;
@@ -459,6 +600,14 @@ class Combination{
         solutionClasses = new ArrayList<>();
         solutionClasses.add(sc);
     }
+    public boolean feasible(SolutionClass sc){
+        for (SolutionClass sci : solutionClasses) {
+            //if(sci.toString().equals("IT3020_LT_BT[5]: (5,6,0) (5,6,1) ")
+            //&& sc.toString().equals("MI3052_LT_BT[13]: (4,6,1) ")) System.out.println("SEE " + sci.overlap(sc));
+            if(sci.overlap(sc)) return false;
+        }
+        return true;
+    }
     public boolean valid(){
         for(int i = 0; i < solutionClasses.size(); i++){
             for(int j = i+1; j < solutionClasses.size(); j++){
@@ -475,6 +624,109 @@ class Combination{
         return s;
     }
 }
+class CombinationConstraint{
+    BacktrackingMaintainCombinations solver = null;
+    private List<AClass> classes;
+    List<Integer>[] classIndicesOfCourse;
+    Map<AClass, Integer> mClass2Index;
+    int[] courseOfClass;
+    public PrintWriter log = null;
+    public List<Stack<Combination>> combinations;// combinations[i] is the stack of combinations for courses 0,1,...,i
+    public CombinationConstraint(List<AClass> classes,  List<Integer>[] classIndicesOfCourse, int[] courseOfClass, BacktrackingMaintainCombinations solver){
+        this.solver = solver;
+        this.classes = classes; this.classIndicesOfCourse = classIndicesOfCourse; this.courseOfClass = courseOfClass;
+        combinations = new ArrayList<>();
+        for(int i = 0; i < classIndicesOfCourse.length;i++){
+            combinations.add(new Stack<>());
+        }
+    }
+    public List<Combination> check(SolutionClass sc, int idxClass, int idxCourse){
+        if(solver.LOGGING && log != null){
+            log.println("check(" + sc + ", idxClass " + idxClass + "," + idxCourse + ")");
+        }
+        List<Combination> res = new ArrayList<>();
+        if(idxCourse == 0){
+            Combination com = new Combination(sc); res.add(com);
+            return res;
+        }
+        // explore combinations of classes from courses 0,1,...,idxCourse - 1
+        boolean hasCombination = false;
+        for(Combination com: combinations.get(idxCourse-1)){
+            if(com.feasible(sc)){
+                hasCombination = true;
+                Combination nc = new Combination(com,sc);
+                res.add(nc);
+                //break;
+            }
+        }
+        if(solver.LOGGING && log != null){
+            log.println("check(" + sc + ", idxClass " + idxClass + "," + idxCourse + "), res = " + res.size());
+        }
+        if(!hasCombination) return new ArrayList<>();
+        if(idxClass == classIndicesOfCourse[idxCourse].size()-1){
+            // current class is the final class of list of classes of current course
+            // check if combinations cover all classes of courses 0,1,...,idxCourse
+            Set<Integer> ids = new HashSet<>();
+            for(Combination com: combinations.get(idxCourse)){
+                for(SolutionClass sci: com.solutionClasses){
+                    ids.add(sci.cls.id);
+                }
+            }
+            if(solver.LOGGING && log != null){
+                log.println("check(" + sc + ", idxClass " + idxClass + "," + idxCourse + "), FIRST ids = " + ids);
+            }
+            // collect classes covered by new arriving combinations related to current class
+            for(Combination com: res){
+                for(SolutionClass sci: com.solutionClasses){
+                    ids.add(sci.cls.id);
+                }
+            }
+            if(solver.LOGGING && log != null){
+                log.println("check(" + sc + ", idxClass " + idxClass + "," + idxCourse + "), SECOND ids = " + ids);
+            }
+            //for(Combination com: combinations.get(idxCourse-1)){
+            //    if(com.feasible(sc)){
+            //        ids.add(sc.cls.id);
+            //        for(SolutionClass sci: com.solutionClasses)
+            //            ids.add(sci.cls.id);
+            //    }
+            //}
+            for(int j = 0; j <= idxCourse; j++){
+                for(int i: classIndicesOfCourse[j]){
+                    if(solver.LOGGING && log != null){
+                        log.println("check(" + sc + ", idxClass " + idxClass + "," + idxCourse + "), j course = " + j + ", i = " + i + ": CHECK class " + classes.get(i).id);
+                    }
+                    if(!ids.contains(classes.get(i).id))
+                        return new ArrayList<>();// class i is not covered by any combination
+                }
+            }
+        }
+        return res;
+    }
+    public void propagate(SolutionClass sc, int idxClass, int idxCourse, List<Combination> newComs){
+        if(solver.LOGGING && log != null) log.println("propagate(" + sc + ")");
+        for(Combination c: newComs){
+            combinations.get(idxCourse).push(c);
+            if(solver.LOGGING && log != null) log.println("propagate(" + sc + "), combinations[" + idxCourse + "].sz = " + combinations.get(idxCourse).size());
+        }
+    }
+    public void backtrack(SolutionClass sc, int idxClass, int idxCourse, List<Combination> newComs){
+        for(int i = 1; i <= newComs.size(); i++){
+            combinations.get(idxCourse).pop();
+        }
+    }
+    public void print(int idxCourse, PrintWriter log){
+        for(int i = 0; i <= idxCourse; i++){
+            log.println("CombinationConstraint, for course[" + i + "]: ");
+            for(int j = 0; j < combinations.get(i).size(); j++){
+                Combination com = combinations.get(i).get(j);
+                log.print(com + "\t");
+            }
+            log.println();
+        }
+    }
+}
+
 class CourseSolver{
     //public static final String SOLVE_CLASS_WITH_SORTED_DOMAIN = "SOLVE_CLASS_WITH_SORTED_DOMAIN";
     //public static final String SOLVE_CLASS_WITH_NON_SORTED_DOMAIN = "SOLVE_CLASS_WITH_NON_SORTED_DOMAIN";
@@ -534,6 +786,7 @@ class CourseSolver{
         //}
         x = new SolutionClass[classes.size()];
         solutionCourse = new ArrayList();
+        nbTries = 0;
         tryClass(0,1);
         return solutionCourse;
     }
@@ -570,6 +823,7 @@ public class BacktrackingOneGroup {
     int bestObj;
     int obj;
     int nbSolutions;
+    int nbFailures;
     int maxCombinationLength = 0;
     int maxSolutions4Course = 0;
     int nbTries = 0;
@@ -629,6 +883,17 @@ public class BacktrackingOneGroup {
             courses = new ArrayList<>();
             for(String course: mCourse2Classes.keySet()){
                 courses.add(course);
+                mCourse2Classes.get(course).sort(new Comparator<AClass>() {
+                    @Override
+                    public int compare(AClass o1, AClass o2) {
+                        return o1.classSegments.size() - o2.classSegments.size();
+                    }
+                });
+                System.out.print("Classes of course [" + course + "]: ");
+                for(AClass cls: mCourse2Classes.get(course)){
+                    System.out.print(cls + "\t");
+                }
+                System.out.println();
             }
             System.out.println("data " + filename);
             System.out.println("#Courses = " + courses.size());
@@ -774,6 +1039,7 @@ public class BacktrackingOneGroup {
         return res;
     }
     private void tryCourse(int i,List<Combination> combinations){
+        //if(LOGGING) System.out.println("tryCourse(" + i + "/" + courses.size() + ")");
         if(combinations.size() >maxCombinationLength) maxCombinationLength = combinations.size();
         //if(i == 1){
         //    System.out.println("tryCourse(" + i + "), level 1 -> combinations = ");
@@ -791,6 +1057,7 @@ public class BacktrackingOneGroup {
         CS.strategy = STRATEGY;
 
         List<Map<AClass, SolutionClass>> solutionCourse = CS.solve(crs,CLS,combinations,true);
+        nbTries += CS.nbTries;
         if(maxSolutions4Course < solutionCourse.size()) maxSolutions4Course = solutionCourse.size();
         for(Map<AClass,SolutionClass> m: solutionCourse){
             List<Combination> childCombinations = checkFeasibleCombination(i,m,combinations);
@@ -909,7 +1176,7 @@ public class BacktrackingOneGroup {
             }
         }
         nbSolutions += 1;
-        //System.out.println("FOUND solutions " + combinations.size());
+        //if(LOGGING) System.out.println("FOUND solutions " + combinations.size());
         for(Combination com: combinations){
             //String info = "";
             //for(SolutionClass sc: com.solutionClasses) info += sc + "; ";
@@ -922,14 +1189,14 @@ public class BacktrackingOneGroup {
         //    MaxClique maxCliqueSolver = new MaxClique();
         //    int mc = maxCliqueSolver.computeMaxClique(x[i]);
         //    f += mc;
-            //String info = "";
-            //for(AClass cls: x[i].keySet()){
-            //    SolutionClass sc = x[i].get(cls);
-            //    info += sc + "; ";
-            //}
-            //System.out.println("Solution " + info + " mc = " + mc + " f = " + f);
+        //String info = "";
+        //for(AClass cls: x[i].keySet()){
+        //    SolutionClass sc = x[i].get(cls);
+        //    info += sc + "; ";
         //}
-        if(LOGGING) System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj + " maxCombinationLength = " + maxCombinationLength);
+        //System.out.println("Solution " + info + " mc = " + mc + " f = " + f);
+        //}
+        //if(LOGGING) System.out.println("nbSolutions = " + nbSolutions + " obj = " + obj + " bestObj = " + bestObj + " maxCombinationLength = " + maxCombinationLength);
         if(obj < bestObj){
             bestObj = obj;
             best_x= new Map[x.length];
@@ -994,21 +1261,25 @@ public class BacktrackingOneGroup {
         }
     }
     public void statistic(){
-        System.out.println("nbTries = " + nbTries);
         System.out.println("maxCombinationLength = " + maxCombinationLength);
         System.out.println("maxSolution4Course = " + maxSolutions4Course);
+        System.out.println("#Tries = " + nbTries);
+        System.out.println("#Solutions = " + nbSolutions);
+        System.out.println("#Failures = " + nbFailures);
         double t = System.currentTimeMillis() - t0;
         t = t*0.001;
         System.out.println("BestObj = " + bestObj + ", Time = " + t);
     }
     public static void BranchAndBoundSolveClassSortedDomain(String filename, int timeLimit){
         BacktrackingOneGroup solver = new BacktrackingOneGroup();
-        solver.BRANCH_AND_BOUND = true;
+        solver.BRANCH_AND_BOUND = false;//true;
+        //solver.BRANCH_AND_BOUND = true;
+        solver.LOGGING = true;
         solver.STRATEGY = BacktrackingOneGroup.SOLVE_CLASS_WITH_SORTED_DOMAIN;
         //solver.postCheck = true;
         solver.inputFile(filename);
         //solver.input();
-        solver.solveNew(timeLimit, false);
+        solver.solveNew(timeLimit, true);
         solver.printBestSolution();
         solver.writeSolutionFormat();
         solver.statistic();
@@ -1027,13 +1298,13 @@ public class BacktrackingOneGroup {
     }
     public static void pureExhaustiveSearch(String filename, int timeLimit){
         BacktrackingOneGroup solver = new BacktrackingOneGroup();
-        solver.BRANCH_AND_BOUND = false;
+        //solver.BRANCH_AND_BOUND = false;
         solver.STRATEGY = BacktrackingOneGroup.SOLVE_CLASS_WITH_NON_SORTED_DOMAIN;
         //solver.postCheck = true;
         solver.inputFile(filename);
         //solver.input();
 
-        solver.solveNew(timeLimit, false);
+        solver.solveNew(timeLimit, true);
         solver.printBestSolution();
         solver.writeSolutionFormat();
         solver.statistic();
@@ -1045,17 +1316,17 @@ public class BacktrackingOneGroup {
         String filename = "data/it1-2nd.txt";
         //String filename = "data/em4-2nd-s.txt";
         String[] FN = {
-            "em4-2nd-s",
-            "fl2-2nd-s",
-            "fl2-3th-c",
-            "fl2-4th-s",
-            "he1-3th-s",
-            "it1-2nd",
-            "it2-2nd",
-            "it2-3th-c",
-            "it2-5th-c",
-            "me1-2nd",
-            "mi1-3th",
+                "em4-2nd-s",
+                "fl2-2nd-s",
+                "fl2-3th-c",
+                "fl2-4th-s",
+                "he1-3th-s",
+                "it1-2nd",
+                "it2-2nd",
+                "it2-3th-c",
+                "it2-5th-c",
+                "me1-2nd",
+                "mi1-3th",
                 "mi1-5th-s",
                 "ph1-3th-s",
                 "ph2-3th-s",
@@ -1064,14 +1335,16 @@ public class BacktrackingOneGroup {
                 "ch1-3th-s",
                 "et1-3th-s",
         };
-        String fn = "it2-3th-c-ext1";
+        //String fn = "fl2-4th-s";
+        String fn = "fl2-3th-c";
+
         //for(String fn: FN) {
-            filename = "data/" + fn + ".txt";
-            BranchAndBoundSolveClassSortedDomain(filename, timeLimit);
-            System.out.println("------------------");
-            //BranchAndBoundSolveClassNonSortedDomain(filename, timeLimit);
-            //System.out.println("------------------");
-            //pureExhaustiveSearch(filename, timeLimit);
-       // }
+        filename = "data/" + fn + ".txt";
+        BranchAndBoundSolveClassSortedDomain(filename, timeLimit);
+        System.out.println("------------------");
+        //BranchAndBoundSolveClassNonSortedDomain(filename, timeLimit);
+        //System.out.println("------------------");
+        //pureExhaustiveSearch(filename, timeLimit);
+        // }
     }
 }
