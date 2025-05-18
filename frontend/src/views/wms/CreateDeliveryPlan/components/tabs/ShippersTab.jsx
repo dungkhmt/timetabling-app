@@ -24,12 +24,12 @@ import { Search, Refresh, Person } from "@mui/icons-material";
 import { useDeliveryPlanForm } from "../../context/DeliveryPlanFormContext";
 import { useWms2Data } from "services/useWms2Data";
 
-// Shipper status color mappings
 const SHIPPER_STATUSES = {
-  "AVAILABLE": { label: "Sẵn sàng", color: "success" },
-  "ASSIGNED": { label: "Đã phân công", color: "primary" },
-  "BUSY": { label: "Bận", color: "warning" },
-  "UNAVAILABLE": { label: "Không khả dụng", color: "error" }
+  DRIVING: { label: "Đang lái", color: "success" },
+  ASSIGNED: { label: "Đã phân công", color: "primary" },
+  IN_TRIP: { label: "Đang giao hàng", color: "warning" },
+  ACTIVE: { label: "Sẵn sàng", color: "success" },
+  INACTIVE: { label: "Không khả dụng", color: "error" }
 };
 
 const ShippersTab = () => {
@@ -49,7 +49,7 @@ const ShippersTab = () => {
     try {
       const filters = {
         keyword: search,
-        status: "ACTIVE" // Only show available shippers
+        statusId: ["ACTIVE"] // Only show available shippers
       };
       
       const response = await getShippers(pagination.page, pagination.size, filters);
@@ -226,11 +226,10 @@ const ShippersTab = () => {
                     />
                   </TableCell>
                   <TableCell></TableCell>
-                  <TableCell>Mã</TableCell>
-                  <TableCell>Tên</TableCell>
+                  <TableCell>Tên đăng nhập</TableCell>
+                  <TableCell>Họ Tên</TableCell>
                   <TableCell align="center">Số điện thoại</TableCell>
                   <TableCell align="center">Trạng thái</TableCell>
-                  <TableCell align="center">Đơn đang giao</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -269,9 +268,8 @@ const ShippersTab = () => {
                       </TableCell>
                       <TableCell>{shipper.userLoginId}</TableCell>
                       <TableCell>{shipper.fullName || shipper.username || '-'}</TableCell>
-                      <TableCell align="center">{shipper.phoneNumber || '-'}</TableCell>
+                      <TableCell align="center">{shipper.phone || '-'}</TableCell>
                       <TableCell align="center">{getStatusChip(shipper.statusId)}</TableCell>
-                      <TableCell align="center">{shipper.activeDeliveryCount || 0}</TableCell>
                     </TableRow>
                   ))
                 )}

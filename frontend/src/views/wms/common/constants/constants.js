@@ -263,3 +263,11 @@ export const SHIPMENT_STATUSES = [
   { id: "CANCELLED", name: "Đã hủy" },
   { id: "IMPORTED", name: "Đã nhập kho" },
 ];
+
+export const SHIPPER_STATUSES = [
+  { id: "DRIVING", name: "Đang lái xe" },
+  { id: "ASSIGNED", name: "Đã phân công" },
+  { id: "IN_TRIP", name: "Đang trong chuyến" },
+  { id: "ACTIVE", name: "Hoạt động" },
+  { id: "INACTIVE", name: "Không hoạt động" }
+];

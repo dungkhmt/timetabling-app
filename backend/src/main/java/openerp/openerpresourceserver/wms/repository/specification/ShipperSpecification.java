@@ -23,14 +23,14 @@ public class ShipperSpecification implements Specification<Shipper> {
         List<Predicate> predicates = new ArrayList<>();
 
         String keyword = filter.getKeyword();
-        String statusId = filter.getStatusId();
+        List<String> statusIds = filter.getStatusId();
 
         if (keyword != null && !keyword.isEmpty()) {
             predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
         }
 
-        if (statusId != null && !statusId.isEmpty()) {
-            predicates.add(criteriaBuilder.equal(root.get("statusId"), statusId));
+        if (statusIds != null && !statusIds.isEmpty()) {
+            predicates.add(root.get("statusId").in(statusIds));
         }
 
 
