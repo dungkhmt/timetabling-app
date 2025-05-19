@@ -9,7 +9,7 @@ import {
   TableRow,
   Typography,
   Tooltip,
-  Popover,
+  Dialog,
   Card,
   CardContent,
   Divider,
@@ -17,7 +17,10 @@ import {
   InputAdornment,
   IconButton,
   Autocomplete,
-  Paper
+  Paper,
+  Button,
+  CircularProgress,
+  Backdrop,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
@@ -29,15 +32,19 @@ import {
   Schedule, 
   CalendarMonth, 
   Search, 
-  Clear 
+  Clear,
+  Close,
+  ExpandMore
 } from '@mui/icons-material';
 
+// Styled components
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  height: '100%',
+  height: 'calc(100vh - 200px)', // Set a fixed height based on viewport
+  maxHeight: '100%',
   overflow: 'auto',
   '&::-webkit-scrollbar': {
-    width: '8px',
-    height: '8px',
+    width: '10px',
+    height: '10px',
   },
   '&::-webkit-scrollbar-track': {
     backgroundColor: theme.palette.grey[200],
@@ -45,6 +52,11 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   '&::-webkit-scrollbar-thumb': {
     backgroundColor: theme.palette.grey[500],
     borderRadius: '4px',
+  },
+  // Ensure the horizontal scrollbar appears correctly
+  '& table': {
+    width: 'auto',
+    minWidth: '100%',
   }
 }));
 
@@ -56,7 +68,7 @@ const FixedHeaderCell = styled(TableCell)(({ theme }) => ({
   padding: theme.spacing(0.75),
   fontWeight: 'bold',
   whiteSpace: 'nowrap',
-  minWidth: '140px',
+  minWidth: '60px',
   borderBottom: `1px solid ${theme.palette.divider}`,
   borderRight: `1px solid ${theme.palette.divider}`,
 }));
@@ -69,7 +81,8 @@ const FixedColumnCell = styled(TableCell)(({ theme }) => ({
   padding: theme.spacing(0.75),
   fontWeight: 'bold',
   whiteSpace: 'nowrap',
-  minWidth: '80px',
+  minWidth: '60px',
+  maxWidth: '120px',
   borderRight: `1px solid ${theme.palette.divider}`,
 }));
 
@@ -86,8 +99,9 @@ const CornerCell = styled(TableCell)(({ theme }) => ({
 }));
 
 const AssignmentCell = styled(TableCell)(({ theme, hasassignment }) => ({
-  padding: theme.spacing(0.5),
-  minWidth: '140px',
+  padding: theme.spacing(0.1),
+  minWidth: '60px',
+  height: '32px',
   cursor: hasassignment === 'true' ? 'pointer' : 'default',
   backgroundColor: hasassignment === 'true' ? 'rgba(25, 118, 210, 0.15)' : 'transparent',
   color: hasassignment === 'true' ? theme.palette.primary.dark : theme.palette.text.primary,
@@ -95,25 +109,175 @@ const AssignmentCell = styled(TableCell)(({ theme, hasassignment }) => ({
     backgroundColor: hasassignment === 'true' ? 'rgba(25, 118, 210, 0.25)' : 'rgba(0, 0, 0, 0.04)',
   },
   borderRight: `1px solid ${theme.palette.divider}`,
-  transition: 'background-color 0.2s ease',
+  transition: 'background-color 0.1s ease', // Faster transition
 }));
 
+// Precompute room and slot lookups for faster access
+const createRoomLookup = (rooms) => {
+  const lookup = {};
+  rooms.forEach(room => {
+    lookup[room.id] = room;
+  });
+  return lookup;
+};
+
+const createSlotLookup = (slots) => {
+  const lookup = {};
+  slots.forEach(slot => {
+    lookup[slot.slotId] = slot;
+  });
+  return lookup;
+};
+
+// Optimized dialog component
+const AssignmentDetailDialog = React.memo(({ open, popoverContent, roomsLookup, slotsLookup, onClose }) => {
+  if (!popoverContent) return null;
+  
+  // Get values from lookup tables instead of find operations
+  const room = roomsLookup[popoverContent.roomId] || {};
+  const slot = slotsLookup[popoverContent.sessionId] || {};
+  
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      TransitionProps={{
+        timeout: 150, // Even faster transition
+        mountOnEnter: true,
+        unmountOnExit: true,
+      }}
+      // Disable backdrop transitions for better performance
+      BackdropProps={{
+        transitionDuration: 0,
+      }}
+      // Disable focus trap to improve performance
+      disableAutoFocus
+      disableEnforceFocus
+      disableRestoreFocus
+    >
+      <Card sx={{ width: '100%', maxWidth: 450 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 0.5 }}>
+          <IconButton size="small" onClick={onClose}>
+            <Close fontSize="small" />
+          </IconButton>
+        </Box>
+        <CardContent>
+          <Box sx={{ mb: 1.5, p: 1, backgroundColor: 'rgba(25, 118, 210, 0.08)', borderRadius: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Mã lớp thi: <span style={{ color: '#1976D2' }}>{popoverContent.examClassId}</span>
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Mã lớp học: <span style={{ color: '#1976D2' }}>{popoverContent.classId}</span>
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" component="div" fontWeight={600}>
+            {popoverContent.courseId} - {popoverContent.courseName}
+          </Typography>
+          
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            {popoverContent.description}
+          </Typography>
+      
+          <Divider sx={{ my: 1.5 }} />
+
+          <Box sx={{ display: 'flex', mb: 1 }}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <Event sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                {popoverContent.date}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <Schedule sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                {slot.slotName || ''}
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ display: 'flex', mb: 1 }}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <CalendarMonth sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                Kỳ: {popoverContent.period}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <Person sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                {popoverContent.numberOfStudents} SV
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ display: 'flex', mb: 1 }}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <Group sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                Mã: {popoverContent.managementCode}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <LocationOn sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                {room.name || ''}
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ mt: 1 }}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <School sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
+              <Typography variant="body2">
+                {popoverContent.school}
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button size="small" onClick={onClose} variant="outlined">
+              Đóng
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Dialog>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  if (prevProps.open !== nextProps.open) return false;
+  if (!prevProps.popoverContent && !nextProps.popoverContent) return true;
+  if (!prevProps.popoverContent || !nextProps.popoverContent) return false;
+  return prevProps.popoverContent.id === nextProps.popoverContent.id;
+});
+
 const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [popoverContent, setPopoverContent] = useState(null);
   const tableRef = useRef(null);
   const [searchValue, setSearchValue] = useState('');
   const [activeSearchValue, setActiveSearchValue] = useState('');
-  const [filteredRooms, setFilteredRooms] = useState([]);
-  const [matchingRoomIds, setMatchingRoomIds] = useState(new Set());
   const [matchingAssignments, setMatchingAssignments] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [showAllRooms, setShowAllRooms] = useState(false);
+
+  // Create lookup tables for faster access
+  const roomsLookup = useMemo(() => createRoomLookup(rooms), [rooms]);
+  const slotsLookup = useMemo(() => createSlotLookup(slots), [slots]);
+
   // Create a lookup map for efficient assignment finding
   const assignmentMap = useMemo(() => {
     const map = {};
-    assignments.forEach(assignment => {
-      const key = `${assignment.roomId}_${assignment.date}_${assignment.sessionId}`;
-      map[key] = assignment;
-    });
+    if (assignments && assignments.length > 0) {
+      assignments.forEach(assignment => {
+        const key = `${assignment.roomId}_${assignment.date}_${assignment.sessionId}`;
+        map[key] = assignment;
+      });
+    }
     return map;
   }, [assignments]);
 
@@ -135,75 +299,57 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
 
   // Sort rooms for a more predictable display
   const sortedRooms = useMemo(() => {
+    if (!rooms || rooms.length === 0) return [];
     return [...rooms].sort((a, b) => a.name.localeCompare(b.name));
   }, [rooms]);
 
+  // Initial loading
   useEffect(() => {
-    setFilteredRooms(sortedRooms);
-  }, [sortedRooms]);
+    // Show loading for at least 3 seconds (reduced from 5)
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
 
-  const handleCellClick = (event, room, slot) => {
-    const key = `${room.id}_${slot.date}_${slot.slotId}`;
-    const assignment = assignmentMap[key];
-    
-    if (assignment && (!activeSearchValue || matchingAssignments.has(key))) {
-      setPopoverContent(assignment);
-      setAnchorEl(event.currentTarget);
-    }
-  };
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleMouseLeave = () => {
-    setAnchorEl(null);
-  };
+  // Cell click handler - optimized dialog open
+  const handleCellClick = useCallback((assignment) => {
+    // Immediate state updates
+    setPopoverContent(assignment);
+    setDialogOpen(true);
+  }, []);
 
-  const handlePopoverClose = () => {
-    setAnchorEl(null);
-  };
+  const handleDialogClose = useCallback(() => {
+    // Immediate close
+    setDialogOpen(false);
+    // Delay clearing content to prevent UI flicker
+    const timer = setTimeout(() => {
+      setPopoverContent(null);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Search handling
-  const handleSearchChange = (event, newValue) => {
+  const handleSearchChange = useCallback((event, newValue) => {
     setSearchValue(newValue);
-  };
+  }, []);
 
-  const handleSearchInputChange = (event, newInputValue) => {
+  const handleSearchInputChange = useCallback((event, newInputValue) => {
     // Only for typing behavior, not selection
-  };
+  }, []);
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = useCallback(() => {
     setActiveSearchValue(searchValue || '');
-    filterRoomsBySearch(searchValue);
-  };
+    filterAssignmentsBySearch(searchValue);
+  }, [searchValue]);
 
-  const isAssignmentMatch = useCallback((assignment, searchText) => {
-    if (!searchText) return true;
-    
-    const lowerSearchText = searchText.toLowerCase();
-    const isExactDescription = uniqueDescriptions.some(
-      desc => desc.toLowerCase() === lowerSearchText
-    );
-    
-    if (isExactDescription) {
-      return assignment.description && 
-             assignment.description.toLowerCase() === lowerSearchText;
-    }
-    
-    return (
-      (assignment.description && assignment.description.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.courseName && assignment.courseName.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.courseId && assignment.courseId.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.classId && assignment.classId.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.examClassId && assignment.examClassId.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.school && assignment.school.toLowerCase().includes(lowerSearchText)) ||
-      (assignment.managementCode && assignment.managementCode.toLowerCase().includes(lowerSearchText))
-    );
-  }, [uniqueDescriptions]);
-
- /// Update the filterRoomsBySearch function to track matching assignments by their keys
-  const filterRoomsBySearch = useCallback((searchText) => {
+  // Optimized filter function
+  const filterAssignmentsBySearch = useCallback((searchText) => {
     if (!searchText) {
       // When there's no search text, show all assignments
       setMatchingAssignments(new Set());
-      setFilteredRooms(sortedRooms);
+      setActiveSearchValue('');
       return;
     }
     
@@ -215,13 +361,13 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
       desc => desc.toLowerCase() === lowerSearchText
     );
     
-    // Find assignments that match the search criteria
-    sortedRooms.forEach(room => {
-      slots.forEach(slot => {
+    // Use for...of loop for better performance with early returns
+    for (const room of sortedRooms) {
+      for (const slot of slots) {
         const key = `${room.id}_${slot.date}_${slot.slotId}`;
         const assignment = assignmentMap[key];
         
-        if (!assignment) return;
+        if (!assignment) continue;
         
         let isMatch = false;
         if (isExactDescription) {
@@ -242,47 +388,23 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
         if (isMatch) {
           matches.add(key);
         }
-      });
-    });
+      }
+    }
     
     setMatchingAssignments(matches);
-    setFilteredRooms(sortedRooms); // Keep all rooms visible
   }, [sortedRooms, slots, assignmentMap, uniqueDescriptions]);
 
   // Update the clear function
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchValue('');
     setActiveSearchValue('');
     setMatchingAssignments(new Set());
-    setFilteredRooms(sortedRooms);
-  };
-
-  // Autocomplete options filter
-  const filterOptions = (options, { inputValue }) => {
-    if (!inputValue) return [];
-    
-    const lowerInput = inputValue.toLowerCase();
-    
-    // Find exact matches at the beginning
-    const startsWithMatches = options.filter(option => 
-      option.toLowerCase().startsWith(lowerInput)
-    );
-    
-    // Find contains matches
-    const containsMatches = options.filter(option => 
-      option.toLowerCase().includes(lowerInput) && 
-      !startsWithMatches.includes(option)
-    );
-    
-    // Combine results
-    return [...startsWithMatches, ...containsMatches].slice(0, 10);
-  };
-
-  const open = Boolean(anchorEl);
-  const popoverId = open ? 'assignment-popover' : undefined;
+  }, []);
 
   // Group slots by week for better organization
   const slotsByWeek = useMemo(() => {
+    if (!slots || slots.length === 0) return {};
+    
     const groupedSlots = {};
     slots.forEach(slot => {
       if (!groupedSlots[slot.week]) {
@@ -293,8 +415,40 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
     return groupedSlots;
   }, [slots]);
 
+  // Toggle to show all rooms - no delay
+  const handleShowAllRooms = useCallback(() => {
+    setShowAllRooms(true);
+  }, []);
+
+  // Displayed rooms - either all or limited
+  const displayedRooms = useMemo(() => {
+    if (showAllRooms) {
+      return sortedRooms;
+    } else {
+      // Show first 100 rooms
+      return sortedRooms.slice(0, 100);
+    }
+  }, [sortedRooms, showAllRooms]);
+
   return (
     <Box sx={{ height: '100%', position: 'relative' }}>
+      {/* Loading indicator */}
+      <Backdrop 
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center' 
+        }}>
+          <CircularProgress color="inherit" size={60} thickness={5} />
+          <Typography variant="h6" sx={{ mt: 2, color: 'white' }}>
+            Đang tải dữ liệu ({assignments?.length || 0} lịch thi)
+          </Typography>
+        </Box>
+      </Backdrop>
+
       {/* Search Filter */}
       <Box sx={{ 
         p: 1.5, 
@@ -313,7 +467,25 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
             onChange={handleSearchChange}
             onInputChange={handleSearchInputChange}
             options={uniqueDescriptions}
-            filterOptions={filterOptions}
+            filterOptions={(options, { inputValue }) => {
+              if (!inputValue) return [];
+              
+              const lowerInput = inputValue.toLowerCase();
+              
+              // Find exact matches at the beginning
+              const startsWithMatches = options.filter(option => 
+                option.toLowerCase().startsWith(lowerInput)
+              ).slice(0, 5); // Limit results for better performance
+              
+              // Find contains matches
+              const containsMatches = options.filter(option => 
+                option.toLowerCase().includes(lowerInput) && 
+                !startsWithMatches.includes(option)
+              ).slice(0, 5); // Limit results for better performance
+              
+              // Combine results
+              return [...startsWithMatches, ...containsMatches];
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -362,17 +534,29 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
           />
         </Box>
         
-        <Typography variant="body2" color="text.secondary">
-          {filteredRooms.length}/{sortedRooms.length} phòng
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {displayedRooms.length}/{sortedRooms.length} phòng
+          </Typography>
+          {!showAllRooms && displayedRooms.length < sortedRooms.length && (
+            <Button 
+              variant="outlined" 
+              size="small"
+              onClick={handleShowAllRooms}
+              disabled={loading}
+            >
+              Mở rộng tất cả
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Timetable Grid */}
       <StyledTableContainer ref={tableRef}>
-        <Table stickyHeader>
+        <Table stickyHeader sx={{ tableLayout: 'fixed' }}>
           <TableHead>
             <TableRow>
-              <CornerCell></CornerCell>
+              <CornerCell>Phòng</CornerCell>
               {Object.entries(slotsByWeek).map(([week, weekSlots]) => (
                 <React.Fragment key={`week-${week}`}>
                   <FixedHeaderCell 
@@ -406,17 +590,13 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
               ))}
             </TableRow>
           </TableHead>
-
           <TableBody>
-            {filteredRooms.map((room) => (
+            {displayedRooms.map((room) => (
               <TableRow key={room.id} hover>
                 <FixedColumnCell>
                   <Tooltip title={`Số chỗ ngồi: ${room.numberSeat}`} placement="right">
                     <Box>
                       <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{room.name}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {room.numberSeat} chỗ ngồi
-                      </Typography>
                     </Box>
                   </Tooltip>
                 </FixedColumnCell>
@@ -429,30 +609,23 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
                   const isVisible = !activeSearchValue || 
                                     (assignment && matchingAssignments.has(key));
                   
+                  // Optimization: Only render assignment content if it exists and is visible
+                  const hasVisibleAssignment = assignment && isVisible;
+                  
                   return (
                     <AssignmentCell 
                       key={`${room.id}-${slot.date}-${slot.slotId}`}
-                      onMouseEnter={(e) => handleCellClick(e, room, slot)}
-                      onMouseLeave={handleMouseLeave}
-                      hasassignment={(assignment && isVisible) ? 'true' : 'false'}
+                      onClick={hasVisibleAssignment ? () => handleCellClick(assignment) : undefined}
+                      hasassignment={hasVisibleAssignment ? 'true' : 'false'}
                     >
-                      {(assignment && isVisible) && (
+                      {hasVisibleAssignment && (
                         <Box sx={{ 
                           p: 0.5, 
                           borderRadius: 1,
                           border: '1px solid rgba(25, 118, 210, 0.3)'
                         }}>
                           <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976D2' }}>
-                            Mã LT: {assignment.examClassId}
-                          </Typography>
-                          <Typography variant="caption" sx={{ 
-                            color: 'text.primary', 
-                            fontWeight: 600,
-                            backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                            px: 0.5,
-                            borderRadius: 1
-                          }}>
-                            Mã LH: {assignment.classId}
+                            {assignment.examClassId}
                           </Typography>
                         </Box>
                       )}
@@ -463,107 +636,33 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
             ))}
           </TableBody>
         </Table>
+        
+        {/* Load more button */}
+        {!showAllRooms && displayedRooms.length < sortedRooms.length && (
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={handleShowAllRooms}
+              startIcon={<ExpandMore />}
+              disabled={loading}
+            >
+              {loading ? 'Đang tải...' : `Hiển thị tất cả phòng (${sortedRooms.length})`}
+            </Button>
+          </Box>
+        )}
       </StyledTableContainer>
 
-      <Popover
-        id={popoverId}
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handlePopoverClose}
-        anchorOrigin={{
-          vertical: 'center',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'center',
-          horizontal: 'left',
-        }}
-        disableRestoreFocus
-        sx={{ pointerEvents: 'none' }}
-      >
-        {popoverContent && (
-          <Card sx={{ width: 350, boxShadow: 3 }}>
-            <CardContent>
-              <Box sx={{ mb: 1.5, p: 1, backgroundColor: 'rgba(25, 118, 210, 0.08)', borderRadius: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    Mã lớp thi: <span style={{ color: '#1976D2' }}>{popoverContent.examClassId}</span>
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    Mã lớp học: <span style={{ color: '#1976D2' }}>{popoverContent.classId}</span>
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Typography variant="body1" component="div" fontWeight={600}>
-                {popoverContent.courseId} - {popoverContent.courseName}
-              </Typography>
-              
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                {popoverContent.description}
-              </Typography>
-          
-              <Divider sx={{ my: 1.5 }} />
-
-              <Box sx={{ display: 'flex', mb: 1 }}>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <Event sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    {popoverContent.date}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <Schedule sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    {slots.find(s => s.slotId === popoverContent.sessionId)?.slotName}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ display: 'flex', mb: 1 }}>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <CalendarMonth sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    Kỳ: {popoverContent.period}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <Person sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    {popoverContent.numberOfStudents} SV
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ display: 'flex', mb: 1 }}>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <Group sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    Mã: {popoverContent.managementCode}
-                  </Typography>
-                </Box>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <LocationOn sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    {rooms.find(r => r.id === popoverContent.roomId)?.name}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ mt: 1 }}>
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                  <School sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
-                  <Typography variant="body2">
-                    {popoverContent.school}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
-      </Popover>
+      {/* Assignment Detail Dialog - using optimized version */}
+      <AssignmentDetailDialog 
+        open={dialogOpen}
+        popoverContent={popoverContent}
+        roomsLookup={roomsLookup}
+        slotsLookup={slotsLookup}
+        onClose={handleDialogClose}
+      />
     </Box>
   );
 };
 
-export default RoomBasedAssignmentView;
+export default React.memo(RoomBasedAssignmentView);

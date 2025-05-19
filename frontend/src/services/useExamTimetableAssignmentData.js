@@ -2,6 +2,7 @@ import { useQuery, useMutation} from 'react-query';
 import { toast } from 'react-toastify';
 import { examTimetableAssignmentService } from "repositories/examTimetableAssignmentRepository ";
 import { queryClient } from 'queryClient';
+import { time } from 'echarts'
 
 export const useExamTimetableAssignmentData = (examTimetableId = null) => {
   const { data: examTimetableAssignments, isLoading, error } = useQuery(
@@ -83,6 +84,19 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     }
   });
 
+  const checkFullExamTimetableAssignmentConflictMutation = useMutation(
+    examTimetableAssignmentService.checkFullExamTimetableAssignmentConflict,
+    {
+      onSuccess: (response) => {
+        // queryClient.invalidateQueries('examTimetableAssignments');
+        // toast.success('Cập nhật lịch thi thành công!');
+      },
+      onError: (error) => {
+        // toast.error(error.response?.data || 'Có lỗi xảy ra khi cập nhật lịch thi');
+      }
+    }
+  );
+
   return {
     examTimetableAssignments: examTimetableAssignments?.data || [],
     isLoading,
@@ -97,5 +111,6 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
     exportTimetable: exportTimetableMutation.mutateAsync,
     autoAssign: autoAssignMutation.mutateAsync,
     unassignAssignments: unassignAssignmentMutation.mutateAsync,
+    checkConflictForFullExamTimetableAssignment: checkFullExamTimetableAssignmentConflictMutation.mutateAsync,
   };
 };

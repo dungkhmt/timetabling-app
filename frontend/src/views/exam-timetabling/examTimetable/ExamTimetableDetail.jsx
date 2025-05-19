@@ -20,8 +20,9 @@ import {
   School,
   Error,
   FileDownload,
-  AutoFixHigh, // Added for auto-assign icon
-  InsertChart
+  AutoFixHigh, 
+  InsertChart,
+  PublishedWithChanges
 } from '@mui/icons-material';
 import ClassesTable from './components/ClassAssignTable';
 import { format } from 'date-fns';
@@ -29,7 +30,8 @@ import DeleteConfirmModal from './components/DeleteExamTimetableModal';
 import UpdateTimetableModal from './components/UpdateTimeTableModal';
 import ConflictDialog from './components/ConflictSaveDialog';
 import InvalidAssignmentDialog from './components/InvalidAssignmentDialog';
-import AutoAssignConfirmDialog from './components/AutoAssignConfirmDialog'; // Added import
+import AutoAssignConfirmDialog from './components/AutoAssignConfirmDialog'; 
+import ConflictCheckDialog from './components/ConflictCheckDialog'; 
 import { validateAssignmentChanges } from './utils/AssignmentValidation';
 import { useExamTimetableData } from 'services/useExamTimetableData';
 import { useExamRoomData } from 'services/useExamRoomData';
@@ -66,6 +68,7 @@ const TimetableDetailPage = () => {
     autoAssign,
     algorithms,
     isLoadingAlgorithm,
+    checkConflictForFullExamTimetableAssignment,
   } = useExamTimetableAssignmentData(id);
 
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -74,10 +77,13 @@ const TimetableDetailPage = () => {
   const [isInvalidModalOpen, setIsInvalidModalOpen] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [invalidAssignments, setInvalidAssignments] = useState([]);
-  const [selectedAssignments, setSelectedAssignments] = useState([]); // Track selected assignments
-  const [isExporting, setIsExporting] = useState(false); // Track export status
+  const [selectedAssignments, setSelectedAssignments] = useState([]); 
+  const [isExporting, setIsExporting] = useState(false); 
   
-  // Added state variables for auto-assign functionality
+  const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
+  const [isConflictCheckDialogOpen, setIsConflictCheckDialogOpen] = useState(false);
+  const [checkConflicts, setCheckConflicts] = useState([]);
+  
   const [isAutoAssignDialogOpen, setIsAutoAssignDialogOpen] = useState(false);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
   const [alreadyAssignedClasses, setAlreadyAssignedClasses] = useState([]);
@@ -208,6 +214,27 @@ const TimetableDetailPage = () => {
     } else {
       saveAssignments(assignmentChanges);
     }
+  };
+
+  const handleCheck = async () => {
+    try {
+      setIsCheckingConflicts(true);
+      const {
+        data: result,
+      } = await checkConflictForFullExamTimetableAssignment(timetable.id);
+      
+      setIsCheckingConflicts(false);
+      
+      setCheckConflicts(result);
+      setIsConflictCheckDialogOpen(true);
+    } catch (error) {
+      console.error('Error checking conflicts:', error);
+      setIsCheckingConflicts(false);
+    }
+  };
+
+  const handleCloseConflictCheckDialog = () => {
+    setIsConflictCheckDialogOpen(false);
   };
 
   const handleContinueSaveWithConflicts = () => {
@@ -428,7 +455,7 @@ const TimetableDetailPage = () => {
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {/* Auto Assign Button - Added */}
+            {/* Auto Assign Button */}
             <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để phân công tự động" : "Phân công tự động cho lớp đã chọn"}>
               <span>
                 <Button
@@ -485,6 +512,20 @@ const TimetableDetailPage = () => {
             
             <Button
               variant="contained"
+              color="warning"
+              startIcon={<PublishedWithChanges />}
+              onClick={handleCheck}
+              disabled={isCheckingConflicts}
+              sx={{ 
+                bgcolor: 'warning.main',
+                '&:hover': { bgcolor: '#FFC107' }
+              }}
+            >
+              {isCheckingConflicts ? 'Đang kiểm tra...' : 'Kiểm tra xung đột'}
+            </Button>
+
+            <Button
+              variant="contained"
               color="success"
               startIcon={<AssignmentTurnedIn />}
               onClick={handleSaveAndCheck}
@@ -493,7 +534,7 @@ const TimetableDetailPage = () => {
                 '&:hover': { bgcolor: '#2E7D32' }
               }}
             >
-              Lưu và kiểm tra xung đột
+              Lưu
             </Button>
           </Box>
         </Box>
@@ -546,6 +587,13 @@ const TimetableDetailPage = () => {
               label: algorithmName
             }))}
             isLoadingAlgorithms={isLoadingAlgorithm}
+          />
+          
+          {/* Conflict Check Dialog */}
+          <ConflictCheckDialog
+            open={isConflictCheckDialogOpen}
+            conflicts={checkConflicts}
+            onClose={handleCloseConflictCheckDialog}
           />
         </Box>
       </Paper>
