@@ -25,6 +25,7 @@ import openerp.openerpresourceserver.examtimetabling.algorithm.ExamTimetablingSe
 import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.AutoAssignRequestDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ConflictResponseDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
@@ -132,6 +133,18 @@ public class ExamTimetableController {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/{timetableId}/conflicts")
+    public ResponseEntity<?> checkTimetableConflicts(@PathVariable UUID timetableId) {
+        try {
+            List<ConflictResponseDTO> conflicts = examTimetableAssignmentService.checkTimetableConflicts(timetableId);
+            return ResponseEntity.ok(conflicts);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", e.getMessage()
+            ));
         }
     }
     

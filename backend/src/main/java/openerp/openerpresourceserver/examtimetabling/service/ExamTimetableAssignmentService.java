@@ -12,7 +12,9 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +31,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Query;
@@ -38,6 +44,7 @@ import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentResultDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.BusyCombinationDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
+import openerp.openerpresourceserver.examtimetabling.dtos.ConflictResponseDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamRoom;
 import openerp.openerpresourceserver.examtimetabling.dtos.ScheduleSlotDTO;
@@ -666,5 +673,131 @@ public class ExamTimetableAssignmentService {
         if (obj instanceof java.sql.Timestamp) return ((java.sql.Timestamp) obj).toLocalDateTime().toLocalDate();
         if (obj instanceof LocalDate) return (LocalDate) obj;
         return LocalDate.parse(obj.toString());
+    }
+
+   /**
+     * Check for conflicts in assignments of a timetable
+     * @param timetableId The timetable ID to check
+     * @return List of room-time combinations with conflicts
+     */
+    public List<ConflictResponseDTO> checkTimetableConflicts(UUID timetableId) {
+        List<ConflictResponseDTO> conflicts = new ArrayList<>();
+        
+        // Step 1: Find room-time slots with multiple assignments (conflict type 1)
+        conflicts.addAll(findRoomTimeConflicts(timetableId));
+        
+        // Step 2: Find conflicts between classes in the conflict_exam_timetabling_class table (conflict type 2)
+        conflicts.addAll(findConflictPairTimeOverlaps(timetableId));
+        
+        return conflicts;
+    }
+
+    /**
+     * Find room-time slots with multiple assignments (conflict type 1)
+     */
+    private List<ConflictResponseDTO> findRoomTimeConflicts(UUID timetableId) {
+        // This query efficiently identifies all room-time slots with multiple assignments
+        String sql = 
+            "SELECT " +
+            "  a.room_id, " +
+            "  a.date, " +
+            "  a.session, " +
+            "  COUNT(*) as assignment_count " +
+            "FROM exam_timetable_assignment a " +
+            "WHERE a.exam_timetable_id = :timetableId " +
+            "  AND a.deleted_at IS NULL " +
+            "  AND a.room_id IS NOT NULL " +
+            "  AND a.date IS NOT NULL " +
+            "  AND a.session IS NOT NULL " +
+            "GROUP BY a.room_id, a.date, a.session " +
+            "HAVING COUNT(*) > 1"; // Only slots with multiple assignments
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        
+        List<ConflictResponseDTO> conflicts = new ArrayList<>();
+        
+        for (Object[] row : results) {
+            String roomId = row[0] != null ? row[0].toString() : "";
+            String date = row[1] != null ? row[1].toString() : null;
+            String session = row[2] != null ? row[2].toString() : "";
+            
+            ConflictResponseDTO conflict = ConflictResponseDTO.builder()
+                .roomId(roomId)
+                .date(date)
+                .session(session)
+                .conflictType("ROOM")
+                .examClassId1(null) 
+                .examClassId2(null)
+                .build();
+            
+            conflicts.add(conflict);
+        }
+        
+        return conflicts;
+    }
+
+    /**
+     * Find time overlaps between classes that have conflict records (conflict type 2)
+     */
+    private List<ConflictResponseDTO> findConflictPairTimeOverlaps(UUID timetableId) {
+        // Query to find time slots where conflict pairs are scheduled together, including exam class IDs
+        String sql = 
+            "SELECT DISTINCT " +
+            "  'Multiple Rooms' as room_name, " +
+            "  a1.date, " +
+            "  a1.session, " +
+            "  LEAST(ec1.exam_class_id, ec2.exam_class_id) as exam_class_id_1, " +
+            "  GREATEST(ec1.exam_class_id, ec2.exam_class_id) as exam_class_id_2 " +
+            "FROM exam_timetable_assignment a1 " +
+            "JOIN exam_timetable_assignment a2 ON " +
+            "  a1.date = a2.date AND " +
+            "  a1.session = a2.session AND " +
+            "  a1.id < a2.id " + // Ensure each pair check only once
+            "JOIN exam_timetabling_class ec1 ON a1.exam_timtabling_class_id = ec1.id " +
+            "JOIN exam_timetabling_class ec2 ON a2.exam_timtabling_class_id = ec2.id " +
+            "JOIN conflict_exam_timetabling_class c ON " +
+            "  (c.exam_timetabling_class_id_1 = a1.exam_timtabling_class_id AND " +
+            "   c.exam_timetabling_class_id_2 = a2.exam_timtabling_class_id) OR " +
+            "  (c.exam_timetabling_class_id_1 = a2.exam_timtabling_class_id AND " +
+            "   c.exam_timetabling_class_id_2 = a1.exam_timtabling_class_id) " +
+            "WHERE a1.exam_timetable_id = :timetableId " +
+            "  AND a2.exam_timetable_id = :timetableId " +
+            "  AND a1.deleted_at IS NULL " +
+            "  AND a2.deleted_at IS NULL " +
+            "  AND a1.date IS NOT NULL " +
+            "  AND a1.session IS NOT NULL";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        
+        List<ConflictResponseDTO> conflicts = new ArrayList<>();
+        
+        for (Object[] row : results) {
+            String roomName = row[0] != null ? row[0].toString() : "Multiple Rooms";
+            String date = row[1] != null ? row[1].toString(): null;
+            String session = row[2] != null ? row[2].toString() : "";
+            String examClassId1 = row[3] != null ? row[3].toString() : "Unknown";
+            String examClassId2 = row[4] != null ? row[4].toString() : "Unknown";
+            
+            ConflictResponseDTO conflict = ConflictResponseDTO.builder()
+                .roomId(roomName) 
+                .date(date)
+                .session(session)
+                .conflictType("CLASS")
+                .examClassId1(examClassId1)
+                .examClassId2(examClassId2)
+                .build();
+            
+            conflicts.add(conflict);
+        }
+        
+        return conflicts;
     }
 }

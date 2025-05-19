@@ -21,10 +21,6 @@ import {
   Button,
   CircularProgress,
   Backdrop,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
@@ -113,23 +109,33 @@ const AssignmentCell = styled(TableCell)(({ theme, hasassignment }) => ({
     backgroundColor: hasassignment === 'true' ? 'rgba(25, 118, 210, 0.25)' : 'rgba(0, 0, 0, 0.04)',
   },
   borderRight: `1px solid ${theme.palette.divider}`,
-  transition: 'background-color 0.2s ease',
+  transition: 'background-color 0.1s ease', // Faster transition
 }));
 
-// Assignment Detail Dialog Component - Preload data for better performance
-const AssignmentDetailDialog = React.memo(({ open, popoverContent, rooms, slots, onClose }) => {
+// Precompute room and slot lookups for faster access
+const createRoomLookup = (rooms) => {
+  const lookup = {};
+  rooms.forEach(room => {
+    lookup[room.id] = room;
+  });
+  return lookup;
+};
+
+const createSlotLookup = (slots) => {
+  const lookup = {};
+  slots.forEach(slot => {
+    lookup[slot.slotId] = slot;
+  });
+  return lookup;
+};
+
+// Optimized dialog component
+const AssignmentDetailDialog = React.memo(({ open, popoverContent, roomsLookup, slotsLookup, onClose }) => {
   if (!popoverContent) return null;
   
-  // Precompute values for better performance
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const roomName = React.useMemo(() => {
-    return rooms.find(r => r.id === popoverContent.roomId)?.name || '';
-  }, [rooms, popoverContent.roomId]);
-  
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const slotName = React.useMemo(() => {
-    return slots.find(s => s.slotId === popoverContent.sessionId)?.slotName || '';
-  }, [slots, popoverContent.sessionId]);
+  // Get values from lookup tables instead of find operations
+  const room = roomsLookup[popoverContent.roomId] || {};
+  const slot = slotsLookup[popoverContent.sessionId] || {};
   
   return (
     <Dialog 
@@ -137,9 +143,18 @@ const AssignmentDetailDialog = React.memo(({ open, popoverContent, rooms, slots,
       onClose={onClose}
       maxWidth="sm"
       TransitionProps={{
-        // Optimize dialog transition for better performance
-        timeout: 200 // Reduced from default 300ms
+        timeout: 150, // Even faster transition
+        mountOnEnter: true,
+        unmountOnExit: true,
       }}
+      // Disable backdrop transitions for better performance
+      BackdropProps={{
+        transitionDuration: 0,
+      }}
+      // Disable focus trap to improve performance
+      disableAutoFocus
+      disableEnforceFocus
+      disableRestoreFocus
     >
       <Card sx={{ width: '100%', maxWidth: 450 }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 0.5 }}>
@@ -179,7 +194,7 @@ const AssignmentDetailDialog = React.memo(({ open, popoverContent, rooms, slots,
             <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
               <Schedule sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
               <Typography variant="body2">
-                {slotName}
+                {slot.slotName || ''}
               </Typography>
             </Box>
           </Box>
@@ -209,7 +224,7 @@ const AssignmentDetailDialog = React.memo(({ open, popoverContent, rooms, slots,
             <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
               <LocationOn sx={{ color: 'primary.main', mr: 0.5, fontSize: 18 }} />
               <Typography variant="body2">
-                {roomName}
+                {room.name || ''}
               </Typography>
             </Box>
           </Box>
@@ -232,9 +247,14 @@ const AssignmentDetailDialog = React.memo(({ open, popoverContent, rooms, slots,
       </Card>
     </Dialog>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  if (prevProps.open !== nextProps.open) return false;
+  if (!prevProps.popoverContent && !nextProps.popoverContent) return true;
+  if (!prevProps.popoverContent || !nextProps.popoverContent) return false;
+  return prevProps.popoverContent.id === nextProps.popoverContent.id;
 });
 
-// Main component
 const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [popoverContent, setPopoverContent] = useState(null);
@@ -245,12 +265,14 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
   const [loading, setLoading] = useState(true);
   const [showAllRooms, setShowAllRooms] = useState(false);
 
+  // Create lookup tables for faster access
+  const roomsLookup = useMemo(() => createRoomLookup(rooms), [rooms]);
+  const slotsLookup = useMemo(() => createSlotLookup(slots), [slots]);
+
   // Create a lookup map for efficient assignment finding
   const assignmentMap = useMemo(() => {
     const map = {};
     if (assignments && assignments.length > 0) {
-      console.log(assignments.length);
-      console.log(assignments[0])
       assignments.forEach(assignment => {
         const key = `${assignment.roomId}_${assignment.date}_${assignment.sessionId}`;
         map[key] = assignment;
@@ -283,23 +305,29 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
 
   // Initial loading
   useEffect(() => {
-    // Show loading for at least 5 seconds
+    // Show loading for at least 3 seconds (reduced from 5)
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Cell click handler - open dialog
-  const handleCellClick = useCallback((room, slot, assignment) => {
+  // Cell click handler - optimized dialog open
+  const handleCellClick = useCallback((assignment) => {
+    // Immediate state updates
     setPopoverContent(assignment);
     setDialogOpen(true);
   }, []);
 
   const handleDialogClose = useCallback(() => {
+    // Immediate close
     setDialogOpen(false);
-    setTimeout(() => setPopoverContent(null), 300); // Clear content after animation
+    // Delay clearing content to prevent UI flicker
+    const timer = setTimeout(() => {
+      setPopoverContent(null);
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   // Search handling
@@ -316,7 +344,7 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
     filterAssignmentsBySearch(searchValue);
   }, [searchValue]);
 
-  // Just filter assignments without filtering rooms
+  // Optimized filter function
   const filterAssignmentsBySearch = useCallback((searchText) => {
     if (!searchText) {
       // When there's no search text, show all assignments
@@ -333,11 +361,9 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
       desc => desc.toLowerCase() === lowerSearchText
     );
     
-    // Find assignments that match the search criteria
-    for (let i = 0; i < sortedRooms.length; i++) {
-      const room = sortedRooms[i];
-      for (let j = 0; j < slots.length; j++) {
-        const slot = slots[j];
+    // Use for...of loop for better performance with early returns
+    for (const room of sortedRooms) {
+      for (const slot of slots) {
         const key = `${room.id}_${slot.date}_${slot.slotId}`;
         const assignment = assignmentMap[key];
         
@@ -364,8 +390,6 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
         }
       }
     }
-
-    console.log('Matching assignments:', matches.length);
     
     setMatchingAssignments(matches);
   }, [sortedRooms, slots, assignmentMap, uniqueDescriptions]);
@@ -391,7 +415,7 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
     return groupedSlots;
   }, [slots]);
 
-  // Toggle to show all rooms
+  // Toggle to show all rooms - no delay
   const handleShowAllRooms = useCallback(() => {
     setShowAllRooms(true);
   }, []);
@@ -451,16 +475,16 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
               // Find exact matches at the beginning
               const startsWithMatches = options.filter(option => 
                 option.toLowerCase().startsWith(lowerInput)
-              );
+              ).slice(0, 5); // Limit results for better performance
               
               // Find contains matches
               const containsMatches = options.filter(option => 
                 option.toLowerCase().includes(lowerInput) && 
                 !startsWithMatches.includes(option)
-              );
+              ).slice(0, 5); // Limit results for better performance
               
               // Combine results
-              return [...startsWithMatches, ...containsMatches].slice(0, 10);
+              return [...startsWithMatches, ...containsMatches];
             }}
             renderInput={(params) => (
               <TextField
@@ -510,9 +534,21 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
           />
         </Box>
         
-        <Typography variant="body2" color="text.secondary">
-          {displayedRooms.length}/{sortedRooms.length} phòng
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {displayedRooms.length}/{sortedRooms.length} phòng
+          </Typography>
+          {!showAllRooms && displayedRooms.length < sortedRooms.length && (
+            <Button 
+              variant="outlined" 
+              size="small"
+              onClick={handleShowAllRooms}
+              disabled={loading}
+            >
+              Mở rộng tất cả
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Timetable Grid */}
@@ -566,27 +602,23 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
                 </FixedColumnCell>
 
                 {slots.map((slot) => {
-                  if(slot.date === '26/05/2025' && room.id === 'D7-203' && slot.slotId === 'eac39a8d-086c-4207-8761-cdbdb2aa61d0') {
-                    console.log('session:', slot.slotId);
-                  }
                   const key = `${room.id}_${slot.date}_${slot.slotId}`;
                   const assignment = assignmentMap[key];
-
-                  if (slot.date === '26/05/2025' && room.id === 'D7-203' && slot.slotId === 'eac39a8d-086c-4207-8761-cdbdb2aa61d0' && assignment) {
-                    console.log('assignment:', assignment);
-                  }
                   
                   // Check if the assignment should be visible based on search
                   const isVisible = !activeSearchValue || 
                                     (assignment && matchingAssignments.has(key));
                   
+                  // Optimization: Only render assignment content if it exists and is visible
+                  const hasVisibleAssignment = assignment && isVisible;
+                  
                   return (
                     <AssignmentCell 
                       key={`${room.id}-${slot.date}-${slot.slotId}`}
-                      onClick={assignment && isVisible ? () => handleCellClick(room, slot, assignment) : undefined}
-                      hasassignment={(assignment && isVisible) ? 'true' : 'false'}
+                      onClick={hasVisibleAssignment ? () => handleCellClick(assignment) : undefined}
+                      hasassignment={hasVisibleAssignment ? 'true' : 'false'}
                     >
-                      {(assignment && isVisible) && (
+                      {hasVisibleAssignment && (
                         <Box sx={{ 
                           p: 0.5, 
                           borderRadius: 1,
@@ -621,12 +653,12 @@ const RoomBasedAssignmentView = ({ rooms, slots, assignments }) => {
         )}
       </StyledTableContainer>
 
-      {/* Assignment Detail Dialog */}
+      {/* Assignment Detail Dialog - using optimized version */}
       <AssignmentDetailDialog 
         open={dialogOpen}
         popoverContent={popoverContent}
-        rooms={rooms}
-        slots={slots}
+        roomsLookup={roomsLookup}
+        slotsLookup={slotsLookup}
         onClose={handleDialogClose}
       />
     </Box>

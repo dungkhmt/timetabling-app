@@ -60,48 +60,97 @@ public class ExamTimetableAlgorithm {
     private ExamTimetableSolution createInitialAssignmentWithRetries(TimetablingData data) {
         ExamTimetableSolution solution = new ExamTimetableSolution();
         
+        // Track assigned class IDs
         Set<UUID> assignedClassIds = new HashSet<>();
         int totalClasses = data.getExamClasses().size();
         int newlyAssignedClasses;
         int maxRetries = 10;
         int retryCount = 0;
         
+        // Track prohibited slots (will be updated after each iteration)
+        Set<TimeSlotRoomPair> prohibitedSlots = new HashSet<>(data.getProhibitedSlots());
+        
         do {
             retryCount++;
             log.info("Initial assignment attempt #{}", retryCount);
             
-            TimetablingData filteredData = filterUnassignedClasses(data, assignedClassIds);
+            // Create filtered data with updated prohibited slots
+            TimetablingData filteredData = filterUnassignedClasses(data, assignedClassIds, prohibitedSlots);
             
+            // Create initial solution for remaining classes
             ExamTimetableSolution iterationSolution = createInitialAssignment(filteredData);
             
+            // Merge with existing solution
             newlyAssignedClasses = mergeSolutions(solution, iterationSolution);
             
+            // Update assigned class IDs
             for (UUID classId : iterationSolution.getAssignedClasses().keySet()) {
                 assignedClassIds.add(classId);
             }
+            
+            // Update prohibited slots from this iteration's assignments
+            updateProhibitedSlots(prohibitedSlots, iterationSolution, filteredData.getAvailableTimeSlots());
             
             log.info("Assigned {} new classes in iteration #{}, total assigned: {}/{}", 
                     newlyAssignedClasses, retryCount, assignedClassIds.size(), totalClasses);
             
         } while (newlyAssignedClasses > 0 && assignedClassIds.size() < totalClasses && retryCount < maxRetries);
         
+        // Calculate metrics for the final solution
         solution.calculateMetrics(data);
         
         return solution;
     }
 
     /**
-     * Filter data to only include unassigned classes
+     * Update prohibited slots based on new assignments
      */
-    private TimetablingData filterUnassignedClasses(TimetablingData originalData, Set<UUID> assignedClassIds) {
+    private void updateProhibitedSlots(Set<TimeSlotRoomPair> prohibitedSlots, 
+                                    ExamTimetableSolution solution,
+                                    List<TimeSlot> availableTimeSlots) {
+        // For each assigned class, mark its room-timeslot pair as prohibited
+        for (Map.Entry<UUID, AssignmentDetails> entry : solution.getAssignedClasses().entrySet()) {
+            AssignmentDetails details = entry.getValue();
+            
+            // Find the corresponding time slot to get session ID
+            TimeSlot timeSlot = null;
+            for (TimeSlot ts : availableTimeSlots) {
+                if (ts.getId().equals(details.getTimeSlotId())) {
+                    timeSlot = ts;
+                    break;
+                }
+            }
+            
+            if (timeSlot != null) {
+                // Create a new prohibited pair
+                TimeSlotRoomPair pair = new TimeSlotRoomPair();
+                pair.setRoomId(details.getRoomId());
+                pair.setSessionId(timeSlot.getSessionId());
+                pair.setDate(details.getDate());
+                
+                // Add to prohibited slots
+                prohibitedSlots.add(pair);
+            }
+        }
+    }
+
+    /**
+     * Filter data to only include unassigned classes and update prohibited slots
+     */
+    private TimetablingData filterUnassignedClasses(TimetablingData originalData, 
+                                                Set<UUID> assignedClassIds,
+                                                Set<TimeSlotRoomPair> updatedProhibitedSlots) {
         TimetablingData filteredData = new TimetablingData();
         
+        // Copy basic data
         filteredData.setAvailableRooms(originalData.getAvailableRooms());
         filteredData.setAvailableTimeSlots(originalData.getAvailableTimeSlots());
         filteredData.setExamDates(originalData.getExamDates());
-        filteredData.setProhibitedSlots(originalData.getProhibitedSlots());
         filteredData.setEarlyTimeSlots(originalData.getEarlyTimeSlots());
         filteredData.setExistingAssignments(originalData.getExistingAssignments());
+        
+        // Use the updated prohibited slots instead of the original ones
+        filteredData.setProhibitedSlots(updatedProhibitedSlots);
         
         // Filter classes to only include unassigned ones
         List<ExamClass> unassignedClasses = originalData.getExamClasses().stream()
@@ -125,6 +174,7 @@ public class ExamTimetableAlgorithm {
             UUID classId = examClass.getId();
             Set<UUID> conflicts = originalData.getConflictGraph().getOrDefault(classId, new HashSet<>());
             
+            // Keep only conflicts with other unassigned classes
             Set<UUID> filteredConflicts = conflicts.stream()
                     .filter(conflictId -> !assignedClassIds.contains(conflictId))
                     .collect(Collectors.toSet());

@@ -25,6 +25,10 @@ class ExamTimetableAssignmentService {
     });
   }
 
+  async checkFullExamTimetableAssignmentConflict(timetableId) {
+    return await request("get", `/exam-timetable/${timetableId}/conflicts`);
+  }
+
   async unassignExamTimetableAssignment(data) {
     return await request("post", "/exam-timetable/assignment/unassign", null, null, data, {
       headers: {
