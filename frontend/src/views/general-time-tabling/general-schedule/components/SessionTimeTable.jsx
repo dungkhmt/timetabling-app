@@ -108,7 +108,8 @@ const SessionTimeTable = ({
             weekDay: cls.weekDay,
             startTime: cls.startTime,
             endTime: cls.endTime,
-            generalClassId: cls.generalClassId
+            generalClassId: cls.generalClassId,
+            crew: cls.crew // Thêm crew vào từng slot
           });
         }
       });
@@ -221,22 +222,27 @@ const SessionTimeTable = ({
 
   // Render time slot for a specific period and session
   const renderTimeSlotForPeriod = (classDetail, day, period, session) => {
-    // Find if there's a time slot that includes this period
+    // Tìm slot phù hợp với day và session
     const slot = classDetail.timeSlots.find(slot => {
       const slotDay = convertWeekdayToDay(slot.weekDay);
       
-      // More accurate session detection based on slot.startTime
-      // For startTime 1-6, it's morning; for 7-12, it's afternoon
-      const slotSession = slot.startTime <= totalSlots ? "Sáng" : "Chiều";
+      // Chỉ xét các slot có cùng ngày với day được truyền vào
+      if (slotDay !== day) return false;
       
-      // For display purposes, we need to check if this period is within the range
-      // For morning slots (1-6), we compare with period
-      // For afternoon slots (7-12), we need to adjust the comparison
-      const isInPeriodRange = slotSession === "Sáng" 
-        ? (period >= slot.startTime && period <= slot.endTime)
-        : (period + totalSlots >= slot.startTime && period + totalSlots <= slot.endTime);
+      // Xác định session dựa vào crew (S=Sáng, C=Chiều)
+      const slotSession = slot.crew === "S" ? "Sáng" : (slot.crew === "C" ? "Chiều" : "");
       
-      return slotDay === day && slotSession === session && isInPeriodRange;
+      // Nếu không khớp session, bỏ qua
+      if (slotSession !== session) return false;
+      
+      // Logic kiểm tra period có nằm trong slot không:
+      // 1. Với kíp sáng (S): so sánh period trực tiếp với startTime/endTime
+      // 2. Với kíp chiều (C): phải trừ totalSlots từ period để so sánh với startTime/endTime
+      //    vì period được truyền vào đã là period + totalSlots (từ cột phần chiều của bảng)
+      let adjustedPeriod = session === "Chiều" ? period - totalSlots : period;
+      const isInRange = adjustedPeriod >= slot.startTime && adjustedPeriod <= slot.endTime;
+      
+      return isInRange;
     });
     
     if (!slot) {
@@ -249,21 +255,21 @@ const SessionTimeTable = ({
       );
     }
     
-    // If this is the start of a slot in this session...
-    const isSessionStart = session === "Sáng" 
-      ? (period === slot.startTime)
-      : (period === (slot.startTime - totalSlots));
+    // Với kíp chiều, adjustedPeriod sẽ là period - totalSlots
+    // để so sánh với startTime của slot
+    let adjustedPeriod = session === "Chiều" ? period - totalSlots : period;
+    
+    // Kiểm tra đây có phải là đầu slot không
+    const isSessionStart = adjustedPeriod === slot.startTime;
     
     if (isSessionStart) {
-      // Calculate the column span
+      // Tính colspan
       const colSpan = slot.endTime - slot.startTime + 1;
-      
-      // Clean up the room name to remove the period information
+      // Clean up room name
       let cleanRoomName = slot.room;
       if (cleanRoomName && cleanRoomName.includes('(Tiết')) {
         cleanRoomName = cleanRoomName.split('(Tiết')[0].trim();
       }
-      
       return (
         <td
           key={`${classDetail.code}-${day}-${session}-${period}`}
@@ -278,7 +284,7 @@ const SessionTimeTable = ({
       );
     }
     
-    // For middle or end periods in a multi-period slot, render nothing (will be covered by colspan)
+    // Các period nằm giữa slot sẽ không render gì (đã được colspan che)
     return null;
   };
 
@@ -614,7 +620,7 @@ const SessionTimeTable = ({
                             renderTimeSlotForPeriod(classDetail, day, period, "Sáng")
                           ),
                           ...afternoonPeriods.map(period => 
-                            renderTimeSlotForPeriod(classDetail, day, period, "Chiều")
+                            renderTimeSlotForPeriod(classDetail, day, period + totalSlots, "Chiều")
                           )
                         ])}
                       </tr>
