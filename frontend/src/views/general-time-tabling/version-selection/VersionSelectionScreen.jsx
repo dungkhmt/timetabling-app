@@ -115,7 +115,7 @@ const VersionSelectionScreen = ({
       name: newVersionName,
       status: newVersionStatus,
       semester: newVersionSemester.semester,
-      userId: "timetablingadmin01",
+      userId: localStorage.getItem("preferred_username") || "timetablingadmin01",
       numberSlotsPerSession: numberSlotsPerSession 
     };
     

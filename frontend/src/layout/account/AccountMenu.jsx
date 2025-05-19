@@ -72,7 +72,10 @@ export function AccountMenu(props) {
   const token = keycloak.tokenParsed;
   const accountUrl = keycloak.createAccountUrl();
 
-  //
+  if (token && token.preferred_username) {
+    localStorage.setItem("preferred_username", token.preferred_username);
+  }
+
   const { open, id, anchorRef, avatarBgColor } = props;
   const openFeedback = useState(false);
 
