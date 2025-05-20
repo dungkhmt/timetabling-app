@@ -10,8 +10,10 @@ import OrderTabs from "../common/components/OrderTabs";
 import OrderFilters from "../common/components/OrderFilters";
 import OrderTable from "../common/components/OrderTable";
 import { PURCHASE_ORDER_SCHEMA, PURCHASE_ORDER_TABS, ORDER_TYPE_ID } from "../common/constants/constants";
+import { MENU_CONSTANTS } from "../common/constants/screenId";
+import { withAuthorization } from "../common/components/withAuthorization";
 
-const PurchaseOrderListPage = () => {
+const PurchaseOrderListPageBase = () => {
   const history = useHistory(); // Use useHistory from React Router v5
   const { getPurchaseOrders, getPurchaseOrdersForExport, getLowStockForecast } = useWms2Data();
   const [loading, setLoading] = useState(false);
@@ -86,5 +88,13 @@ const PurchaseOrderListPage = () => {
     </>
   );
 };
+
+const PurchaseOrderListPage = (props) => {
+  const { location } = props;
+  const path = location.pathname;
+  const menuId = path.includes('logistics') ? MENU_CONSTANTS.LOGISTICS_PURCHASE_LIST : MENU_CONSTANTS.PURCHASE_LIST;
+  const AuthorizedComponent = withAuthorization(PurchaseOrderListPageBase, menuId);
+  return <AuthorizedComponent {...props} />;
+}
 
 export default PurchaseOrderListPage;

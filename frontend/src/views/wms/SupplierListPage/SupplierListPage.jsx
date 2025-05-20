@@ -6,6 +6,8 @@ import SupplierListHeader from "./components/SupplierListHeader";
 import SupplierFilters from "./components/SupplierFilters";
 import SupplierTable from "./components/SupplierTable";
 import { useWms2Data } from "../../../services/useWms2Data";
+import { MENU_CONSTANTS } from "../common/constants/screenId";
+import { withAuthorization } from "../common/components/withAuthorization";
 
 const SupplierListPage = () => {
   const [loading, setLoading] = useState(true);
@@ -134,4 +136,4 @@ const SupplierListPage = () => {
   );
 };
 
-export default SupplierListPage;
+export default withAuthorization(SupplierListPage, MENU_CONSTANTS.SUPPLIER_LIST);

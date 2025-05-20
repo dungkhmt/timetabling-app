@@ -5,6 +5,8 @@ import { useWms2Data } from "../../../services/useWms2Data";
 import ShipperListHeader from "./components/ShipperListHeader";
 import ShipperFilters from "./components/ShipperFilters";
 import ShipperTable from "./components/ShipperTable";
+import {withAuthorization} from "../common/components/withAuthorization";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
 
 const ShipperListPage = () => {
   const { getShippers } = useWms2Data();
@@ -134,4 +136,4 @@ const ShipperListPage = () => {
   );
 };
 
-export default ShipperListPage;
+export default withAuthorization(ShipperListPage, MENU_CONSTANTS.LOGISTICS_SHIPPER_LIST);

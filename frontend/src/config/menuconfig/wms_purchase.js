@@ -6,21 +6,21 @@ export const wms_purchase = {
       {
         id: "MENU_WMS_PURCHASE.PURCHASE_ORDER",
         path: "/wms/purchase/orders",
-        isPublic: false,
+        isPublic: true,
         text: "Đơn hàng mua",
         child: [],
       },
       {
         id: "MENU_WMS_PURCHASE.SUPPLIERS",
         path: "/wms/purchase/suppliers",
-        isPublic: false,
+        isPublic: true,
         text: "Nhà cung cấp",
         child: [],
       },
       {
         id: "MENU_WMS_PURCHASE.DASHBOARD",
         path: "/wms/purchase/dashboard",
-        isPublic: false,
+        isPublic: true,
         text: "Dashboard",
         child: [],
       }
