@@ -28,7 +28,7 @@ export const wms2Service = {
     return request("put", `/sale-order/update-status/${orderId}`, null, null, {status});
   },
   approveOrder: (orderId) => {
-    return request("put", `/sale-order/approve/${orderId}`);
+    return request("put", `/order/approve/${orderId}`);
   },
   rejectOrder: (orderId) => {
     return request("put", `/sale-order/reject/${orderId}`);
@@ -71,9 +71,6 @@ export const wms2Service = {
   updatePurchaseOrderStatus: (orderId, status) => {
     return request("put", `/purchase-order/update-status/${orderId}`, null, null, {status});
   },
-    approvePurchaseOrder: (orderId) => {
-        return request("put", `/purchase-order/approve/${orderId}`);
-    },
   getInBoundsOrder : (orderId, page, limit) => {
     return request("get", `/shipment/inbound/order/${orderId}?page=${page}&limit=${limit}`);
   },

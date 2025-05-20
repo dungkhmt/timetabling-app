@@ -59,6 +59,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                 .orElseThrow(() -> new DataNotFoundException("User not found with id" + name));
         // create order header
         var orderHeader = OrderHeader.builder()
+                .id(CommonUtil.getUUID())
                 .orderTypeId(OrderType.SALES_ORDER.name())
                 .status(OrderStatus.CREATED.name())
                 .createdByUser(userCreated)
@@ -153,23 +154,6 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                         .orderItems(orderItemResponses)
 
                         .build())
-                .build();
-    }
-
-    @Override
-    public ApiResponse<Void> approveSaleOrder(String id, String name) {
-        var orderHeader = orderHeaderRepo.findById(id)
-                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
-        orderHeader.setStatus(OrderStatus.APPROVED.name());
-
-        var userApproved = userLoginRepo.findById(name)
-                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name));
-        orderHeader.setUserApproved(userApproved);
-
-        orderHeaderRepo.save(orderHeader);
-        return ApiResponse.<Void>builder()
-                .code(200)
-                .message("Order approved successfully")
                 .build();
     }
 

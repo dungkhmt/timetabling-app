@@ -88,10 +88,6 @@ export const SALE_ORDER_TABS = [
   },
   {
     value: "CREATED",
-    label: "Mới tạo",
-  },
-  {
-    value: "WAITING_FOR_APPROVAL",
     label: "Chờ duyệt",
   },
   {
@@ -99,8 +95,8 @@ export const SALE_ORDER_TABS = [
     label: "Đã duyệt",
   },
   {
-    value: "REJECTED",
-    label: "Từ chối",
+    value: "CANCELLED",
+    label: "Đã hủy",
   },
 ]
 
@@ -190,10 +186,6 @@ export const PURCHASE_ORDER_TABS = [
   },
   {
     value: "CREATED",
-    label: "Mới tạo",
-  },
-  {
-    value: "WAITING_FOR_APPROVAL",
     label: "Chờ duyệt",
   },
   {
@@ -201,7 +193,7 @@ export const PURCHASE_ORDER_TABS = [
     label: "Đã duyệt",
   },
   {
-    value: "REJECTED",
+    value: "CANCELLED",
     label: "Từ chối",
   },
 ];

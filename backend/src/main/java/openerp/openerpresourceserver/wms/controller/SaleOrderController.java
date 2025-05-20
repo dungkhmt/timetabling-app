@@ -30,11 +30,6 @@ public class SaleOrderController {
         return saleOrderService.getSaleOrderDetails(id);
     }
 
-    @PutMapping("/approve/{id}")
-    public ApiResponse<Void> approveSaleOrder(@PathVariable String id, Principal principal) {
-        return saleOrderService.approveSaleOrder(id, principal.getName());
-    }
-
     @PostMapping("/get-all")
     public ApiResponse<Pagination<OrderListRes>>  getAllSaleOrders(@RequestParam int page, @RequestParam int limit, @RequestBody SaleOrderGetListFilter filters) {
         return saleOrderService.getAllSaleOrders(page, limit, filters);
