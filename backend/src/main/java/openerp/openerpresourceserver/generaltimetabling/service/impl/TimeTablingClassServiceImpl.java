@@ -59,7 +59,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     @Autowired
     private GroupRepo groupRepo;
     @Transactional
-    private void createClassSegment(TimeTablingClass gc, List<Integer> seqSlots) {
+    private void createClassSegment(TimeTablingClass gc, List<Integer> seqSlots, Long versionId) {
         log.info("createClassSegments, classId " + gc.getId() + ", crew " + gc.getCrew() + "  course "
                 + gc.getModuleCode() + " type " + gc.getClassType() + " slots = " + seqSlots);
 
@@ -70,6 +70,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             cs.setClassId(gc.getId());
             cs.setCrew(gc.getCrew());
             cs.setDuration(s);
+            cs.setVersionId(versionId);
             log.info("createClassSegments, classId " + gc.getId() + ", crew " + gc.getCrew() + "  course "
                     + gc.getModuleCode() + " type " + gc.getClassType() + " slots = " + seqSlots
                     + " add slot " + s);
@@ -82,7 +83,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     private void createClassSegmentsOfASession(List<TimeTablingClass> LS,
                                                List<List<Integer>> PLT,
                                                List<List<Integer>> PBT,
-                                               List<List<Integer>> PLTBT) {
+                                               List<List<Integer>> PLTBT, Long versionId) {
         // consider morning classes first
         List<TimeTablingClass> LLT = new ArrayList<>();
         List<TimeTablingClass> LBT = new ArrayList<>();
@@ -101,7 +102,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 // create a.size class-segment for class gc
                 //
                 if (seqSlots.size() >= 1) {
-                    createClassSegment(gc, seqSlots);
+                    createClassSegment(gc, seqSlots, versionId);
                 }
                 idx += 1;
                 if (idx >= PLT.size()) idx = 0;
@@ -114,7 +115,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 // create a.size class-segment for class gc
                 //if(seqSlots.size() > 1){
                 if (seqSlots.size() >= 1) {
-                    createClassSegment(gc, seqSlots);
+                    createClassSegment(gc, seqSlots,versionId);
                 }
                 idx += 1;
                 if (idx >= PBT.size()) idx = 0;
@@ -127,7 +128,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 // create a.size class-segment for class gc
                 //if(seqSlots.size() > 1){
                 if (seqSlots.size() >= 1) {
-                    createClassSegment(gc, seqSlots);
+                    createClassSegment(gc, seqSlots,versionId);
                 }
                 idx += 1;
                 if (idx >= PLTBT.size()) idx = 0;
@@ -161,7 +162,10 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     public List<TimeTablingClassSegment> createClassSegmentForSummerSemester(ModelInputCreateClassSegment I) {
         ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
-        List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
+        //List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+
+
 
         log.info("createClassSegmentForSummerSemester, semester = " + I.getSemester() + " number classes = " + cls.size()
                 + " number courses = " + courses.size());
@@ -236,9 +240,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 }
             }
             log.info("createClassSegmentForSummerSemester, for course " + courseCode + " morning sz = " + LS.size());
-            createClassSegmentsOfASession(LS, PLT, PBT, PLTBT);
+            createClassSegmentsOfASession(LS, PLT, PBT, PLTBT,I.getVersionId());
             log.info("createClassSegmentForSummerSemester, for course " + courseCode + " afternoon sz = " + LC.size());
-            createClassSegmentsOfASession(LC, PLT, PBT, PLTBT);
+            createClassSegmentsOfASession(LC, PLT, PBT, PLTBT,I.getVersionId());
 
         }
         return new ArrayList<>();
