@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Button,
@@ -8,7 +8,8 @@ import {
   DialogTitle,
   Typography,
   Chip,
-  Divider
+  Divider,
+  Paper
 } from '@mui/material';
 import { Error, AccessTime, Room, Group } from '@mui/icons-material';
 
@@ -17,6 +18,21 @@ const ConflictDialog = ({
   conflicts, 
   onClose
 }) => {
+  const groupedConflicts = useMemo(() => {
+    if (!conflicts || conflicts.length === 0) return {};
+    
+    return conflicts.reduce((acc, conflict) => {
+      const type = conflict.conflictType || 'UNKNOWN';
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(conflict);
+      return acc;
+    }, {});
+  }, [conflicts]);
+
+  const totalConflicts = conflicts ? conflicts.length : 0;
+  
   return (
     <Dialog
       open={open}
@@ -31,15 +47,15 @@ const ConflictDialog = ({
       }}>
         <Error color="error" sx={{ mr: 1 }} />
         Phát hiện xung đột
+        {totalConflicts > 0 && (
+          <Typography component="span" color="error.main" fontWeight={500} sx={{ ml: 1 }}>
+            ({totalConflicts} xung đột)
+          </Typography>
+        )}
       </DialogTitle>
       <DialogContent sx={{ py: 2 }}>
         <Typography variant="body1" sx={{ mb: 2 }}>
           Các lớp học sau đây có xung đột lịch thi (cùng phòng, cùng thời gian):
-          {conflicts.length > 1 && (
-            <Typography component="span" color="error.main" fontWeight={500}>
-              {` (${conflicts.length} xung đột)`}
-            </Typography>
-          )}
         </Typography>
         
         {/* Add fixed height and scroll for many conflicts */}
@@ -49,75 +65,86 @@ const ConflictDialog = ({
           overflowY: 'auto',  
           pr: 1  
         }}>
-          {conflicts.map((conflict, index) => (
-            <Box 
-              key={index} 
-              sx={{ 
-                mb: 1.5, 
+          {Object.entries(groupedConflicts).map(([type, typeConflicts]) => (
+            <Paper key={type} elevation={1} sx={{ mb: 2, overflow: 'hidden' }}>
+              <Box sx={{ 
                 p: 1.5, 
-                border: '1px solid #ffccbc', 
-                borderRadius: 1,
-                backgroundColor: '#fff8e1'
-              }}
-            >
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                mb: 1
+                backgroundColor: type === 'ROOM' ? '#fff3e0' : '#fff8e1',
+                borderBottom: '1px solid #ffe0b2'
               }}>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  Xung đột {index + 1} / {conflicts.length}
-                </Typography>
-                <Chip 
-                  size="small" 
-                  color="error" 
-                  label="Trùng lịch" 
-                  sx={{ fontSize: '0.75rem' }}
-                />
-              </Box>
-              
-              {/* One line for room and time information */}
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                mb: 1,
-                pb: 1,
-                borderBottom: '1px dashed #ffccbc'
-              }}>
-                <Room fontSize="small" sx={{ color: 'primary.main', mr: 0.5 }} />
-                <Typography variant="body2" sx={{ mr: 2 }}>
-                  {conflict.roomName || '?'}
-                </Typography>
-                
-                <AccessTime fontSize="small" sx={{ color: 'primary.main', mr: 0.5 }} />
-                <Typography variant="body2">
-                  {conflict.weekName || '?'}, {conflict.sessionName || '?'}
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {type === 'ROOM' ? 'Xung đột Phòng' : type === 'CLASS' ? 'Xung đột Lớp' : `Xung đột ${type}`}
+                  <Typography component="span" color="error.main" sx={{ ml: 1 }}>
+                    ({typeConflicts.length})
+                  </Typography>
                 </Typography>
               </Box>
               
-              {/* Compact list of class IDs */}
-              <Typography variant="body2" fontWeight={500} sx={{ mb: 0.5 }}>
-                Các lớp bị trùng:
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {conflict.examClassIds && conflict.examClassIds.map((classId, idx) => (
-                  <Chip 
-                    key={idx}
-                    size="small"
-                    icon={<Group fontSize="small" />}
-                    label={classId}
-                    variant="outlined"
-                    sx={{ fontSize: '0.75rem' }}
-                  />
-                ))}
-              </Box>
-              
-              <Typography variant="body2" color="error" sx={{ mt: 1, fontSize: '0.75rem', fontStyle: 'italic' }}>
-                Vui lòng cập nhật lại lịch thi cho một hoặc nhiều lớp để giải quyết xung đột.
-              </Typography>
-            </Box>
+              {typeConflicts.map((conflict, index) => (
+                <Box 
+                  key={index} 
+                  sx={{ 
+                    p: 1.5, 
+                    borderBottom: index < typeConflicts.length - 1 ? '1px dashed #ffe0b2' : 'none',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                    {/* Room info */}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Room fontSize="small" sx={{ color: 'primary.main', mr: 0.5 }} />
+                      <Typography variant="body2" sx={{ mr: 1 }}>
+                        {conflict.roomId || conflict.roomName || '?'}
+                      </Typography>
+                    </Box>
+                    
+                    {/* Time info */}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <AccessTime fontSize="small" sx={{ color: 'primary.main', mr: 0.5 }} />
+                      <Typography variant="body2">
+                        {conflict.date}, 
+                        Ca {conflict.session || conflict.sessionName || '?'}
+                      </Typography>
+                    </Box>
+                    
+                    {/* Class info for CLASS type */}
+                    {type === 'CLASS' && (
+                      <>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1, height: '20px' }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Group fontSize="small" sx={{ color: 'error.main', mr: 0.5 }} />
+                          <Typography variant="body2" color="error.main">
+                            Lớp {conflict.examClassId1 || '?'} và Lớp {conflict.examClassId2 || '?'}
+                          </Typography>
+                        </Box>
+                      </>
+                    )}
+                    
+                    {/* For backward compatibility with examClassIds array format */}
+                    {conflict.examClassIds && conflict.examClassIds.length > 0 && (
+                      <>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1, height: '20px' }} />
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            Các lớp bị trùng:
+                          </Typography>
+                          {conflict.examClassIds.map((classId, idx) => (
+                            <Chip 
+                              key={idx}
+                              size="small"
+                              icon={<Group fontSize="small" />}
+                              label={classId}
+                              variant="outlined"
+                              color="error"
+                              sx={{ fontSize: '0.75rem' }}
+                            />
+                          ))}
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              ))}
+            </Paper>
           ))}
         </Box>
         

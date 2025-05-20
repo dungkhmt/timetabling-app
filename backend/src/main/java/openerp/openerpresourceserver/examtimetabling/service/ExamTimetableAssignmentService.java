@@ -65,124 +65,256 @@ public class ExamTimetableAssignmentService {
     private final ExamTimetableSessionRepository sessionRepository;
     private final EntityManager entityManager;
     
-    public List<ConflictDTO> checkForConflicts(List<AssignmentUpdateDTO> assignmentChanges) {
+    /**
+     * Check for conflicts in assignment changes
+     * @param assignmentChanges List of assignment updates to check
+     * @return List of conflicts found
+     */
+    public List<ConflictResponseDTO> checkForConflicts(List<AssignmentUpdateDTO> assignmentChanges) {
         if (assignmentChanges == null || assignmentChanges.isEmpty()) {
             return Collections.emptyList();
         }
         
-        List<ConflictDTO> conflicts = new ArrayList<>();
+        List<ConflictResponseDTO> conflicts = new ArrayList<>();
         
         for (AssignmentUpdateDTO change : assignmentChanges) {
+            // Skip if essential data is missing
             if (change.getRoomId() == null || change.getDate() == null || 
                 change.getSessionId() == null || change.getAssignmentId() == null ||
                 change.getTimetableId() == null) { 
-                    System.err.println("Skipping assignment change with missing data");
-                    continue;
+                System.err.println("Skipping assignment change with missing data");
+                continue;
             }
             
             try {
-                String sql = "SELECT a.id, a.exam_timtabling_class_id, c.exam_class_id " +
-                             "FROM exam_timetable_assignment a " +
-                             "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
-                             "WHERE CAST(a.id AS VARCHAR) = :assignmentId";
-                
-                Query query = entityManager.createNativeQuery(sql);
-                query.setParameter("assignmentId", change.getAssignmentId());
-                
-                Object[] currentAssignment = null;
-                try {
-                    currentAssignment = (Object[]) query.getSingleResult();
-                } catch (Exception e) {
-                    continue;
-                }
-                
-                String conflictSql = 
-                    "SELECT a.id, c.exam_class_id, a.exam_timtabling_class_id " +
-                    "FROM exam_timetable_assignment a " +
-                    "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
-                    "WHERE CAST(a.id AS VARCHAR) != :assignmentId " +
-                    "AND a.deleted_at IS NULL " +
-                    "AND CAST(a.room_id AS VARCHAR) = :roomId " +
-                    "AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
-                    "AND a.date = :date " +
-                    "AND CAST(a.exam_timetable_id AS VARCHAR) = :timetableId"; 
-                
-                Query conflictQuery = entityManager.createNativeQuery(conflictSql);
-                conflictQuery.setParameter("assignmentId", change.getAssignmentId());
-                conflictQuery.setParameter("roomId", change.getRoomId());
-                conflictQuery.setParameter("sessionId", change.getSessionId());
-                conflictQuery.setParameter("timetableId", change.getTimetableId().toString());
-                
+                // Convert date string to LocalDate
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                 LocalDate date = LocalDate.parse(change.getDate(), formatter);
-                conflictQuery.setParameter("date", date);
                 
-                List<Object[]> conflictResults = conflictQuery.getResultList();
-                
-                if (!conflictResults.isEmpty()) {
-                    ConflictDTO conflict = new ConflictDTO();
-                    
-                    conflict.setWeekName("W" + change.getWeekNumber());
-                    
-                    conflict.setDate(change.getDate());
-                    
-                    try {
-                        String roomSql = "SELECT name FROM exam_room WHERE CAST(id AS VARCHAR) = :roomId";
-                        Query roomQuery = entityManager.createNativeQuery(roomSql);
-                        roomQuery.setParameter("roomId", change.getRoomId());
-                        String roomName = (String) roomQuery.getSingleResult();
-                        conflict.setRoomName(roomName);
-                    } catch (Exception e) {
-                        conflict.setRoomName("Unknown Room");
-                    }
-                    
-                    try {
-                        String sessionSql = 
-                            "SELECT name, start_time, end_time FROM exam_timetable_session WHERE CAST(id AS VARCHAR) = :sessionId";
-                        Query sessionQuery = entityManager.createNativeQuery(sessionSql);
-                        sessionQuery.setParameter("sessionId", change.getSessionId());
-                        Object[] sessionResult = (Object[]) sessionQuery.getSingleResult();
-                        
-                        String sessionName = (String) sessionResult[0];
-                        Timestamp startTime = (Timestamp) sessionResult[1];
-                        Timestamp endTime = (Timestamp) sessionResult[2];
-                        
-                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:mm");
-                        LocalDateTime startDateTime = startTime.toLocalDateTime();
-                        LocalDateTime endDateTime = endTime.toLocalDateTime();
-                        
-                        String formattedSession = sessionName + " (" + 
-                                                 startDateTime.format(timeFormatter) + " - " + 
-                                                 endDateTime.format(timeFormatter) + ")";
-                        
-                        conflict.setSessionName(formattedSession);
-                    } catch (Exception e) {
-                        conflict.setSessionName("Unknown Session");
-                    }
-                    
-                    List<String> examClassIds = new ArrayList<>();
-                    
-                    if (currentAssignment != null && currentAssignment[2] != null) {
-                        examClassIds.add(currentAssignment[2].toString());
-                    }
-                    
-                    for (Object[] result : conflictResults) {
-                        if (result[1] != null) {
-                            examClassIds.add(result[1].toString());
-                        }
-                    }
-                    
-                    conflict.setExamClassIds(examClassIds);
-                    conflicts.add(conflict);
+                // Step 1: Get the exam class ID for the current assignment
+                UUID examClassId = getExamClassIdForAssignment(change.getAssignmentId());
+                if (examClassId == null) {
+                    continue; // Skip if we can't find the assignment
                 }
+                
+                // Step 2: Check for room conflicts (same room, date, session)
+                List<ConflictResponseDTO> roomConflicts = checkRoomConflicts(
+                    change.getTimetableId(), 
+                    change.getAssignmentId(),
+                    change.getRoomId(), 
+                    date, 
+                    change.getSessionId()
+                );
+                conflicts.addAll(roomConflicts);
+                
+                // Step 3: Check for class conflicts (conflicting classes at the same time)
+                List<ConflictResponseDTO> classConflicts = checkClassConflicts(
+                    change.getTimetableId(),
+                    examClassId,
+                    date,
+                    change.getSessionId()
+                );
+                conflicts.addAll(classConflicts);
+                
             } catch (Exception e) {
                 e.printStackTrace();
+                // Continue with the next assignment
             }
         }
         
         return conflicts;
     }
-    
+
+    /**
+     * Get the exam class ID for an assignment
+     */
+    private UUID getExamClassIdForAssignment(String assignmentId) {
+        String sql = "SELECT exam_timtabling_class_id " +
+                    "FROM exam_timetable_assignment " +
+                    "WHERE CAST(id AS VARCHAR) = :assignmentId";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("assignmentId", assignmentId);
+        
+        try {
+            Object result = query.getSingleResult();
+            if (result != null) {
+                return UUID.fromString(result.toString());
+            }
+        } catch (Exception e) {
+            // Handle any errors
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check for room conflicts
+     */
+    private List<ConflictResponseDTO> checkRoomConflicts(
+            UUID timetableId, 
+            String assignmentId, 
+            String roomId, 
+            LocalDate date, 
+            String sessionId) {
+        
+        String sql = 
+            "SELECT " +
+            "  a.room_id as room_id, " +
+            "  c.exam_class_id, " +
+            "  a.session " +
+            "FROM exam_timetable_assignment a " +
+            "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+            "WHERE a.exam_timetable_id = :timetableId " +
+            "  AND CAST(a.id AS VARCHAR) != :assignmentId " +
+            "  AND CAST(a.room_id AS VARCHAR) = :roomId " +
+            "  AND a.date = :date " +
+            "  AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
+            "  AND a.deleted_at IS NULL";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        query.setParameter("assignmentId", assignmentId);
+        query.setParameter("roomId", roomId);
+        query.setParameter("date", date);
+        query.setParameter("sessionId", sessionId);
+        
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        
+        List<ConflictResponseDTO> conflicts = new ArrayList<>();
+        
+        for (Object[] row : results) {
+            String roomIdResult = row[0] != null ? row[0].toString() : null;
+            String examClassId = row[1] != null ? row[1].toString() : "Unknown";
+            String session = row[2] != null ? row[2].toString() : "Unknown";
+            
+            // Get the exam class ID of the current assignment
+            String currentExamClassSql = 
+                "SELECT c.exam_class_id " +
+                "FROM exam_timetable_assignment a " +
+                "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+                "WHERE CAST(a.id AS VARCHAR) = :assignmentId";
+            
+            Query currentExamClassQuery = entityManager.createNativeQuery(currentExamClassSql);
+            currentExamClassQuery.setParameter("assignmentId", assignmentId);
+            
+            String currentExamClassId = "Unknown";
+            try {
+                currentExamClassId = currentExamClassQuery.getSingleResult().toString();
+            } catch (Exception e) {
+                // Use default value
+            }
+            
+            ConflictResponseDTO conflict = new ConflictResponseDTO(
+                roomIdResult,
+                date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                session,
+                "ROOM",
+                currentExamClassId,
+                examClassId
+            );
+            
+            conflicts.add(conflict);
+        }
+        
+        return conflicts;
+    }
+
+    /**
+     * Check for class conflicts based on conflict pairs
+     */
+    private List<ConflictResponseDTO> checkClassConflicts(
+            UUID timetableId,
+            UUID examClassId,
+            LocalDate date,
+            String sessionId) {
+        
+        // First find conflicting class pairs for this exam class
+        String conflictPairsSql = 
+            "SELECT " +
+            "  CASE " + 
+            "    WHEN conf.exam_timetabling_class_id_1 = :examClassId THEN conf.exam_timetabling_class_id_2 " +
+            "    ELSE conf.exam_timetabling_class_id_1 " +
+            "  END as other_class_id " +
+            "FROM conflict_exam_timetabling_class conf " +
+            "WHERE conf.exam_timetabling_class_id_1 = :examClassId " +
+            "   OR conf.exam_timetabling_class_id_2 = :examClassId";
+        
+        Query conflictPairsQuery = entityManager.createNativeQuery(conflictPairsSql);
+        conflictPairsQuery.setParameter("examClassId", examClassId);
+        
+        @SuppressWarnings("unchecked")
+        List<Object> conflictClassIds = conflictPairsQuery.getResultList();
+        
+        if (conflictClassIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        List<ConflictResponseDTO> conflicts = new ArrayList<>();
+        
+        // For each conflicting class, check if it has an assignment at the same time
+        for (Object conflictClassIdObj : conflictClassIds) {
+            UUID conflictClassId = UUID.fromString(conflictClassIdObj.toString());
+            
+            String timeOverlapSql = 
+                "SELECT " +
+                "  a.room_id, " +
+                "  c1.exam_class_id as exam_class_id_1, " +
+                "  c2.exam_class_id as exam_class_id_2 " +
+                "FROM exam_timetable_assignment a " +
+                "JOIN exam_timetabling_class c1 ON a.exam_timtabling_class_id = c1.id " +
+                "JOIN exam_timetabling_class c2 ON c2.id = :conflictClassId " +
+                "WHERE a.exam_timetable_id = :timetableId " +
+                "  AND a.exam_timtabling_class_id = :conflictClassId " +
+                "  AND a.date = :date " +
+                "  AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
+                "  AND a.deleted_at IS NULL";
+            
+            Query timeOverlapQuery = entityManager.createNativeQuery(timeOverlapSql);
+            timeOverlapQuery.setParameter("timetableId", timetableId);
+            timeOverlapQuery.setParameter("conflictClassId", conflictClassId);
+            timeOverlapQuery.setParameter("date", date);
+            timeOverlapQuery.setParameter("sessionId", sessionId);
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> overlaps = timeOverlapQuery.getResultList();
+            
+            // Get the exam class ID of the current class
+            String currentExamClassSql = 
+                "SELECT exam_class_id FROM exam_timetabling_class WHERE id = :examClassId";
+            
+            Query currentExamClassQuery = entityManager.createNativeQuery(currentExamClassSql);
+            currentExamClassQuery.setParameter("examClassId", examClassId);
+            
+            String currentExamClassId = "Unknown";
+            try {
+                currentExamClassId = currentExamClassQuery.getSingleResult().toString();
+            } catch (Exception e) {
+                // Use default value
+            }
+            
+            // If overlaps found, create a conflict
+            for (Object[] overlap : overlaps) {
+                String roomId = overlap[0] != null ? overlap[0].toString() : null;
+                String examClassId2 = overlap[2] != null ? overlap[2].toString() : "Unknown";
+                
+                ConflictResponseDTO conflict = new ConflictResponseDTO(
+                    roomId,
+                    date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    sessionId,
+                    "CLASS",
+                    currentExamClassId,
+                    examClassId2
+                );
+                
+                conflicts.add(conflict);
+            }
+        }
+        
+        return conflicts;
+    }
+
     @Transactional
     public void updateAssignments(List<AssignmentUpdateDTO> assignmentChanges) {
         if (assignmentChanges == null || assignmentChanges.isEmpty()) {
