@@ -39,6 +39,7 @@ const WeekAcademicScreen = () => {
         setUpdateSelectedSemester={setSelectedSemester}
         setOpen={setOpenWeekDialog}
         refetch={refetch}
+        selectedSemester={selectedSemester}
       />
       <div className="flex gap-2 justify-between w-full">
         {isDeleting && <FacebookCircularProgress />}
@@ -61,7 +62,7 @@ const WeekAcademicScreen = () => {
             Xóa tuần học của kì
           </Button>
           <Button
-            disabled={isLoading}
+            disabled={isLoading || selectedSemester === null}
             sx={{
               width: "220px",
               textTransform: "none",

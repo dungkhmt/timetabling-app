@@ -126,12 +126,13 @@ public class ExamTimetableController {
     }
 
     @PostMapping("/assignment/check-conflict")
-    public ResponseEntity<List<ConflictDTO>> checkConflicts(@RequestBody List<AssignmentUpdateDTO> assignmentChanges) {
+    public ResponseEntity<List<ConflictResponseDTO>> checkConflicts(@RequestBody List<AssignmentUpdateDTO> assignmentChanges) {
         try {
-            List<ConflictDTO> conflicts = examTimetableAssignmentService.checkForConflicts(assignmentChanges);
+            List<ConflictResponseDTO> conflicts = examTimetableAssignmentService.checkForConflicts(assignmentChanges);
             return ResponseEntity.ok(conflicts);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+
+            System.out.println("Error checking conflicts: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }

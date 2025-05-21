@@ -5,7 +5,7 @@ import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAut
 import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoComplete";
 import GeneralClusterAutoComplete from "../common-components/GeneralClusterAutoComplete";
 import VersionSelectionScreen from "../version-selection/VersionSelectionScreen";
-import { Button, Tabs, Tab, Chip, Divider, Paper, Typography, Box } from "@mui/material";
+import { Button, Tabs, Tab, Chip, Divider, Paper, Typography, Box, TextField } from "@mui/material";
 import { FacebookCircularProgress } from "components/common/progressBar/CustomizedCircularProgress";
 import TimeTable from "./components/TimeTable";
 import ConsolidatedTimeTable from "./components/ConsolidatedTimeTable";
@@ -23,7 +23,6 @@ import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { Clear, ArrowBack } from "@mui/icons-material";
 import {toast} from "react-toastify";
 import { request } from "api";
-import { select } from "d3-selection";
 
 
 const GeneralScheduleScreen = () => {
@@ -368,16 +367,17 @@ const GeneralScheduleScreen = () => {
           <div className="mt-3">
             <Paper variant="outlined" className="p-3">
               <div className="flex gap-3 items-center flex-wrap">
-                <GeneralSemesterAutoComplete
-                  selectedSemester={states.selectedSemester}
-                  setSelectedSemester={setters.setSelectedSemester}
-                  sx={{
-                    minWidth: 200,
-                    "& .MuiInputBase-root": { height: "40px" },
-                  }}
-                  label="Chọn học kỳ"
-                  disabled={!!selectedVersion} // Disable if selectedVersion exists
-                />
+              <TextField
+                width="200px"
+                size="small"
+                height="36px"
+                label="Kỳ học"
+                value={selectedVersion?.semester || ""}
+                disabled
+                InputProps={{
+                  readOnly: true,
+                }}
+              />
 
                 <GeneralGroupAutoComplete
                   selectedGroup={states.selectedGroup}
@@ -561,7 +561,8 @@ const GeneralScheduleScreen = () => {
                     onClick={() =>
                       handlers.handleExportTimeTabling(
                         states.selectedSemester?.semester,
-                        true // includeBorders parameter
+                        selectedVersion?.id,
+                        selectedVersion?.numberSlotsPerSession || 6 // Sử dụng numberSlotsPerSession từ version, mặc định là 6
                       )
                     }
                     sx={{

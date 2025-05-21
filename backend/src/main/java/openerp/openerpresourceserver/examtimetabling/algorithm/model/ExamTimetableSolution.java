@@ -197,10 +197,10 @@ public class ExamTimetableSolution extends TimetablingSolution {
         // Early slot assignments (negative impact, lower priority)
         double earlySlotScore = 1.0 / (1.0 + getEarlySlotAssignments() * 0.1);
 
-        System.err.println("Group Spacing Score: " + groupSpacingScore);
-        System.err.println("Room Balance Score: " + roomBalanceScore);
-        System.err.println("Time Slot Balance Score: " + timeSlotBalanceScore);
-        System.err.println("Early Slot Score: " + earlySlotScore);
+        // System.err.println("Group Spacing Score: " + groupSpacingScore);
+        // System.err.println("Room Balance Score: " + roomBalanceScore);
+        // System.err.println("Time Slot Balance Score: " + timeSlotBalanceScore);
+        // System.err.println("Early Slot Score: " + earlySlotScore);
         
         // Weighted sum (higher is better)
         double score = (WEIGHT_GROUP_SPACING * groupSpacingScore) +

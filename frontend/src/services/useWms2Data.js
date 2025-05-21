@@ -285,17 +285,6 @@ export const useWms2Data = () => {
     }
   };
 
-  const approvePurchaseOrder = async (orderId) => {
-    try {
-      const response = await wms2Service.approvePurchaseOrder(orderId);
-      return response.data;
-    } catch (error) {
-      console.error("Error approving purchase order:", error);
-      toast.error("Không thể duyệt đơn hàng mua");
-      return { data: {} };
-    }
-  };
-
   const createInBoundOrder = async (data) => {
     try {
       const res = await wms2Service.createInBoundOrder(data);
@@ -642,7 +631,6 @@ export const useWms2Data = () => {
     getPurchaseOrdersForExport,
     getPurchaseOrderDetails,
     updatePurchaseOrderStatus,
-    approvePurchaseOrder,
     createInBoundOrder,
     getInBoundsOrder,
     getInBoundDetail,
