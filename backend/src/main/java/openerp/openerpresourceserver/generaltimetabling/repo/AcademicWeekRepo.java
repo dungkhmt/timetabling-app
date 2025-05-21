@@ -15,4 +15,6 @@ public interface AcademicWeekRepo extends JpaRepository<AcademicWeek, Long> {
     void deleteBySemester(String semester);
 
     boolean findBySemester(String semester);
+
+    boolean existsBySemester(String semester);
 }
