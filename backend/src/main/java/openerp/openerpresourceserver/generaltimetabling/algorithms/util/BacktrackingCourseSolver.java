@@ -19,7 +19,7 @@ public class BacktrackingCourseSolver {
     }
     boolean check(int ses, int sl, int k){
         // return true if (ses, sl) can be assigned to course k without overlapping with courses 0,...,k-1
-
+        return true;
     }
     private void updateBest(){
         // compare current solution with the best solution found before
