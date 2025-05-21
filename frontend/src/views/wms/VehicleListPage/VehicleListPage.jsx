@@ -2,25 +2,25 @@ import React, { useState, useEffect } from "react";
 import { Box, Tabs, Tab, Paper } from "@mui/material";
 import { useWms2Data } from "../../../services/useWms2Data";
 import { toast } from "react-toastify";
-import DeliveryRouteListHeader from "./components/DeliveryRouteListHeader";
-import DeliveryRouteFilters from "./components/DeliveryRouteFilters";
-import DeliveryRouteTable from "./components/DeliveryRouteTable";
+import VehicleListHeader from "./components/VehicleListHeader";
+import VehicleFilters from "./components/VehicleFilters";
+import VehicleTable from "./components/VehicleTable";
 import {MENU_CONSTANTS} from "../common/constants/screenId";
 import {withAuthorization} from "../common/components/withAuthorization";
 
-// Constants for delivery route status
-const DELIVERY_ROUTE_STATUSES = [
+// Constants for vehicle status
+const VEHICLE_STATUSES = [
   { id: "", name: "Tất cả" },
+  { id: "AVAILABLE", name: "Có sẵn" },
   { id: "ASSIGNED", name: "Đã phân công" },
-  { id: "IN_PROGRESS", name: "Đang giao hàng" },
-  { id: "COMPLETED", name: "Đã hoàn thành" },
-  { id: "CANCELLED", name: "Đã hủy" }
+  { id: "IN_USE", name: "Đang sử dụng" },
+  { id: "UNDER_MAINTENANCE", name: "Đang bảo trì" }
 ];
 
-const DeliveryRouteListPage = () => {
-  const { getAllDeliveryRoutes } = useWms2Data();
+const VehicleListPage = () => {
+  const { getVehicles } = useWms2Data();
   
-  const [deliveryRoutes, setDeliveryRoutes] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 0,
@@ -34,7 +34,7 @@ const DeliveryRouteListPage = () => {
   
   const [filters, setFilters] = useState({
     keyword: "",
-    statusId: ""  // Changed from array to string to match backend
+    statusId: ""
   });
   
   const [showFilters, setShowFilters] = useState(true);
@@ -44,7 +44,7 @@ const DeliveryRouteListPage = () => {
     setSelectedTab(newValue);
     
     // Update status filter based on selected tab
-    const newStatusFilter = DELIVERY_ROUTE_STATUSES[newValue].id;
+    const newStatusFilter = VEHICLE_STATUSES[newValue].id;
     
     setFilters(prev => ({
       ...prev,
@@ -59,16 +59,16 @@ const DeliveryRouteListPage = () => {
     
     // Fetch with new status filter
     setTimeout(() => {
-      fetchDeliveryRoutes(newStatusFilter);
+      fetchVehicles(newStatusFilter);
     }, 0);
   };
 
-  // Fetch delivery routes on component mount and when pagination changes
+  // Fetch vehicles on component mount and when pagination changes
   useEffect(() => {
-    fetchDeliveryRoutes();
+    fetchVehicles();
   }, [pagination.page, pagination.size]);
 
-  const fetchDeliveryRoutes = async (statusOverride = null) => {
+  const fetchVehicles = async (statusOverride = null) => {
     setLoading(true);
     try {
       // Use status override if provided, otherwise use current filters
@@ -77,25 +77,25 @@ const DeliveryRouteListPage = () => {
         statusId: statusOverride !== null ? statusOverride : filters.statusId
       };
       
-      const response = await getAllDeliveryRoutes(
-        pagination.page, // API uses 1-indexed pagination
+      const response = await getVehicles(
+        pagination.page + 1, // API uses 1-indexed pagination
         pagination.size,
         filterPayload
       );
       
       if (response && response.code === 200) {
-        setDeliveryRoutes(response.data.data || []);
+        setVehicles(response.data.data || []);
         setPagination(prev => ({
           ...prev,
           totalElements: response.data.totalElements || 0,
           totalPages: response.data.totalPages || 0
         }));
       } else {
-        toast.error("Không thể tải danh sách chuyến giao hàng");
+        toast.error("Không thể tải danh sách phương tiện");
       }
     } catch (error) {
-      console.error("Error fetching delivery routes:", error);
-      toast.error("Lỗi khi tải danh sách chuyến giao hàng");
+      console.error("Error fetching vehicles:", error);
+      toast.error("Lỗi khi tải danh sách phương tiện");
     } finally {
       setLoading(false);
     }
@@ -130,10 +130,10 @@ const DeliveryRouteListPage = () => {
   // Apply filters
   const handleApplyFilters = () => {
     setPagination(prev => ({ ...prev, page: 0 }));
-    fetchDeliveryRoutes();
+    fetchVehicles();
     
     // Find and select the tab that matches the status in filters, or select "All" if none
-    const statusTabIndex = DELIVERY_ROUTE_STATUSES.findIndex(
+    const statusTabIndex = VEHICLE_STATUSES.findIndex(
       status => status.id === filters.statusId
     );
     setSelectedTab(statusTabIndex >= 0 ? statusTabIndex : 0);
@@ -148,7 +148,7 @@ const DeliveryRouteListPage = () => {
     setPagination(prev => ({ ...prev, page: 0 }));
     setSelectedTab(0); // Reset to "ALL" tab
     setTimeout(() => {
-      fetchDeliveryRoutes();
+      fetchVehicles();
     }, 0);
   };
 
@@ -159,7 +159,7 @@ const DeliveryRouteListPage = () => {
 
   return (
     <Box p={3}>
-      <DeliveryRouteListHeader 
+      <VehicleListHeader 
         onResetFilters={handleResetFilters}
         showFilters={showFilters}
         onToggleFilters={handleToggleFilters}
@@ -174,16 +174,16 @@ const DeliveryRouteListPage = () => {
           textColor="primary"
           variant="scrollable"
           scrollButtons="auto"
-          aria-label="delivery route status tabs"
+          aria-label="vehicle status tabs"
         >
-          {DELIVERY_ROUTE_STATUSES.map((status) => (
+          {VEHICLE_STATUSES.map((status) => (
             <Tab key={status.id} label={status.name} />
           ))}
         </Tabs>
       </Paper>
 
       {showFilters && (
-        <DeliveryRouteFilters
+        <VehicleFilters
           filters={filters}
           onFilterChange={handleFilterChange}
           onApplyFilters={handleApplyFilters}
@@ -192,8 +192,8 @@ const DeliveryRouteListPage = () => {
         />
       )}
 
-      <DeliveryRouteTable 
-        deliveryRoutes={deliveryRoutes}
+      <VehicleTable 
+        vehicles={vehicles}
         loading={loading}
         pagination={pagination}
         onChangePage={handleChangePage}
@@ -203,4 +203,4 @@ const DeliveryRouteListPage = () => {
   );
 };
 
-export default withAuthorization(DeliveryRouteListPage, MENU_CONSTANTS.LOGISTICS_DELIVERY_ROUTE_LIST) ;
+export default withAuthorization(VehicleListPage, MENU_CONSTANTS.LOGISTICS_VEHICLE_LIST);
