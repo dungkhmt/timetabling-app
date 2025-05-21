@@ -22,9 +22,11 @@ import {
   Search,
   FilterList,
   ViewColumn,
-  Clear
+  Clear,
+  Restore
 } from '@mui/icons-material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import ResetChangesConfirmDialog from './ResetChangesConfirmDialog'
 
 function CustomToolbar(props) {
   const { visibleColumns, setVisibleColumns, allColumns } = props;
@@ -90,10 +92,6 @@ function CustomToolbar(props) {
   );
 }
 
-/**
- * A data grid component for managing exam class assignments
- * Optimized for performance with virtualization and memoization
- */
 const ClassesTable = forwardRef(({ 
   classesData, 
   isLoading,
@@ -101,7 +99,8 @@ const ClassesTable = forwardRef(({
   weeks,
   dates,
   slots,
-  onSelectionChange 
+  onSelectionChange,
+  onChangeStatusUpdate,
 }, ref) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [roomFilter, setRoomFilter] = useState('all'); 
@@ -118,6 +117,12 @@ const ClassesTable = forwardRef(({
      'numberOfStudents', 'description',
   ]);
   const [frozenFilteredClasses, setFrozenFilteredClasses] = useState(null);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+
+  const handleResetChanges = () => {
+    setAssignmentChanges({});
+    setIsResetDialogOpen(false);
+  };
   
   const uniqueDescriptions = useMemo(() => {
     if (!classesData || classesData.length === 0) return [];
@@ -272,7 +277,6 @@ const ClassesTable = forwardRef(({
       }
     }
     
-    // Apply status filter - check if assignment is fully scheduled or not
     if (statusFilter !== 'all') {
       results = results.filter(item => {
         const id = item.id;
@@ -324,24 +328,30 @@ const ClassesTable = forwardRef(({
   }, [classesData, activeSearchValue, statusFilter, roomFilter, dateFilter, slotFilter, assignmentChanges, uniqueDescriptions, activeFilters, frozenFilteredClasses]);
 
   const handleRoomChange = useCallback((classId, roomId) => {
-    setAssignmentChanges(prev => {
-      const currentAssignment = prev[classId] || {};
-      const originalRow = classesData.find(row => row.id === classId);
-      
-      return {
-        ...prev,
-        [classId]: {
-          roomId,
-          weekNumber: currentAssignment.weekNumber !== undefined ? 
-            currentAssignment.weekNumber : originalRow.weekNumber,
-          date: currentAssignment.date !== undefined ? 
-            currentAssignment.date : originalRow.date,
-          sessionId: currentAssignment.sessionId !== undefined ? 
-            currentAssignment.sessionId : originalRow.sessionId
+      setAssignmentChanges(prev => {
+        const currentAssignment = prev[classId] || {};
+        const originalRow = classesData.find(row => row.id === classId);
+        
+        const newChanges = {
+          ...prev,
+          [classId]: {
+            roomId,
+            weekNumber: currentAssignment.weekNumber !== undefined ? 
+              currentAssignment.weekNumber : originalRow.weekNumber,
+            date: currentAssignment.date !== undefined ? 
+              currentAssignment.date : originalRow.date,
+            sessionId: currentAssignment.sessionId !== undefined ? 
+              currentAssignment.sessionId : originalRow.sessionId
+          }
+        };
+        
+        if (onChangeStatusUpdate) {
+          onChangeStatusUpdate(Object.keys(newChanges).length > 0);
         }
-      };
-    });
-  }, [classesData]);
+        
+        return newChanges;
+      });
+    }, [classesData, onChangeStatusUpdate]);
   
   const handleWeekChange = useCallback((classId, weekNumber) => {
     setAssignmentChanges(prev => {
@@ -606,8 +616,20 @@ const ClassesTable = forwardRef(({
       }));
     },
     getRawAssignmentChanges: () => assignmentChanges,
-    getSelectedRows: () => selectedRows
+    getSelectedRows: () => selectedRows,
+    resetAssignmentChanges: () => {
+      setAssignmentChanges({});
+      if (onChangeStatusUpdate) {
+        onChangeStatusUpdate(false);
+      }
+    }
   }));
+
+  useEffect(() => {
+    if (onChangeStatusUpdate) {
+      onChangeStatusUpdate(Object.keys(assignmentChanges).length > 0);
+    }
+  }, [assignmentChanges, onChangeStatusUpdate]);
 
   const filterOptions = (options, { inputValue }) => {
     if (!inputValue) return [];
@@ -790,9 +812,30 @@ const ClassesTable = forwardRef(({
             </FormControl>
           </Box>
         </Box>
-
       </Box>
+
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end', p: 2 }}>
+        {Object.keys(assignmentChanges).length > 0 && (
+          <Button
+            variant="outlined"
+            color="warning"
+            size="small"
+            startIcon={<Restore />}
+            onClick={() => setIsResetDialogOpen(true)}
+            sx={{ 
+              mr: 1,
+              borderColor: '#f57c00',
+              color: '#f57c00',
+              '&:hover': {
+                backgroundColor: '#fff3e0',
+                borderColor: '#f57c00'
+              }
+            }}
+          >
+            Hoàn tác thay đổi ({Object.keys(assignmentChanges).length})
+          </Button>
+        )}
+
         {activeFilters && (
           <Button
             variant="outlined"
@@ -811,7 +854,7 @@ const ClassesTable = forwardRef(({
             Xóa bộ lọc
           </Button>
         )}
-
+        
         {activeFilters && frozenFilteredClasses !== null && (
           <Button
             variant="outlined"
@@ -840,7 +883,9 @@ const ClassesTable = forwardRef(({
             }}
             rowHeight={52}
             getRowId={(row) => row.id}
-            getRowClassName={() => 'datagrid-row'}
+            getRowClassName={(params) => {
+              return assignmentChanges[params.id] ? 'datagrid-row changed-row' : 'datagrid-row';
+            }}
             columnBuffer={12}
             rowBuffer={100}
             density="standard"
@@ -878,8 +923,14 @@ const ClassesTable = forwardRef(({
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
               },
+              '& .changed-row': {
+                backgroundColor: '#fff8e1', // Light yellow background for changed rows
+              },
               '& .MuiDataGrid-row:nth-of-type(even)': {
                 backgroundColor: '#fafafa',
+              },
+              '& .MuiDataGrid-row:nth-of-type(even).changed-row': {
+                backgroundColor: '#fff8e1', // Light yellow background for changed rows (even)
               },
               '& .MuiDataGrid-row:hover': {
                 backgroundColor: '#f5f5f5',
@@ -908,6 +959,13 @@ const ClassesTable = forwardRef(({
           />
         )}
       </Box>
+
+      <ResetChangesConfirmDialog
+        open={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        onConfirm={handleResetChanges}
+        changesCount={Object.keys(assignmentChanges).length}
+      />
     </Box>
   );
 });

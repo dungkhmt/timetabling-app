@@ -66,6 +66,11 @@ const localText = {
   
   // Selected rows count
   selectedRowCount: (count) => `${count} hàng đã chọn`,
+
+  // Quick filter toolbar field
+  toolbarQuickFilterPlaceholder: 'Tìm kiếm',
+  toolbarQuickFilterLabel: 'Tìm kiếm',
+  toolbarQuickFilterDeleteIconLabel: 'Xóa',
 };
 
 export default localText;

@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams, useHistory, Prompt } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -38,6 +38,7 @@ import { useExamTimetableData } from 'services/useExamTimetableData';
 import { useExamRoomData } from 'services/useExamRoomData';
 import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
 import UnassignConfirmDialog from './components/UnassignConfirmDialog'
+import UnsavedChangesWarningModal from './components/UnsavedChangesWarningModal'
 
 const convertDateFormat = (dateStr) =>{
   const [year, month, day] = dateStr.split('-');
@@ -92,8 +93,108 @@ const TimetableDetailPage = () => {
   const [isUnassignDialogOpen, setIsUnassignDialogOpen] = useState(false);
   const [isUnassigning, setIsUnassigning] = useState(false);
   const [assignmentsToUnassign, setAssignmentsToUnassign] = useState([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isNavigatingAway, setIsNavigatingAway] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
 
   const classesTableRef = useRef();
+
+  useEffect(() => {
+    if (classesTableRef.current) {
+      const unsavedChangesCount = Object.keys(classesTableRef.current.getRawAssignmentChanges() || {}).length;
+      setHasUnsavedChanges(unsavedChangesCount > 0);
+    }
+  }, [examTimetableAssignments]); 
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+        return ''; 
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  const checkUnsavedChanges = useCallback(() => {
+    if (classesTableRef.current) {
+      const changes = classesTableRef.current.getRawAssignmentChanges() || {};
+      return Object.keys(changes).length;
+    }
+    return 0;
+  }, []);
+
+  const handleNavigation = useCallback((nextLocation) => {
+    const changesCount = checkUnsavedChanges();
+    
+    if (changesCount > 0) {
+      setPendingNavigation(nextLocation);
+      setIsWarningModalOpen(true);
+      return false;
+    }
+    
+    return true;
+  }, [checkUnsavedChanges]);
+
+  const handleSaveAndCheck = useCallback(async () => {
+    const assignmentChanges = classesTableRef.current.getAssignmentChanges();
+    
+    const validationResult = validateAssignmentChanges(
+      classesTableRef.current.getRawAssignmentChanges(), 
+      examTimetableAssignments
+    );
+    
+    if (!validationResult.isValid) {
+      setInvalidAssignments(validationResult.invalidAssignments);
+      setIsInvalidModalOpen(true);
+      return Promise.reject(new Error('Invalid assignments'));
+    }
+
+    const {
+      data: foundConflicts,
+    } = await getAssignmentConflicts(
+      assignmentChanges.map((assignment) => ({
+        timetableId: timetable.id,
+        ...assignment,
+      }))
+    );
+
+    if (foundConflicts.length > 0) {
+      setConflicts(foundConflicts);
+      setIsConflictModalOpen(true);
+      return Promise.reject(new Error('Conflicts found'));
+    } else {
+      return saveAssignments(assignmentChanges);
+    }
+  });
+
+
+  const handleNavigationDecision = useCallback((shouldSave) => {
+    setIsWarningModalOpen(false);
+
+    
+    if (shouldSave) {
+      handleSaveAndCheck().then(() => {
+        if (pendingNavigation) {
+          history.push(pendingNavigation.pathname);
+        }
+      });
+    } else {
+      if (pendingNavigation) {
+        setIsNavigatingAway(true);
+        history.push(pendingNavigation.pathname);
+      }
+    }
+    
+    setPendingNavigation(null);
+  }, [pendingNavigation, history, handleSaveAndCheck]);
 
   const handleSelectionChange = (selectedIds) => {
     setSelectedAssignments(selectedIds);
@@ -186,37 +287,7 @@ const TimetableDetailPage = () => {
     }
   };
 
-  const handleSaveAndCheck = async () => {
-    const assignmentChanges = classesTableRef.current.getAssignmentChanges();
-    
-    const validationResult = validateAssignmentChanges(
-      classesTableRef.current.getRawAssignmentChanges(), 
-      examTimetableAssignments
-    );
-    
-    if (!validationResult.isValid) {
-      setInvalidAssignments(validationResult.invalidAssignments);
-      setIsInvalidModalOpen(true);
-      return;
-    }
-
-    const {
-      data: foundConflicts,
-    } = await getAssignmentConflicts(
-      assignmentChanges.map((assignment) => ({
-        timetableId: timetable.id,
-        ...assignment,
-      }))
-    );
-
-    if (foundConflicts.length > 0) {
-      setConflicts(foundConflicts);
-      setIsConflictModalOpen(true);
-    } else {
-      saveAssignments(assignmentChanges);
-    }
-  };
-
+  
   const handleCheck = async () => {
     try {
       setIsCheckingConflicts(true);
@@ -241,14 +312,20 @@ const TimetableDetailPage = () => {
   const handleContinueSaveWithConflicts = () => {
     setIsConflictModalOpen(false);
     const assignmentChanges = classesTableRef.current.getAssignmentChanges();
-    saveAssignments(assignmentChanges, conflicts);
+    return saveAssignments(assignmentChanges, conflicts);
   };
 
   const saveAssignments = async (assignments, conflictsToLog = []) => {
     try {
       await updateExamTimetableAssignments(assignments, conflictsToLog);
+      setHasUnsavedChanges(false);
+      if (classesTableRef.current) {
+        classesTableRef.current.resetAssignmentChanges();
+      }
+      return Promise.resolve();
     } catch (error) {
       console.error('Error saving assignments:', error);
+      return Promise.reject(error);
     }
   };
   
@@ -476,7 +553,7 @@ const TimetableDetailPage = () => {
           
           <Box sx={{ display: 'flex', gap: 1 }}>
             {/* Auto Assign Button */}
-            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để phân công tự động" : "Phân công tự động cho lớp đã chọn"}>
+            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để xếp tự động" : "Xếp tự động cho lớp đã chọn"}>
               <span>
                 <Button
                   variant="contained"
@@ -490,7 +567,7 @@ const TimetableDetailPage = () => {
                     '&:hover': { bgcolor: '#FFA726' }
                   }}
                 >
-                  {isAutoAssigning ? 'Đang xử lý...' : `Phân công tự động (${selectedAssignments.length})`}
+                  {isAutoAssigning ? 'Đang xử lý...' : `Xếp tự động (${selectedAssignments.length})`}
                 </Button>
               </span>
             </Tooltip>
@@ -509,7 +586,7 @@ const TimetableDetailPage = () => {
                     '&:hover': { bgcolor: '#EF5350' }
                   }}
                 >
-                  {isUnassigning ? 'Đang xử lý...' : `Hủy phân công (${selectedAssignments.length})`}
+                  {isUnassigning ? 'Đang xử lý...' : `Hủy (${selectedAssignments.length})`}
                 </Button>
               </span>
             </Tooltip>
@@ -545,7 +622,7 @@ const TimetableDetailPage = () => {
                 '&:hover': { bgcolor: '#FFC107' }
               }}
             >
-              {isCheckingConflicts ? 'Đang kiểm tra...' : 'Kiểm tra xung đột'}
+              {isCheckingConflicts ? 'Đang kiểm tra...' : 'Kiểm tra'}
             </Button>
 
             <Button
@@ -574,6 +651,7 @@ const TimetableDetailPage = () => {
             dates={timetable.dates}
             slots={timetable.slots}
             onSelectionChange={handleSelectionChange}
+            onChangeStatusUpdate={setHasUnsavedChanges} 
           />
 
           {/* Conflict Dialog */}
@@ -638,6 +716,19 @@ const TimetableDetailPage = () => {
         onUpdateTimetable={handleRenameTimetable}
         timetableName={timetable.name}
         timetableId={timetable.id}
+      />
+
+      <Prompt
+        when={hasUnsavedChanges && !isNavigatingAway}
+        message={handleNavigation}
+      />
+      
+      {/* Unsaved Changes Warning Modal */}
+      <UnsavedChangesWarningModal
+        open={isWarningModalOpen}
+        onClose={() => setIsWarningModalOpen(false)}
+        onConfirm={handleNavigationDecision}
+        changesCount={checkUnsavedChanges()}
       />
     </Container>
   );
