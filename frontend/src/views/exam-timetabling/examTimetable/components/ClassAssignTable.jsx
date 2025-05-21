@@ -22,9 +22,11 @@ import {
   Search,
   FilterList,
   ViewColumn,
-  Clear
+  Clear,
+  Restore
 } from '@mui/icons-material';
 import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import ResetChangesConfirmDialog from './ResetChangesConfirmDialog'
 
 function CustomToolbar(props) {
   const { visibleColumns, setVisibleColumns, allColumns } = props;
@@ -118,6 +120,12 @@ const ClassesTable = forwardRef(({
      'numberOfStudents', 'description',
   ]);
   const [frozenFilteredClasses, setFrozenFilteredClasses] = useState(null);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+
+  const handleResetChanges = () => {
+    setAssignmentChanges({});
+    setIsResetDialogOpen(false);
+  };
   
   const uniqueDescriptions = useMemo(() => {
     if (!classesData || classesData.length === 0) return [];
@@ -597,7 +605,7 @@ const ClassesTable = forwardRef(({
       width: 100,
     },
   ], [renderRoomCell, renderWeekCell, renderDateCell, renderSlotCell]);
-
+  
   useImperativeHandle(ref, () => ({
     getAssignmentChanges: () => {
       return Object.entries(assignmentChanges).map(([key, value]) => ({
@@ -606,7 +614,10 @@ const ClassesTable = forwardRef(({
       }));
     },
     getRawAssignmentChanges: () => assignmentChanges,
-    getSelectedRows: () => selectedRows
+    getSelectedRows: () => selectedRows,
+    resetAssignmentChanges: () => {
+      setAssignmentChanges({});
+    }
   }));
 
   const filterOptions = (options, { inputValue }) => {
@@ -790,9 +801,30 @@ const ClassesTable = forwardRef(({
             </FormControl>
           </Box>
         </Box>
-
       </Box>
+
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end', p: 2 }}>
+        {Object.keys(assignmentChanges).length > 0 && (
+          <Button
+            variant="outlined"
+            color="warning"
+            size="small"
+            startIcon={<Restore />}
+            onClick={() => setIsResetDialogOpen(true)}
+            sx={{ 
+              mr: 1,
+              borderColor: '#f57c00',
+              color: '#f57c00',
+              '&:hover': {
+                backgroundColor: '#fff3e0',
+                borderColor: '#f57c00'
+              }
+            }}
+          >
+            Hoàn tác thay đổi ({Object.keys(assignmentChanges).length})
+          </Button>
+        )}
+
         {activeFilters && (
           <Button
             variant="outlined"
@@ -811,7 +843,7 @@ const ClassesTable = forwardRef(({
             Xóa bộ lọc
           </Button>
         )}
-
+        
         {activeFilters && frozenFilteredClasses !== null && (
           <Button
             variant="outlined"
@@ -840,7 +872,9 @@ const ClassesTable = forwardRef(({
             }}
             rowHeight={52}
             getRowId={(row) => row.id}
-            getRowClassName={() => 'datagrid-row'}
+            getRowClassName={(params) => {
+              return assignmentChanges[params.id] ? 'datagrid-row changed-row' : 'datagrid-row';
+            }}
             columnBuffer={12}
             rowBuffer={100}
             density="standard"
@@ -878,8 +912,14 @@ const ClassesTable = forwardRef(({
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
               },
+              '& .changed-row': {
+                backgroundColor: '#fff8e1', // Light yellow background for changed rows
+              },
               '& .MuiDataGrid-row:nth-of-type(even)': {
                 backgroundColor: '#fafafa',
+              },
+              '& .MuiDataGrid-row:nth-of-type(even).changed-row': {
+                backgroundColor: '#fff8e1', // Light yellow background for changed rows (even)
               },
               '& .MuiDataGrid-row:hover': {
                 backgroundColor: '#f5f5f5',
@@ -908,6 +948,13 @@ const ClassesTable = forwardRef(({
           />
         )}
       </Box>
+
+      <ResetChangesConfirmDialog
+        open={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        onConfirm={handleResetChanges}
+        changesCount={Object.keys(assignmentChanges).length}
+      />
     </Box>
   );
 });

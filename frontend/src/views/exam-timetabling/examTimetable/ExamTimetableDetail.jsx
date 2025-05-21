@@ -476,7 +476,7 @@ const TimetableDetailPage = () => {
           
           <Box sx={{ display: 'flex', gap: 1 }}>
             {/* Auto Assign Button */}
-            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để phân công tự động" : "Phân công tự động cho lớp đã chọn"}>
+            <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để xếp tự động" : "Xếp tự động cho lớp đã chọn"}>
               <span>
                 <Button
                   variant="contained"
@@ -490,7 +490,7 @@ const TimetableDetailPage = () => {
                     '&:hover': { bgcolor: '#FFA726' }
                   }}
                 >
-                  {isAutoAssigning ? 'Đang xử lý...' : `Phân công tự động (${selectedAssignments.length})`}
+                  {isAutoAssigning ? 'Đang xử lý...' : `Xếp tự động (${selectedAssignments.length})`}
                 </Button>
               </span>
             </Tooltip>
@@ -509,7 +509,7 @@ const TimetableDetailPage = () => {
                     '&:hover': { bgcolor: '#EF5350' }
                   }}
                 >
-                  {isUnassigning ? 'Đang xử lý...' : `Hủy phân công (${selectedAssignments.length})`}
+                  {isUnassigning ? 'Đang xử lý...' : `Hủy (${selectedAssignments.length})`}
                 </Button>
               </span>
             </Tooltip>
@@ -545,7 +545,7 @@ const TimetableDetailPage = () => {
                 '&:hover': { bgcolor: '#FFC107' }
               }}
             >
-              {isCheckingConflicts ? 'Đang kiểm tra...' : 'Kiểm tra xung đột'}
+              {isCheckingConflicts ? 'Đang kiểm tra...' : 'Kiểm tra'}
             </Button>
 
             <Button
