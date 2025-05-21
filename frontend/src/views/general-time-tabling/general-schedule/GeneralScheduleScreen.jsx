@@ -561,7 +561,8 @@ const GeneralScheduleScreen = () => {
                     onClick={() =>
                       handlers.handleExportTimeTabling(
                         states.selectedSemester?.semester,
-                        true // includeBorders parameter
+                        selectedVersion?.id,
+                        selectedVersion?.numberSlotsPerSession || 6 // Sử dụng numberSlotsPerSession từ version, mặc định là 6
                       )
                     }
                     sx={{

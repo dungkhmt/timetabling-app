@@ -10,8 +10,12 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.OccupationClassPeriod;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingClassRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingClassSegmentRepo;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -504,6 +508,369 @@ public class GeneralExcelHelper {
             return new ByteArrayInputStream(out.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
+        }
+    }
+    /**
+     * Overload of convertGeneralClassToExcel that accepts a map of class segments and numberSlotsPerSession
+     */
+    public static ByteArrayInputStream convertGeneralClassToExcel(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Integer numberSlotsPerSession) {
+        /*Handle Excel write*/
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            /* Init the cell style*/
+            /*Bold style*/
+            CellStyle boldStyle = workbook.createCellStyle();
+            Font boldFont = workbook.createFont();
+            boldFont.setBold(true);
+            boldStyle.setFont(boldFont);
+            boldStyle.setBorderBottom((short) 1);
+            boldStyle.setBorderLeft((short) 1);
+            boldStyle.setBorderRight((short) 1);
+            boldStyle.setBorderTop((short) 1);
+            int rowIndex = START_ROW_TO_READ_CLASS;
+            Sheet sheet = workbook.createSheet(SHEET);
+            /*Room style*/
+            CellStyle roomStyle=  workbook.createCellStyle();
+            roomStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+            roomStyle.setFillPattern((short) 1);
+            roomStyle.setBorderBottom((short) 1);
+            roomStyle.setBorderLeft((short) 1);
+            roomStyle.setBorderRight((short) 1);
+            roomStyle.setBorderTop((short) 1);
+
+            /*Header style*/
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(boldFont);
+            headerStyle.setAlignment(CellStyle.ALIGN_CENTER);
+            headerStyle.setBorderBottom((short) 1);
+            headerStyle.setBorderLeft((short) 1);
+            headerStyle.setBorderRight((short) 1);
+            headerStyle.setBorderTop((short) 1);
+
+            /*Create default cell style with borders*/
+            CellStyle defaultStyle = workbook.createCellStyle();
+            defaultStyle.setBorderBottom((short) 1);
+            defaultStyle.setBorderLeft((short) 1);
+            defaultStyle.setBorderRight((short) 1);
+            defaultStyle.setBorderTop((short) 1);
+
+            /*Header*/
+            /*Handle create header info*/
+            Row weekIndexRow = sheet.createRow(rowIndex);
+            for (int i = 0; i < HEADERS.length; i += 1) {
+                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex+1,i,i));
+                Cell c = weekIndexRow.createCell(i);
+                String classInfoString = HEADERS[i];
+                c.setCellValue(classInfoString);
+                c.setCellStyle(headerStyle);
+            }
+            /*Handle create header schedule info */
+
+            Row periodIndexRow = sheet.createRow(rowIndex+1);
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+42; i += numberSlotsPerSession) {
+                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex,i,i+numberSlotsPerSession-1));
+                Cell c = weekIndexRow.createCell(i);
+                String weekString = "Thứ " + ((i-START_COL_TO_READ_CLASS_SCHEDULE)/numberSlotsPerSession + 2);
+                c.setCellValue(weekString);
+                c.setCellStyle(headerStyle);
+            }
+
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+42; i++) {
+                Cell c = periodIndexRow.createCell(i);
+                String periodString = "" + ((i-START_COL_TO_READ_CLASS_SCHEDULE)%numberSlotsPerSession + 1);
+                c.setCellValue(periodString);
+                c.setCellStyle(headerStyle);
+            }
+
+            rowIndex+=2;
+            /*Handle write class info and schedule*/
+            for (TimeTablingClass timeTablingClass : classes) {
+                Row classRow = sheet.createRow(rowIndex);
+                /*Write the class info*/
+                for (int i = 0 ; i <= END_COL_TO_READ_CLASS_INFO; i++ ) {
+                    Cell c = classRow.createCell(i);
+                    c.setCellStyle(defaultStyle); // Add default style with borders
+                    switch (i) {
+                        case 0:
+                            if (timeTablingClass.getQuantity() != null) {
+                                c.setCellValue(timeTablingClass.getQuantity());
+                            }
+                            break;
+                        case 1:
+                            c.setCellValue(timeTablingClass.getClassType());
+                            break;
+                        case 2:
+                            c.setCellValue(timeTablingClass.getModuleCode());
+                            break;
+                        case 3:
+                            c.setCellValue(timeTablingClass.getModuleName());
+                            break;
+                        case 4:
+                            c.setCellValue(timeTablingClass.getLearningWeeks());
+                            break;
+                        case 5:
+                            c.setCellValue(timeTablingClass.getMass());
+                            break;
+                        case 6:
+                            if (timeTablingClass.getQuantityMax() != null) {
+                                c.setCellValue(timeTablingClass.getQuantityMax());
+                            }
+                            break;
+                        case 7:
+                            c.setCellValue(timeTablingClass.getStudyClass());
+                            break;
+                        case 8:
+                            c.setCellValue(timeTablingClass.getState());
+                            break;
+                        case 9:
+                            c.setCellValue(timeTablingClass.getClassCode());
+                            break;
+                        case 10:
+                            if (timeTablingClass.getRefClassId() != null) {
+                                c.setCellValue(timeTablingClass.getRefClassId());
+                            }
+                            break;
+                        case 11:
+                            if (timeTablingClass.getId()!= null) {
+                                c.setCellValue(timeTablingClass.getId());
+                            }
+                            break;
+                        case 12:
+                            if (timeTablingClass.getParentClassId() != null) {
+                                c.setCellValue(timeTablingClass.getParentClassId());
+                            }
+                            break;
+                        case 13:
+                            c.setCellValue(timeTablingClass.getCrew());
+                            break;
+                        case 14:
+                            c.setCellValue(timeTablingClass.getOpenBatch());
+                            break;
+                        case 15:
+                            c.setCellValue(timeTablingClass.getCourse());
+                            break;
+                        case 16:
+                            c.setCellValue(timeTablingClass.getForeignLecturer());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                
+                /*Write the class schedule using segments*/
+                for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + 42; j++) {
+                    Cell c = classRow.createCell(j);
+                    c.setCellStyle(defaultStyle); // Add default style with borders
+                    
+                    // Get segments for current class from the map
+                    List<TimeTablingClassSegment> segments = mClassId2ClassSegments.getOrDefault(timeTablingClass.getId(), new ArrayList<>());
+                    for (TimeTablingClassSegment segment : segments) {
+                        if (segment.getRoom() != null && segment.getWeekday() != null && segment.getStartTime() != null && segment.getEndTime() != null) {
+                            // Điều chỉnh công thức để lùi 1 cột sang trái
+                            int startCol = (segment.getWeekday()-2)*numberSlotsPerSession + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
+                            int endCol = START_COL_TO_READ_CLASS_SCHEDULE + (segment.getWeekday()-2)*numberSlotsPerSession + segment.getEndTime() - 1;
+                            
+                            sheet.addMergedRegion(new CellRangeAddress(
+                                rowIndex, rowIndex, 
+                                startCol, 
+                                endCol
+                            ));
+                            
+                            if (j - START_COL_TO_READ_CLASS_SCHEDULE >= (segment.getWeekday()-2)*numberSlotsPerSession + segment.getStartTime() - 1 && 
+                                j - START_COL_TO_READ_CLASS_SCHEDULE <= (segment.getWeekday()-2)*numberSlotsPerSession + segment.getEndTime() - 1) {
+                                c.setCellValue(segment.getRoom());
+                                c.setCellStyle(roomStyle);
+                            }
+                        }
+                    }
+                }
+                rowIndex++;
+            }
+            
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
+        }
+    }
+
+    public static Map<String, Object> saveTimeTablingClassAndSegmentsFromExcel(
+            InputStream inputStream, 
+            String semester,
+            TimeTablingClassRepo classRepo,
+            TimeTablingClassSegmentRepo segmentRepo) {
+        try {
+            Workbook workbook = new XSSFWorkbook(inputStream);
+            Sheet sheet = workbook.getSheet(SHEET);
+            List<TimeTablingClass> classes = new ArrayList<>();
+            Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
+            
+            if (sheet == null) {
+                sheet = workbook.getSheet(DEFAULT_SHEET);
+            }
+            
+            int totalRowsNum = sheet.getLastRowNum();
+            for (int i = totalRowsNum; i >= START_ROW_TO_READ_CLASS; i--) {
+                Row classRow = sheet.getRow(i);
+                // Skip if class code doesn't exist
+                if (classRow != null && classRow.getCell(9) != null) {
+                    Cell classCodeCell = classRow.getCell(9);
+                    if (classCodeCell.getCellType() == Cell.CELL_TYPE_BLANK) {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+                
+                // Create the class object from the row
+                TimeTablingClass timeTablingClass = new TimeTablingClass();
+                timeTablingClass.setSemester(semester);
+                
+                // Process each cell in the row
+                for (int j = START_COL_TO_READ_CLASS_INFO; j <= END_COL_TO_READ_CLASS_INFO; j++) {
+                    Cell cell = classRow.getCell(j);
+                    if (cell != null) {
+                        String value = "";
+                        if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+                            value = cell.getStringCellValue();
+                        } else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                            value = String.valueOf((int) cell.getNumericCellValue());
+                        }
+                        
+                        switch (j) {
+                            case 0: // quantity
+                                if (!value.isEmpty()) {
+                                    timeTablingClass.setQuantity(Integer.valueOf(value));
+                                }
+                                break;
+                            case 1: // class type
+                                timeTablingClass.setClassType(value);
+                                break;
+                            case 2: // module code
+                                timeTablingClass.setModuleCode(value);
+                                break;
+                            case 3: // module name
+                                timeTablingClass.setModuleName(value);
+                                break;
+                            case 4: // learning weeks
+                                timeTablingClass.setLearningWeeks(value);
+                                break;
+                            case 5: // mass
+                                timeTablingClass.setMass(value);
+                                break;
+                            case 6: // quantity max
+                                if (!value.isEmpty()) {
+                                    timeTablingClass.setQuantityMax(Integer.valueOf(value));
+                                }
+                                break;
+                            case 7: // study class
+                                timeTablingClass.setStudyClass(value);
+                                break;
+                            case 8: // state
+                                timeTablingClass.setState(value);
+                                break;
+                            case 9: // class code
+                                timeTablingClass.setClassCode(value);
+                                break;
+                            case 10: // ref class id
+                                if (!value.isEmpty()) {
+                                    timeTablingClass.setRefClassId(Long.valueOf(value));
+                                }
+                                break;
+                            case 12: // parent class id
+                                if (!value.isEmpty()) {
+                                    timeTablingClass.setParentClassId(Long.valueOf(value));
+                                }
+                                break;
+                            case 13: // crew
+                                timeTablingClass.setCrew(value);
+                                break;
+                            case 14: // open batch
+                                timeTablingClass.setOpenBatch(value);
+                                break;
+                            case 15: // course
+                                timeTablingClass.setCourse(value);
+                                break;
+                            case 16: // foreign lecturer
+                                timeTablingClass.setForeignLecturer(value);
+                                break;
+                        }
+                    }
+                }
+                
+                // Save the TimeTablingClass to get an ID
+                if (timeTablingClass.getId() == null) {
+                    Long nextId = classRepo.getNextReferenceValue();
+                    timeTablingClass.setId(nextId);
+                }
+                TimeTablingClass savedClass = classRepo.save(timeTablingClass);
+                classes.add(savedClass);
+                
+                // Now process the schedule cells to create TimeTablingClassSegment objects
+                List<TimeTablingClassSegment> segments = new ArrayList<>();
+                
+                for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + 42; j++) {
+                    Cell cell = classRow.getCell(j);
+                    if (cell != null && cell.getCellStyle() != null && cell.getStringCellValue() != null && !cell.getStringCellValue().isEmpty()) {
+                        // Check if this is a cell with room information (by checking cell style or value)
+                        XSSFColor bgColor = (XSSFColor) cell.getCellStyle().getFillForegroundColorColor();
+                        if (bgColor != null && bgColor.getARGBHex() != null && bgColor.getARGBHex().equals("FFFF9900")) {
+                            String room = cell.getStringCellValue();
+                            
+                            // Calculate weekday and period from cell position
+                            int colOffset = j - START_COL_TO_READ_CLASS_SCHEDULE;
+                            int weekday = (colOffset / 6) + 2; // 2=Monday, 3=Tuesday, etc.
+                            int startTime = (colOffset % 6);   // 0-5 represents periods 1-6
+                            
+                            // Find how many cells are merged horizontally (represents duration)
+                            int duration = 1;
+                            for (int k = 0; k < sheet.getNumMergedRegions(); k++) {
+                                CellRangeAddress merge = sheet.getMergedRegion(k);
+                                if (merge.getFirstRow() == i && merge.getLastRow() == i &&
+                                    merge.getFirstColumn() <= j && merge.getLastColumn() >= j) {
+                                    duration = merge.getLastColumn() - merge.getFirstColumn() + 1;
+                                    break;
+                                }
+                            }
+                            
+                            // Create segment
+                            TimeTablingClassSegment segment = new TimeTablingClassSegment();
+                            segment.setClassId(savedClass.getId());
+                            segment.setRoom(room);
+                            segment.setWeekday(weekday);
+                            segment.setStartTime(startTime);
+                            segment.setEndTime(startTime + duration - 1);
+                            segment.setDuration(duration);
+                            segment.setCrew(savedClass.getCrew());
+                            
+                            // Save segment
+                            Long nextSegmentId = segmentRepo.getNextReferenceValue();
+                            segment.setId(nextSegmentId);
+                            TimeTablingClassSegment savedSegment = segmentRepo.save(segment);
+                            segments.add(savedSegment);
+                            
+                            // Skip ahead to avoid processing the same merged cell multiple times
+                            j += (duration - 1);
+                        }
+                    }
+                }
+                
+                if (!segments.isEmpty()) {
+                    mClassId2ClassSegments.put(savedClass.getId(), segments);
+                }
+            }
+            
+            workbook.close();
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("classes", classes);
+            result.put("segments", mClassId2ClassSegments);
+            
+            return result;
+            
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            log.error(ex);
+            return null;
         }
     }
 }

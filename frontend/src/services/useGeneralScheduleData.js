@@ -400,7 +400,7 @@ export const useGeneralSchedule = () => {
   );
 
   // Export Excel
-  const handleExportTimeTabling = useCallback(async (semester) => {
+  const handleExportTimeTabling = useCallback(async (semester, versionId, numberSlotsPerSession) => {
     if (!semester) {
       toast.error("Vui lòng chọn học kỳ!");
       return;
@@ -409,7 +409,7 @@ export const useGeneralSchedule = () => {
     setIsExportExcelLoading(true);
 
     try {
-      const response = await generalScheduleRepository.exportExcel(semester);
+      const response = await generalScheduleRepository.exportExcel(semester, versionId, numberSlotsPerSession);
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
