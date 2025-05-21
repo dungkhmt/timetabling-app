@@ -18,6 +18,7 @@ import AddConflictPairDialog from './components/AddConflictPairDialog';
 
 import { useExamPlanData } from "services/useExamPlanData";
 import { useExamClassConflictData } from "services/useExamClassConflictData";
+import localText from './utils/localText'
 
 export default function ConflictClassListScreen() {
   const [selectedExamPlan, setSelectedExamPlan] = useState(null);
@@ -295,6 +296,7 @@ export default function ConflictClassListScreen() {
       
       {/* DataGrid */}
       <DataGrid
+        localeText={localText}
         rows={rows}
         columns={columns}
         pageSizeOptions={[10, 20, 50, 100]}
