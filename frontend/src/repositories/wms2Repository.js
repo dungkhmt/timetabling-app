@@ -157,5 +157,8 @@ export const wms2Service = {
   },
   getAllShipments : (page, limit, filters) => {
     return request("post", `/shipment/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getAllDeliveryRoutes : (page, limit, filters) => {
+    return request("post", `/delivery-route/get-all?page=${page}&limit=${limit}`, null, null, filters);
   }
 };
