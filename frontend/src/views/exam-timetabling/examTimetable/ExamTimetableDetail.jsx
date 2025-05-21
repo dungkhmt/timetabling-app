@@ -22,7 +22,8 @@ import {
   FileDownload,
   AutoFixHigh, 
   InsertChart,
-  PublishedWithChanges
+  PublishedWithChanges,
+  Redo
 } from '@mui/icons-material';
 import ClassesTable from './components/ClassAssignTable';
 import { format } from 'date-fns';
@@ -279,6 +280,10 @@ const TimetableDetailPage = () => {
     history.push(`/exam-time-tabling/exam-timetable/view/${id}`);
   };
 
+  const handleBackToTimeplan = () => {
+    history.push(`/exam-time-tabling/exam-plan/${timetable.examPlanId}`);
+  };
+
   const handleViewTimetableStatistics = () => {
     history.push(`/exam-time-tabling/exam-timetable/statistic/${id}`);
   };
@@ -331,6 +336,21 @@ const TimetableDetailPage = () => {
           </Typography>
           <Box>
             <Button 
+              variant="contained" 
+              color="secondary"
+              startIcon={<Redo />} 
+              size="small"
+              sx={{ 
+                mr: 1, 
+                backgroundColor: 'warning.main', 
+                '&:hover': { backgroundColor: '#FFB74D' }
+              }}
+              onClick={handleBackToTimeplan}
+            >
+              Về kế hoạch
+            </Button>
+
+             <Button 
               variant="contained" 
               color="secondary"
               startIcon={<Visibility />} 
@@ -454,13 +474,14 @@ const TimetableDetailPage = () => {
             Danh sách lớp thi
           </Typography>
           
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
             {/* Auto Assign Button */}
             <Tooltip title={selectedAssignments.length === 0 ? "Chọn ít nhất một lớp để phân công tự động" : "Phân công tự động cho lớp đã chọn"}>
               <span>
                 <Button
                   variant="contained"
                   color="warning"
+                  size="small"
                   startIcon={<AutoFixHigh />}
                   onClick={handleAutoAssign}
                   disabled={selectedAssignments.length === 0 || isAutoAssigning}
@@ -478,6 +499,7 @@ const TimetableDetailPage = () => {
               <span>
                 <Button
                   variant="contained"
+                  size="small"
                   color="error"
                   startIcon={<Delete />}
                   onClick={handleUnassign}
@@ -497,6 +519,7 @@ const TimetableDetailPage = () => {
                 <Button
                   variant="contained"
                   color="success"
+                  size="small"
                   startIcon={<FileDownload />}
                   onClick={handleExport}
                   disabled={selectedAssignments.length === 0 || isExporting}
@@ -513,6 +536,7 @@ const TimetableDetailPage = () => {
             <Button
               variant="contained"
               color="warning"
+              size="small"
               startIcon={<PublishedWithChanges />}
               onClick={handleCheck}
               disabled={isCheckingConflicts}
@@ -525,6 +549,7 @@ const TimetableDetailPage = () => {
             </Button>
 
             <Button
+              size="small"
               variant="contained"
               color="success"
               startIcon={<AssignmentTurnedIn />}
