@@ -92,10 +92,6 @@ function CustomToolbar(props) {
   );
 }
 
-/**
- * A data grid component for managing exam class assignments
- * Optimized for performance with virtualization and memoization
- */
 const ClassesTable = forwardRef(({ 
   classesData, 
   isLoading,
@@ -103,7 +99,8 @@ const ClassesTable = forwardRef(({
   weeks,
   dates,
   slots,
-  onSelectionChange 
+  onSelectionChange,
+  onChangeStatusUpdate,
 }, ref) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [roomFilter, setRoomFilter] = useState('all'); 
@@ -280,7 +277,6 @@ const ClassesTable = forwardRef(({
       }
     }
     
-    // Apply status filter - check if assignment is fully scheduled or not
     if (statusFilter !== 'all') {
       results = results.filter(item => {
         const id = item.id;
@@ -332,24 +328,30 @@ const ClassesTable = forwardRef(({
   }, [classesData, activeSearchValue, statusFilter, roomFilter, dateFilter, slotFilter, assignmentChanges, uniqueDescriptions, activeFilters, frozenFilteredClasses]);
 
   const handleRoomChange = useCallback((classId, roomId) => {
-    setAssignmentChanges(prev => {
-      const currentAssignment = prev[classId] || {};
-      const originalRow = classesData.find(row => row.id === classId);
-      
-      return {
-        ...prev,
-        [classId]: {
-          roomId,
-          weekNumber: currentAssignment.weekNumber !== undefined ? 
-            currentAssignment.weekNumber : originalRow.weekNumber,
-          date: currentAssignment.date !== undefined ? 
-            currentAssignment.date : originalRow.date,
-          sessionId: currentAssignment.sessionId !== undefined ? 
-            currentAssignment.sessionId : originalRow.sessionId
+      setAssignmentChanges(prev => {
+        const currentAssignment = prev[classId] || {};
+        const originalRow = classesData.find(row => row.id === classId);
+        
+        const newChanges = {
+          ...prev,
+          [classId]: {
+            roomId,
+            weekNumber: currentAssignment.weekNumber !== undefined ? 
+              currentAssignment.weekNumber : originalRow.weekNumber,
+            date: currentAssignment.date !== undefined ? 
+              currentAssignment.date : originalRow.date,
+            sessionId: currentAssignment.sessionId !== undefined ? 
+              currentAssignment.sessionId : originalRow.sessionId
+          }
+        };
+        
+        if (onChangeStatusUpdate) {
+          onChangeStatusUpdate(Object.keys(newChanges).length > 0);
         }
-      };
-    });
-  }, [classesData]);
+        
+        return newChanges;
+      });
+    }, [classesData, onChangeStatusUpdate]);
   
   const handleWeekChange = useCallback((classId, weekNumber) => {
     setAssignmentChanges(prev => {
@@ -605,7 +607,7 @@ const ClassesTable = forwardRef(({
       width: 100,
     },
   ], [renderRoomCell, renderWeekCell, renderDateCell, renderSlotCell]);
-  
+
   useImperativeHandle(ref, () => ({
     getAssignmentChanges: () => {
       return Object.entries(assignmentChanges).map(([key, value]) => ({
@@ -617,8 +619,17 @@ const ClassesTable = forwardRef(({
     getSelectedRows: () => selectedRows,
     resetAssignmentChanges: () => {
       setAssignmentChanges({});
+      if (onChangeStatusUpdate) {
+        onChangeStatusUpdate(false);
+      }
     }
   }));
+
+  useEffect(() => {
+    if (onChangeStatusUpdate) {
+      onChangeStatusUpdate(Object.keys(assignmentChanges).length > 0);
+    }
+  }, [assignmentChanges, onChangeStatusUpdate]);
 
   const filterOptions = (options, { inputValue }) => {
     if (!inputValue) return [];
