@@ -337,7 +337,7 @@ const GeneralScheduleScreen = () => {
             }
           />
           <Tab label="Xem theo phòng" />
-          {/* <Tab
+          <Tab
             label={
               <div className="flex items-center gap-2">
                 <span>Gộp lớp học</span>
@@ -348,7 +348,7 @@ const GeneralScheduleScreen = () => {
                 />
               </div>
             }
-          /> */}
+          />
           <Tab
             label={
               <div className="flex items-center gap-2">
