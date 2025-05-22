@@ -66,6 +66,7 @@ const TimetableDetailPage = () => {
     isLoading,
     exportTimetable,
     error,
+    refetch,
     unassignAssignments,
     autoAssign,
     algorithms,
@@ -278,8 +279,10 @@ const TimetableDetailPage = () => {
     try {
       setIsUnassigning(true);
       await unassignAssignments(selectedAssignments);
+      setSelectedAssignments([]);
       setIsUnassigning(false);
       setIsUnassignDialogOpen(false);
+      await refetch();
     } catch (error) {
       console.error('Error unassigning assignments:', error);
       setIsUnassigning(false);
@@ -322,6 +325,8 @@ const TimetableDetailPage = () => {
       if (classesTableRef.current) {
         classesTableRef.current.resetAssignmentChanges();
       }
+
+      await refetch()
       return Promise.resolve();
     } catch (error) {
       console.error('Error saving assignments:', error);
