@@ -27,8 +27,7 @@ export const useAcademicWeeks = (selectedSemester) => {
 
   const createMutation = useMutation(academicWeekServices.createAcademicWeeks, {
     onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries(['academicWeeks', variables.semester]);
-      await queryClient.refetchQueries(['academicWeeks', variables.semester]);
+      queryClient.invalidateQueries(['academicWeeks', variables.semester]);
       toast.success('Tạo danh sách tuần thành công!');
     },
     onError: () => {

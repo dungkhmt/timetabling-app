@@ -80,13 +80,6 @@ export const usePlanTableConfig = (setPlanClasses) => {
       headerName: "Tổng số lớp",
       field: "numberOfClasses",
       width: 100,
-      renderCell: (params) => (
-        <Input
-          type="number"
-          value={params.value}
-          onChange={(e) => handleOnCellChange(e, params)}
-        />
-      ),
     },
     {
       headerName: "Max SV/LT",
@@ -167,6 +160,18 @@ export const usePlanTableConfig = (setPlanClasses) => {
       headerName: "Thời lượng",
       field: "mass",
       width: 100,
+    },
+    {
+      headerName: "Số tiết",
+      field: "duration",
+      width: 100,
+      renderCell: (params) => (
+        <Input
+          type="number"
+          value={params.value}
+          onChange={(e) => handleOnCellChange(e, params)}
+        />
+      ),
     },
     {
       headerName: "Tuần học",

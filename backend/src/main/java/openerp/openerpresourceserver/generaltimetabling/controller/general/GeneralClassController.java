@@ -153,13 +153,33 @@ public class GeneralClassController {
     public ResponseEntity<?> getClassDetailWithSubClasses(Principal principal, @PathVariable Long classId){
         ModelResponseGeneralClass cls = gService.getClassDetailWithSubClasses(classId);
         return ResponseEntity.ok().body(cls);
-    }
-
+    }    
+    
     @PostMapping("/export-excel")
-    public ResponseEntity requestExportExcel(@RequestParam("semester") String semester) {
+    public ResponseEntity requestExportExcel(@RequestParam("semester") String semester, @RequestBody ExportExcelRequest requestDto) {
         log.info("Controler API -> requestExportExcel start...");
         String filename = String.format("TKB_{}.xlsx", semester);
-        InputStreamResource file = new InputStreamResource(excelService.exportGeneralExcel(semester));
+        InputStreamResource file = new InputStreamResource(excelService.exportGeneralExcel(
+            semester, 
+            requestDto.getVersionId(), 
+            requestDto.getNumberSlotsPerSession()
+        ));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    @PostMapping("/export-excel/view-all-session")
+    public ResponseEntity requestExportExcelWithAllSession(@RequestParam("semester") String semester, @RequestBody ExportExcelRequest requestDto) {
+        log.info("Controler API -> requestExportExcel start...");
+        String filename = String.format("TKB_{}.xlsx", semester);
+        InputStreamResource file = new InputStreamResource(excelService.exportGeneralExcelWithAllSession(
+            semester, 
+            requestDto.getVersionId(), 
+            requestDto.getNumberSlotsPerSession()
+        ));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(

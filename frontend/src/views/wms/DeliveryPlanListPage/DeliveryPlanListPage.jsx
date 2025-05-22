@@ -5,6 +5,8 @@ import DeliveryPlanFilters from "./components/DeliveryPlanFilters";
 import DeliveryPlanTable from "./components/DeliveryPlanTable";
 import { useWms2Data } from "services/useWms2Data";
 import { toast } from "react-toastify";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
+import {withAuthorization} from "../common/components/withAuthorization";
 
 // Delivery plan status definitions to be shared across components
 export const DELIVERY_PLAN_STATUSES = {
@@ -133,4 +135,4 @@ const DeliveryPlanListPage = () => {
   );
 };
 
-export default DeliveryPlanListPage;
+export default withAuthorization(DeliveryPlanListPage, MENU_CONSTANTS.LOGISTICS_DELIVERY_LIST);

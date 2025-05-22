@@ -285,17 +285,6 @@ export const useWms2Data = () => {
     }
   };
 
-  const approvePurchaseOrder = async (orderId) => {
-    try {
-      const response = await wms2Service.approvePurchaseOrder(orderId);
-      return response.data;
-    } catch (error) {
-      console.error("Error approving purchase order:", error);
-      toast.error("Không thể duyệt đơn hàng mua");
-      return { data: {} };
-    }
-  };
-
   const createInBoundOrder = async (data) => {
     try {
       const res = await wms2Service.createInBoundOrder(data);
@@ -616,6 +605,28 @@ export const useWms2Data = () => {
     }
   }
 
+  const getAllDeliveryRoutes = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getAllDeliveryRoutes(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all delivery routes:", error);
+      toast.error("Không thể tải danh sách lộ trình giao hàng");
+      return { data: {} };
+    }
+  }
+
+  const getAllOrderBillItems = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getAllOrderBillItems(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all order bill items:", error);
+      toast.error("Không thể tải danh sách phiếu xuất");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -642,7 +653,6 @@ export const useWms2Data = () => {
     getPurchaseOrdersForExport,
     getPurchaseOrderDetails,
     updatePurchaseOrderStatus,
-    approvePurchaseOrder,
     createInBoundOrder,
     getInBoundsOrder,
     getInBoundDetail,
@@ -672,5 +682,7 @@ export const useWms2Data = () => {
     getFacilityById,
     getOrderReport,
     getAllShipments,
+    getAllDeliveryRoutes,
+    getAllOrderBillItems
   };
 };

@@ -1,21 +1,21 @@
 import React from "react";
 import {
+  Chip,
+  IconButton,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  Paper,
   TablePagination,
-  Chip,
-  Button,
-  IconButton,
+  TableRow,
   Tooltip,
 } from "@mui/material";
-import { useHistory, useLocation } from "react-router-dom";
-import { Info, Visibility } from "@mui/icons-material";
-import { SALE_ORDER_STATUSES, PURCHASE_ORDER_STATUSES, ORDER_TYPE_ID } from "views/wms/common/constants/constants";
+import {useLocation} from "react-router-dom";
+import {Visibility} from "@mui/icons-material";
+import {ORDER_TYPE_ID, PURCHASE_ORDER_STATUSES, SALE_ORDER_STATUSES} from "views/wms/common/constants/constants";
+import {useHandleNavigate} from "../utils/functions";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -42,15 +42,23 @@ const OrderTable = ({
   onRowsPerPageChange,
   type
 }) => {
-  const history = useHistory();
+  const navigate = useHandleNavigate();
   const location = useLocation();
-  const baseUrl = type === ORDER_TYPE_ID.SALES_ORDER ? "/wms/sales" : "/wms/purchase";
-  
+
   const handleViewDetails = (orderId) => {
-    history.push(`${baseUrl}/orders/details/${orderId}`);
+    navigate(``, url => {
+      const pathName = location.pathname;
+      if (pathName.includes('logistics')) {
+        if(type === ORDER_TYPE_ID.SALES_ORDER) return url + `/wms/logistics/salesorders/details/reviewed/${orderId}`;
+        return url + `/wms/logistics/purchaseorders/details/reviewed/${orderId}`;
+      }
+      if(type === ORDER_TYPE_ID.SALES_ORDER) {
+        return url + `/wms/sales/orders/details/reviewed/${orderId}`;
+      }
+        return url + `/wms/purchase/orders/details/reviewed/${orderId}`;
+    });
   };
 
-  // Chọn statuses phù hợp cho từng loại order
   const ORDER_STATUSES = type === ORDER_TYPE_ID.SALES_ORDER  ? SALE_ORDER_STATUSES : PURCHASE_ORDER_STATUSES;
 
   return (
@@ -64,7 +72,6 @@ const OrderTable = ({
               <TableCell>{type === ORDER_TYPE_ID.SALES_ORDER ? "Khách hàng" : "Nhà cung cấp"}</TableCell>
               <TableCell>Thành tiền</TableCell>
               <TableCell>Trạng thái</TableCell>
-              <TableCell align="center">Thao tác</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -79,7 +86,6 @@ const OrderTable = ({
                     backgroundColor: 'rgba(0, 0, 0, 0.04)',
                   },
                   '& > td': {
-                    // Đảm bảo tất cả các cell đều không chọn được text khi hover
                     userSelect: 'none'
                   }
                 }}
@@ -109,20 +115,6 @@ const OrderTable = ({
                     size="small"
                     onClick={(e) => e.stopPropagation()} // Ngăn việc bubble up sự kiện click
                   />
-                </TableCell>
-                <TableCell align="center">
-                  <Tooltip title="Xem chi tiết">
-                    <IconButton 
-                      size="small" 
-                      color="primary"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Ngăn việc bubble up sự kiện click
-                        handleViewDetails(order.id);
-                      }}
-                    >
-                      <Visibility fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}

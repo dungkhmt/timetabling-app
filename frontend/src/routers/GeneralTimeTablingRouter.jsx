@@ -3,6 +3,8 @@ import EmptyRoomFindingScreen from "views/general-time-tabling/empty-room-find/E
 import GeneralGroupScreen from "views/general-time-tabling/general-group-select/GeneralGroupScreen";
 import GeneralPlanClassOpenScreen from "views/general-time-tabling/general-plan-class-open/GeneralPlanClassOpenScreen";
 import GeneralScheduleScreen from "views/general-time-tabling/general-schedule/GeneralScheduleScreen";
+import GeneralScheduleSummerScreen from "views/general-time-tabling/general-schedule/GeneralScheduleSummerScreen";
+
 import GeneralUploadScreen from "views/general-time-tabling/general-upload/GeneralUploadScreen";
 import RoomOccupationScreen from "views/general-time-tabling/room-occupation/RoomOccupationScreen";
 
@@ -31,6 +33,11 @@ export default function GeneralTimeTablingRouter() {
           component={GeneralScheduleScreen}
           exact
           path={`${path}/schedule-class`}
+        ></Route>
+         <Route
+          component={GeneralScheduleSummerScreen}
+          exact
+          path={`${path}/schedule-class-summer`}
         ></Route>
         <Route
           component={RoomOccupationScreen}

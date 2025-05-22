@@ -82,36 +82,51 @@ export const generalScheduleRepository = {
         versionId  // Thêm versionId vào request body
       }
     );
-  },
-
-  exportExcel: async (semester) => {
+  },  
+  exportExcel: async (semester, versionId, numberSlotsPerSession) => {
     try {
       const response = await request(
         "post",
         `general-classes/export-excel?semester=${semester}`,
         null,
         null,
-        null,
+        { 
+          versionId,
+          numberSlotsPerSession: numberSlotsPerSession || 6 
+        },
         { responseType: "arraybuffer" }
       );
-
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"],
-      });
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `Danh_sach_lop_TKB_${semester}.xlsx`;
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
+      
+      // Chỉ trả về response, không tạo và tải xuống file
       return response;
     } catch (error) {
       console.error("Export Excel error:", error);
       throw error;
     }
   },
+
+  exportExcelWithAllSession: async (semester, versionId, numberSlotsPerSession) => {
+    try {
+      const response = await request(
+        "post",
+        `general-classes/export-excel/view-all-session?semester=${semester}`,
+        null,
+        null,
+        { 
+          versionId,
+          numberSlotsPerSession: numberSlotsPerSession || 6 
+        },
+        { responseType: "arraybuffer" }
+      );
+      
+      // Chỉ trả về response, không tạo và tải xuống file
+      return response;
+    } catch (error) {
+      console.error("Export Excel error:", error);
+      throw error;
+    }
+  },
+
 
   updateTimeSlot: async (semester, saveRequest, errorCallback) => {
     try {

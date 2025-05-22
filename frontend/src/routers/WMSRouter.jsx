@@ -26,8 +26,12 @@ import FacilityListPage from "views/wms/FacilityListPage/FacilityListPage";
 import FacilityDetail from "views/wms/FacilityDetail/FacilityDetail";
 import OrderDashBoard from "../views/wms/OrderDashBoard/OrderDashBoard";
 import ShipmentListPage from "../views/wms/ShipmentListPage/ShipmentListPage";
-import ShipperListPage from "../views/wms/ShipperListPage/ShipperListPage";
 import {ORDER_TYPE_ID, SHIPMENT_TYPE_ID} from "../views/wms/common/constants/constants";
+import PurchaseOrderDetail from "../views/wms/PurchaseOrderDetail/PurchaseOrderDetail";
+import SaleOrderDetail from "../views/wms/SaleOrderDetail/SaleOrderDetail";
+import DeliveryRouteListPage from "../views/wms/DeliveryRouteListPage/DeliveryRouteListPage";
+import VehicleListPage from "../views/wms/VehicleListPage/VehicleListPage";
+import FacilityHistory from "../views/wms/FacilityHistory/FacilityHistory";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -40,9 +44,15 @@ export default function WMSRouter() {
         ></Route>
 
         <Route
-          component={ApprovedPurchaseOrderDetail}
+          component={PurchaseOrderDetail}
           exact
           path={`${path}/purchase/orders/details/:id`}
+        ></Route>
+
+        <Route
+            component={ApprovedPurchaseOrderDetail}
+            exact
+            path={`${path}/logistics/purchaseorders/details/reviewed/:id`}
         ></Route>
 
         <Route
@@ -57,9 +67,15 @@ export default function WMSRouter() {
         ></Route>
 
         <Route
-          component={ApprovedSaleOrderDetail}
+          component={SaleOrderDetail}
           exact
           path={`${path}/sales/orders/details/:id`}
+        ></Route>
+
+        <Route
+            component={ApprovedSaleOrderDetail}
+            exact
+            path={`${path}/logistics/salesorders/details/reviewed/:id`}
         ></Route>
 
         <Route
@@ -69,12 +85,12 @@ export default function WMSRouter() {
 
         <Route
           component={OutBoundDetail}
-          path={`${path}/sales/orders/details/:id/outbound/:shipmentId`}
+          path={`${path}/logistics/salesorders/details/reviewed/:id/outbound/:shipmentId`}
         ></Route>
 
         <Route
           component={InBoundDetail}
-          path={`${path}/purchase/orders/details/:id/inbound/:shipmentId`}
+          path={`${path}/logistics/purchaseorders/details/reviewed/:id/inbound/:shipmentId`}
         ></Route>
 
         <Route
@@ -203,6 +219,24 @@ export default function WMSRouter() {
           component={SaleOrderListPage}
           exact
           path={`${path}/logistics/salesorders`}
+        ></Route>
+
+        <Route
+          component={DeliveryRouteListPage}
+            exact
+            path={`${path}/logistics/deliveryroute`}
+        ></Route>
+
+        <Route
+          component={VehicleListPage}
+            exact
+            path={`${path}/logistics/vehicle`}
+        ></Route>
+
+        <Route
+            component={FacilityHistory}
+            exact
+            path={`${path}/admin/inventory_detail`}
         ></Route>
         
       </Switch>

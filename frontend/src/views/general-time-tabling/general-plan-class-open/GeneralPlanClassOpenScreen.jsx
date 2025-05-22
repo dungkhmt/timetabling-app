@@ -99,7 +99,7 @@ const GeneralPlanClassOpenScreen = () => {
         if (err.response.status === 410) {
           toast.error(err.response.data);
         } else {
-          toast.error("Có lỗi khi sinh lop");
+          toast.error("Có lỗi khi sinh lớp");
         }
 
         console.log(err);
@@ -126,7 +126,7 @@ const GeneralPlanClassOpenScreen = () => {
         if (err.response.status === 410) {
           toast.error(err.response.data);
         } else {
-          toast.error("Có lỗi khi sinh lop");
+          toast.error("Có lỗi khi sinh lớp");
         }
 
         console.log(err);
@@ -240,7 +240,7 @@ const GeneralPlanClassOpenScreen = () => {
                 textTransform: "none",
               }}
             >
-              Sinh lop
+              Sinh lớp
             </Button>
             <Button
               variant="contained"
@@ -273,11 +273,12 @@ const GeneralPlanClassOpenScreen = () => {
         setClasses={setPlanClasses}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-      />
+      />      
       <AddNewClassDialog
         open={openNewClassDialog}
         onClose={() => setOpenNewClassDialog(false)}
         semester={selectedSemester}
+        selectedGroup={states.selectedGroup}
         onSuccess={(newClass) => {
           setPlanClasses([...planClasses, newClass]);
           toast.success("Tạo lớp mới thành công!");

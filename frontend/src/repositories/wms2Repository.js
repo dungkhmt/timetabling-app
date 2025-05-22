@@ -28,7 +28,7 @@ export const wms2Service = {
     return request("put", `/sale-order/update-status/${orderId}`, null, null, {status});
   },
   approveOrder: (orderId) => {
-    return request("put", `/sale-order/approve/${orderId}`);
+    return request("put", `/order/approve/${orderId}`);
   },
   rejectOrder: (orderId) => {
     return request("put", `/sale-order/reject/${orderId}`);
@@ -71,9 +71,6 @@ export const wms2Service = {
   updatePurchaseOrderStatus: (orderId, status) => {
     return request("put", `/purchase-order/update-status/${orderId}`, null, null, {status});
   },
-    approvePurchaseOrder: (orderId) => {
-        return request("put", `/purchase-order/approve/${orderId}`);
-    },
   getInBoundsOrder : (orderId, page, limit) => {
     return request("get", `/shipment/inbound/order/${orderId}?page=${page}&limit=${limit}`);
   },
@@ -114,7 +111,7 @@ export const wms2Service = {
     return request("get", `delivery-plan/details/${deliveryPlanId}`, null, null, null);
   },
   getVehicles : (page, limit, filters) => {
-    return request("get", `/vehicle/get-all?page=${page}&limit=${limit}&statusId=${filters.statusId}`, null, null, null);
+    return request("post", `/vehicle/get-all?page=${page}&limit=${limit}`, null, null, filters);
   },
   createProduct : (data) => {
     return request("post", "/product/create", null, null, data);
@@ -160,5 +157,11 @@ export const wms2Service = {
   },
   getAllShipments : (page, limit, filters) => {
     return request("post", `/shipment/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getAllDeliveryRoutes : (page, limit, filters) => {
+    return request("post", `/delivery-route/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getAllOrderBillItems : (page, limit, filters) => {
+    return request("post", `/order-bill-item/get-all?page=${page}&limit=${limit}`, null, null, filters);
   }
 };

@@ -399,7 +399,7 @@ public class ExamTimetableService {
     }
 
     private void calculateTotalRoomsUsed(UUID timetableId, TimetableStatisticsDTO statistics) {
-        String totalRoomsSql = "SELECT COUNT(*) FROM exam_room";
+        String totalRoomsSql = "SELECT COUNT(*) FROM timetabling_classroom";
         Query totalRoomsQuery = entityManager.createNativeQuery(totalRoomsSql);
         Number totalRoomsResult = (Number) totalRoomsQuery.getSingleResult();
         long totalRooms = totalRoomsResult.longValue();
@@ -588,13 +588,13 @@ public class ExamTimetableService {
     
     private void calculateRoomDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
         String sql = "SELECT " +
-                    "r.name as room_name, " +
+                    "r.classroom as room_name, " +
                     "COUNT(a.id) as assignment_count " +
                     "FROM exam_timetable_assignment a " +
-                    "JOIN exam_room r ON a.room_id = r.id " +
+                    "JOIN timetabling_classroom r ON a.room_id = r.classroom_id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
                     "AND a.deleted_at IS NULL " +
-                    "GROUP BY r.name " +
+                    "GROUP BY r.classroom " +
                     "ORDER BY assignment_count DESC";
         
         Query query = entityManager.createNativeQuery(sql);
@@ -639,11 +639,11 @@ public class ExamTimetableService {
         String sql = "SELECT " +
                     "COUNT(a.id) " +
                     "FROM exam_timetable_assignment a " +
-                    "JOIN exam_room r ON a.room_id = r.id " +
+                    "JOIN timetabling_classroom r ON a.room_id = r.classroom_id " +
                     "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
                     "AND a.deleted_at IS NULL " +
-                    "AND r.number_seat < c.number_students * 2";
+                    "AND r.quantity_max < c.number_students * 2";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("timetableId", timetableId);
@@ -656,10 +656,10 @@ public class ExamTimetableService {
     
     private void calculateBuildingDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
         String sql = "SELECT " +
-                    "SUBSTRING(r.name FROM 1 FOR POSITION('-' IN r.name) - 1) as building_name, " +
+                    "r.building_id as building_name, " +
                     "COUNT(a.id) as assignment_count " +
                     "FROM exam_timetable_assignment a " +
-                    "JOIN exam_room r ON a.room_id = r.id " +
+                    "JOIN timetabling_classroom r ON a.room_id = r.classroom_id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
                     "AND a.deleted_at IS NULL " +
                     "GROUP BY building_name " +

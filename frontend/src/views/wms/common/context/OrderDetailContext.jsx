@@ -49,7 +49,7 @@ export const OrderDetailProvider = ({ children, orderType }) => {
     
     try {
       // setLoading(true);
-      const res = await (orderType === ORDER_TYPE_ID.SALES_ORDER ? approveOrder(id) : approvePurchaseOrder(id));
+      const res = await approveOrder(id);
       
       if (res && res.code == 200) {
         toast.success("Đơn hàng đã được duyệt thành công!");
@@ -112,7 +112,6 @@ export const OrderDetailProvider = ({ children, orderType }) => {
   const value = {
     orderData,
     orderType,
-    // loading,
     approveOrderApi,
     cancelOrder,
     editOrder,

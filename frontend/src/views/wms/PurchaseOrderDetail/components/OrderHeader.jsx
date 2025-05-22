@@ -42,7 +42,7 @@ const OrderHeader = () => {
         fontWeight="bold"
         sx={{ mb: 2, fontSize: isMobile ? "1.2rem" : "1.5rem" }}
       >
-        Chi tiết đơn hàng mua: {orderData.id}
+        Chi tiết đơn hàng mua: {orderData.id.substring(0, 8)}
       </Typography>
 
       <Box>

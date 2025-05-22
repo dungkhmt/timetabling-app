@@ -6,8 +6,13 @@ import { SHIPMENT_TYPE_ID } from "../common/constants/constants";
 import ShipmentListHeader from "./components/ShipmentListHeader";
 import ShipmentFilters from "./components/ShipmentFilters";
 import ShipmentTable from "./components/ShipmentTable";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
+import {withAuthorization} from "../common/components/withAuthorization";
 
-const ShipmentListPage = ({ shipmentTypeId = SHIPMENT_TYPE_ID.INBOUND }) => {
+var MENU_ID = MENU_CONSTANTS.LOGISTICS_PURCHASE_SHIPMENT_LIST
+const ShipmentListPageBase = ({ shipmentTypeId = SHIPMENT_TYPE_ID.INBOUND }) => {
+  // SET MENU_ID
+  MENU_ID = shipmentTypeId === SHIPMENT_TYPE_ID.INBOUND ? MENU_CONSTANTS.LOGISTICS_PURCHASE_SHIPMENT_LIST : MENU_CONSTANTS.LOGISTICS_SALES_SHIPMENT_LIST;
   const { getAllShipments } = useWms2Data();
   
   const [shipments, setShipments] = useState([]);
@@ -147,5 +152,12 @@ const ShipmentListPage = ({ shipmentTypeId = SHIPMENT_TYPE_ID.INBOUND }) => {
     </Box>
   );
 };
+
+const ShipmentListPage = (props) => {
+    const { shipmentTypeId = SHIPMENT_TYPE_ID.INBOUND  } = props;
+    const menuId = shipmentTypeId === SHIPMENT_TYPE_ID.INBOUND ? MENU_CONSTANTS.LOGISTICS_PURCHASE_SHIPMENT_LIST : MENU_CONSTANTS.LOGISTICS_SALES_SHIPMENT_LIST;
+    const AuthorizedComponent = withAuthorization(ShipmentListPageBase, menuId);
+    return <AuthorizedComponent {...props} />;
+}
 
 export default ShipmentListPage;

@@ -14,11 +14,13 @@ import DailyOrderChart from "./components/DailyOrderChart";
 import OrderStatusPieChart from "./components/OrderStatusPieChart";
 import { Grid } from "@mui/material";
 import PropTypes from "prop-types";
+import { withAuthorization } from "../common/components/withAuthorization";
+import { MENU_CONSTANTS } from "../common/constants/screenId";
 
-const OrderDashBoard = ({ orderTypeId = ORDER_TYPE_ID.PURCHASE_ORDER }) => {
+const OrderDashBoardBase = ({ orderTypeId = ORDER_TYPE_ID.PURCHASE_ORDER }) => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const { getOrderReport } = useWms2Data();
 
   // Fetch data when component mounts or orderTypeId changes
@@ -57,8 +59,8 @@ const OrderDashBoard = ({ orderTypeId = ORDER_TYPE_ID.PURCHASE_ORDER }) => {
 
   if (!reportData) return null;
 
-  const dashboardTitle = orderTypeId === ORDER_TYPE_ID.PURCHASE_ORDER 
-    ? "Báo cáo đơn hàng mua" 
+  const dashboardTitle = orderTypeId === ORDER_TYPE_ID.PURCHASE_ORDER
+    ? "Báo cáo đơn hàng mua"
     : "Báo cáo đơn hàng bán";
 
   return (
@@ -70,27 +72,27 @@ const OrderDashBoard = ({ orderTypeId = ORDER_TYPE_ID.PURCHASE_ORDER }) => {
         <Typography variant="body2" color="textSecondary" gutterBottom>
           Thống kê đơn hàng từ đầu tháng đến hiện tại
         </Typography>
-        
+
         <Divider sx={{ my: 2 }} />
-        
-        <OrderSummaryCards 
+
+        <OrderSummaryCards
           reportData={reportData}
           orderType={orderTypeId}
         />
-        
+
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
             <Paper elevation={2} sx={{ p: 2 }}>
-              <DailyOrderChart 
+              <DailyOrderChart
                 dailyOrderCounts={reportData.dailyOrderCounts}
                 orderType={orderTypeId}
               />
             </Paper>
           </Grid>
-          
+
           <Grid item xs={12} md={4}>
             <Paper elevation={2} sx={{ p: 2 }}>
-              <OrderStatusPieChart 
+              <OrderStatusPieChart
                 reportData={reportData}
                 orderType={orderTypeId}
               />
@@ -102,8 +104,14 @@ const OrderDashBoard = ({ orderTypeId = ORDER_TYPE_ID.PURCHASE_ORDER }) => {
   );
 };
 
-OrderDashBoard.propTypes = {
-  orderTypeId: PropTypes.string
+const OrderDashBoard = (props) => {
+  const { orderTypeId = ORDER_TYPE_ID.PURCHASE_ORDER } = props;
+  const menuId = orderTypeId === ORDER_TYPE_ID.PURCHASE_ORDER
+      ? MENU_CONSTANTS.PURCHASE_DASHBOARD
+      : MENU_CONSTANTS.SALES_DASHBOARD;
+
+  const AuthorizedComponent = withAuthorization(OrderDashBoardBase, menuId);
+  return <AuthorizedComponent {...props} />;
 };
 
 export default OrderDashBoard;

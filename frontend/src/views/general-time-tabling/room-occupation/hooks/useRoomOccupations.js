@@ -2,7 +2,7 @@ import { request } from "api";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-export const useRoomOccupations = (semester, selectedWeek, versionId) => {
+export const useRoomOccupations = (semester, selectedWeek, versionId, numberSlotsPerSession = 6) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState([]);
@@ -32,7 +32,7 @@ export const useRoomOccupations = (semester, selectedWeek, versionId) => {
     return mergedPeriods;
   };
 
-const convertSchedule = (schedule) => {
+const convertSchedule = (schedule, numberSlotsPerSession) => {
   if (!Array.isArray(schedule) || schedule.length === 0) {
     return [];
   }
@@ -57,7 +57,7 @@ const convertSchedule = (schedule) => {
       return;
     }
 
-    const dayOffset = (dayIndex - 2) * 6;
+    const dayOffset = (dayIndex - 2) * numberSlotsPerSession;
     const start = dayOffset + startPeriod - 1;
     const duration = endPeriod - startPeriod + 1;
 
@@ -98,7 +98,6 @@ const convertSchedule = (schedule) => {
       return 0;
     });
 };
-
   const fetchRoomOccupations = useCallback(() => {
     if (!semester || !selectedWeek?.weekIndex) {
       return;
@@ -115,7 +114,7 @@ const convertSchedule = (schedule) => {
       (res) => {
         try {
           console.log(res);
-          const convertedData = convertSchedule(res.data);
+          const convertedData = convertSchedule(res.data, numberSlotsPerSession);
           setData(convertedData);
           console.log('Converted data:', convertedData);
         } catch (err) {
@@ -129,10 +128,9 @@ const convertSchedule = (schedule) => {
         setError(error);
         toast.error("Có lỗi khi tải dữ liệu sử dụng phòng");
       }
-    ).finally(() => {
-      setLoading(false);
+    ).finally(() => {      setLoading(false);
     });
-  }, [semester, selectedWeek, versionId]);
+  }, [semester, selectedWeek, versionId, numberSlotsPerSession]);
 
   useEffect(() => {
     if (!semester || !selectedWeek) { 
@@ -140,7 +138,7 @@ const convertSchedule = (schedule) => {
       return;
     }
     fetchRoomOccupations();
-  }, [semester, selectedWeek, versionId]);
+  }, [semester, selectedWeek, versionId, numberSlotsPerSession, fetchRoomOccupations]);
 
   return { loading, error, data, refresh: fetchRoomOccupations };
 };

@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.helper.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
@@ -25,7 +26,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -59,10 +62,17 @@ public class ExcelService {
     private ClassGroupRepo classGroupRepo;
 
     @Autowired
-    private GroupRepo groupRepo;
+    private GroupRepo groupRepo;    @Autowired
+    private TimeTablingClassRepo timeTablingClassRepo;
+    
+    @Autowired 
+    private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;   
 
-    public InputStream exportGeneralExcel(String semester) {
-        List<GeneralClass> classes = gcoRepo.findAllBySemester(semester)
+    private Map<String, Object> prepareClassDataForExport(String semester, Long versionId, Integer numberSlotsPerSession) {
+        // Sử dụng giá trị mặc định là 6 nếu numberSlotsPerSession là null
+        int slots = numberSlotsPerSession != null ? numberSlotsPerSession : 6;
+        
+        List<TimeTablingClass> classes = timeTablingClassRepo.findAllBySemester(semester)
                 .stream()
                 .filter(c -> c.getClassCode() != null && !c.getClassCode().isEmpty())
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -71,9 +81,56 @@ public class ExcelService {
             Comparable fieldValueB = b.getClassCode();
             return fieldValueA.compareTo(fieldValueB);
         });
+        
+        // Lấy tất cả class IDs
+        List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
+        
+        // Lấy các segments cho các classes này theo versionId
+        List<TimeTablingClassSegment> segments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
+        
+        // Tạo map từ class ID -> các segments liên quan
+        Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
+        for (TimeTablingClassSegment segment : segments) {
+            if (!mClassId2ClassSegments.containsKey(segment.getClassId())) {
+                mClassId2ClassSegments.put(segment.getClassId(), new ArrayList<>());
+            }
+            mClassId2ClassSegments.get(segment.getClassId()).add(segment);
+        }
+        
         if (classes.isEmpty()) throw new NotFoundException("Kỳ học không có bất kỳ lớp học nào!");
-        return GeneralExcelHelper.convertGeneralClassToExcel(classes);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("classes", classes);
+        result.put("segments", mClassId2ClassSegments);
+        result.put("slots", slots);
+        
+        return result;
     }
+    
+    /**
+     * Export general excel with regular format
+     */
+    public InputStream exportGeneralExcel(String semester, Long versionId, Integer numberSlotsPerSession) {
+        Map<String, Object> data = prepareClassDataForExport(semester, versionId, numberSlotsPerSession);
+        return GeneralExcelHelper.convertGeneralClassToExcel(
+            (List<TimeTablingClass>) data.get("classes"), 
+            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"), 
+            (Integer) data.get("slots")
+        );
+    }
+
+    /**
+     * Export general excel with all sessions format
+     */
+    public InputStream exportGeneralExcelWithAllSession(String semester, Long versionId, Integer numberSlotsPerSession) {
+        Map<String, Object> data = prepareClassDataForExport(semester, versionId, numberSlotsPerSession);
+        return GeneralExcelHelper.convertGeneralClassToExcelWithAllSession(
+            (List<TimeTablingClass>) data.get("classes"), 
+            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"), 
+            (Integer) data.get("slots")
+        );
+    }
+
 
 
     // public ByteArrayInputStream load() {
@@ -118,8 +175,7 @@ public class ExcelService {
     // } catch (IOException e) {
     // throw new RuntimeException("fail to store excel data: " + e.getMessage());
     // }
-    // }
-    @Transactional
+    // }    @Transactional
     public List<GeneralClass> saveGeneralClasses(MultipartFile file, String semester) {
         gcoRepo.deleteAllBySemester(semester);
         try {
@@ -161,6 +217,83 @@ public class ExcelService {
             return new ArrayList<GeneralClass>();
         }
     }
+    
+//    @Transactional
+//    public Map<String, Object> saveTimeTablingClasses(MultipartFile file, String semester, Long versionId) {
+//        try {
+//            // Nếu cần, có thể xóa các lớp và segments hiện có cho kỳ học này
+//            // timeTablingClassRepo.deleteAllBySemester(semester);
+//            // timeTablingClassSegmentRepo.deleteAllByVersionId(versionId);
+//
+//            Map<String, Object> result = GeneralExcelHelper
+//                    .saveTimeTablingClassAndSegmentsFromExcel(file.getInputStream(), semester,
+//                                                             timeTablingClassRepo, timeTablingClassSegmentRepo);
+//
+//            if (result == null) {
+//                return new HashMap<>();
+//            }
+//
+//            // Cập nhật versionId cho tất cả các segments
+//            if (result.containsKey("segments")) {
+//                @SuppressWarnings("unchecked")
+//                Map<Long, List<TimeTablingClassSegment>> segmentsMap =
+//                    (Map<Long, List<TimeTablingClassSegment>>)result.get("segments");
+//
+//                for (List<TimeTablingClassSegment> segments : segmentsMap.values()) {
+//                    for (TimeTablingClassSegment segment : segments) {
+//                        segment.setVersionId(versionId);
+//                        timeTablingClassSegmentRepo.save(segment);
+//                    }
+//                }
+//            }
+//
+//            // Tạo RoomOccupation từ các TimeTablingClassSegment
+//            List<RoomOccupation> roomOccupations = new ArrayList<>();
+//            if (result.containsKey("classes") && result.containsKey("segments")) {
+//                @SuppressWarnings("unchecked")
+//                List<TimeTablingClass> classes = (List<TimeTablingClass>) result.get("classes");
+//
+//                @SuppressWarnings("unchecked")
+//                Map<Long, List<TimeTablingClassSegment>> segmentsMap =
+//                    (Map<Long, List<TimeTablingClassSegment>>) result.get("segments");
+//
+//                for (TimeTablingClass cls : classes) {
+//                    List<TimeTablingClassSegment> segments = segmentsMap.get(cls.getId());
+//                    if (segments != null) {
+//                        for (TimeTablingClassSegment segment : segments) {
+//                            List<String> learningWeekStrings = Arrays.asList(cls.getLearningWeeks().trim().split(","));
+//                            learningWeekStrings.forEach(learningWeek -> {
+//                                if (LearningWeekValidator.isCorrectFormat(learningWeek)) {
+//                                    LearningWeekExtractor.extract(learningWeek).forEach(weekInt -> {
+//                                        roomOccupations.add(new RoomOccupation(
+//                                            segment.getRoom(),
+//                                            cls.getClassCode(),
+//                                            segment.getStartTime(),
+//                                            segment.getEndTime(),
+//                                            cls.getCrew(),
+//                                            segment.getWeekday(),
+//                                            weekInt,
+//                                            "study",
+//                                            cls.getSemester()
+//                                        ));
+//                                    });
+//                                }
+//                            });
+//                        }
+//                    }
+//                }
+//
+//                // Lưu các RoomOccupation
+//                roomOccupationService.saveAll(roomOccupations);
+//            }
+//
+//            return result;
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            log.error("Không thể lưu các lớp từ Excel: " + e.getMessage());
+//            return new HashMap<>();
+//        }
+//    }
 
     public List<ClassOpened> saveClassOpened(MultipartFile file, String semester) {
         try {
@@ -335,8 +468,8 @@ public class ExcelService {
         return scheduleRepo.findAll();
     }
 
-    public ByteArrayInputStream exportRoomOccupationExcel(String semester, int week) {
-        return roomOccupationService.exportExcel(semester, week);
+    public ByteArrayInputStream exportRoomOccupationExcel(String semester, int week, Long versionId) {
+        return roomOccupationService.exportExcel(semester, week, versionId);
     }
 
 
@@ -391,6 +524,44 @@ public class ExcelService {
         } catch (IOException e) {
             log.error(e.getMessage());
             return new ArrayList<>();
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> saveTimeTablingClasses(MultipartFile file, String semester, Long versionId) {
+        try {
+            // Delete existing classes and segments for this semester if necessary
+            // Note: You may want to add a confirmation step before deleting data in production
+            // timeTablingClassRepo.deleteAllBySemester(semester);
+            // timeTablingClassSegmentRepo.deleteAllByVersionId(versionId);
+            
+            Map<String, Object> result = GeneralExcelHelper
+                    .saveTimeTablingClassAndSegmentsFromExcel(file.getInputStream(), semester, 
+                                                             timeTablingClassRepo, timeTablingClassSegmentRepo);
+            
+            if (result == null) {
+                return new HashMap<>();
+            }
+            
+            // Update version ID for all segments
+            if (result.containsKey("segments")) {
+                @SuppressWarnings("unchecked")
+                Map<Long, List<TimeTablingClassSegment>> segmentsMap = 
+                    (Map<Long, List<TimeTablingClassSegment>>)result.get("segments");
+                
+                for (List<TimeTablingClassSegment> segments : segmentsMap.values()) {
+                    for (TimeTablingClassSegment segment : segments) {
+                        segment.setVersionId(versionId);
+                        timeTablingClassSegmentRepo.save(segment);
+                    }
+                }
+            }
+            
+            return result;
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error("Failed to save timetabling classes from Excel: " + e.getMessage());
+            return new HashMap<>();
         }
     }
 

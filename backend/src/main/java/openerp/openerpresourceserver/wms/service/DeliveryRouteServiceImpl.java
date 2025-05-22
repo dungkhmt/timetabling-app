@@ -7,10 +7,15 @@ import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryPlanStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.VehicleStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
+import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.delivery.DeliveryRouteGetListRes;
 import openerp.openerpresourceserver.wms.dto.delivery.DeliveryRouteResponseDTO;
+import openerp.openerpresourceserver.wms.dto.filter.DeliveryRouteGetListFilter;
 import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
+import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
+import openerp.openerpresourceserver.wms.repository.specification.DeliveryRouteSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import openerp.openerpresourceserver.wms.vrp.Node;
 import openerp.openerpresourceserver.wms.vrp.VRPRoute;
@@ -22,11 +27,7 @@ import openerp.openerpresourceserver.wms.vrp.service.RouteVisualizationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,6 +46,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
     private final DeliveryPlanShipperRepo deliveryPlanShipperRepo;
     private final DeliveryPlanVehicleRepo deliveryPlanVehicleRepo;
     private final VehicleRepo vehicleRepo;
+    private final GeneralMapper genaralMapper;
 
     // Services
     private final RouteOptimizer routeOptimizer;
@@ -291,5 +293,46 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
         // Update delivery plan status
         deliveryPlan.setStatusId(DeliveryPlanStatus.IN_PROGRESS.name());
         deliveryPlanRepo.save(deliveryPlan);
+    }
+
+
+    @Override
+    public ApiResponse<Pagination<DeliveryRouteGetListRes>> getAlls(int page, int limit, DeliveryRouteGetListFilter filters) {
+        var pageReq = CommonUtil.getPageRequest(page, limit);
+        var deliveryRouteSpec = new DeliveryRouteSpecification(filters);
+        var deliveryRoutes = deliveryRouteRepo.findAll(deliveryRouteSpec, pageReq);
+
+        var deliveryRouteList = deliveryRoutes.getContent().stream()
+                .map(deliveryRoute -> {
+                    var deliveryRouteGetListRes = genaralMapper.convertToDto(deliveryRoute, DeliveryRouteGetListRes.class);
+                    if(Objects.nonNull(deliveryRoute.getAssignToVehicle())) {
+                        deliveryRouteGetListRes.setAssignToVehicleId(deliveryRoute.getAssignToVehicle().getId());
+                        deliveryRouteGetListRes.setAssignToVehicleName(deliveryRoute.getAssignToVehicle().getVehicleName());
+                    }
+
+                    if(Objects.nonNull(deliveryRoute.getAssignToShipper())) {
+                        deliveryRouteGetListRes.setAssignToShipperId(deliveryRoute.getAssignToShipper().getUserLoginId());
+                        deliveryRouteGetListRes.setAssignToShipperName(deliveryRoute.getAssignToShipper().getFullName());
+                    }
+
+                    deliveryRouteGetListRes.setDeliveryPlanId(deliveryRoute.getDeliveryPlan().getId());
+                    deliveryRouteGetListRes.setDeliveryPlanName(deliveryRoute.getDeliveryPlan().getDeliveryPlanName());
+                    return deliveryRouteGetListRes;
+                }).toList();
+
+        var pagination = Pagination.<DeliveryRouteGetListRes>builder()
+                .page(page)
+                .size(limit)
+                .totalElements(deliveryRoutes.getTotalElements())
+                .totalPages(deliveryRoutes.getTotalPages())
+                .data(deliveryRouteList)
+                .build();
+
+        return ApiResponse.<Pagination<DeliveryRouteGetListRes>>builder()
+                .code(200)
+                .message("Get delivery routes successfully")
+                .data(pagination)
+                .build();
+
     }
 }

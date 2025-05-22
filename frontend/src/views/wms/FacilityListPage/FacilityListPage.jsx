@@ -6,6 +6,8 @@ import FacilityListHeader from "./components/FacilityListHeader";
 import FacilityFilters from "./components/FacilityFilters";
 import FacilityTable from "./components/FacilityTable";
 import { useWms2Data } from "../../../services/useWms2Data";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
+import {withAuthorization} from "../common/components/withAuthorization";
 
 const FacilityListPage = () => {
   const [loading, setLoading] = useState(true);
@@ -134,4 +136,4 @@ const FacilityListPage = () => {
   );
 };
 
-export default FacilityListPage;
+export default withAuthorization(FacilityListPage, MENU_CONSTANTS.FACILITY_LIST);

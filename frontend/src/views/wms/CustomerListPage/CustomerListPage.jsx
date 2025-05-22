@@ -12,6 +12,8 @@ import CustomerListHeader from "./components/CustomerListHeader";
 import CustomerFilters from "./components/CustomerFilters";
 import CustomerTable from "./components/CustomerTable";
 import { useWms2Data } from "../../../services/useWms2Data";
+import {withAuthorization} from "../common/components/withAuthorization";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
 
 const CustomerListPage = () => {
   const [loading, setLoading] = useState(true);
@@ -140,4 +142,4 @@ const CustomerListPage = () => {
   );
 };
 
-export default CustomerListPage;
+export default withAuthorization(CustomerListPage, MENU_CONSTANTS.CUSTOMER_LIST);

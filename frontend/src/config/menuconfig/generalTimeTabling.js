@@ -17,18 +17,25 @@ export const generalTimeTabling = {
       text: "Danh sách lớp",
       child: [],
     },
-    {
-      id: "MENU_GENERAL_TIME_TABLING.GROUP_SCREEN",
-      path: "/general-time-tabling/group-class",
-      isPublic: false,
-      text: "Phân nhóm lớp",
-      child: [],
-    },
+    //{
+    //  id: "MENU_GENERAL_TIME_TABLING.GROUP_SCREEN",
+    //  path: "/general-time-tabling/group-class",
+    //  isPublic: false,
+    //  text: "Phân nhóm lớp",
+    //  child: [],
+    //},
     {
       id: "MENU_GENERAL_TIME_TABLING.SCHEDULE_SCREEN",
       path: "/general-time-tabling/schedule-class",
       isPublic: false,
       text: "Xếp thời khóa biểu",
+      child: [],
+    },
+    {
+      id: "MENU_GENERAL_TIME_TABLING.SCHEDULE_SCREEN_SUMMER",
+      path: "/general-time-tabling/schedule-class-summer",
+      isPublic: false,
+      text: "Xếp thời khóa biểu kỳ hè",
       child: [],
     },
     {

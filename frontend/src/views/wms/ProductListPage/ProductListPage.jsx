@@ -19,6 +19,8 @@ import ProductListHeader from "./components/ProductListHeader";
 import ProductFilters from "./components/ProductFilters";
 import ProductTable from "./components/ProductTable";
 import { useWms2Data } from "../../../services/useWms2Data";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
+import {withAuthorization} from "../common/components/withAuthorization";
 
 const ProductListPage = () => {
   const [loading, setLoading] = useState(true);
@@ -149,4 +151,4 @@ const ProductListPage = () => {
   );
 };
 
-export default ProductListPage;
+export default withAuthorization(ProductListPage, MENU_CONSTANTS.PRODUCT_LIST);

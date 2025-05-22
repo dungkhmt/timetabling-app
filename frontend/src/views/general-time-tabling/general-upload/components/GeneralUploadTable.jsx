@@ -188,6 +188,18 @@ const GeneralUploadTable = ({ classes, dataLoading, setClasses, onSelectionChang
         ),
       },
       {
+        headerName: "Số tiết",
+        field: "duration",
+        width: 100,
+        renderCell: (params) => (
+          <TextFieldCell
+            value={params.row.duration}
+            onChange={handleOnCellChange}
+            params={params}
+          />
+        ),
+      },
+      {
         headerName: "Kíp",
         field: "crew",
         width: 80,

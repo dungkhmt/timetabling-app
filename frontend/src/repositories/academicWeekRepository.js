@@ -1,4 +1,3 @@
-
 import { request } from "api";
 
 export const academicWeekServices = {
@@ -21,10 +20,10 @@ export const academicWeekServices = {
   createAcademicWeeks: async (data) => {
     return await request(
       "post",
-      "/academic-weeks/",
+      "/academic-weeks-v2",
       null,
       null,
       data
     );
-  }
+  },
 };

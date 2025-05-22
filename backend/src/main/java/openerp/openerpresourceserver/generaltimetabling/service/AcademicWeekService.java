@@ -17,6 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class AcademicWeekService {
     private AcademicWeekRepo academicWeekRepo;
+    
+    // Phương thức cũ vẫn giữ lại để tương thích
     public List<AcademicWeek> saveAcademicWeeks(String semester, String startDate, int numberOfWeeks) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         List<AcademicWeek> academicWeekList = new ArrayList<>();
@@ -37,9 +39,33 @@ public class AcademicWeekService {
         }
         return academicWeekRepo.saveAll(academicWeekList);
     }
+    
+    // Phương thức mới với tuần bắt đầu (startWeek)
+    public List<AcademicWeek> saveAcademicWeeksV2(String semester, String startDate, int startWeek, int numberOfWeeks) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        List<AcademicWeek> academicWeekList = new ArrayList<>();
+        try {
+            Calendar calendar = Calendar.getInstance();
+            Date parsedStartDate = dateFormat.parse(startDate);
+            calendar.setTime(parsedStartDate);
+            for (int i = 0; i < numberOfWeeks; i++) {
+                AcademicWeek academicWeek = new AcademicWeek();
+                academicWeek.setStartDayOfWeek(dateFormat.format(calendar.getTime()));
+                academicWeek.setWeekIndex(startWeek + i);
+                academicWeek.setSemester(semester);
+                academicWeekList.add(academicWeek);
+                calendar.add(Calendar.WEEK_OF_YEAR, 1);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return academicWeekRepo.saveAll(academicWeekList);
+    }
+    
     public List<AcademicWeek> getAllWeeks(String semester) {
         return academicWeekRepo.findAllBySemester(semester);
     }
+    
     @Transactional
     public void deleteAllBySemester(String semester) {
         academicWeekRepo.deleteBySemester(semester);

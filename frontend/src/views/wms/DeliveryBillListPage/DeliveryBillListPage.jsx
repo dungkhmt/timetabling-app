@@ -5,6 +5,8 @@ import DeliveryBillFilters from "./components/DeliveryBillFilters";
 import DeliveryBillTable from "./components/DeliveryBillTable";
 import { useWms2Data } from "services/useWms2Data";
 import { toast } from "react-toastify";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
+import {withAuthorization} from "../common/components/withAuthorization";
 
 // Delivery bill status definitions to be shared across components
 export const DELIVERY_BILL_STATUSES = {
@@ -140,4 +142,4 @@ const DeliveryBillListPage = () => {
   );
 };
 
-export default DeliveryBillListPage;
+export default withAuthorization(DeliveryBillListPage, MENU_CONSTANTS.LOGISTICS_DELIVERY_BILL_LIST);
