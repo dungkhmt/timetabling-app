@@ -352,11 +352,303 @@ public class GeneralExcelHelper {
         } catch (IOException e) {
             throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
         }
+    }    /**
+     * Overload of convertGeneralClassToExcel that accepts a map of class segments and numberSlotsPerSession
+     * This version creates a timetable with morning and afternoon sessions combined in one continuous day view
+     */
+    public static ByteArrayInputStream convertGeneralClassToExcelWithAllSession(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Integer numberSlotsPerSession) {
+        /*Handle Excel write*/
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            /* Init the cell style*/
+            /*Bold style*/
+            CellStyle boldStyle = workbook.createCellStyle();
+            Font boldFont = workbook.createFont();
+            boldFont.setBold(true);
+            boldStyle.setFont(boldFont);
+            boldStyle.setBorderBottom((short) 1);
+            boldStyle.setBorderLeft((short) 1);
+            boldStyle.setBorderRight((short) 1);
+            boldStyle.setBorderTop((short) 1);            
+            
+            int rowIndex = START_ROW_TO_READ_CLASS;
+            Sheet sheet = workbook.createSheet(SHEET);
+            
+            /*Room style*/
+            CellStyle roomStyle=  workbook.createCellStyle();
+            roomStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+            roomStyle.setFillPattern((short) 1);
+            roomStyle.setBorderBottom((short) 1);
+            roomStyle.setBorderLeft((short) 1);
+            roomStyle.setBorderRight((short) 1);
+            roomStyle.setBorderTop((short) 1);
+            roomStyle.setAlignment(CellStyle.ALIGN_CENTER); // Center horizontally
+            roomStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER); // Center vertically
+
+            // Tạo style riêng cho buổi sáng (màu vàng)
+            CellStyle morningStyle = workbook.createCellStyle();
+            morningStyle.cloneStyleFrom(roomStyle);
+            
+            // Tạo style riêng cho buổi chiều (màu xanh nhạt)
+            CellStyle afternoonStyle = workbook.createCellStyle();
+            afternoonStyle.cloneStyleFrom(roomStyle);
+            afternoonStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            afternoonStyle.setFillPattern((short) 1);
+
+            /*Header style*/
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(boldFont);
+            headerStyle.setAlignment(CellStyle.ALIGN_CENTER);
+            headerStyle.setBorderBottom((short) 1);
+            headerStyle.setBorderLeft((short) 1);
+            headerStyle.setBorderRight((short) 1);
+            headerStyle.setBorderTop((short) 1); // Ensure top border is applied
+
+            /*Create default cell style with borders*/
+            CellStyle defaultStyle = workbook.createCellStyle();
+            defaultStyle.setBorderBottom((short) 1);
+            defaultStyle.setBorderLeft((short) 1);
+            defaultStyle.setBorderRight((short) 1);
+            defaultStyle.setBorderTop((short) 1);
+            
+            // Tạo header style cho buổi sáng (màu vàng nhạt)
+            CellStyle morningHeaderStyle = workbook.createCellStyle();
+            morningHeaderStyle.cloneStyleFrom(headerStyle);
+            morningHeaderStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            morningHeaderStyle.setFillPattern((short) 1);
+            
+            // Tạo header style cho buổi chiều (màu xanh nhạt)
+            CellStyle afternoonHeaderStyle = workbook.createCellStyle();
+            afternoonHeaderStyle.cloneStyleFrom(headerStyle);
+            afternoonHeaderStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
+            afternoonHeaderStyle.setFillPattern((short) 1);
+            
+            /*Header*/
+            /*Handle create header info*/
+            
+            // Số tiết mỗi ngày là số tiết mỗi session * 2 (sáng + chiều)
+            int slotsPerDay = numberSlotsPerSession * 2;
+            
+            // Set column widths - make schedule columns half width
+            ColumnWidthHelper.setTimeTableColumnWidths(sheet, END_COL_TO_READ_CLASS_INFO, 
+                                                     START_COL_TO_READ_CLASS_SCHEDULE, 
+                                                     slotsPerDay, 7); // 7 days (Mon-Sun)
+            
+            Row weekIndexRow = sheet.createRow(rowIndex);
+            for (int i = 0; i < HEADERS.length; i += 1) {
+                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex+1,i,i));
+                Cell c = weekIndexRow.createCell(i);
+                String classInfoString = HEADERS[i];
+                c.setCellValue(classInfoString);
+                c.setCellStyle(headerStyle);
+            }
+            
+            /*Handle create header schedule info */
+            int totalColumns = 7 * slotsPerDay; // 7 days (Mon-Sun) * (morning + afternoon) slots per day
+            
+            // Day row
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i += slotsPerDay) {
+                CellRangeAddress region = new CellRangeAddress(rowIndex, rowIndex, i, i+slotsPerDay-1);
+                sheet.addMergedRegion(region);
+                
+                // Explicitly set borders for the merged region
+                RegionUtil.setBorderTop((short) 1, region, sheet, workbook);
+                RegionUtil.setBorderBottom((short) 1, region, sheet, workbook);
+                RegionUtil.setBorderLeft((short) 1, region, sheet, workbook);
+                RegionUtil.setBorderRight((short) 1, region, sheet, workbook);
+                
+                Cell c = weekIndexRow.createCell(i);
+                int dayIndex = (i-START_COL_TO_READ_CLASS_SCHEDULE)/slotsPerDay + 2;
+                String weekString = dayIndex < 8 ? "Thứ " + dayIndex : "Chủ nhật";
+                c.setCellValue(weekString);
+                c.setCellStyle(headerStyle);
+            }
+            
+            // Session row (below day row)
+            Row sessionRow = sheet.createRow(rowIndex+1);
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i += slotsPerDay) {
+                // Sáng (Morning)
+                CellRangeAddress morningRegion = new CellRangeAddress(rowIndex+1, rowIndex+1, i, i+numberSlotsPerSession-1);
+                sheet.addMergedRegion(morningRegion);
+                
+                // Set borders
+                RegionUtil.setBorderTop((short) 1, morningRegion, sheet, workbook);
+                RegionUtil.setBorderBottom((short) 1, morningRegion, sheet, workbook);
+                RegionUtil.setBorderLeft((short) 1, morningRegion, sheet, workbook);
+                RegionUtil.setBorderRight((short) 1, morningRegion, sheet, workbook);
+                
+                Cell morningCell = sessionRow.createCell(i);
+                morningCell.setCellValue("Sáng");
+                morningCell.setCellStyle(morningHeaderStyle);
+                
+                // Chiều (Afternoon)
+                CellRangeAddress afternoonRegion = new CellRangeAddress(rowIndex+1, rowIndex+1, 
+                                                   i+numberSlotsPerSession, i+slotsPerDay-1);
+                sheet.addMergedRegion(afternoonRegion);
+                
+                // Set borders
+                RegionUtil.setBorderTop((short) 1, afternoonRegion, sheet, workbook);
+                RegionUtil.setBorderBottom((short) 1, afternoonRegion, sheet, workbook);
+                RegionUtil.setBorderLeft((short) 1, afternoonRegion, sheet, workbook);
+                RegionUtil.setBorderRight((short) 1, afternoonRegion, sheet, workbook);
+                
+                Cell afternoonCell = sessionRow.createCell(i+numberSlotsPerSession);
+                afternoonCell.setCellValue("Chiều");
+                afternoonCell.setCellStyle(afternoonHeaderStyle);
+            }
+            
+            // Period row (below session row)
+            Row periodRow = sheet.createRow(rowIndex+2);
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i++) {
+                Cell c = periodRow.createCell(i);
+                // Calculate the period number (1-based) within its session
+                int columnPosition = i - START_COL_TO_READ_CLASS_SCHEDULE;
+                // int dayIndex = columnPosition / slotsPerDay; // Not strictly needed for period string logic
+                int periodInDay = columnPosition % slotsPerDay; // 0-indexed period within the combined day
+
+                // Determine if this is morning or afternoon slot based on periodInDay
+                boolean isMorning = periodInDay < numberSlotsPerSession;
+                
+                int periodInSession = periodInDay;
+                
+                // For afternoon session, adjust period number to be 0-indexed within the afternoon session
+                if (!isMorning) {
+                    periodInSession = periodInDay - numberSlotsPerSession;
+                }
+                
+                // Period numbers should always start from 1
+                String periodString = "" + (periodInSession + 1);
+                
+                c.setCellValue(periodString);
+                c.setCellStyle(isMorning ? morningHeaderStyle : afternoonHeaderStyle);
+            }
+
+            rowIndex+=3; // Increase row index for data rows (after day, session, and period rows)
+            
+            /*Handle write class info and schedule*/
+            for (TimeTablingClass timeTablingClass : classes) {
+                Row classRow = sheet.createRow(rowIndex);
+                /*Write the class info*/
+                for (int i = 0 ; i <= END_COL_TO_READ_CLASS_INFO; i++ ) {
+                    Cell c = classRow.createCell(i);
+                    c.setCellStyle(defaultStyle); // Add default style with borders
+                    switch (i) {
+                        case 0:
+                            if (timeTablingClass.getQuantity() != null) {
+                                c.setCellValue(timeTablingClass.getQuantity());
+                            }
+                            break;
+                        case 1:
+                            c.setCellValue(timeTablingClass.getClassType());
+                            break;
+                        case 2:
+                            c.setCellValue(timeTablingClass.getModuleCode());
+                            break;
+                        case 3:
+                            c.setCellValue(timeTablingClass.getModuleName());
+                            break;
+                        case 4:
+                            c.setCellValue(timeTablingClass.getLearningWeeks());
+                            break;
+                        case 5:
+                            c.setCellValue(timeTablingClass.getMass());
+                            break;
+                        case 6:
+                            if (timeTablingClass.getQuantityMax() != null) {
+                                c.setCellValue(timeTablingClass.getQuantityMax());
+                            }
+                            break;
+                        case 7:
+                            c.setCellValue(timeTablingClass.getStudyClass());
+                            break;
+                        case 8:
+                            c.setCellValue(timeTablingClass.getState());
+                            break;
+                        case 9:
+                            c.setCellValue(timeTablingClass.getClassCode());
+                            break;
+                        case 10:
+                            if (timeTablingClass.getRefClassId() != null) {
+                                c.setCellValue(timeTablingClass.getRefClassId());
+                            }
+                            break;
+                        case 11:
+                            if (timeTablingClass.getId()!= null) {
+                                c.setCellValue(timeTablingClass.getId());
+                            }
+                            break;
+                        case 12:
+                            if (timeTablingClass.getParentClassId() != null) {
+                                c.setCellValue(timeTablingClass.getParentClassId());
+                            }
+                            break;
+                        case 13:
+                            c.setCellValue(timeTablingClass.getCrew());
+                            break;
+                        case 14:
+                            c.setCellValue(timeTablingClass.getOpenBatch());
+                            break;
+                        case 15:
+                            c.setCellValue(timeTablingClass.getCourse());
+                            break;
+                        case 16:
+                            c.setCellValue(timeTablingClass.getForeignLecturer());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                
+                /*Write the class schedule using segments*/
+                for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + totalColumns; j++) {
+                    Cell c = classRow.createCell(j);
+                    c.setCellStyle(defaultStyle); // Add default style with borders
+                    
+                    // Get segments for current class from the map
+                    List<TimeTablingClassSegment> segments = mClassId2ClassSegments.getOrDefault(timeTablingClass.getId(), new ArrayList<>());
+                    for (TimeTablingClassSegment segment : segments) {
+                        if (segment.getRoom() != null && segment.getWeekday() != null && segment.getStartTime() != null && segment.getEndTime() != null) {
+                            // Điều chỉnh công thức để lùi 1 cột sang trái
+                            int dayIndex = segment.getWeekday();
+                            // Chuyển đổi chỉ số ngày: 8 -> 7 (chủ nhật)
+                            if (dayIndex == 8) dayIndex = 7;
+                            else if (dayIndex > 8) continue; // Bỏ qua nếu nằm ngoài phạm vi
+                            
+                            // Xác định kíp học (S = sáng, C = chiều)
+                            String crew = timeTablingClass.getCrew();
+                            boolean isMorning = "S".equals(crew);
+                            
+                            // Tính toán vị trí cột dựa vào ngày, kíp và thời gian
+                            int sessionOffset = isMorning ? 0 : numberSlotsPerSession;
+                            int startCol = (dayIndex-2)*slotsPerDay + sessionOffset + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
+                            int endCol = (dayIndex-2)*slotsPerDay + sessionOffset + segment.getEndTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
+                            
+                            sheet.addMergedRegion(new CellRangeAddress(
+                                rowIndex, rowIndex, 
+                                startCol, 
+                                endCol
+                            ));
+                            
+                            if (j >= startCol && j <= endCol) {
+                                // Hiển thị phòng học
+                                c.setCellValue(segment.getRoom());
+                                
+                                // Sử dụng style tương ứng với kíp
+                                CellStyle cellStyle = isMorning ? morningStyle : afternoonStyle;
+                                c.setCellStyle(cellStyle);
+                            }
+                        }
+                    }
+                }
+                rowIndex++;
+            }
+            
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
+        }
     }
 
-    /**
-     * Overload of convertGeneralClassToExcel that accepts a map of class segments and numberSlotsPerSession
-     */
     public static ByteArrayInputStream convertGeneralClassToExcel(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Integer numberSlotsPerSession) {
         /*Handle Excel write*/
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {

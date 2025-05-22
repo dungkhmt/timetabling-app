@@ -66,8 +66,9 @@ public class ExcelService {
     private TimeTablingClassRepo timeTablingClassRepo;
     
     @Autowired 
-    private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
-      public InputStream exportGeneralExcel(String semester, Long versionId, Integer numberSlotsPerSession) {
+    private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;   
+    
+    private Map<String, Object> prepareClassDataForExport(String semester, Long versionId, Integer numberSlotsPerSession) {
         // Sử dụng giá trị mặc định là 6 nếu numberSlotsPerSession là null
         int slots = numberSlotsPerSession != null ? numberSlotsPerSession : 6;
         
@@ -97,8 +98,39 @@ public class ExcelService {
         }
         
         if (classes.isEmpty()) throw new NotFoundException("Kỳ học không có bất kỳ lớp học nào!");
-        return GeneralExcelHelper.convertGeneralClassToExcel(classes, mClassId2ClassSegments, slots);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("classes", classes);
+        result.put("segments", mClassId2ClassSegments);
+        result.put("slots", slots);
+        
+        return result;
     }
+    
+    /**
+     * Export general excel with regular format
+     */
+    public InputStream exportGeneralExcel(String semester, Long versionId, Integer numberSlotsPerSession) {
+        Map<String, Object> data = prepareClassDataForExport(semester, versionId, numberSlotsPerSession);
+        return GeneralExcelHelper.convertGeneralClassToExcel(
+            (List<TimeTablingClass>) data.get("classes"), 
+            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"), 
+            (Integer) data.get("slots")
+        );
+    }
+
+    /**
+     * Export general excel with all sessions format
+     */
+    public InputStream exportGeneralExcelWithAllSession(String semester, Long versionId, Integer numberSlotsPerSession) {
+        Map<String, Object> data = prepareClassDataForExport(semester, versionId, numberSlotsPerSession);
+        return GeneralExcelHelper.convertGeneralClassToExcelWithAllSession(
+            (List<TimeTablingClass>) data.get("classes"), 
+            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"), 
+            (Integer) data.get("slots")
+        );
+    }
+
 
 
     // public ByteArrayInputStream load() {

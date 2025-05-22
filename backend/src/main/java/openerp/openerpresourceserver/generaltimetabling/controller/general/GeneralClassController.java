@@ -171,6 +171,22 @@ public class GeneralClassController {
                 .body(file);
     }
 
+    @PostMapping("/export-excel/view-all-session")
+    public ResponseEntity requestExportExcelWithAllSession(@RequestParam("semester") String semester, @RequestBody ExportExcelRequest requestDto) {
+        log.info("Controler API -> requestExportExcel start...");
+        String filename = String.format("TKB_{}.xlsx", semester);
+        InputStreamResource file = new InputStreamResource(excelService.exportGeneralExcelWithAllSession(
+            semester, 
+            requestDto.getVersionId(), 
+            requestDto.getNumberSlotsPerSession()
+        ));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
     @PostMapping("/reset-schedule")
     public ResponseEntity<?> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
         log.info("Controler API -> requestResetSchedule start...");

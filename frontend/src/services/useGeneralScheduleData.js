@@ -428,6 +428,34 @@ export const useGeneralSchedule = () => {
     }
   }, []);
 
+    const handleExportTimeTablingWithAllSession = useCallback(async (semester, versionId, numberSlotsPerSession) => {
+    if (!semester) {
+      toast.error("Vui lòng chọn học kỳ!");
+      return;
+    }
+
+    setIsExportExcelLoading(true);
+
+    try {
+      const response = await generalScheduleRepository.exportExcelWithAllSession(semester, versionId, numberSlotsPerSession);
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `timetable_${semester}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Tải xuống thành công!");
+    } catch (error) {
+      toast.error(error.response?.data || "Có lỗi khi tải xuống file!");
+    } finally {
+      setIsExportExcelLoading(false);
+    }
+  }, []);
+
   // Delete classes
   const handleDeleteClasses = useCallback(async () => {
     if (!selectedSemester?.semester) {
@@ -831,6 +859,7 @@ export const useGeneralSchedule = () => {
       handleAutoScheduleTimeSlotTimeTabling,
       handleAutoScheduleClassroomTimeTabling,
       handleRefreshClasses: fetchClasses,
+      handleExportTimeTablingWithAllSession,
       handleSaveTimeSlot,
       handleAddTimeSlot,
       handleRemoveTimeSlot,

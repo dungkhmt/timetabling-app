@@ -546,12 +546,11 @@ const GeneralScheduleScreen = () => {
                 >
                   {isDeletingBySemester ? "Đang xóa..." : "Xóa ca học"}
                 </Button>
-                  <Button
+                <Button
                     disabled={
                       states.selectedSemester === null ||
                       states.isExportExcelLoading
-                    }
-                    startIcon={
+                    }                    startIcon={
                       states.isExportExcelLoading ? (
                         <FacebookCircularProgress size={20} />
                       ) : null
@@ -559,11 +558,17 @@ const GeneralScheduleScreen = () => {
                     variant="contained"
                     color="success"
                     onClick={() =>
-                      handlers.handleExportTimeTabling(
-                        states.selectedSemester?.semester,
-                        selectedVersion?.id,
-                        selectedVersion?.numberSlotsPerSession || 6 // Sử dụng numberSlotsPerSession từ version, mặc định là 6
-                      )
+                      viewTab === 4
+                      ? handlers.handleExportTimeTablingWithAllSession(
+                          states.selectedSemester?.semester,
+                          selectedVersion?.id,
+                          selectedVersion?.numberSlotsPerSession || 6 
+                        )
+                      : handlers.handleExportTimeTabling(
+                          states.selectedSemester?.semester,
+                          selectedVersion?.id,
+                          selectedVersion?.numberSlotsPerSession || 6 
+                        )
                     }
                     sx={{
                       minWidth: "100px",
