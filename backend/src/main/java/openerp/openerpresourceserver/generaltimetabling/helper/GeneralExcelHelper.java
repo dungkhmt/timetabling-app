@@ -391,8 +391,9 @@ public class GeneralExcelHelper {
             // Tạo style riêng cho buổi chiều (màu xanh nhạt)
             CellStyle afternoonStyle = workbook.createCellStyle();
             afternoonStyle.cloneStyleFrom(roomStyle);
-            afternoonStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            afternoonStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
             afternoonStyle.setFillPattern((short) 1);
+
 
             /*Header style*/
             CellStyle headerStyle = workbook.createCellStyle();
