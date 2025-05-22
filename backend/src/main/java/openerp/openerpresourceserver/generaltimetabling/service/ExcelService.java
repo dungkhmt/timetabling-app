@@ -67,7 +67,7 @@ public class ExcelService {
     
     @Autowired 
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;   
-    
+
     private Map<String, Object> prepareClassDataForExport(String semester, Long versionId, Integer numberSlotsPerSession) {
         // Sử dụng giá trị mặc định là 6 nếu numberSlotsPerSession là null
         int slots = numberSlotsPerSession != null ? numberSlotsPerSession : 6;
@@ -468,8 +468,8 @@ public class ExcelService {
         return scheduleRepo.findAll();
     }
 
-    public ByteArrayInputStream exportRoomOccupationExcel(String semester, int week) {
-        return roomOccupationService.exportExcel(semester, week);
+    public ByteArrayInputStream exportRoomOccupationExcel(String semester, int week, Long versionId) {
+        return roomOccupationService.exportExcel(semester, week, versionId);
     }
 
 

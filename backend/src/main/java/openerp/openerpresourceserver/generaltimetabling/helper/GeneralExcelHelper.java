@@ -402,7 +402,7 @@ public class GeneralExcelHelper {
             headerStyle.setBorderBottom((short) 1);
             headerStyle.setBorderLeft((short) 1);
             headerStyle.setBorderRight((short) 1);
-            headerStyle.setBorderTop((short) 1); // Ensure top border is applied
+            headerStyle.setBorderTop((short) 1); 
 
             /*Create default cell style with borders*/
             CellStyle defaultStyle = workbook.createCellStyle();

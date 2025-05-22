@@ -15,7 +15,7 @@ public interface RoomOccupationService {
 
      void saveAll(List<RoomOccupation> roomOccupations);
 
-     ByteArrayInputStream exportExcel(String semester, int week);
+     ByteArrayInputStream exportExcel(String semester, int week, Long versionId);
 
     List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex);
 
