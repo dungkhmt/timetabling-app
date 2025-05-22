@@ -44,15 +44,18 @@ const OrderTable = ({
 }) => {
   const navigate = useHandleNavigate();
   const location = useLocation();
-  const baseUrl = type === ORDER_TYPE_ID.SALES_ORDER ? "/wms/sales" : "/wms/purchase";
 
   const handleViewDetails = (orderId) => {
-    navigate(`${baseUrl}/orders/details`, url => {
+    navigate(``, url => {
       const pathName = location.pathname;
       if (pathName.includes('logistics')) {
-        return url + `/reviewed/${orderId}`;
+        if(type === ORDER_TYPE_ID.SALES_ORDER) return url + `/wms/logistics/salesorders/details/reviewed/${orderId}`;
+        return url + `/wms/logistics/purchaseorders/details/reviewed/${orderId}`;
       }
-      return url + `/${orderId}`;
+      if(type === ORDER_TYPE_ID.SALES_ORDER) {
+        return url + `/wms/sales/orders/details/reviewed/${orderId}`;
+      }
+        return url + `/wms/purchase/orders/details/reviewed/${orderId}`;
     });
   };
 

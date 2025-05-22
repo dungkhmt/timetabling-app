@@ -1,16 +1,9 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 
 @Data
 @Entity
@@ -25,19 +18,25 @@ public class OrderItemBilling extends BaseEntity {
     @Column(name = "id", length = 40)
     private String id;
 
-
-
     @ManyToOne
     @JoinColumn(name = "order_item_id")
     private OrderItem orderItem;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_item_id")
     private InvoiceItem invoiceItem;
 
-    @ManyToOne
-    @JoinColumn(name = "shipment_id")
-    private Shipment shipment;
+//    @ManyToOne
+//    @JoinColumn(name = "shipment_id")
+//    private Shipment shipment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "facility_id")
+    private Facility facility;
+
+    @OneToOne
+    @JoinColumn(name = "inventory_item_detail_id")
+    private InventoryItemDetail inventoryItemDetail;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
@@ -48,5 +47,8 @@ public class OrderItemBilling extends BaseEntity {
 
     @Column(name = "amount", precision = 25, scale = 5)
     private BigDecimal amount;
+
+    @Column(name = "unit")
+    private String unit;
 
 }
