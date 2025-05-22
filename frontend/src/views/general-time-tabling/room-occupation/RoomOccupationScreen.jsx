@@ -4,13 +4,22 @@ import { useRoomOccupations } from "./hooks/useRoomOccupations";
 import FilterSelectBox from "./components/FilterSelectBox";
 import { Button, TablePagination, Autocomplete, TextField, CircularProgress } from "@mui/material";
 import { Refresh } from "@mui/icons-material";
-const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
+const RoomOccupationScreen = ({ selectedSemester, selectedVersion, numberSlotsPerSession: propNumberSlotsPerSession }) => {
 
-  console.log(selectedVersion)
+  console.log(selectedVersion)  
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const { data, loading, error, refresh } = useRoomOccupations(selectedSemester?.semester, selectedWeek, selectedVersion?.id);
+  
+  // Số tiết mỗi buổi (mặc định 6 nếu không truyền vào)
+  const numberSlotsPerSession = propNumberSlotsPerSession ?? selectedVersion?.numberSlotsPerSession ?? 6;
+  
+  const { data, loading, error, refresh } = useRoomOccupations(
+    selectedSemester?.semester, 
+    selectedWeek, 
+    selectedVersion?.id,
+    numberSlotsPerSession
+  );
 
   useEffect(() => {
     console.log("Current state:", {
@@ -52,18 +61,20 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
       },
       null,
       { responseType: "arraybuffer" }
-    ).then();
-  };
+    ).then();  };
+
+  const daysInWeek = 7;
+  const totalSlots = numberSlotsPerSession * daysInWeek;
 
   const createSessionCells = (periods) => {
-    const cells = Array(42).fill(null);
+    const cells = Array(totalSlots).fill(null);
     if (!periods) return cells;
     
     periods.forEach(({ start, duration, classCode, moduleCode }) => {
-      if (start < 0 || start >= 42) return;
+      if (start < 0 || start >= totalSlots) return;
       cells[start] = { colSpan: duration, classCode, moduleCode };
       for (let i = 1; i < duration; i++) {
-        if (start + i < 42) {
+        if (start + i < totalSlots) {
           cells[start + i] = { hidden: true };
         }
       }
@@ -80,16 +91,16 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
           width: '40px', 
           minWidth: '40px', 
           maxWidth: '40px',
-          borderLeft: index % 6 === 0 ? '2px solid rgb(148 163 184)' : '1px solid rgb(226 232 240)'
+          borderLeft: index % numberSlotsPerSession === 0 ? '2px solid rgb(148 163 184)' : '1px solid rgb(226 232 240)'
         }}
       />
     );
-    if (cell.hidden) return null;
-
-    const day = Math.floor(index / 6) + 2;
+    if (cell.hidden) return null;  
+    const day = Math.floor(index / numberSlotsPerSession) + 2;
     const dayText = day === 8 ? 'CN' : `Thứ ${day}`;
-    const periodStart = (index % 6) + 1;
-    const periodEnd = ((index + cell.colSpan - 1) % 6) + 1;
+    const periodStart = (index % numberSlotsPerSession) + 1;
+    let periodEnd = periodStart + cell.colSpan - 1;
+    if (periodEnd > numberSlotsPerSession) periodEnd = numberSlotsPerSession;
     const title = `${cell.classCode} - ${cell.moduleCode}: ${dayText}/${periodStart}-${periodEnd}`;
     
     const baseWidth = 40;
@@ -104,7 +115,7 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
           width: `${width}px`,
           minWidth: `${width}px`,
           maxWidth: `${width}px`,
-          borderLeft: index % 6 === 0 ? '2px solid rgb(148 163 184)' : undefined
+          borderLeft: index % numberSlotsPerSession === 0 ? '2px solid rgb(148 163 184)' : undefined
         }}
         className="cell bg-yellow-300 text-center overflow-hidden text-xs border border-slate-100"
       >
@@ -200,14 +211,14 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
                 >
                   Phòng học/ Thời gian
                 </th>
-                {Array.from({ length: 7 }).map((_, index) => (
+                {Array.from({ length: daysInWeek }).map((_, index) => (
                   <th
                     key={index}
-                    colSpan="6"
+                    colSpan={numberSlotsPerSession}
                     className="cell text-center border-2 border-slate-300 bg-white sticky top-0 z-20"
                     style={{ 
-                      width: "240px", 
-                      minWidth: "240px",
+                      width: `${numberSlotsPerSession * 40}px`, 
+                      minWidth: `${numberSlotsPerSession * 40}px`,
                       borderLeft: '2px solid rgb(148 163 184)',
                       borderRight: '2px solid rgb(148 163 184)'
                     }}
@@ -217,7 +228,7 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
                 ))}
               </tr>
               <tr>
-                {Array.from({ length: 42 }).map((_, index) => (
+                {Array.from({ length: totalSlots }).map((_, index) => (
                   <th
                     key={index}
                     className="cell border border-slate-300 text-center bg-white sticky top-10 z-20"
@@ -225,10 +236,10 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
                       width: "40px", 
                       minWidth: "40px", 
                       maxWidth: "40px",
-                      borderLeft: index % 6 === 0 ? '2px solid rgb(148 163 184)' : '1px solid rgb(226 232 240)'
+                      borderLeft: index % numberSlotsPerSession === 0 ? '2px solid rgb(148 163 184)' : '1px solid rgb(226 232 240)'
                     }}
                   >
-                    {(index % 6) + 1}
+                    {(index % numberSlotsPerSession) + 1}
                   </th>
                 ))}
               </tr>
@@ -255,7 +266,7 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
                         <div className="p-1">C</div>
                       </div>
                     </th>
-                    <td colSpan="42" className="p-0 border border-slate-300">
+                    <td colSpan={totalSlots} className="p-0 border border-slate-300">
                       <div className="flex flex-col">
                         <div className="border-b border-slate-200 flex">
                           {createSessionCells(roomData.morningPeriods).map(
