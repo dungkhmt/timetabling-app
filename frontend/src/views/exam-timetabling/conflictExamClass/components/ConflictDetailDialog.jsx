@@ -73,16 +73,17 @@ const ConflictDetailDialog = ({
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>Số lượng SV:</Typography>
             <Typography variant="body" sx={{ fontSize: '1rem' }}>{classData.numberOfStudents}</Typography>
           </Grid>
-          <Grid item xs={6} sm={3}>
-            <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>Trường/Khoa:</Typography>
-            <Typography variant="body" sx={{ fontSize: '1rem' }} noWrap>{classData.school}</Typography>
-          </Grid>
           
           {/* Description in a separate row */}
-          <Grid item xs={12} sx={{ mt: 0.5 }}>
+          <Grid item xs={6} sx={{ mt: 0.5 }}>
             <Divider sx={{ my: 0.5 }} />
             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>Ghi chú:</Typography>
             <Typography variant="body" sx={{ fontSize: '1rem' }}>{classData.description}</Typography>
+          </Grid>
+          <Grid item xs={6} sx={{ mt: 0.5 }}>
+            <Divider sx={{ my: 0.5 }} />
+            <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>Trường/Khoa:</Typography>
+            <Typography variant="body" sx={{ fontSize: '1rem' }} noWrap>{classData.school}</Typography>
           </Grid>
         </Grid>
       </Paper>

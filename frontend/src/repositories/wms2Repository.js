@@ -111,7 +111,7 @@ export const wms2Service = {
     return request("get", `delivery-plan/details/${deliveryPlanId}`, null, null, null);
   },
   getVehicles : (page, limit, filters) => {
-    return request("get", `/vehicle/get-all?page=${page}&limit=${limit}&statusId=${filters.statusId}`, null, null, null);
+    return request("post", `/vehicle/get-all?page=${page}&limit=${limit}`, null, null, filters);
   },
   createProduct : (data) => {
     return request("post", "/product/create", null, null, data);
@@ -157,5 +157,8 @@ export const wms2Service = {
   },
   getAllShipments : (page, limit, filters) => {
     return request("post", `/shipment/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getAllDeliveryRoutes : (page, limit, filters) => {
+    return request("post", `/delivery-route/get-all?page=${page}&limit=${limit}`, null, null, filters);
   }
 };

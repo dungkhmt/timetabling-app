@@ -29,6 +29,8 @@ import ShipmentListPage from "../views/wms/ShipmentListPage/ShipmentListPage";
 import {ORDER_TYPE_ID, SHIPMENT_TYPE_ID} from "../views/wms/common/constants/constants";
 import PurchaseOrderDetail from "../views/wms/PurchaseOrderDetail/PurchaseOrderDetail";
 import SaleOrderDetail from "../views/wms/SaleOrderDetail/SaleOrderDetail";
+import DeliveryRouteListPage from "../views/wms/DeliveryRouteListPage/DeliveryRouteListPage";
+import VehicleListPage from "../views/wms/VehicleListPage/VehicleListPage";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -216,6 +218,18 @@ export default function WMSRouter() {
           component={SaleOrderListPage}
           exact
           path={`${path}/logistics/salesorders`}
+        ></Route>
+
+        <Route
+          component={DeliveryRouteListPage}
+            exact
+            path={`${path}/logistics/deliveryroute`}
+        ></Route>
+
+        <Route
+          component={VehicleListPage}
+            exact
+            path={`${path}/logistics/vehicle`}
         ></Route>
         
       </Switch>
