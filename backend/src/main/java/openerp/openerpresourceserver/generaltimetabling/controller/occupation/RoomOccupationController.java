@@ -42,9 +42,9 @@ public class RoomOccupationController {
     }
 
     @PostMapping("/export")
-    public ResponseEntity<Resource> exportExcel (@RequestParam("semester") String semester, @RequestParam("week") int week) {
+    public ResponseEntity<Resource> exportExcel (@RequestParam("semester") String semester, @RequestParam("week") int week, @RequestParam("versionId") Long versionId) {
         String filename = String.format("room_occupations_S{}_W{}.xlsx", semester, week);
-        InputStreamResource file = new InputStreamResource(excelService.exportRoomOccupationExcel(semester, week));
+        InputStreamResource file = new InputStreamResource(excelService.exportRoomOccupationExcel(semester, week, versionId));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(

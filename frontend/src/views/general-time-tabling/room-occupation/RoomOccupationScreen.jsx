@@ -33,9 +33,11 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion }) => {
       return;
     }
 
+    const versionIdParam = selectedVersion?.id ? `&versionId=${selectedVersion.id}` : "";
+
     request(
       "post",
-      `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}&includeBorders=true`,
+      `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}${versionIdParam}&includeBorders=true`,
       (res) => {
         const blob = new Blob([res.data], { type: res.headers["content-type"] });
         const link = document.createElement("a");

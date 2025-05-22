@@ -28,12 +28,13 @@ import { useCourseData } from "services/useCourseData";
 import { request } from "api";
 import { validateClassForm, prepareClassPayload, extractErrorMessage } from "../utils/formValidate";
 
-const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
-  const initialFormState = {
-    groupId: "", // ID của nhóm để truyền lên API
-    programName: "", // Tên chương trình học (group name)
-    moduleCode: "", // Mã học phần
-    moduleName: "", // Tên học phần
+const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }) => {
+  // Khởi tạo formData với giá trị từ props ngay từ đầu
+  const [formData, setFormData] = useState({
+    groupId: selectedGroup?.id || "", 
+    programName: selectedGroup?.groupName || "", 
+    moduleCode: "", 
+    moduleName: "", 
     numberOfClasses: "", // Số lượng lớp học
     learningWeeks: "", // Tuần học
     weekType: "0", // Tuần chẵn/lẻ
@@ -44,35 +45,34 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
     exerciseMaxQuantity: "", // Số SV Max (BT)
     lectureExerciseMaxQuantity: "", // Số SV Max (LT+BT)
     mass: "", // Khối lượng X(a-b-c-d)
-  };
-
-  const [formData, setFormData] = useState(initialFormState);
+  });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [selectedCourse, setSelectedCourse] = useState(null);
-
   // Fetch groups and courses
   const { allGroups, isLoadingGroups } = useGroupData();
   const { courses, isLoading: isLoadingCourses } = useCourseData();
-
-  // Update form when semester changes
+  
+  // Cập nhật formData mỗi khi dialog mở hoặc selectedGroup thay đổi
   useEffect(() => {
-    if (semester) {
-      // Clear any semester-related errors when a semester is selected
-      setErrors(prev => ({
-        ...prev,
-        semester: null
-      }));
-    }
-  }, [semester]);
-
-  // Update module code and name when a course is selected
-  useEffect(() => {
-    if (selectedCourse) {
+    // Chỉ cập nhật khi dialog đang mở để tránh cập nhật không cần thiết
+    if (open && selectedGroup) {
       setFormData(prev => ({
         ...prev,
-        moduleCode: selectedCourse.id,
-        moduleName: selectedCourse.courseName
+        groupId: selectedGroup.id || "",
+        programName: selectedGroup.groupName || ""
+      }));
+    }
+  }, [open, selectedGroup]);
+  
+  // Cập nhật selectedCourse đồng thời cập nhật formData tương ứng
+  const handleCourseChange = (newSelectedCourse) => {
+    setSelectedCourse(newSelectedCourse);
+    if (newSelectedCourse) {
+      setFormData(prev => ({
+        ...prev,
+        moduleCode: newSelectedCourse.id,
+        moduleName: newSelectedCourse.courseName
       }));
     } else {
       setFormData(prev => ({
@@ -81,7 +81,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
         moduleName: ""
       }));
     }
-  }, [selectedCourse]);
+  };
 
   const handleGroupChange = (e) => {
     const selectedId = e.target.value;
@@ -174,7 +174,6 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
       });
     }
   };
-
   const handleSubmit = () => {
     // Create a trimmed version of the form data
     const trimmedFormData = Object.keys(formData).reduce((acc, key) => {
@@ -186,6 +185,12 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
       }
       return acc;
     }, {});
+    
+    // Check if group is selected
+    if (!selectedGroup) {
+      toast.error("Vui lòng chọn chương trình học từ màn hình chính trước khi tạo lớp!");
+      return;
+    }
     
     // Use the trimmed data for validation
     const validationErrors = validateClassForm(trimmedFormData, semester);
@@ -228,10 +233,25 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
       setLoading(false);
       toast.error(err.response.data);
     });
-  };
-
+  };  
   const handleClose = () => {
-    setFormData(initialFormState);
+    // Reset formData but keep the selected group information
+    setFormData({
+      groupId: selectedGroup?.id || "",
+      programName: selectedGroup?.groupName || "",
+      moduleCode: "",
+      moduleName: "",
+      numberOfClasses: "",
+      learningWeeks: "",
+      weekType: "0",
+      crew: "",
+      duration: "",
+      promotion: "",
+      lectureMaxQuantity: "",
+      exerciseMaxQuantity: "",
+      lectureExerciseMaxQuantity: "",
+      mass: "",
+    });
     setSelectedCourse(null);
     setErrors({});
     onClose();
@@ -251,49 +271,33 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
             Vui lòng chọn kỳ học trước khi tạo lớp
           </Alert>
         )}
-        
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mt: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mt: 1 }}>
           <Box sx={{ flex: 2 }}>
-            <Grid container spacing={2}>
+            <Grid container spacing={2}>              
               <Grid item xs={12}>
                 <FormControl fullWidth error={!!errors.groupId || !!errors.programName}>
                   <InputLabel>Chương trình học *</InputLabel>
                   <Select
                     name="groupId"
                     value={formData.groupId}
-                    onChange={handleGroupChange}
                     label="Chương trình học"
-                    disabled={isLoadingGroups}
-                    endAdornment={
-                      formData.groupId ? (
-                        <IconButton
-                          size="small"
-                          sx={{ marginRight: 2 }}
-                          onClick={() => handleClearField("groupId")}
-                        >
-                          <ClearIcon fontSize="small" />
-                        </IconButton>
-                      ) : null
-                    }
+                    disabled={true}
                   >
-                    {isLoadingGroups ? (
-                      <MenuItem value="">
-                        <CircularProgress size={20} />
+                    {selectedGroup ? (
+                      <MenuItem key={selectedGroup.id} value={selectedGroup.id}>
+                        {selectedGroup.groupName}
                       </MenuItem>
                     ) : (
-                      allGroups.map((group) => (
-                        <MenuItem key={group.id} value={group.id}>
-                          {group.groupName}
-                        </MenuItem>
-                      ))
+                      <MenuItem value="" disabled>
+                        <em>Vui lòng chọn chương trình học từ màn hình chính</em>
+                      </MenuItem>
                     )}
                   </Select>
                   {(errors.groupId || errors.programName) && 
                     <FormHelperText>{errors.groupId || errors.programName}</FormHelperText>}
                 </FormControl>
               </Grid>
-              
-              <Grid item xs={6}>
+                <Grid item xs={6}>
                 <Autocomplete
                   options={courses || []}
                   getOptionLabel={(option) => `${option.id} - ${option.courseName}`}
@@ -301,7 +305,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
                   loading={isLoadingCourses}
                   value={selectedCourse}
                   onChange={(_, newValue) => {
-                    setSelectedCourse(newValue);
+                    handleCourseChange(newValue);
                   }}
                   renderInput={(params) => (
                     <TextField
@@ -334,7 +338,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess }) => {
                   value={formData.promotion}
                   onChange={handleChange}
                   fullWidth
-                  placeholder="Ví dụ: K65, K66"
+                  placeholder="Ví dụ: 65, 66"
                   InputProps={{
                     endAdornment: formData.promotion ? (
                       <IconButton

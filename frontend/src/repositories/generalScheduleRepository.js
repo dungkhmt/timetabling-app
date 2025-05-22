@@ -82,7 +82,8 @@ export const generalScheduleRepository = {
         versionId  // Thêm versionId vào request body
       }
     );
-  },  exportExcel: async (semester, versionId, numberSlotsPerSession) => {
+  },  
+  exportExcel: async (semester, versionId, numberSlotsPerSession) => {
     try {
       const response = await request(
         "post",
@@ -103,6 +104,29 @@ export const generalScheduleRepository = {
       throw error;
     }
   },
+
+  exportExcelWithAllSession: async (semester, versionId, numberSlotsPerSession) => {
+    try {
+      const response = await request(
+        "post",
+        `general-classes/export-excel/view-all-session?semester=${semester}`,
+        null,
+        null,
+        { 
+          versionId,
+          numberSlotsPerSession: numberSlotsPerSession || 6 
+        },
+        { responseType: "arraybuffer" }
+      );
+      
+      // Chỉ trả về response, không tạo và tải xuống file
+      return response;
+    } catch (error) {
+      console.error("Export Excel error:", error);
+      throw error;
+    }
+  },
+
 
   updateTimeSlot: async (semester, saveRequest, errorCallback) => {
     try {

@@ -337,7 +337,7 @@ const GeneralScheduleScreen = () => {
             }
           />
           <Tab label="Xem theo phòng" />
-          <Tab
+          {/* <Tab
             label={
               <div className="flex items-center gap-2">
                 <span>Gộp lớp học</span>
@@ -348,7 +348,7 @@ const GeneralScheduleScreen = () => {
                 />
               </div>
             }
-          />
+          /> */}
           <Tab
             label={
               <div className="flex items-center gap-2">
@@ -546,12 +546,11 @@ const GeneralScheduleScreen = () => {
                 >
                   {isDeletingBySemester ? "Đang xóa..." : "Xóa ca học"}
                 </Button>
-                  <Button
+                <Button
                     disabled={
                       states.selectedSemester === null ||
                       states.isExportExcelLoading
-                    }
-                    startIcon={
+                    }                    startIcon={
                       states.isExportExcelLoading ? (
                         <FacebookCircularProgress size={20} />
                       ) : null
@@ -559,11 +558,17 @@ const GeneralScheduleScreen = () => {
                     variant="contained"
                     color="success"
                     onClick={() =>
-                      handlers.handleExportTimeTabling(
-                        states.selectedSemester?.semester,
-                        selectedVersion?.id,
-                        selectedVersion?.numberSlotsPerSession || 6 // Sử dụng numberSlotsPerSession từ version, mặc định là 6
-                      )
+                      viewTab === 4
+                      ? handlers.handleExportTimeTablingWithAllSession(
+                          states.selectedSemester?.semester,
+                          selectedVersion?.id,
+                          selectedVersion?.numberSlotsPerSession || 6 
+                        )
+                      : handlers.handleExportTimeTabling(
+                          states.selectedSemester?.semester,
+                          selectedVersion?.id,
+                          selectedVersion?.numberSlotsPerSession || 6 
+                        )
                     }
                     sx={{
                       minWidth: "100px",
@@ -647,7 +652,8 @@ const GeneralScheduleScreen = () => {
               selectedVersion={selectedVersion}
             />
           </div>
-        ) : viewTab === 3 ? (
+        ) :
+         viewTab === 3 ? (
           <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
               <ConsolidatedTimeTable
                 selectedSemester={states.selectedSemester}
@@ -659,7 +665,8 @@ const GeneralScheduleScreen = () => {
                 selectedVersion={selectedVersion}
               />
           </div>
-        ) : viewTab === 4 ? (
+        ) : 
+        viewTab === 4 ? (
           <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
               <SessionTimeTable
                 selectedSemester={states.selectedSemester}

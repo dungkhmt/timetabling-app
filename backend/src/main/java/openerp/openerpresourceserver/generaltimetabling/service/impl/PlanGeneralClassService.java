@@ -525,6 +525,7 @@ public class PlanGeneralClassService {
         }
         planGeneralClass.setLearningWeeks(planClass.getLearningWeeks());
         planGeneralClass.setCrew(planClass.getCrew());
+        planGeneralClass.setDuration(planClass.getDuration());
         planGeneralClass.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
         planGeneralClass.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
         planGeneralClass.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());

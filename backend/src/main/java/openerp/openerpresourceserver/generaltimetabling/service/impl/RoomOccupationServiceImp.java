@@ -16,6 +16,7 @@ import openerp.openerpresourceserver.generaltimetabling.repo.GeneralClassReposit
 import openerp.openerpresourceserver.generaltimetabling.repo.RoomOccupationRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.RoomOccupationService;
 import openerp.openerpresourceserver.generaltimetabling.helper.GeneralExcelHelper;
+import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.stereotype.Service;
 
 @AllArgsConstructor
@@ -27,6 +28,10 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
     private GeneralExcelHelper excelHelper;
     private ClassroomRepo classroomRepo;
     private GeneralClassRepository gRepo;
+
+    
+    private TimeTablingClassService timeTablingClassService;
+
     @Override
     public List<RoomOccupation> getRoomOccupationsBySemester(String semester) {
         return roomOccupationRepo.findAllBySemester(semester);
@@ -74,9 +79,10 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
         return roomOccupationsWithModuleCode;
     }
 
+    
     @Override
-    public ByteArrayInputStream exportExcel(String semester, int week) {
-        List<RoomOccupationWithModuleCode> roomOccupations = getRoomOccupationsBySemesterAndWeekIndex(semester, week);
+    public ByteArrayInputStream exportExcel(String semester, int week, Long versionId) {
+        List<RoomOccupationWithModuleCode> roomOccupations = timeTablingClassService.getRoomOccupationsBySemesterAndWeekIndexAndVersionId(semester, week, versionId);
         return excelHelper.convertRoomOccupationToExcel(roomOccupations);
     }
 
