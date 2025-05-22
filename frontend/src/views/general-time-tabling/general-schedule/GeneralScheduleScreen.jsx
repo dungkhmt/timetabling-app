@@ -337,7 +337,7 @@ const GeneralScheduleScreen = () => {
             }
           />
           <Tab label="Xem theo phòng" />
-          <Tab
+          {/* <Tab
             label={
               <div className="flex items-center gap-2">
                 <span>Gộp lớp học</span>
@@ -348,7 +348,7 @@ const GeneralScheduleScreen = () => {
                 />
               </div>
             }
-          />
+          /> */}
           <Tab
             label={
               <div className="flex items-center gap-2">
@@ -652,7 +652,8 @@ const GeneralScheduleScreen = () => {
               selectedVersion={selectedVersion}
             />
           </div>
-        ) : viewTab === 3 ? (
+        ) :
+         viewTab === 3 ? (
           <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
               <ConsolidatedTimeTable
                 selectedSemester={states.selectedSemester}
@@ -664,7 +665,8 @@ const GeneralScheduleScreen = () => {
                 selectedVersion={selectedVersion}
               />
           </div>
-        ) : viewTab === 4 ? (
+        ) : 
+        viewTab === 4 ? (
           <div className="flex flex-row gap-4 w-full overflow-y-hidden h-[600px] rounded-[8px]">
               <SessionTimeTable
                 selectedSemester={states.selectedSemester}
