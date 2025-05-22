@@ -22,6 +22,9 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import openerp.openerpresourceserver.generaltimetabling.helper.ColumnWidthHelper;
+import org.apache.poi.ss.util.RegionUtil;
+import org.apache.poi.ss.usermodel.BorderStyle;
 
 @Log4j2
 @Component
@@ -266,8 +269,7 @@ public class GeneralExcelHelper {
             errorStyle.setFillPattern((short) 1);
             errorStyle.setFont(boldFont);
             errorStyle.setBorderBottom((short) 1);
-            errorStyle.setBorderLeft((short) 1);
-            errorStyle.setBorderRight((short) 1);
+            errorStyle.setBorderLeft((short) 1);            errorStyle.setBorderRight((short) 1);
             errorStyle.setBorderTop((short) 1);
             /*Room style*/
             CellStyle roomStyle=  workbook.createCellStyle();
@@ -277,6 +279,8 @@ public class GeneralExcelHelper {
             roomStyle.setBorderLeft((short) 1);
             roomStyle.setBorderRight((short) 1);
             roomStyle.setBorderTop((short) 1);
+            roomStyle.setAlignment(CellStyle.ALIGN_CENTER); // Center horizontally
+            roomStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER); // Center vertically
             /*Week index style*/
             CellStyle headerStyle = workbook.createCellStyle();
             headerStyle.setAlignment(CellStyle.ALIGN_CENTER);
@@ -284,8 +288,12 @@ public class GeneralExcelHelper {
             headerStyle.setBorderLeft((short) 1);
             headerStyle.setBorderRight((short) 1);
             headerStyle.setBorderTop((short) 1);
-            Sheet sheet = workbook.createSheet(SHEET);
-            int rowIndex = 0;
+            Sheet sheet = workbook.createSheet(SHEET);            int rowIndex = 0;
+            
+            // Set column widths for schedule display - half width
+            for(int i = 1; i <= 84; i++) {
+                sheet.setColumnWidth(i, 256 * 6); // 6 characters width (half of standard)
+            }
 
             /*Header*/
             /*Week index row*/
@@ -346,170 +354,6 @@ public class GeneralExcelHelper {
         }
     }
 
-
-
-     public static ByteArrayInputStream convertGeneralClassToExcel(List<GeneralClass> classes) {
-        /*Handle Excel write*/
-        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            /* Init the cell style*/
-            /*Bold style*/
-            CellStyle boldStyle = workbook.createCellStyle();
-            Font boldFont = workbook.createFont();
-            boldFont.setBold(true);
-            boldStyle.setFont(boldFont);
-            boldStyle.setBorderBottom((short) 1);
-            boldStyle.setBorderLeft((short) 1);
-            boldStyle.setBorderRight((short) 1);
-            boldStyle.setBorderTop((short) 1);
-            int rowIndex = START_ROW_TO_READ_CLASS;
-            Sheet sheet = workbook.createSheet(SHEET);
-            /*Room style*/
-            CellStyle roomStyle=  workbook.createCellStyle();
-            roomStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-            roomStyle.setFillPattern((short) 1);
-            roomStyle.setBorderBottom((short) 1);
-            roomStyle.setBorderLeft((short) 1);
-            roomStyle.setBorderRight((short) 1);
-            roomStyle.setBorderTop((short) 1);
-
-            /*Header style*/
-            CellStyle headerStyle = workbook.createCellStyle();
-            headerStyle.setFont(boldFont);
-            headerStyle.setAlignment(CellStyle.ALIGN_CENTER);
-            headerStyle.setBorderBottom((short) 1);
-            headerStyle.setBorderLeft((short) 1);
-            headerStyle.setBorderRight((short) 1);
-            headerStyle.setBorderTop((short) 1);
-
-            /*Create default cell style with borders*/
-            CellStyle defaultStyle = workbook.createCellStyle();
-            defaultStyle.setBorderBottom((short) 1);
-            defaultStyle.setBorderLeft((short) 1);
-            defaultStyle.setBorderRight((short) 1);
-            defaultStyle.setBorderTop((short) 1);
-
-            /*Header*/
-            /*Handle create header info*/
-            Row weekIndexRow = sheet.createRow(rowIndex);
-            for (int i = 0; i < HEADERS.length; i += 1) {
-                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex+1,i,i));
-                Cell c = weekIndexRow.createCell(i);
-                String classInfoString = HEADERS[i];
-                c.setCellValue(classInfoString);
-                c.setCellStyle(headerStyle);
-            }
-            /*Handle create header schedule info */
-
-            Row periodIndexRow = sheet.createRow(rowIndex+1);
-            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+42; i += 6) {
-                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex,i,i+5));
-                Cell c = weekIndexRow.createCell(i);
-                String weekString = "Thứ " + ((i-START_COL_TO_READ_CLASS_SCHEDULE)/6 + 2);
-                c.setCellValue(weekString);
-                c.setCellStyle(headerStyle);
-            }
-
-            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+42; i++) {
-                Cell c = periodIndexRow.createCell(i);
-                String periodString = "" + ((i-START_COL_TO_READ_CLASS_SCHEDULE)%6 + 1);
-                c.setCellValue(periodString);
-                c.setCellStyle(headerStyle);
-            }
-
-            rowIndex+=2;
-            /*Handle write class info and schedule*/
-            for (GeneralClass generalClass : classes) {
-                Row classRow = sheet.createRow(rowIndex);
-                /*Write the class info*/
-                for (int i = 0 ; i <= END_COL_TO_READ_CLASS_INFO; i++ ) {
-                    Cell c = classRow.createCell(i);
-                    c.setCellStyle(defaultStyle); // Add default style with borders
-                    switch (i) {
-                        case 0:
-                            if (generalClass.getQuantity() != null) {
-                                c.setCellValue(generalClass.getQuantity());
-                            }
-                            break;
-                        case 1:
-                            c.setCellValue(generalClass.getClassType());
-                            break;
-                        case 2:
-                            c.setCellValue(generalClass.getModuleCode());
-                            break;
-                        case 3:
-                            c.setCellValue(generalClass.getModuleName());
-                            break;
-                        case 4:
-                            c.setCellValue(generalClass.getLearningWeeks());
-                            break;
-                        case 5:
-                            c.setCellValue(generalClass.getMass());
-                            break;
-                        case 6:
-                            if (generalClass.getQuantityMax() != null) {
-                                c.setCellValue(generalClass.getQuantityMax());
-                            }
-                            break;
-                        case 7:
-                            c.setCellValue(generalClass.getStudyClass());
-                            break;
-                        case 8:
-                            c.setCellValue(generalClass.getState());
-                            break;
-                        case 9:
-                            c.setCellValue(generalClass.getClassCode());
-                            break;
-                        case 10:
-                            if (generalClass.getRefClassId() != null) {
-                                c.setCellValue(generalClass.getRefClassId());
-                            }
-                            break;
-                        case 11:
-                            if (generalClass.getId()!= null) {
-                                c.setCellValue(generalClass.getId());
-                            }
-                            break;
-                        case 12:
-                            if (generalClass.getParentClassId() != null) {
-                                c.setCellValue(generalClass.getParentClassId());
-                            }
-                            break;
-                        case 13:
-                            c.setCellValue(generalClass.getCrew());
-                            break;
-                        case 14:
-                            c.setCellValue(generalClass.getOpenBatch());
-                            break;
-                        case 15:
-                            c.setCellValue(generalClass.getCourse());
-                            break;
-                        case 16:
-                            c.setCellValue(generalClass.getForeignLecturer());
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                /*Write the class schedule*/
-                for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + 42; j++) {
-                    Cell c = classRow.createCell(j);
-                    c.setCellStyle(defaultStyle); // Add default style with borders
-                    for (RoomReservation rr : generalClass.getTimeSlots().stream().filter(RoomReservation::isScheduleNotNull).toList()) {
-                        sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, (rr.getWeekday()-2)*6 + rr.getStartTime() -1 + START_COL_TO_READ_CLASS_SCHEDULE, START_COL_TO_READ_CLASS_SCHEDULE + (rr.getWeekday()-2)*6 + rr.getEndTime() -1));
-                        if (j - START_COL_TO_READ_CLASS_SCHEDULE >= (rr.getWeekday()-2)*6 + rr.getStartTime() -1 && j-START_COL_TO_READ_CLASS_SCHEDULE <= (rr.getWeekday()-2)*6 + rr.getEndTime() -1) {
-                            c.setCellValue(rr.getRoom());
-                            c.setCellStyle(roomStyle);
-                        }
-                    }
-                }
-                rowIndex++;
-            }
-            workbook.write(out);
-            return new ByteArrayInputStream(out.toByteArray());
-        } catch (IOException e) {
-            throw new RuntimeException("fail to import data to Excel file: " + e.getMessage());
-        }
-    }
     /**
      * Overload of convertGeneralClassToExcel that accepts a map of class segments and numberSlotsPerSession
      */
@@ -525,8 +369,7 @@ public class GeneralExcelHelper {
             boldStyle.setBorderBottom((short) 1);
             boldStyle.setBorderLeft((short) 1);
             boldStyle.setBorderRight((short) 1);
-            boldStyle.setBorderTop((short) 1);
-            int rowIndex = START_ROW_TO_READ_CLASS;
+            boldStyle.setBorderTop((short) 1);            int rowIndex = START_ROW_TO_READ_CLASS;
             Sheet sheet = workbook.createSheet(SHEET);
             /*Room style*/
             CellStyle roomStyle=  workbook.createCellStyle();
@@ -536,6 +379,8 @@ public class GeneralExcelHelper {
             roomStyle.setBorderLeft((short) 1);
             roomStyle.setBorderRight((short) 1);
             roomStyle.setBorderTop((short) 1);
+            roomStyle.setAlignment(CellStyle.ALIGN_CENTER); // Center horizontally
+            roomStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER); // Center vertically
 
             /*Header style*/
             CellStyle headerStyle = workbook.createCellStyle();
@@ -544,17 +389,21 @@ public class GeneralExcelHelper {
             headerStyle.setBorderBottom((short) 1);
             headerStyle.setBorderLeft((short) 1);
             headerStyle.setBorderRight((short) 1);
-            headerStyle.setBorderTop((short) 1);
+            headerStyle.setBorderTop((short) 1); // Ensure top border is applied
 
             /*Create default cell style with borders*/
             CellStyle defaultStyle = workbook.createCellStyle();
             defaultStyle.setBorderBottom((short) 1);
             defaultStyle.setBorderLeft((short) 1);
             defaultStyle.setBorderRight((short) 1);
-            defaultStyle.setBorderTop((short) 1);
-
-            /*Header*/
+            defaultStyle.setBorderTop((short) 1);            /*Header*/
             /*Handle create header info*/
+            
+            // Set column widths - make schedule columns half width
+            ColumnWidthHelper.setTimeTableColumnWidths(sheet, END_COL_TO_READ_CLASS_INFO, 
+                                                     START_COL_TO_READ_CLASS_SCHEDULE, 
+                                                     numberSlotsPerSession, 7); // 7 days (Mon-Sun)
+            
             Row weekIndexRow = sheet.createRow(rowIndex);
             for (int i = 0; i < HEADERS.length; i += 1) {
                 sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex+1,i,i));
@@ -563,18 +412,24 @@ public class GeneralExcelHelper {
                 c.setCellValue(classInfoString);
                 c.setCellStyle(headerStyle);
             }
-            /*Handle create header schedule info */
-
-            Row periodIndexRow = sheet.createRow(rowIndex+1);
-            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+42; i += numberSlotsPerSession) {
-                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex,i,i+numberSlotsPerSession-1));
+            /*Handle create header schedule info */            Row periodIndexRow = sheet.createRow(rowIndex+1);
+            int totalColumns = 7 * numberSlotsPerSession; // 7 days (Mon-Sun) * slots per day
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i += numberSlotsPerSession) {
+                CellRangeAddress region = new CellRangeAddress(rowIndex, rowIndex, i, i+numberSlotsPerSession-1);
+                sheet.addMergedRegion(region);
+                
+                // Explicitly set borders for the merged region - with all 4 required parameters
+                RegionUtil.setBorderTop((short) 1, region, sheet, workbook);     // 1 = THIN border
+                RegionUtil.setBorderBottom((short) 1, region, sheet, workbook);
+                RegionUtil.setBorderLeft((short) 1, region, sheet, workbook);
+                RegionUtil.setBorderRight((short) 1, region, sheet, workbook);
+                
                 Cell c = weekIndexRow.createCell(i);
-                String weekString = "Thứ " + ((i-START_COL_TO_READ_CLASS_SCHEDULE)/numberSlotsPerSession + 2);
+                int dayIndex = (i-START_COL_TO_READ_CLASS_SCHEDULE)/numberSlotsPerSession + 2;
+                String weekString = dayIndex < 8 ? "Thứ " + dayIndex : "Chủ nhật";
                 c.setCellValue(weekString);
                 c.setCellStyle(headerStyle);
-            }
-
-            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+42; i++) {
+            }            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i++) {
                 Cell c = periodIndexRow.createCell(i);
                 String periodString = "" + ((i-START_COL_TO_READ_CLASS_SCHEDULE)%numberSlotsPerSession + 1);
                 c.setCellValue(periodString);
@@ -655,9 +510,8 @@ public class GeneralExcelHelper {
                             break;
                     }
                 }
-                
-                /*Write the class schedule using segments*/
-                for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + 42; j++) {
+                  /*Write the class schedule using segments*/
+                for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + totalColumns; j++) {
                     Cell c = classRow.createCell(j);
                     c.setCellStyle(defaultStyle); // Add default style with borders
                     
@@ -666,20 +520,31 @@ public class GeneralExcelHelper {
                     for (TimeTablingClassSegment segment : segments) {
                         if (segment.getRoom() != null && segment.getWeekday() != null && segment.getStartTime() != null && segment.getEndTime() != null) {
                             // Điều chỉnh công thức để lùi 1 cột sang trái
-                            int startCol = (segment.getWeekday()-2)*numberSlotsPerSession + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
-                            int endCol = START_COL_TO_READ_CLASS_SCHEDULE + (segment.getWeekday()-2)*numberSlotsPerSession + segment.getEndTime() - 1;
+                            int dayIndex = segment.getWeekday();
+                            // Chuyển đổi chỉ số ngày: 8 -> 7 (chủ nhật)
+                            if (dayIndex == 8) dayIndex = 7;
+                            else if (dayIndex > 8) continue; // Bỏ qua nếu nằm ngoài phạm vi
                             
+                            int startCol = (dayIndex-2)*numberSlotsPerSession + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
+                            int endCol = START_COL_TO_READ_CLASS_SCHEDULE + (dayIndex-2)*numberSlotsPerSession + segment.getEndTime() - 1;                            
                             sheet.addMergedRegion(new CellRangeAddress(
                                 rowIndex, rowIndex, 
                                 startCol, 
                                 endCol
                             ));
                             
-                            if (j - START_COL_TO_READ_CLASS_SCHEDULE >= (segment.getWeekday()-2)*numberSlotsPerSession + segment.getStartTime() - 1 && 
-                                j - START_COL_TO_READ_CLASS_SCHEDULE <= (segment.getWeekday()-2)*numberSlotsPerSession + segment.getEndTime() - 1) {
+                            if (j - START_COL_TO_READ_CLASS_SCHEDULE >= (dayIndex-2)*numberSlotsPerSession + segment.getStartTime() - 1 && 
+                                j - START_COL_TO_READ_CLASS_SCHEDULE <= (dayIndex-2)*numberSlotsPerSession + segment.getEndTime() - 1) {
                                 c.setCellValue(segment.getRoom());
-                                c.setCellStyle(roomStyle);
+                                c.setCellStyle(roomStyle);                                CellStyle specificStyle = workbook.createCellStyle();
+                                specificStyle.cloneStyleFrom(roomStyle);
+                                specificStyle.setAlignment(CellStyle.ALIGN_CENTER);
+                                specificStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+                                specificStyle.setBorderTop((short) 1); // Adding top border
+                                c.setCellStyle(specificStyle);
                             }
+
+
                         }
                     }
                 }
