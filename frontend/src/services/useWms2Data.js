@@ -616,6 +616,17 @@ export const useWms2Data = () => {
     }
   }
 
+  const getAllOrderBillItems = async (page, limit, filters) => {
+    try {
+      const response = await wms2Service.getAllOrderBillItems(page, limit, filters);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all order bill items:", error);
+      toast.error("Không thể tải danh sách phiếu xuất");
+      return { data: {} };
+    }
+  }
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -672,5 +683,6 @@ export const useWms2Data = () => {
     getOrderReport,
     getAllShipments,
     getAllDeliveryRoutes,
+    getAllOrderBillItems
   };
 };

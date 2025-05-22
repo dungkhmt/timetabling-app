@@ -160,5 +160,8 @@ export const wms2Service = {
   },
   getAllDeliveryRoutes : (page, limit, filters) => {
     return request("post", `/delivery-route/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getAllOrderBillItems : (page, limit, filters) => {
+    return request("post", `/order-bill-item/get-all?page=${page}&limit=${limit}`, null, null, filters);
   }
 };
