@@ -649,7 +649,11 @@ const TimetableDetailPage = () => {
             rooms={examRooms}
             weeks={timetable.weeks}
             dates={timetable.dates}
-            slots={timetable.slots}
+            slots={timetable.slots.sort((a, b) => {
+              const slotNumA = parseInt(a.name);
+              const slotNumB = parseInt(b.name);
+              return slotNumA - slotNumB;
+            })}
             onSelectionChange={handleSelectionChange}
             onChangeStatusUpdate={setHasUnsavedChanges} 
           />
