@@ -81,9 +81,9 @@ public class RoomOccupationServiceImp implements RoomOccupationService {
 
     
     @Override
-    public ByteArrayInputStream exportExcel(String semester, int week, Long versionId) {
+    public ByteArrayInputStream exportExcel(String semester, int week, Long versionId, int numberSlotsPerSession) {
         List<RoomOccupationWithModuleCode> roomOccupations = timeTablingClassService.getRoomOccupationsBySemesterAndWeekIndexAndVersionId(semester, week, versionId);
-        return excelHelper.convertRoomOccupationToExcel(roomOccupations);
+        return excelHelper.convertRoomOccupationToExcel(roomOccupations, numberSlotsPerSession);
     }
 
 

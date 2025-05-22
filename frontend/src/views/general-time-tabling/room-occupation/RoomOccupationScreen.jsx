@@ -40,13 +40,12 @@ const RoomOccupationScreen = ({ selectedSemester, selectedVersion, numberSlotsPe
   const handleExportExcel = () => {
     if (!selectedSemester || !selectedWeek) {
       return;
-    }
-
-    const versionIdParam = selectedVersion?.id ? `&versionId=${selectedVersion.id}` : "";
+    }    const versionIdParam = selectedVersion?.id ? `&versionId=${selectedVersion.id}` : "";
+    const slotsParam = `&numberSlotsPerSession=${numberSlotsPerSession}`;
 
     request(
       "post",
-      `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}${versionIdParam}&includeBorders=true`,
+      `room-occupation/export?semester=${selectedSemester?.semester}&week=${selectedWeek?.weekIndex}${versionIdParam}${slotsParam}&includeBorders=true`,
       (res) => {
         const blob = new Blob([res.data], { type: res.headers["content-type"] });
         const link = document.createElement("a");
