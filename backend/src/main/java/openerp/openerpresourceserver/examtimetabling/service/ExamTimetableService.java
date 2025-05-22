@@ -485,23 +485,25 @@ public class ExamTimetableService {
             // Calculate average relax time between courses and days with multiple exams
             double averageRelaxTime = 0;
             int daysWithMultipleExams = 0;
+            Map<String, Integer> examsPerDayDistribution = new HashMap<>(); 
             
             if (assignedClasses > 0) {
+                // Query to get one exam class per course_id for this description (group)
                 String courseDatesSql = "WITH RankedAssignments AS ( " +
-                                      "SELECT " +
-                                      "c.course_id, " +
-                                      "a.date, " +
-                                      "ROW_NUMBER() OVER (PARTITION BY c.course_id ORDER BY a.date) as rn " +
-                                      "FROM exam_timetable_assignment a " +
-                                      "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
-                                      "WHERE a.exam_timetable_id = :timetableId " +
-                                      "AND c.description = :description " +
-                                      "AND a.date IS NOT NULL " +
-                                      "AND a.deleted_at IS NULL " +
-                                      ") " +
-                                      "SELECT course_id, date FROM RankedAssignments WHERE rn = 1 " +
-                                      "ORDER BY date";
-                                      
+                                    "SELECT " +
+                                    "c.course_id, " +
+                                    "a.date, " +
+                                    "ROW_NUMBER() OVER (PARTITION BY c.course_id ORDER BY a.date) as rn " +
+                                    "FROM exam_timetable_assignment a " +
+                                    "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
+                                    "WHERE a.exam_timetable_id = :timetableId " +
+                                    "AND c.description = :description " +
+                                    "AND a.date IS NOT NULL " +
+                                    "AND a.deleted_at IS NULL " +
+                                    ") " +
+                                    "SELECT course_id, date FROM RankedAssignments WHERE rn = 1 " +
+                                    "ORDER BY date";
+                                    
                 Query courseDatesQuery = entityManager.createNativeQuery(courseDatesSql);
                 courseDatesQuery.setParameter("timetableId", timetableId);
                 courseDatesQuery.setParameter("description", groupName);
@@ -525,6 +527,7 @@ public class ExamTimetableService {
                             continue;
                         }
                         
+                        // Count exams per day for the distribution map
                         examsPerDay.put(examDate, examsPerDay.getOrDefault(examDate, 0) + 1);
                         
                         if (previousDate != null) {
@@ -542,6 +545,13 @@ public class ExamTimetableService {
                     
                     // Count days with multiple exams
                     daysWithMultipleExams = (int) examsPerDay.values().stream().filter(count -> count > 1).count();
+                    
+                    // Convert the examsPerDay map to the examsPerDayDistribution with formatted dates
+                    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    for (Map.Entry<LocalDate, Integer> entry : examsPerDay.entrySet()) {
+                        String formattedDate = entry.getKey().format(dateFormatter);
+                        examsPerDayDistribution.put(formattedDate, entry.getValue());
+                    }
                 }
             }
             
@@ -552,7 +562,8 @@ public class ExamTimetableService {
                 unassignedClasses,
                 completionRate,
                 Math.round(averageRelaxTime * 100) / 100.0, 
-                daysWithMultipleExams
+                daysWithMultipleExams,
+                examsPerDayDistribution 
             ));
         }
         
@@ -604,12 +615,12 @@ public class ExamTimetableService {
         
         List<DistributionItemDTO> roomDistribution = new ArrayList<>();
         
-        if (results.size() > 20) {
+        if (results.size() > 40) {
             long otherCount = 0;
             
             for (int i = 0; i < results.size(); i++) {
                 Object[] row = results.get(i);
-                if (i < 19) {
+                if (i < 39) {
                     roomDistribution.add(new DistributionItemDTO(
                         row[0].toString(),
                         ((Number) row[1]).longValue()
