@@ -627,6 +627,28 @@ export const useWms2Data = () => {
     }
   }
 
+  const getMonthlyInventoryReport = async (startDate, endDate) => {
+  try {
+    const response = await wms2Service.getMonthlyInventoryReport(startDate, endDate);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching monthly inventory report:", error);
+    toast.error("Lỗi khi tải báo cáo nhập xuất kho");
+    return null;
+  }
+};
+
+const getMonthlyFacilityReport = async (facilityId, startDate, endDate) => {
+  try {
+    const response = await wms2Service.getMonthlyFacilityReport(facilityId, startDate, endDate);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching monthly facility report:", error);
+    toast.error("Lỗi khi tải báo cáo nhập xuất kho cho kho cụ thể");
+    return null;
+  }
+};
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -683,6 +705,8 @@ export const useWms2Data = () => {
     getOrderReport,
     getAllShipments,
     getAllDeliveryRoutes,
-    getAllOrderBillItems
+    getAllOrderBillItems,
+    getMonthlyInventoryReport,
+    getMonthlyFacilityReport,
   };
 };

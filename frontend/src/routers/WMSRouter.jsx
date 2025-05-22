@@ -32,6 +32,7 @@ import SaleOrderDetail from "../views/wms/SaleOrderDetail/SaleOrderDetail";
 import DeliveryRouteListPage from "../views/wms/DeliveryRouteListPage/DeliveryRouteListPage";
 import VehicleListPage from "../views/wms/VehicleListPage/VehicleListPage";
 import FacilityHistory from "../views/wms/FacilityHistory/FacilityHistory";
+import InventoryReport from "../views/wms/InventoryReport/InventoryReport";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -237,6 +238,12 @@ export default function WMSRouter() {
             component={FacilityHistory}
             exact
             path={`${path}/admin/inventory_detail`}
+        ></Route>
+
+        <Route
+          component={InventoryReport}
+            exact
+            path={`${path}/admin/dashboard`}
         ></Route>
         
       </Switch>

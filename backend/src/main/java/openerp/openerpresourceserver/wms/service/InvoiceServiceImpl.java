@@ -68,7 +68,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .inventoryItemDetail(inventoryItemDetail)
                     .facility(inventoryItemDetail.getInventoryItem().getFacility())
                     .product(inventoryItemDetail.getProduct())
-                    .quantity(inventoryItemDetail.getQuantity())
+                    .quantity(inventoryItemDetail.getQuantity() * -1)
                     .unit(inventoryItemDetail.getProduct().getUnit())
                     .amount(inventoryItemDetail.getProduct().getWholeSalePrice().multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())))
                     .build();
