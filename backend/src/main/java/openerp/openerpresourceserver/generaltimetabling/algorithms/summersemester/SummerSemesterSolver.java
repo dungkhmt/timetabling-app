@@ -469,6 +469,7 @@ public class SummerSemesterSolver implements Solver {
         int i2 = 0; int i3 = 0;
         Set<ClassSegment> scheduled24= new HashSet<>();
         Set<ClassSegment> scheduled33 = new HashSet<>();
+        log.info("scheduleClassSegments24and33, L24 = " + L24.size() + " L33 = " + L33.size());
         while(i2 < a24.length && i3 < a33.length){
             int j2 = i2%2; int j3 = i3%2;
             Long id2 = a24[i2]; Long id3 = a33[i3];
@@ -1372,6 +1373,7 @@ public class SummerSemesterSolver implements Solver {
                         ME[session].add(cs);
                     }else if(sMI.contains(cs.getCourseCode())){
                         MI[session].add(cs);
+                        log.info("solver, id = " + id + " class-segment " + cs.toString() + " MI.add(" + cs.getCourseCode() + ") -> sz = " + MI[session].size());
                     }else if(sSSH.contains(cs.getCourseCode())){
                         SSH[session].add(cs);
                     }

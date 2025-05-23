@@ -183,7 +183,7 @@ public class BacktrackingMaintainCombinations extends BacktrackingOneGroup{
         String filename = "data/fl2-2nd-s-ext1.txt";
         solver.USE_COMBINATION_CONSTRAINT = true;
         solver.BRANCH_AND_BOUND = true;
-        solver.SORT_DOMAIN = false;
+        solver.SORT_DOMAIN = true;
         solver.LOGGING = false;
         int timeLimit = 600;
         solver.inputFile(filename);
