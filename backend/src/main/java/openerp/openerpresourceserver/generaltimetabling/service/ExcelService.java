@@ -468,8 +468,8 @@ public class ExcelService {
         return scheduleRepo.findAll();
     }
 
-    public ByteArrayInputStream exportRoomOccupationExcel(String semester, int week, Long versionId) {
-        return roomOccupationService.exportExcel(semester, week, versionId);
+    public ByteArrayInputStream exportRoomOccupationExcel(String semester, int week, Long versionId, int numberSlotsPerSession) {
+        return roomOccupationService.exportExcel(semester, week, versionId, numberSlotsPerSession);
     }
 
 

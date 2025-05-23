@@ -304,7 +304,45 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
             mClassId2ClassSegments.get(cs.getClassId()).add(cs);
         }
-        return cls.stream()
+
+        // sort class such that parent-child classes go consecutive each other
+        List<TimeTablingClass> s_cls = new ArrayList<>();
+        Map<TimeTablingClass, List<TimeTablingClass>> mClass2Children = new HashMap<>();
+        Map<Long, TimeTablingClass> mID2Class = new HashMap<>();
+        for(TimeTablingClass c: cls){
+            mID2Class.put(c.getId(),c);
+        }
+        for(TimeTablingClass c: cls){
+            Long pid = c.getParentClassId();
+            if(pid != null){
+                TimeTablingClass pCls = mID2Class.get(pid);
+                if(pCls != null){
+                    if(mClass2Children.get(pCls)==null) mClass2Children.put(pCls,new ArrayList<>());
+                    mClass2Children.get(pCls).add(c);
+                }
+            }
+        }
+        Map<TimeTablingClass,Boolean> appeared = new HashMap<>();
+        for(int i = 0; i < cls.size(); i++) {
+            TimeTablingClass c = cls.get(i);
+            appeared.put(c,false);
+        }
+        for(int i = 0; i < cls.size(); i++){
+            TimeTablingClass c = cls.get(i);
+            if(appeared.get(c) == false) {
+                s_cls.add(c); appeared.put(c,true);
+                log.info("getTimeTablingClassDtos, process sorting, add parent class " + c.getId() + "," + c.getClassType() + "," + c.getModuleCode());
+                if (mClass2Children.get(c) != null) {
+                    for (TimeTablingClass cc : mClass2Children.get(c)) {
+                        s_cls.add(cc);
+                        appeared.put(cc, true);
+                        log.info("getTimeTablingClassDtos, process sorting, add child class " + cc.getId() + "," + cc.getClassType() + "," + cc.getModuleCode() + ", parent " + cc.getParentClassId());
+                    }
+                }
+            }
+        }
+        //return cls.stream()
+        return s_cls.stream() // use sorted list
                 .map(c -> ModelResponseTimeTablingClass.builder()
                         .id(c.getId())
                         .quantity(c.getQuantity())

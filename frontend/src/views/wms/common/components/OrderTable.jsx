@@ -53,9 +53,9 @@ const OrderTable = ({
         return url + `/wms/logistics/purchaseorders/details/reviewed/${orderId}`;
       }
       if(type === ORDER_TYPE_ID.SALES_ORDER) {
-        return url + `/wms/sales/orders/details/reviewed/${orderId}`;
+        return url + `/wms/sales/orders/details/${orderId}`;
       }
-        return url + `/wms/purchase/orders/details/reviewed/${orderId}`;
+        return url + `/wms/purchase/orders/details/${orderId}`;
     });
   };
 

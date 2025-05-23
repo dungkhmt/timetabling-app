@@ -469,6 +469,7 @@ public class SummerSemesterSolver implements Solver {
         int i2 = 0; int i3 = 0;
         Set<ClassSegment> scheduled24= new HashSet<>();
         Set<ClassSegment> scheduled33 = new HashSet<>();
+        log.info("scheduleClassSegments24and33, L24 = " + L24.size() + " L33 = " + L33.size());
         while(i2 < a24.length && i3 < a33.length){
             int j2 = i2%2; int j3 = i3%2;
             Long id2 = a24[i2]; Long id3 = a33[i3];
@@ -1307,16 +1308,18 @@ public class SummerSemesterSolver implements Solver {
 
         Set<String> sCH  = new HashSet<>(Arrays.asList(new String[]{"CH1012","CH1015","CH1018","CH3220","CH3323","CH3224","CH3316","CH3330","CH4780",
                 "CH3400","CH3412","CH3420","CH3051","CH3061","CH2020","CH3456","CH4486","CH3452","CH3454",
-                "CH3474","CH2021"}));
+                "CH3474","CH2021","CH3120","CH1017"}));
+
         Set<String> sETEE  = new HashSet<>(Arrays.asList(new String[]{"ET2012","ET2022","ET2031","ET2060","ET2100","ET3262",
-                "EE2012","EE2022","EE2021","EE2023", "EE2000"}));
+                "EE2012","EE2022","EE2021","EE2023", "EE2000","EE2031","EE2130"}));
+
 
         Set<String> sME  = new HashSet<>(Arrays.asList(new String[]{"ME2011","ME2201","ME2020","ME2011","ME2015","ME2040","ME2112","ME2211","ME2101",
                 "ME2202","ME3190","ME3190","ME2102","ME2030","ME2203","ME4159","ME4181","ME2021","ME3123",
-        "ME3124","HE2012","HE2020","TE3602","TE2020","IT2030","ME2140Q"}));
+        "ME3124","HE2012","HE2020","TE3602","TE2020","IT2030","ME2140Q","ME3230","ME3212"}));
 
         Set<String> sEM  = new HashSet<>(Arrays.asList(new String[]{
-            "EM1010","EM1170","EM1180","EM1100","EM3105","EM3004"
+            "EM1010","EM1170","EM1180","EM1100","EM3105","EM3004","EM3222"
         }));
 
         Set<String> sED  = new HashSet<>(Arrays.asList(new String[]{
@@ -1329,7 +1332,8 @@ public class SummerSemesterSolver implements Solver {
 
         Set<String> sMI  = new HashSet<>(Arrays.asList(new String[]{
                 "MI1111","MI1121","MI1131","MI1141","MI1112","MI1142","MI1113","MI1036","MI1016","MI2020",
-                "MI2021","MI3180","MI1026","MI1132"
+                "MI2021","MI3180","MI1026","MI1132","MI1143","MI2010","MI2110","MI1122","MI1133",
+                "MI1144","MI1114","MI1124","MI1046","MI1134"
         }));
 
 
@@ -1356,6 +1360,7 @@ public class SummerSemesterSolver implements Solver {
 
             for (Long id : ids) {
                 for(ClassSegment cs: mClassId2ClassSegments.get(id)){
+                    log.info("solver, id = " + id + " class-segment " + cs.toString());
                     if(sCH.contains(cs.getCourseCode())){
                         CH[session].add(cs);
                     }else if(sETEE.contains(cs.getCourseCode())){
@@ -1368,13 +1373,15 @@ public class SummerSemesterSolver implements Solver {
                         ME[session].add(cs);
                     }else if(sMI.contains(cs.getCourseCode())){
                         MI[session].add(cs);
+                        log.info("solver, id = " + id + " class-segment " + cs.toString() + " MI.add(" + cs.getCourseCode() + ") -> sz = " + MI[session].size());
                     }else if(sSSH.contains(cs.getCourseCode())){
                         SSH[session].add(cs);
                     }
                 }
             }
             log.info("Session " + session + ": nb class-segments = " + I.getClassSegments().size());
-            log.info("Session " + session + ": After partitionning CH = " + CH[session].size() + " ME = " + ME[session].size() + " ETEE = " + ETEE[session].size()
+            log.info("Session " + session + ": A" +
+                    "H = " + CH[session].size() + " ME = " + ME[session].size() + " ETEE = " + ETEE[session].size()
             + " EM = " + EM[session].size() + " ED = " + ED[session].size() + " MI = " + MI[session].size() + " SSH = " + SSH[session].size() +
                     " -> SUM = " + (CH[session].size() + ME[session].size() + ETEE[session].size() + EM[session].size() + ED[session].size() + MI[session].size() + SSH[session].size()));
 

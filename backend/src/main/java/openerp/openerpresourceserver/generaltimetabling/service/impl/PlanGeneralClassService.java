@@ -184,7 +184,9 @@ public class PlanGeneralClassService {
         log.info("makeClass -> SAVE classId " + cls.getId() + " groupId " + groupId);
 
         // create corresponding class-segment
-        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAll();
+        //List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAll();
+        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAllBySemester(request.getSemester());
+
         for(TimeTablingTimeTableVersion v: versions) {
             TimeTablingClassSegment cs = timeTablingClassService.createClassSegment(cls.getId(),cls.getCrew(),cls.getDuration(),v.getId());
             /*
@@ -622,6 +624,9 @@ public class PlanGeneralClassService {
             req.setId(savedClass.getId());
             req.setNbClasses(planClass.getNumberOfClasses());
             req.setClassType(planClass.getClassType());
+            if(course.getMaxStudentLT()!=null && course.getMaxStudentLT() > 0){
+                req.setClassType("LT");
+            }
             req.setDuration(planClass.getDuration());
             req.setCrew(planClass.getCrew());
             req.setMass(planClass.getMass());
@@ -635,6 +640,19 @@ public class PlanGeneralClassService {
             req.setProgramName(planClass.getProgramName());
             req.setWeekType(planClass.getWeekType());
             makeClass(req, planClass.getGroupId());
+
+            // make sub-class (class BT of the current class LT
+            if(course.getMaxStudentBT()!=null && course.getMaxStudentLT()!=null &&
+            course.getMaxStudentLT() > 0 && course.getMaxStudentBT() > 0){
+                int nbSubClass = course.getMaxStudentLT()/course.getMaxStudentBT();
+                for(int k = 1; k <= nbSubClass; k++){
+                    // not finish yet
+                    //ModelInputCreateSubClass I = new ModelInputCreateSubClass();
+                    //I.setClassType("BT");
+                    //I.setDuration();
+                    //makeSubClassNew(I);
+                }
+            }
         }
 
         return savedClass;

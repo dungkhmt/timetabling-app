@@ -57,7 +57,7 @@ export const useExamTimetableData = (examPlanId = null, examTimetableId = null) 
 
   const updateAssignmentMutation = useMutation(examTimetableService.updateExamTimetableAssignment, {
     onSuccess: () => {
-      queryClient.invalidateQueries('examTimetables');
+      // queryClient.invalidateQueries('examTimetables');
       toast.success('Cập nhật lịch thi thành công!');
     },
     onError: (error) => {
