@@ -36,7 +36,7 @@ const ShipperListPage = () => {
     setLoading(true);
     try {
       const response = await getShippers(
-        pagination.page + 1, // API uses 1-indexed pagination
+        pagination.page, // API uses 1-indexed pagination
         pagination.size,
         filters
       );

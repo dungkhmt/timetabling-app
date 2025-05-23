@@ -8,6 +8,8 @@ import InventorySummaryCards from "./components/InventorySummaryCards";
 import DailyMovementChart from "./components/DailyMovementChart";
 import ProductChartsGrid from "./components/ProductChartsGrid";
 import FacilityComparisonChart from "./components/FacilityComparisonChart";
+import {MENU_CONSTANTS} from "../common/constants/screenId";
+import {withAuthorization} from "../common/components/withAuthorization";
 
 const InventoryReport = () => {
   const { getMoreFacilities, getMonthlyInventoryReport, getMonthlyFacilityReport } = useWms2Data();
@@ -136,4 +138,4 @@ const InventoryReport = () => {
   );
 };
 
-export default InventoryReport;
+export default withAuthorization(InventoryReport, MENU_CONSTANTS.LOGISTICS_ADMIN_DASHBOARD);

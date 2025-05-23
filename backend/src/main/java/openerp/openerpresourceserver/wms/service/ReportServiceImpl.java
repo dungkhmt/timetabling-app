@@ -6,9 +6,8 @@ import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.report.*;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.OrderItem;
-import openerp.openerpresourceserver.wms.repository.OrderHeaderRepo;
-import openerp.openerpresourceserver.wms.repository.OrderItemBillingRepo;
-import openerp.openerpresourceserver.wms.repository.OrderItemRepo;
+import openerp.openerpresourceserver.wms.repository.*;
+import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,11 +20,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ReportServiceImpl implements ReportService
-{
+public class ReportServiceImpl implements ReportService {
     private final OrderHeaderRepo orderHeaderRepo;
     private final OrderItemRepo orderItemRepo;
     private final OrderItemBillingRepo orderItemBillingRepo;
+    private final DeliveryBillRepo deliveryBillRepo;
+    private final DeliveryPlanRepo deliveryPlanRepo;
+    private final DeliveryRouteRepo deliveryRouteRepo;
+    
     @Override
     public ApiResponse<PurchaseOrderReportDto> getMonthlyPurchaseReport(String orderTypeId) {
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
@@ -265,4 +267,148 @@ public class ReportServiceImpl implements ReportService
                 ));
     }
 
+    @Override
+    public ApiResponse<DeliveryDashboardDto> getDeliveryDashboard(LocalDate startDate, LocalDate endDate) {
+        // Convert dates to LocalDateTime for repository queries
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+        
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        
+        // 1. Get total counts
+        int totalDeliveryBills = deliveryBillRepo.countByCreatedStampBetween(startDateTime, endDateTime);
+        int totalDeliveryPlans = deliveryPlanRepo.countByCreatedStampBetween(startDateTime, endDateTime);
+        int totalDeliveryRoutes = deliveryRouteRepo.countByCreatedStampBetween(startDateTime, endDateTime);
+        
+        // 2. Get total delivery weight
+        BigDecimal totalWeight = deliveryPlanRepo.sumTotalWeightBetween(startDateTime, endDateTime);
+        if (totalWeight == null) {
+            totalWeight = BigDecimal.ZERO;
+        }
+        
+        // 3. Get status counts as maps
+        Map<String, Integer> billStatusCounts = new HashMap<>();
+        deliveryBillRepo.countByStatusBetween(startDateTime, endDateTime).forEach(row -> 
+            billStatusCounts.put((String) row[0], ((Number) row[1]).intValue())
+        );
+        
+        Map<String, Integer> planStatusCounts = new HashMap<>();
+        deliveryPlanRepo.countByStatusBetween(startDateTime, endDateTime).forEach(row -> 
+            planStatusCounts.put((String) row[0], ((Number) row[1]).intValue())
+        );
+        
+        Map<String, Integer> routeStatusCounts = new HashMap<>();
+        deliveryRouteRepo.countByStatusBetween(startDateTime, endDateTime).forEach(row -> 
+            routeStatusCounts.put((String) row[0], ((Number) row[1]).intValue())
+        );
+        
+        // 4. Get daily counts and merge them
+        Map<LocalDate, DailyDeliveryCountDto> dailyMap = initializeDailyDeliveryMap(startDate, endDate);
+        
+        // Process bill daily counts
+        deliveryBillRepo.countDailyBetween(startDateTime, endDateTime).forEach(row -> {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            int count = ((Number) row[1]).intValue();
+            
+            DailyDeliveryCountDto daily = dailyMap.get(date);
+            if (daily != null) {
+                daily.setBillsCount(count);
+            }
+        });
+        
+        // Process plan daily counts
+        deliveryPlanRepo.countDailyBetween(startDateTime, endDateTime).forEach(row -> {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            int count = ((Number) row[1]).intValue();
+            
+            DailyDeliveryCountDto daily = dailyMap.get(date);
+            if (daily != null) {
+                daily.setPlansCount(count);
+            }
+        });
+        
+        // Process route daily counts
+        deliveryRouteRepo.countDailyBetween(startDateTime, endDateTime).forEach(row -> {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            int count = ((Number) row[1]).intValue();
+            
+            DailyDeliveryCountDto daily = dailyMap.get(date);
+            if (daily != null) {
+                daily.setRoutesCount(count);
+            }
+        });
+        
+        // Convert map to sorted list
+        List<DailyDeliveryCountDto> dailyDeliveryCounts = new ArrayList<>(dailyMap.values());
+        dailyDeliveryCounts.sort(Comparator.comparing(DailyDeliveryCountDto::getDate));
+        
+        // 5. Get top customers (limit to 5)
+        List<TopCustomerDto> topCustomers = new ArrayList<>();
+        deliveryBillRepo.findTopCustomersBetween(startDateTime, endDateTime, CommonUtil.getPageRequest(0,5)).forEach(row -> {
+            String customerId = (String) row[0];
+            String customerName = (String) row[1];
+            int count = ((Number) row[2]).intValue();
+            BigDecimal weight = (BigDecimal) row[3];
+            
+            if (weight == null) {
+                weight = BigDecimal.ZERO;
+            }
+            
+            topCustomers.add(new TopCustomerDto(customerId, customerName, count, weight));
+        });
+        
+        // 6. Get shipper performance
+        List<ShipperPerformanceDto> shipperPerformances = new ArrayList<>();
+        deliveryRouteRepo.findShipperPerformanceBetween(startDateTime, endDateTime).forEach(row -> {
+            String shipperId = (String) row[0];
+            String shipperName = (String) row[1] + (String) row[2];
+            int assignedRoutes = ((Number) row[3]).intValue();
+            int completedRoutes = ((Number) row[4]).intValue();
+            int inProgressRoutes = ((Number) row[5]).intValue();
+            
+            shipperPerformances.add(new ShipperPerformanceDto(
+                shipperId, shipperName, assignedRoutes, completedRoutes, inProgressRoutes
+            ));
+        });
+        
+        // Build the dashboard DTO
+        DeliveryDashboardDto dashboardDto = DeliveryDashboardDto.builder()
+                .totalDeliveryBills(totalDeliveryBills)
+                .totalDeliveryPlans(totalDeliveryPlans)
+                .totalDeliveryRoutes(totalDeliveryRoutes)
+                .billStatusCounts(billStatusCounts)
+                .planStatusCounts(planStatusCounts)
+                .routeStatusCounts(routeStatusCounts)
+                .totalDeliveryWeight(totalWeight)
+                .dailyDeliveryCounts(dailyDeliveryCounts)
+                .topCustomers(topCustomers)
+                .shipperPerformances(shipperPerformances)
+                .build();
+        
+        return ApiResponse.<DeliveryDashboardDto>builder()
+                .code(200)
+                .message("Delivery dashboard data retrieved successfully")
+                .data(dashboardDto)
+                .build();
+    }
+    
+    // Helper method to initialize daily map
+    private Map<LocalDate, DailyDeliveryCountDto> initializeDailyDeliveryMap(LocalDate startDate, LocalDate endDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        
+        Map<LocalDate, DailyDeliveryCountDto> map = new HashMap<>();
+        LocalDate currentDate = startDate;
+        
+        while (!currentDate.isAfter(endDate)) {
+            DailyDeliveryCountDto dto = new DailyDeliveryCountDto(
+                currentDate,
+                currentDate.format(formatter),
+                0, 0, 0
+            );
+            map.put(currentDate, dto);
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        return map;
+    }
 }

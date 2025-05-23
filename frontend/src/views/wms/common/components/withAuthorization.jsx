@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AccessDenied from "./AccessDenied";
 
 export function withAuthorization(Component, id) {
+  console.log("id ", id);
   return function ScreenSecurityComponent({ ...props }) {
     const [checking, setChecking] = useState(true);
     const [screenAuthorization, setScreenAuthorization] = useState(null); // null rõ ràng hơn undefined

@@ -171,4 +171,7 @@ export const wms2Service = {
   getMonthlyFacilityReport: (facilityId, startDate, endDate) => {
     return request("get", `/report/inventory/facility/${facilityId}?startDate=${startDate}&endDate=${endDate}`);
   },
+  getDeliveryDashboard : (startDate, endDate) => {
+    return request("get", `/report/delivery/dashboard?startDate=${startDate}&endDate=${endDate}`);
+  }
 };

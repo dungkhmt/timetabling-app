@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.wms.controller;
 
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
+import openerp.openerpresourceserver.wms.dto.report.DeliveryDashboardDto;
 import openerp.openerpresourceserver.wms.dto.report.ImportExportReportDto;
 import openerp.openerpresourceserver.wms.dto.report.PurchaseOrderReportDto;
 import openerp.openerpresourceserver.wms.service.ReportService;
@@ -48,4 +49,16 @@ public class ReportController {
         return reportService.getFacilityInventoryReport(facilityId, start, end);
     }
 
+    @GetMapping("/delivery/dashboard")
+    public ApiResponse<DeliveryDashboardDto> getDeliveryDashboard(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        // If dates not provided, use first day of current month to today
+        LocalDate end = Optional.ofNullable(endDate).orElse(LocalDate.now());
+        LocalDate start = Optional.ofNullable(startDate)
+                .orElse(LocalDate.now().withDayOfMonth(1)); // First day of current month
+
+        return reportService.getDeliveryDashboard(start, end);
+    }
 }
