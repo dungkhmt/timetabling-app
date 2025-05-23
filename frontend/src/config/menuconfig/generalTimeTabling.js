@@ -10,6 +10,13 @@ export const generalTimeTabling = {
       text: "Kế hoạch mở lớp",
       child: [],
     },
+     {
+      id: "MENU_GENERAL_TIME_TABLING.UPLOAD_SCREEN",
+      path: "/general-time-tabling/plan-class-open-summer",
+      isPublic: true,
+      text: "Kế hoạch mở lớp kỳ hè",
+      child: [],
+    },
     {
       id: "MENU_GENERAL_TIME_TABLING.UPLOAD_SCREEN",
       path: "/general-time-tabling/upload-class",
