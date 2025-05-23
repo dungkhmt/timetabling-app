@@ -1,4 +1,4 @@
-package openerp.openerpresourceserver.generaltimetabling.algorithms;
+package openerp.openerpresourceserver.generaltimetabling.algorithms.twophasesheuristic;
 
 import openerp.openerpresourceserver.generaltimetabling.algorithms.util.AClass;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.util.AClassSegment;
@@ -83,7 +83,7 @@ public class TwoPhaseSchedulerTest {
         }
     }
 
-    public void runPhase1Manual() {
+    public void runPhase1Manual1() {
         // Manually assign every first class of each course to the first slot of each session
         // Can only assign up to 5 courses
         System.out.println("-- Starting Phase 1 --");
@@ -139,6 +139,100 @@ public class TwoPhaseSchedulerTest {
 //        }
     }
 
+
+    public void runPhase1Manual() {
+        System.out.println("-- Starting Phase 1 --");
+        int session = 0;
+        Set<Integer> occupiedSessions = new HashSet<>();
+        List<SolutionClass> initialAssignments = new ArrayList<>();
+
+        // Assign first 5 courses to the first slot of each new day
+        for (int i = 0; i < courses.size(); i++) {
+            String course = courses.get(i);
+            AClass cls = USC.get(course).remove(0);
+
+            List<int[]> periods = new ArrayList<>();
+            boolean assigned = false;
+
+            if (i < nbSessions) {
+                // Assign to new session
+                int slot = 1;
+                int currentSession = session++;
+                for (AClassSegment seg : cls.classSegments) {
+                    int start = slot;
+                    int end = slot + seg.duration - 1;
+                    periods.add(new int[]{start, end, currentSession});
+                    slot += seg.duration;
+                }
+                assigned = true;
+            } else {
+                // Try all possible non-overlapping slots with existing assignments
+                outer:
+                for (int s = 0; s < nbSessions; s++) {
+                    for (int sl = 1; sl <= nbSlotPerSession; sl++) {
+                        periods.clear();
+                        int currSlot = sl;
+                        boolean fits = true;
+
+                        for (AClassSegment seg : cls.classSegments) {
+                            int end = currSlot + seg.duration - 1;
+                            if (end > nbSlotPerSession) {
+                                fits = false;
+                                break;
+                            }
+                            periods.add(new int[]{currSlot, end, s});
+                            currSlot = end + 1;
+                        }
+                        if (!fits) continue;
+
+                        // Check for overlap with already assigned initial classes
+                        boolean conflict = false;
+                        for (SolutionClass assignedSc : initialAssignments) {
+                            for (int[] p1 : periods) {
+                                for (int[] p2 : assignedSc.periods) {
+                                    if (p1[2] == p2[2] && !(p1[1] < p2[0] || p2[1] < p1[0])) {
+                                        conflict = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (conflict) break;
+                        }
+
+                        if (!conflict) {
+                            assigned = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+
+            if (!assigned) {
+                System.out.println("Failed to assign class " + cls.id + " in Phase 1");
+                continue;
+            }
+
+            SolutionClass sc = new SolutionClass(cls, periods);
+            best_x[i].put(cls, sc);
+            SC.get(course).add(cls);
+            Alpha.add(course);
+            initialAssignments.add(sc);
+            candidates.addAll(USC.get(course));
+        }
+
+        System.out.println("\n-- Phase 1 Assignments --");
+        for (int i = 0; i < courses.size(); i++) {
+            for (Map.Entry<AClass, SolutionClass> entry : best_x[i].entrySet()) {
+                AClass cls = entry.getKey();
+                SolutionClass sc = entry.getValue();
+                System.out.print("Class ID " + cls.id + " (" + cls.course + "): ");
+                for (int[] p : sc.periods) {
+                    System.out.print("[S=" + p[0] + ",E=" + p[1] + ",T=" + p[2] + "] ");
+                }
+                System.out.println();
+            }
+        }
+    }
     public void runPhase1Smart() {
         System.out.println("-- Starting Phase 1 (Smart Backtracking) --");
         long startTime = System.currentTimeMillis(); // Start time tracking
@@ -180,6 +274,7 @@ public class TwoPhaseSchedulerTest {
     private void backtrackPhase1Smart(int idx, List<String> courses, List<SolutionClass> current,
                                       List<SolutionClass> best, int[] bestSessionCount, int[] bestSlot1Count) {
         if (idx == courses.size()) {
+            // branch and bound to improve time consumed
             List<AClass> allClasses = new ArrayList<>();
             List<Integer>[] classIndicesOfCourse = new ArrayList[courses.size()];
             SolutionClass[] xArray = new SolutionClass[courses.size()];
@@ -542,14 +637,43 @@ public class TwoPhaseSchedulerTest {
             e.printStackTrace();
         }
     }
+    public void saveFinalSolutionToFile(String inputFilePath) {
+        try {
+            // Extract the filename (e.g., "1.txt") from the full input path
+            File inputFile = new File(inputFilePath);
+            String fileName = inputFile.getName(); // e.g., "1.txt"
+
+            // Build the output path in the "experiment" package
+            String outputPath = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/src/main/java/openerp/openerpresourceserver/generaltimetabling/algorithms/twophasesheuristic/experiment/" + fileName;
+            PrintWriter out = new PrintWriter(new FileWriter(outputPath));
+
+            for (int i = 0; i < courses.size(); i++) {
+                for (AClass c : best_x[i].keySet()) {
+                    SolutionClass sc = best_x[i].get(c);
+                    out.print(c.id + " " + sc.periods.size() + " ");
+                    for (int[] p : sc.periods) {
+                        out.print(p[2] + " " + p[0] + " ");
+                    }
+                    out.println();
+                }
+            }
+
+            out.close();
+            System.out.println("✅ Final solution saved to: " + outputPath);
+        } catch (IOException e) {
+            System.err.println("❌ Error saving final solution: " + e.getMessage());
+        }
+    }
     public static void main(String[] args) {
         TwoPhaseSchedulerTest scheduler = new TwoPhaseSchedulerTest();
 //        scheduler.readFromStdin();
-        scheduler.inputFile("/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/data/em4-2nd-s-altered.txt");
+        String inputPath = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/data/et1-3th-s.txt";
+        scheduler.inputFile(inputPath);
         scheduler.printInputSummary();
-//        scheduler.runPhase1Manual();
-        scheduler.runPhase1Smart();
+        scheduler.runPhase1Manual();
+//        scheduler.runPhase1Smart();
         scheduler.runPhase2();
         scheduler.printFinalSolution();
+        scheduler.saveFinalSolutionToFile(inputPath);
     }
 }
