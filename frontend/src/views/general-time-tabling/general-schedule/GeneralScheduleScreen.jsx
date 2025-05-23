@@ -650,6 +650,7 @@ const GeneralScheduleScreen = () => {
               selectedSemester={states.selectedSemester}
               setSelectedSemester={setters.setSelectedSemester}
               selectedVersion={selectedVersion}
+              numberSlotsPerSession={selectedVersion?.numberSlotsPerSession ?? 6}
             />
           </div>
         ) :

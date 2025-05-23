@@ -1,5 +1,7 @@
 package openerp.openerpresourceserver.examtimetabling.dtos;
 
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,4 +15,5 @@ public class GroupAssignmentStatsDTO {
     private double completionRate;
     private double averageRelaxTimeBetweenCourses; 
     private int daysWithMultipleExams;
+    private Map<String, Integer> examsPerDayDistribution; 
 }

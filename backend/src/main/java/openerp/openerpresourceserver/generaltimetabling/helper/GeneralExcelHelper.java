@@ -221,7 +221,7 @@ public class GeneralExcelHelper {
     }
 
 
-    public static ByteArrayInputStream convertRoomOccupationToExcel(List<RoomOccupationWithModuleCode> rooms) {
+    public static ByteArrayInputStream convertRoomOccupationToExcel(List<RoomOccupationWithModuleCode> rooms, int numberSlotsPerSession) {
         /*Init the data to map*/
         HashMap<String, List<OccupationClassPeriod>> periodMap = new HashMap<>();
         HashMap<OccupationClassPeriod, List<OccupationClassPeriod>> conflictMap = new HashMap<>();
@@ -234,9 +234,15 @@ public class GeneralExcelHelper {
             String classRoom = room.getClassRoom();
             String moduleCode = room.getModuleCode();
             String displayText = room.getClassCode() + (moduleCode != null ? " (" + moduleCode + ")" : "");
-            long crewPeriod = "S".equals(room.getCrew()) ? 0 : 6;
-            long startPeriodIndex = room.getStartPeriod().intValue() + 12L * (room.getDayIndex().intValue()-2) + crewPeriod;
-            long endPeriodIndex = room.getEndPeriod().intValue() + 12L * (room.getDayIndex().intValue()-2) + crewPeriod;
+            
+            // Calculate slots per day (morning + afternoon sessions)
+            int slotsPerDay = numberSlotsPerSession * 2;
+            
+            // Calculate period index based on crew (S = morning, C = afternoon)
+            long sessionOffset = "S".equals(room.getCrew()) ? 0 : numberSlotsPerSession;
+            long startPeriodIndex = room.getStartPeriod().intValue() + sessionOffset + slotsPerDay * (room.getDayIndex().intValue()-2);
+            long endPeriodIndex = room.getEndPeriod().intValue() + sessionOffset + slotsPerDay * (room.getDayIndex().intValue()-2);
+            
             OccupationClassPeriod period = new OccupationClassPeriod(startPeriodIndex, endPeriodIndex, displayText, classRoom);
             if(periodMap.get(classRoom) == null) {
                 List<OccupationClassPeriod> initList = new ArrayList<>();
@@ -269,7 +275,8 @@ public class GeneralExcelHelper {
             errorStyle.setFillPattern((short) 1);
             errorStyle.setFont(boldFont);
             errorStyle.setBorderBottom((short) 1);
-            errorStyle.setBorderLeft((short) 1);            errorStyle.setBorderRight((short) 1);
+            errorStyle.setBorderLeft((short) 1);
+            errorStyle.setBorderRight((short) 1);
             errorStyle.setBorderTop((short) 1);
             /*Room style*/
             CellStyle roomStyle=  workbook.createCellStyle();
@@ -288,34 +295,40 @@ public class GeneralExcelHelper {
             headerStyle.setBorderLeft((short) 1);
             headerStyle.setBorderRight((short) 1);
             headerStyle.setBorderTop((short) 1);
-            Sheet sheet = workbook.createSheet(SHEET);            int rowIndex = 0;
+            Sheet sheet = workbook.createSheet(SHEET);
+            int rowIndex = 0;
             
-            // Set column widths for schedule display - half width
-            for(int i = 1; i <= 84; i++) {
-                sheet.setColumnWidth(i, 256 * 6); // 6 characters width (half of standard)
+            int totalColumns = 7 * numberSlotsPerSession * 2; 
+            sheet.setColumnWidth(0, 256 * 18); 
+            // Set schedule columns width to 1.5x the previous half-width
+            for(int i = 1; i <= totalColumns; i++) {
+                sheet.setColumnWidth(i, 256 * 9); // 9 characters width (1.5x the previous 6-char width)
             }
 
             /*Header*/
             /*Week index row*/
             Row dayIndexRow = sheet.createRow(rowIndex);
-            for (int i = 0; i < 84; i+=12) {
-                sheet.addMergedRegion(new CellRangeAddress(rowIndex,rowIndex,i+1,i+12));
+            for (int i = 0; i < totalColumns; i += numberSlotsPerSession * 2) {
+                sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, i+1, i+numberSlotsPerSession*2));
                 Cell c = dayIndexRow.createCell(i+1);
-                String weekIndexString = "" + ((i%84)/12 +2);
+                String weekIndexString = "" + ((i % totalColumns) / (numberSlotsPerSession * 2) + 2);
                 c.setCellValue(weekIndexString);
                 c.setCellStyle(headerStyle);
             }
             rowIndex++;
+            
             /*Period row*/
             Row periodRow = sheet.createRow(rowIndex);
-            for (int i = 0; i < 84; i++) {
+            for (int i = 0; i < totalColumns; i++) {
                 Cell c = periodRow.createCell(i+1);
-                String periodIndexString = "" + ((i%84)%12+1);
+                // Calculate period number (1-based) within its session
+                int sessionIndex = (i % (numberSlotsPerSession * 2)) / numberSlotsPerSession; // 0 = morning, 1 = afternoon
+                int periodInSession = (i % (numberSlotsPerSession * 2)) % numberSlotsPerSession + 1; // 1-based period within session
+                String periodIndexString = (sessionIndex == 0 ? "S" : "C") + periodInSession;
                 c.setCellValue(periodIndexString);
                 c.setCellStyle(headerStyle);
             }
             rowIndex++;
-
 
             /*Start write data*/
             for (String room : periodMap.keySet()) {
@@ -324,7 +337,7 @@ public class GeneralExcelHelper {
                     Cell roomNameCell = roomRow.createCell(0);
                     roomNameCell.setCellValue(room);
                     roomNameCell.setCellStyle(headerStyle);
-                    for (int cellIndex = 1; cellIndex <= 84; cellIndex++) {
+                    for (int cellIndex = 1; cellIndex <= totalColumns; cellIndex++) {
                         Cell c = roomRow.createCell(cellIndex);
                         c.setCellStyle(boldStyle);
                         for (OccupationClassPeriod roomPeriod : periodMap.get(room)) {
@@ -430,9 +443,9 @@ public class GeneralExcelHelper {
             int slotsPerDay = numberSlotsPerSession * 2;
             
             // Set column widths - make schedule columns half width
-            ColumnWidthHelper.setTimeTableColumnWidths(sheet, END_COL_TO_READ_CLASS_INFO, 
-                                                     START_COL_TO_READ_CLASS_SCHEDULE, 
-                                                     slotsPerDay, 7); // 7 days (Mon-Sun)
+            for (int i = 0; i < HEADERS.length; i++) {
+                sheet.setColumnWidth(i, 256 * 12); // 12 characters width (standard width)
+            }
             
             Row weekIndexRow = sheet.createRow(rowIndex);
             for (int i = 0; i < HEADERS.length; i += 1) {
@@ -693,9 +706,9 @@ public class GeneralExcelHelper {
             /*Handle create header info*/
             
             // Set column widths - make schedule columns half width
-            ColumnWidthHelper.setTimeTableColumnWidths(sheet, END_COL_TO_READ_CLASS_INFO, 
-                                                     START_COL_TO_READ_CLASS_SCHEDULE, 
-                                                     numberSlotsPerSession, 7); // 7 days (Mon-Sun)
+            for (int i = 0; i < HEADERS.length; i++) {
+                sheet.setColumnWidth(i, 256 * 12); // 12 characters width (standard width)
+            }
             
             Row weekIndexRow = sheet.createRow(rowIndex);
             for (int i = 0; i < HEADERS.length; i += 1) {

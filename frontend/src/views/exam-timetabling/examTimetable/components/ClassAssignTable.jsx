@@ -622,6 +622,12 @@ const ClassesTable = forwardRef(({
       if (onChangeStatusUpdate) {
         onChangeStatusUpdate(false);
       }
+    },
+    clearSelection: () => {
+      setSelectedRows([]);
+      if (onSelectionChange) {
+        onSelectionChange([]);
+      }
     }
   }));
 

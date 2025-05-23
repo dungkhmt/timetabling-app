@@ -160,5 +160,15 @@ export const wms2Service = {
   },
   getAllDeliveryRoutes : (page, limit, filters) => {
     return request("post", `/delivery-route/get-all?page=${page}&limit=${limit}`, null, null, filters);
-  }
+  },
+  getAllOrderBillItems : (page, limit, filters) => {
+    return request("post", `/order-bill-item/get-all?page=${page}&limit=${limit}`, null, null, filters);
+  },
+  getMonthlyInventoryReport: (startDate, endDate) => {
+    return request("get", `/report/inventory/monthly?startDate=${startDate}&endDate=${endDate}`);
+  },
+
+  getMonthlyFacilityReport: (facilityId, startDate, endDate) => {
+    return request("get", `/report/inventory/facility/${facilityId}?startDate=${startDate}&endDate=${endDate}`);
+  },
 };

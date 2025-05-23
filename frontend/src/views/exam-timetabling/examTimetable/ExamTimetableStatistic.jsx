@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { BarChart } from '@mui/x-charts/BarChart';
 import { useExamTimetableData } from 'services/useExamTimetableData';
 
 // General Information Component
@@ -46,7 +47,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
         </Typography>
         
         <Grid container justifyContent={'space-between'} spacing={1} sx={{ mt: 0.5 }}>
-          <Grid item xs={4}>
+          <Grid item xs={5}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Tổng số lớp:
@@ -56,7 +57,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={8}>
+          <Grid item xs={7}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Lớp đã xếp:
@@ -66,7 +67,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={4}>
+          <Grid item xs={5}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Tổng số phòng:
@@ -76,7 +77,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={8}>
+          <Grid item xs={7}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Phòng đã sử dụng:
@@ -86,7 +87,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={4}>
+          <Grid item xs={5}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Tổng số ngày thi:
@@ -96,15 +97,136 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={8}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                Bộ kíp thi:
-              </Typography>
-              <Typography variant="body1" fontWeight={500}>
-                {timetableInfo.sessionCollectionName}
-              </Typography>
+          
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Group Multiple Exams Distribution Card 
+const GroupMultipleExamsCard = ({ groupStats }) => {
+  if (!groupStats || groupStats.length === 0) {
+    return (
+      <Card sx={{ height: '100%', boxShadow: 2, borderRadius: 2 }}>
+        <Box sx={{ 
+          background: 'linear-gradient(90deg, #1976D2, #2196F3)', 
+          color: 'white',
+          p: 1.5,
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Phân bố ngày thi nhiều môn
+          </Typography>
+        </Box>
+        <CardContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%' }}>
+          <Typography variant="body1" color="text.secondary">
+            Không có dữ liệu nhóm lớp
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const top5Groups = [...groupStats]
+    .sort((a, b) => b.daysWithMultipleExams - a.daysWithMultipleExams)
+    .slice(0, 5);
+
+  const countByRange = groupStats.reduce((acc, group) => {
+    const count = group.daysWithMultipleExams;
+    if (count === 0) acc['0'] = (acc['0'] || 0) + 1;
+    else if (count <= 5) acc['1-5'] = (acc['1-5'] || 0) + 1;
+    else if (count <= 10) acc['6-10'] = (acc['6-10'] || 0) + 1;
+    else if (count <= 15) acc['11-15'] = (acc['11-15'] || 0) + 1;
+    else acc['16+'] = (acc['16+'] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <Card sx={{ 
+      height: '100%', 
+      boxShadow: 2, 
+      borderRadius: 2,
+      overflow: 'hidden',
+      border: '1px solid #ddd',
+    }}>
+      <Box sx={{ 
+        background: 'linear-gradient(90deg, #1976D2, #2196F3)', 
+        color: 'white',
+        p: 1.5,
+      }}>
+        <Typography variant="h6" fontWeight={600}>
+          Phân bố ngày thi nhiều môn
+        </Typography>
+      </Box>
+      <CardContent>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Top 5 nhóm có nhiều ngày thi nhiều môn
+            </Typography>
+            <Box sx={{ height: 150, px: 2 }}>
+              {top5Groups.length > 0 ? (
+                <BarChart
+                  dataset={top5Groups}
+                  yAxis={[{ 
+                    label: null, 
+                  }]}
+                  xAxis={[{ 
+                    scaleType: 'band',
+                    dataKey: 'groupName',
+                    tickLabelStyle: {
+                      angle: 0,
+                      textAnchor: 'middle',
+                      fontSize: 12
+                    }
+                  }]}
+                  series={[{
+                    dataKey: 'daysWithMultipleExams',
+                    valueFormatter: (value) => `${value}`,
+                  
+                  }]}
+                  height={130}
+                  width={top5Groups.length <= 3 ? 300 : undefined} 
+                  margin={{ left: 10, right: 10, top: 20, bottom: 30 }}
+                  layout="vertical" 
+                  barProps={{
+                    paddingInner: 0.4, 
+                  }}
+                  sx={{
+                    '.MuiBarElement-root': {
+                      maxWidth: '80px',
+                    },
+                  }}
+                />
+              ) : (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    Không có nhóm nào có ngày thi nhiều môn
+                  </Typography>
+                </Box>
+              )}
             </Box>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
+              Phân bố theo khoảng
+            </Typography>
+            <Grid container spacing={1} sx={{ mt: 0.5 }}>
+              {Object.entries(countByRange).map(([range, count]) => (
+                <Grid item xs={2} key={range}>
+                  <Box sx={{ 
+                    border: '1px solid #e0e0e0', 
+                    borderRadius: 1, 
+                    p: 1, 
+                    textAlign: 'center',
+                    backgroundColor: '#f5f5f5'
+                  }}>
+                    <Typography variant="h6" color="primary">{count}</Typography>
+                    <Typography variant="caption">{range} ngày</Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
           </Grid>
         </Grid>
       </CardContent>
@@ -112,8 +234,8 @@ const GeneralInfoCard = ({ timetableInfo }) => {
   );
 };
 
-// Group Statistics Component
-const GroupStatisticsCard = ({ groupStats }) => {
+// Group Detail Statistics Card 
+const GroupDetailStatisticsCard = ({ groupStats }) => {
   const [selectedGroup, setSelectedGroup] = useState(
     groupStats && groupStats.length > 0 ? groupStats[0].groupName : ''
   );
@@ -124,10 +246,10 @@ const GroupStatisticsCard = ({ groupStats }) => {
         <Box sx={{ 
           background: 'linear-gradient(90deg, #1976D2, #2196F3)', 
           color: 'white',
-          p: 2,
+          p: 1.5,
         }}>
           <Typography variant="h6" fontWeight={600}>
-            Thống kê theo nhóm lớp
+            Thống kê chi tiết theo nhóm lớp
           </Typography>
         </Box>
         <CardContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%' }}>
@@ -140,6 +262,21 @@ const GroupStatisticsCard = ({ groupStats }) => {
   }
 
   const selectedGroupData = groupStats.find(group => group.groupName === selectedGroup);
+  
+  const dailyExamsData = selectedGroupData && selectedGroupData.examsPerDayDistribution ? 
+    Object.entries(selectedGroupData.examsPerDayDistribution)
+      .map(([date, count]) => ({
+        date: date.substring(0, 5), 
+        count,
+        fullDate: date
+      }))
+      .sort((a, b) => {
+        const [dayA, monthA] = a.fullDate.split('/');
+        const [dayB, monthB] = b.fullDate.split('/');
+        const dateA = new Date(2025, parseInt(monthA) - 1, parseInt(dayA));
+        const dateB = new Date(2025, parseInt(monthB) - 1, parseInt(dayB));
+        return dateA - dateB;
+      }) : [];
 
   return (
     <Card sx={{ 
@@ -158,7 +295,7 @@ const GroupStatisticsCard = ({ groupStats }) => {
         alignItems: 'center'
       }}>
         <Typography variant="h6" fontWeight={600}>
-          Thống kê theo nhóm lớp
+          Thống kê chi tiết theo nhóm lớp
         </Typography>
         <FormControl variant="outlined" size="small" sx={{ minWidth: 200, backgroundColor: 'white', borderRadius: 1 }}>
           <Select
@@ -174,60 +311,101 @@ const GroupStatisticsCard = ({ groupStats }) => {
           </Select>
         </FormControl>
       </Box>
-      <CardContent>
+      
+      <CardContent >
         {selectedGroupData && (
-          <Grid container spacing={1}>
-            <Grid item xs={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                  Tổng số lớp:
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {selectedGroupData.totalClasses}
-                </Typography>
-              </Box>
+          <>
+            <Grid container spacing={0.5} sx={{ mb: 0.5 }}>
+              <Grid item xs={4}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                    Tổng số lớp:
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {selectedGroupData.totalClasses}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                    Đã xếp lịch:
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {selectedGroupData.assignedClasses} ({selectedGroupData.completionRate}%)
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                    Chưa xếp lịch:
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {selectedGroupData.unassignedClasses}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                    Ngày thi nhiều môn:
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {selectedGroupData.daysWithMultipleExams}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                    Thời gian nghỉ trung bình:
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {selectedGroupData.averageRelaxTimeBetweenCourses} ngày
+                  </Typography>
+                </Box>
+              </Grid>
             </Grid>
-            <Grid item xs={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                  Đã xếp lịch:
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {selectedGroupData.assignedClasses} ({selectedGroupData.completionRate}%)
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                  Chưa xếp lịch:
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {selectedGroupData.unassignedClasses}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                  Ngày thi nhiều môn:
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {selectedGroupData.daysWithMultipleExams}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                  Thời gian nghỉ trung bình:
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {selectedGroupData.averageRelaxTimeBetweenCourses} ngày
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
+            
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+              Phân bố số lượng bài thi theo ngày
+            </Typography>
+            
+            <Box sx={{ height: 180, width: '100%', px: 2 }}>
+              <BarChart
+                dataset={dailyExamsData}
+                yAxis={[{ 
+                  label: null, 
+                  max: 100, 
+                }]}
+                xAxis={[{ 
+                  scaleType: 'band',
+                  dataKey: 'date',
+                  tickLabelStyle: {
+                    angle: 0,
+                    textAnchor: 'middle',
+                    fontSize: 12
+                  }
+                }]}
+                series={[{
+                  dataKey: 'count',
+                  valueFormatter: (value) => `${value}`,
+                  color: '#ef9f5e'
+                }]}
+                height={180}
+                margin={{ left: 10, right: 10, top: 20, bottom: 30 }}
+                barProps={{
+                  paddingInner: 2, 
+                }}
+                sx={{
+                  '.MuiBarElement-root': {
+                    maxWidth: '30px', 
+                  },
+                }}
+              />
+            </Box>
+          </>
         )}
       </CardContent>
     </Card>
@@ -249,26 +427,10 @@ const DistributionChart = ({ title, data, chartType, onModeChange, modes }) => {
   }
 
   const chartColors = [
-    '#1976d2', // Blue
-    '#388e3c', // Green
-    '#f57c00', // Orange
-    '#d32f2f', // Red
-    '#7b1fa2', // Purple
-    '#fbc02d', // Yellow
-    '#00796b', // Teal
-    '#5d4037', // Brown
-    '#c2185b', // Pink
-    '#455a64',  // Blue Grey
-    '#64b5f6', // Light Blue
-    '#2196f3', // Dark Blue
-    '#ff9800', // Deep Orange
-    '#e53935', // Red
-    '#8b9467', // Light Green
-    '#66bb6a', // Light Teal
-    '#1e88e5', // Dark Blue Grey
-    '#4caf50', // Light Green
-    '#9c27b0', // Deep Purple
-    '#03a9f4'  // Cyan
+    '#1976d2', '#388e3c', '#f57c00', '#d32f2f', '#7b1fa2', 
+    '#fbc02d', '#00796b', '#5d4037', '#c2185b', '#455a64',
+    '#64b5f6', '#2196f3', '#ff9800', '#e53935', '#8b9467', 
+    '#66bb6a', '#1e88e5', '#4caf50', '#9c27b0', '#03a9f4'
   ];
 
   const selectedData = data[selectedMode] || [];
@@ -340,9 +502,19 @@ const DistributionChart = ({ title, data, chartType, onModeChange, modes }) => {
                 flexDirection: 'column', 
                 alignItems: 'stretch',
                 width: '45%',
-                height: '100%',
-                overflow: 'auto',
-                pl: 1
+                height: '90%',
+                overflowY: 'auto',
+                pl: 1,
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#bdbdbd',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: '#f5f5f5',
+                }
               }}
             >
               {chartData.map((item, index) => (
@@ -442,17 +614,22 @@ const TimetableStatisticsPanel = () => {
       </Box>
 
       <Grid container spacing={3} sx={{ minHeight: 'calc(100vh - 200px)' }}>
-        {/* Region A: General Information */}
+        {/* General Information Card */}
         <Grid item xs={12} md={6} sx={{ height: '250px' }}>
           <GeneralInfoCard timetableInfo={timetableStatistics} />
         </Grid>
 
-        {/* Region B: Group Statistics */}
+        {/* Group Multiple Exams Distribution Card */}
         <Grid item xs={12} md={6} sx={{ height: '250px' }}>
-          <GroupStatisticsCard groupStats={timetableStatistics.groupAssignmentStats} />
+          <GroupMultipleExamsCard groupStats={timetableStatistics.groupAssignmentStats} />
         </Grid>
 
-        {/* Region C: Time Distribution Chart */}
+        {/* Group Detail Statistics Card */}
+        <Grid item xs={12} sx={{ height: '370px' }}>
+          <GroupDetailStatisticsCard groupStats={timetableStatistics.groupAssignmentStats} />
+        </Grid>
+
+        {/* Time Distribution Chart */}
         <Grid item xs={12} md={6} sx={{ height: '370px' }}>
           <DistributionChart 
             title="Phân bố lớp theo thời gian"
@@ -465,7 +642,7 @@ const TimetableStatisticsPanel = () => {
           />
         </Grid>
 
-        {/* Region D: Location Distribution Chart */}
+        {/* Location Distribution Chart */}
         <Grid item xs={12} md={6} sx={{ height: '370px' }}>
           <DistributionChart 
             title="Phân bố lớp theo địa điểm"

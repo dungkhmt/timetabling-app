@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.generaltimetabling.algorithms;
 
 import openerp.openerpresourceserver.generaltimetabling.algorithms.util.AClass;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.util.AClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.util.CombinationChecker;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.util.SolutionClass;
 
 import java.io.*;
@@ -17,6 +18,7 @@ public class TwoPhaseSchedulerTest {
     List<String> courses;
     int nbSlotPerSession;
     int nbSessions;
+    int totalClasses;
 
     @SuppressWarnings("unchecked")
     public void inputFile(String filename) {
@@ -59,6 +61,9 @@ public class TwoPhaseSchedulerTest {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        for (String course : courses) {
+            totalClasses += mCourse2Classes.get(course).size();
         }
     }
     public void printInputSummary() {
@@ -133,6 +138,122 @@ public class TwoPhaseSchedulerTest {
 //            System.out.println("Class ID " + c.id + " (" + c.course + ")");
 //        }
     }
+
+    public void runPhase1Smart() {
+        System.out.println("-- Starting Phase 1 (Smart Backtracking) --");
+        long startTime = System.currentTimeMillis(); // Start time tracking
+        List<String> selectedCourses = new ArrayList<>(courses);
+        List<SolutionClass> bestSolution = new ArrayList<>();
+        int[] bestSessionCount = { -1 };
+        int[] bestSlot1Count = { -1 };
+
+        backtrackPhase1Smart(0, selectedCourses, new ArrayList<>(), bestSolution, bestSessionCount, bestSlot1Count);
+        long endTime = System.currentTimeMillis(); // End time tracking
+        long duration = endTime - startTime;
+        for (SolutionClass sc : bestSolution) {
+            String course = sc.cls.course;
+            int i = courses.indexOf(course);
+
+            best_x[i].put(sc.cls, sc);
+            SC.get(course).add(sc.cls);
+            Alpha.add(course);
+
+            USC.get(course).remove(sc.cls);
+            candidates.addAll(USC.get(course));
+        }
+
+        System.out.println("\n-- Phase 1 Assignments --");
+        for (int i = 0; i < courses.size(); i++) {
+            for (Map.Entry<AClass, SolutionClass> entry : best_x[i].entrySet()) {
+                AClass cls = entry.getKey();
+                SolutionClass sc = entry.getValue();
+                System.out.print("Class ID " + cls.id + " (" + cls.course + "): ");
+                for (int[] p : sc.periods) {
+                    System.out.print("[S=" + p[0] + ",E=" + p[1] + ",T=" + p[2] + "] ");
+                }
+                System.out.println();
+            }
+        }
+        System.out.println("Phase 1 completed in " + duration + " ms");
+    }
+
+    private void backtrackPhase1Smart(int idx, List<String> courses, List<SolutionClass> current,
+                                      List<SolutionClass> best, int[] bestSessionCount, int[] bestSlot1Count) {
+        if (idx == courses.size()) {
+            List<AClass> allClasses = new ArrayList<>();
+            List<Integer>[] classIndicesOfCourse = new ArrayList[courses.size()];
+            SolutionClass[] xArray = new SolutionClass[courses.size()];
+
+            for (int i = 0; i < courses.size(); i++) classIndicesOfCourse[i] = new ArrayList<>();
+
+            for (int i = 0; i < current.size(); i++) {
+                SolutionClass sc = current.get(i);
+                allClasses.add(sc.cls);
+                classIndicesOfCourse[courses.indexOf(sc.cls.course)].add(i);
+                xArray[i] = sc;
+            }
+
+            CombinationChecker checker = new CombinationChecker(classIndicesOfCourse, allClasses, xArray);
+            for (int i = 0; i < allClasses.size(); i++) {
+                if (!checker.checkInCombination(i)) return;
+            }
+
+            Set<Integer> sessionsUsed = new HashSet<>();
+            int slot1Count = 0;
+            for (SolutionClass sc : current) {
+                for (int[] p : sc.periods) {
+                    sessionsUsed.add(p[2]);
+                    if (p[0] == 1) slot1Count++;
+                }
+            }
+
+            int sessionCount = sessionsUsed.size();
+            boolean better = (sessionCount > bestSessionCount[0]) ||
+                    (sessionCount == bestSessionCount[0] && slot1Count > bestSlot1Count[0]);
+
+            if (better) {
+                bestSessionCount[0] = sessionCount;
+                bestSlot1Count[0] = slot1Count;
+                best.clear();
+                for (SolutionClass sc : current) {
+                    List<int[]> copyPeriods = new ArrayList<>();
+                    for (int[] p : sc.periods)
+                        copyPeriods.add(new int[]{p[0], p[1], p[2]});
+                    best.add(new SolutionClass(sc.cls, copyPeriods));
+                }
+            }
+            return;
+        }
+
+        // Try assigning a slot for the current course's first class
+        String course = courses.get(idx);
+        AClass cls = USC.get(course).get(0);
+        for (int session = 0; session < nbSessions; session++) {
+            for (int slot = 1; slot <= nbSlotPerSession; slot++) {
+                List<int[]> periods = new ArrayList<>();
+                int currSlot = slot;
+                boolean fits = true;
+
+                for (AClassSegment seg : cls.classSegments) {
+                    int end = currSlot + seg.duration - 1;
+                    if (end > nbSlotPerSession) {
+                        fits = false;
+                        break;
+                    }
+                    periods.add(new int[]{currSlot, end, session});
+                    currSlot = end + 1;
+                }
+
+                if (!fits) continue;
+
+                current.add(new SolutionClass(cls, periods));
+                backtrackPhase1Smart(idx + 1, courses, current, best, bestSessionCount, bestSlot1Count);
+                current.remove(current.size() - 1);
+            }
+        }
+    }
+
+
     public void runPhase2() {
         System.out.println("\n-- Starting Phase 2 --");
         int m = courses.size();
@@ -160,7 +281,7 @@ public class TwoPhaseSchedulerTest {
 
                 for (List<int[]> schedule : possibleSchedules) {
                     System.out.println("Testing schedule: " + formatSchedule(schedule));
-                    if (!isCompatible(schedule)) {
+                    if (!isCompatible(k, schedule)) {
                         System.out.println("Not compatible (fails global constraint).");
                         continue;
                     }
@@ -210,7 +331,7 @@ public class TwoPhaseSchedulerTest {
         System.out.println("\n-- Phase 2 Finished --");
     }
 
-    private boolean isCompatible(List<int[]> sched) {
+    private boolean isCompatible(List<int[]> sched) { // wrong logic
         for (String c : Alpha) {
             boolean found = false;
             for (AClass ac : SC.get(c)) { // check every class in course c
@@ -230,6 +351,32 @@ public class TwoPhaseSchedulerTest {
                 }
             }
             if (!found) return false;
+        }
+        return true;
+    }
+
+    private boolean isCompatible(AClass candidate, List<int[]> candidateSchedule) {
+        List<AClass> allClasses = new ArrayList<>();
+        List<Integer>[] classIndicesOfCourse = new ArrayList[courses.size()];
+        SolutionClass[] xArray = new SolutionClass[totalClasses];
+
+        int idx = 0;
+        for (int i = 0; i < courses.size(); i++) {
+            classIndicesOfCourse[i] = new ArrayList<>();
+            for (AClass ac : SC.get(courses.get(i))) {
+                allClasses.add(ac);
+                classIndicesOfCourse[i].add(idx);
+                xArray[idx++] = best_x[i].get(ac);
+            }
+        }
+
+        allClasses.add(candidate);
+        xArray[idx] = new SolutionClass(candidate, candidateSchedule);
+        classIndicesOfCourse[courses.indexOf(candidate.course)].add(idx);
+
+        CombinationChecker checker = new CombinationChecker(classIndicesOfCourse, allClasses, xArray);
+        for (int i = 0; i < allClasses.size(); i++) {
+            if (!checker.checkInCombination(i)) return false;
         }
         return true;
     }
@@ -398,9 +545,10 @@ public class TwoPhaseSchedulerTest {
     public static void main(String[] args) {
         TwoPhaseSchedulerTest scheduler = new TwoPhaseSchedulerTest();
 //        scheduler.readFromStdin();
-        scheduler.inputFile("/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/data/3.txt");
+        scheduler.inputFile("/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/data/em4-2nd-s-altered.txt");
         scheduler.printInputSummary();
-        scheduler.runPhase1Manual();
+//        scheduler.runPhase1Manual();
+        scheduler.runPhase1Smart();
         scheduler.runPhase2();
         scheduler.printFinalSolution();
     }

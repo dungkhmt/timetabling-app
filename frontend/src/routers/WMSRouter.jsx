@@ -31,6 +31,8 @@ import PurchaseOrderDetail from "../views/wms/PurchaseOrderDetail/PurchaseOrderD
 import SaleOrderDetail from "../views/wms/SaleOrderDetail/SaleOrderDetail";
 import DeliveryRouteListPage from "../views/wms/DeliveryRouteListPage/DeliveryRouteListPage";
 import VehicleListPage from "../views/wms/VehicleListPage/VehicleListPage";
+import FacilityHistory from "../views/wms/FacilityHistory/FacilityHistory";
+import InventoryReport from "../views/wms/InventoryReport/InventoryReport";
 export default function WMSRouter() {
   let { path } = useRouteMatch();
   return (
@@ -51,7 +53,7 @@ export default function WMSRouter() {
         <Route
             component={ApprovedPurchaseOrderDetail}
             exact
-            path={`${path}/purchase/orders/details/reviewed/:id`}
+            path={`${path}/logistics/purchaseorders/details/reviewed/:id`}
         ></Route>
 
         <Route
@@ -74,7 +76,7 @@ export default function WMSRouter() {
         <Route
             component={ApprovedSaleOrderDetail}
             exact
-            path={`${path}/sales/orders/details/reviewed/:id`}
+            path={`${path}/logistics/salesorders/details/reviewed/:id`}
         ></Route>
 
         <Route
@@ -84,12 +86,12 @@ export default function WMSRouter() {
 
         <Route
           component={OutBoundDetail}
-          path={`${path}/sales/orders/details/:id/outbound/:shipmentId`}
+          path={`${path}/logistics/salesorders/details/reviewed/:id/outbound/:shipmentId`}
         ></Route>
 
         <Route
           component={InBoundDetail}
-          path={`${path}/purchase/orders/details/:id/inbound/:shipmentId`}
+          path={`${path}/logistics/purchaseorders/details/reviewed/:id/inbound/:shipmentId`}
         ></Route>
 
         <Route
@@ -230,6 +232,18 @@ export default function WMSRouter() {
           component={VehicleListPage}
             exact
             path={`${path}/logistics/vehicle`}
+        ></Route>
+
+        <Route
+            component={FacilityHistory}
+            exact
+            path={`${path}/admin/inventory_detail`}
+        ></Route>
+
+        <Route
+          component={InventoryReport}
+            exact
+            path={`${path}/admin/dashboard`}
         ></Route>
         
       </Switch>

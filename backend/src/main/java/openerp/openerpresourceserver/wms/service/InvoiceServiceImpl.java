@@ -65,9 +65,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .id(CommonUtil.getUUID())
                     .orderItem(inventoryItemDetail.getOrderItem())
                     .invoiceItem(newInvoiceItem)
-                    .shipment(shipment)
+                    .inventoryItemDetail(inventoryItemDetail)
+                    .facility(inventoryItemDetail.getInventoryItem().getFacility())
                     .product(inventoryItemDetail.getProduct())
-                    .quantity(inventoryItemDetail.getQuantity())
+                    .quantity(inventoryItemDetail.getQuantity() * -1)
+                    .unit(inventoryItemDetail.getProduct().getUnit())
                     .amount(inventoryItemDetail.getProduct().getWholeSalePrice().multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())))
                     .build();
             newOrderItemBillings.add(orderItemBilling);
@@ -126,9 +128,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .id(CommonUtil.getUUID())
                     .orderItem(inventoryItemDetail.getOrderItem())
                     .invoiceItem(newInvoiceItem)
-                    .shipment(shipment)
+                    .inventoryItemDetail(inventoryItemDetail)
+                    .facility(inventoryItemDetail.getInventoryItem().getFacility())
                     .product(inventoryItemDetail.getProduct())
                     .quantity(inventoryItemDetail.getQuantity())
+                    .unit(inventoryItemDetail.getProduct().getUnit())
                     .amount(inventoryItemDetail.getProduct().getWholeSalePrice().multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())))
                     .build();
             newOrderItemBillings.add(orderItemBilling);

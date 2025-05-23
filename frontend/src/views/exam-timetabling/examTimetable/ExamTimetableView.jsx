@@ -75,6 +75,19 @@ const ExamTimeTableView = () => {
     });
   });
 
+  slots.sort((a, b) => {
+    const dateA = new Date(a.date.split('/').reverse().join('/'));
+    const dateB = new Date(b.date.split('/').reverse().join('/'));
+
+    if (dateA < dateB) return -1;
+    if (dateA > dateB) return 1;
+
+    const slotNumA = parseInt(a.slotName.split(' ')[0]);
+    const slotNumB = parseInt(b.slotName.split(' ')[0]);
+
+    return slotNumA - slotNumB;
+  });
+
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ 
@@ -104,7 +117,7 @@ const ExamTimeTableView = () => {
           </Typography>
         </Box>
 
-        <ToggleButtonGroup
+        {/* <ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={handleViewModeChange}
@@ -134,7 +147,7 @@ const ExamTimeTableView = () => {
             <ViewModule sx={{ mr: 0.5, fontSize: 18 }} />
             Theo lớp
           </ToggleButton>
-        </ToggleButtonGroup>
+        </ToggleButtonGroup> */}
         
       </Box>
 
