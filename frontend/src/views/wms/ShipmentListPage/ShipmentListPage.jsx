@@ -9,10 +9,7 @@ import ShipmentTable from "./components/ShipmentTable";
 import {MENU_CONSTANTS} from "../common/constants/screenId";
 import {withAuthorization} from "../common/components/withAuthorization";
 
-var MENU_ID = MENU_CONSTANTS.LOGISTICS_PURCHASE_SHIPMENT_LIST
 const ShipmentListPageBase = ({ shipmentTypeId = SHIPMENT_TYPE_ID.INBOUND }) => {
-  // SET MENU_ID
-  MENU_ID = shipmentTypeId === SHIPMENT_TYPE_ID.INBOUND ? MENU_CONSTANTS.LOGISTICS_PURCHASE_SHIPMENT_LIST : MENU_CONSTANTS.LOGISTICS_SALES_SHIPMENT_LIST;
   const { getAllShipments } = useWms2Data();
   
   const [shipments, setShipments] = useState([]);

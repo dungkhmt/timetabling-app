@@ -649,6 +649,17 @@ const getMonthlyFacilityReport = async (facilityId, startDate, endDate) => {
   }
 };
 
+const getDeliveryDashboard = async (startDate, endDate) => {
+  try {
+    const response = await wms2Service.getDeliveryDashboard(startDate, endDate);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching delivery dashboard:", error);
+    toast.error("Lỗi khi tải dữ liệu báo cáo giao hàng");
+    return null;
+  }
+};
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -708,5 +719,6 @@ const getMonthlyFacilityReport = async (facilityId, startDate, endDate) => {
     getAllOrderBillItems,
     getMonthlyInventoryReport,
     getMonthlyFacilityReport,
+    getDeliveryDashboard
   };
 };

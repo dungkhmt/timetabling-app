@@ -46,7 +46,6 @@ export const useGeneralSchedule = () => {
   const [isDeletingByIds, setIsDeletingByIds] = useState(false);
   const [isLoadingClusterClasses, setIsLoadingClusterClasses] = useState(false);
 
-  // Fetch classes when semester or group changes
   useEffect(() => {
     if (selectedSemester?.semester) {
       fetchClasses();
@@ -54,7 +53,6 @@ export const useGeneralSchedule = () => {
     }
   }, [selectedSemester, selectedGroup]);
 
-  // Helper function to process class data
   const processClassData = (data) => {
     if (!Array.isArray(data)) {
       return [];
@@ -62,7 +60,6 @@ export const useGeneralSchedule = () => {
   
     let generalClasses = [];
     data.forEach((classObj) => {
-      // Handle child classes (time slots)
       if (classObj.timeSlots) {
         classObj.timeSlots.forEach((timeSlot, index) => {
           if (timeSlot.duration !== null) {
@@ -85,23 +82,10 @@ export const useGeneralSchedule = () => {
         });
       }
     });
-    console.log(generalClasses.length, "generalClasses.length");
-  
-    generalClasses.sort((a, b) => {
-      const parentIdA = a.parentId || a.id;
-      const parentIdB = b.parentId || b.id;
-  
-      if (parentIdA !== parentIdB) {
-        return parentIdA - parentIdB;
-      }
-  
-      return 0;
-    });
   
     return generalClasses;
   };
 
-  // Fetch classes
   const fetchClasses = useCallback(async () => {
     if (!selectedSemester?.semester) return [];
 
@@ -112,7 +96,7 @@ export const useGeneralSchedule = () => {
       const data = await generalScheduleRepository.getClasses(
         selectedSemester?.semester,
         selectedGroup?.id,
-        versionId // Pass the versionId to the API call
+        versionId 
       );
 
       const processedClasses = processClassData(data);
@@ -124,7 +108,7 @@ export const useGeneralSchedule = () => {
       setIsClassesLoading(false);
       setLoading(false);
     }
-  }, [selectedSemester, selectedGroup, versionId]); // Add versionId to dependencies
+  }, [selectedSemester, selectedGroup, versionId]); 
 
   const fetchClassesNoSchedule = useCallback(async () => {
     if (!selectedSemester?.semester) return;
@@ -135,7 +119,7 @@ export const useGeneralSchedule = () => {
       const data = await generalScheduleRepository.getClassesNoSchedule(
         selectedSemester?.semester,
         selectedGroup?.id,
-        versionId // Pass the versionId to the API call
+        versionId 
       );
       setClassesNoSchedule(data || []);
     } catch (error) {
@@ -143,8 +127,7 @@ export const useGeneralSchedule = () => {
     } finally {
       setIsClassesNoScheduleLoading(false);
     }
-  }, [selectedSemester, selectedGroup, versionId]); // Add versionId to dependencies
-
+  }, [selectedSemester, selectedGroup, versionId]); 
   useEffect(() => {
     fetchAlgorithms();
   }, []);
@@ -178,7 +161,6 @@ export const useGeneralSchedule = () => {
     // Tạo mảng mới chỉ chứa roomReservationId từ các lớp đã chọn thay vì gửi generalClassId
     try {
       // Trong TimeTable, một hàng có thể được chọn theo generalClassId hoặc roomReservationId
-      // Chúng ta cần tìm các hàng được chọn và lấy roomReservationId của chúng
       const selectedRowsRoomReservationIds = [];
       
       // Tìm các lớp từ classes có generalClassId trùng với selectedRows
@@ -199,7 +181,7 @@ export const useGeneralSchedule = () => {
       
       await generalScheduleRepository.resetSchedule(
         selectedSemester.semester,
-        selectedRowsRoomReservationIds // Truyền mảng roomReservationId
+        selectedRowsRoomReservationIds 
       );
       
       await fetchClasses();
