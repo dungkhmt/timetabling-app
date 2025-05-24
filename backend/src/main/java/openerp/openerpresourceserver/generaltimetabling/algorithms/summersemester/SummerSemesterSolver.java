@@ -1259,6 +1259,13 @@ public class SummerSemesterSolver implements Solver {
         if(!scheduleLTBTClassSegments(C333,L333,session)) return false;
         log.info("scheduleLTBTClassSegments ends, L333 = " + L333.size());
 
+        int[][][] C24 = {
+                {{2,2,1},{4,4,1}},
+                {{2,3,1},{4,5,1}}
+        };
+
+        if(!scheduleLTBTClassSegments(C24,L24,session)) return false;
+        log.info("scheduleLTBTClassSegments ends, L24 = " + L24.size());
         return true;
     }
     @Override
@@ -1396,18 +1403,15 @@ public class SummerSemesterSolver implements Solver {
             scheduleGroup(EM[session],session);
             log.info("solve group ED size = " + ED[session].size());
             scheduleGroup(ED[session],session);
-
-
-
-
-
             log.info("solve scheduleGroupLTandBT MI size = " + MI[session].size());
             if(!scheduleGroupLTandBT(MI[session],session)) return;
+            log.info("After solve scheduleGroupLTandBT MI remain size = " + MI[session].size());
             log.info("solve scheduleGroupLTandBT SSH size = " + SSH[session].size());
             if(!scheduleGroupLTandBT(SSH[session],session)) return;
 
             log.info("solve group MI size = " + MI[session].size());
             if(!scheduleGroup(MI[session],session)) return;
+            log.info("After solve group MI remains size = " + MI[session].size());
 
             log.info("solve group MSSH size = " + SSH[session].size());
             if(!scheduleGroup(SSH[session],session)) return;
