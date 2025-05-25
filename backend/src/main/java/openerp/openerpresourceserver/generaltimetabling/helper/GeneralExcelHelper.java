@@ -509,7 +509,9 @@ public class GeneralExcelHelper {
                 afternoonCell.setCellValue("Chiều");
                 afternoonCell.setCellStyle(afternoonHeaderStyle);
             }
-            
+            for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i++){
+                sheet.setColumnWidth(i,1000);
+            }
             // Period row (below session row)
             Row periodRow = sheet.createRow(rowIndex+2);
             for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i++) {

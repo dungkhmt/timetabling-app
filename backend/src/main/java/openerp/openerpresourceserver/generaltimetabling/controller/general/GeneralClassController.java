@@ -27,6 +27,7 @@ import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

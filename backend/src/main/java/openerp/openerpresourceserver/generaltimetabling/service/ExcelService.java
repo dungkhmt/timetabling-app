@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.generaltimetabling.service;
 
 import lombok.extern.log4j.Log4j2;
+import openerp.openerpresourceserver.generaltimetabling.Utils;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
@@ -81,7 +82,9 @@ public class ExcelService {
             Comparable fieldValueB = b.getClassCode();
             return fieldValueA.compareTo(fieldValueB);
         });
-        
+
+        classes = Utils.sort(classes);
+
         // Lấy tất cả class IDs
         List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
         
