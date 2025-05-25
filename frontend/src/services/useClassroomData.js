@@ -2,13 +2,15 @@ import { useQuery, useMutation } from "react-query";
 import { toast } from "react-toastify";
 import { classroomService } from "repositories/classroomRepository";
 
-export const useClassroomData = () => {
-  const {
+export const useClassroomData = () => {  const {
     data: classrooms,
     isLoading,
     error,
     refetch,
-  } = useQuery("classrooms", classroomService.getAllClassrooms, {
+  } = useQuery("classrooms", () => classroomService.postClassroom({
+    groupName: "",
+    maxAmount: null
+  }), {
     staleTime: 5 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
   });

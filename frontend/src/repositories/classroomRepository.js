@@ -1,11 +1,6 @@
 import { request } from 'api';
 
 export const classroomService = {
-  getAllClassrooms: async () => {
-    const response = await request('get', '/classroom/get-all');
-    return response;
-  },
-
   createClassroom: async (data) => {
     const response = await request('post', '/classroom/create', null, null, data);
     return response;
