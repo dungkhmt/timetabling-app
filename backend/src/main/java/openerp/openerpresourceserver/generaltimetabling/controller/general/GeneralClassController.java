@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAssignSessionToClassesSummer;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
@@ -296,6 +297,11 @@ public class GeneralClassController {
     public ResponseEntity<?> createClassSegments(Principal principal, @RequestBody ModelInputCreateClassSegment I){
         List<RoomReservation> res = gService.createClassSegment(I);
         timeTablingClassService.createClassSegment(I);
+        return ResponseEntity.ok().body(res);
+    }
+    @PostMapping("/assign-session-to-classes-for-summer-semester")
+    public ResponseEntity<?> assignSessionToClassesSummerSemester(Principal principal, @RequestBody ModelInputAssignSessionToClassesSummer I){
+        List<TimeTablingClass> res = timeTablingClassService.assignSessionToClassesSummer(I);
         return ResponseEntity.ok().body(res);
     }
 

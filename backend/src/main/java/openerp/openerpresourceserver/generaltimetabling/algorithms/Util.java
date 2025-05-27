@@ -25,6 +25,13 @@ public class Util {
         }
         return L;
     }
+    public static List<Integer> intersectList2(List<Integer> L1, List<Integer> L2){
+        List<Integer> res = new ArrayList<>();
+        for(int i: L1){
+            if(L2.contains(i)) res.add(i);
+        }
+        return res;
+    }
     public static int intersect(List<Integer> L1, List<Integer> L2){
         int res = 0;
         for(Integer e: L1){

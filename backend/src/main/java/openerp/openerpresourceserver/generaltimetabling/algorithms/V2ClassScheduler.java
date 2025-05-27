@@ -774,7 +774,10 @@ public class V2ClassScheduler {
                         }else{// do not apply room priority predefined,
                             //log.info("mapDataNew, DO NOT use room priority");
                             // SORT all rooms in increasing order of capacity
-                            for(Classroom r: rooms) selectedSortedClassRooms.add(r);
+                            for(Classroom r: rooms){
+                                if(gc.getQuantityMax() <= r.getQuantityMax())
+                                    selectedSortedClassRooms.add(r);
+                            }
                             Collections.sort(selectedSortedClassRooms, new Comparator<Classroom>() {
                                 @Override
                                 public int compare(Classroom o1, Classroom o2) {
@@ -858,7 +861,7 @@ public class V2ClassScheduler {
         //log.info("mapData, classSegments.length = " + classSegments.length + " listClassSegments.sz = " + listClassSegments.size());
         MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments);
 
-        MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation,mIndex2Room);
+        MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation,mIndex2Room,classes);
 
         //data.print();
         return DW;

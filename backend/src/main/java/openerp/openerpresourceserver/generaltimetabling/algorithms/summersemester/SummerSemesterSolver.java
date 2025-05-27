@@ -23,6 +23,7 @@ public class SummerSemesterSolver implements Solver {
     //int[] ins; // ins[i]: number of class having the same course with class segment i
     //ClassSegment[] classSegments = null;
     List<ClassSegment> classSegments = null;
+    Map<Long, ModelResponseTimeTablingClass> mClassId2Class;
     // output data structures
     List<Integer> unScheduledClassSegment;
     boolean foundSolution;
@@ -30,6 +31,10 @@ public class SummerSemesterSolver implements Solver {
 
     public SummerSemesterSolver(MapDataScheduleTimeSlotRoomWrapper W){
         this.I = W.data; this.W = W;
+        mClassId2Class = new HashMap<>();
+        for(ModelResponseTimeTablingClass cls: W.classes){
+            mClassId2Class.put(cls.getId(),cls);
+        }
 
     }
     public void printRoomsUsed(){
@@ -49,6 +54,10 @@ public class SummerSemesterSolver implements Solver {
 
             }
         }
+    }
+    private boolean  assignTimeSlot(ClassSegment cs, int timeSlot){
+        solutionSlot.put(cs.getId(),timeSlot);
+        return true;
     }
     private boolean  assignTimeSlotRoom(ClassSegment cs, int timeSlot, int room){
         log.info("assignTimeSlotRoom start (cs.getId() " + cs.getId() + " timeSlot " + timeSlot + " room " + room + ")") ;
@@ -713,6 +722,7 @@ public class SummerSemesterSolver implements Solver {
         return true;
     }
     private boolean scheduleClassSegments23(List<ClassSegment> L, int session){
+        /*
         int[][] C23 = {
                 {2,1,4,3},// (day 2 - slot 1) and (day 4 - slot 3)
                 {5,1,2,3},// (day 5 - slot 1) and (day 2 - slot 3)
@@ -720,6 +730,15 @@ public class SummerSemesterSolver implements Solver {
                 {6,1,3,3},// (day 5 - slot 1) and (day 3 - slot 3)
                 {4,1,6,3},// (day 4 - slot 1) and (day 6 - slot 3)
         };
+         */
+        int[][] C23 = {
+                {2,1,4,3},// (day 2 - slot 1) and (day 4 - slot 3)
+                {4,1,2,3},// (day 5 - slot 1) and (day 2 - slot 3)
+                {3,1,5,3},// (day 3 -slot 1) and (day 5 - slot 3)
+                {5,1,3,3},// (day 5 - slot 1) and (day 3 - slot 3)
+                {4,1,6,3},// (day 4 - slot 1) and (day 6 - slot 3)
+        };
+
         log.info("scheduleClassSegments23, session = " + session + " L.sz = " + L.size());
         // session = 0: morning
         // session = 1; afternoon
@@ -733,7 +752,9 @@ public class SummerSemesterSolver implements Solver {
         Long[] a = sortClassesByCourse(L);
         Set<ClassSegment> scheduled = new HashSet<>();
         //for(Long id: mClassId2ClassSegments.keySet()){
+        List<List<Long>> clusterClassId = new ArrayList<>();
         for(Long id: a){
+            ModelResponseTimeTablingClass cls = mClassId2Class.get(id);
             idx ++;
             List<ClassSegment> Li = mClassId2ClassSegments.get(id);
             if(Li.size() != 2) continue;
@@ -744,8 +765,32 @@ public class SummerSemesterSolver implements Solver {
             int j = idx% C23.length;
             int day1 = C23[j][0]; int slot1 = C23[j][1];
             int day2 = C23[j][2]; int slot2 = C23[j][3];
+            log.info("scheduleClassSegments23, classCode " + cls.getClassCode() + ", j = " + j + " day1 = " + day1 + ", slot1 = " + slot1 + ", day2 = " + day2 + ", slot2 = " + slot2);
             int s1 = new DaySessionSlot(day1,session,slot1).hash();
             int s2 = new DaySessionSlot(day2,session,slot2).hash();
+            assignTimeSlot(cs1,s1);
+            assignTimeSlot(cs2,s2);
+            boolean addNewCluster = false;
+            if(clusterClassId.size() > 0){
+                List<Long> last = clusterClassId.get(clusterClassId.size()-1);
+                if(last.size() == 1){
+                    Long lastId = last.get(0);
+                    ModelResponseTimeTablingClass lastCls = mClassId2Class.get(lastId);
+                    if(lastCls != null && lastCls.getModuleCode().equals(cls.getModuleCode())){
+                        // add the second class to the cluster as it has the same courseCode with lastCls
+                        addNewCluster = true;
+                    }
+                }
+            }
+            if(addNewCluster){
+                List<Long> last = clusterClassId.get(clusterClassId.size()-1);
+                last.add(id);
+            }else{
+                List<Long> newCluster = new ArrayList<>();
+                newCluster.add(id);
+                clusterClassId.add(newCluster);
+            }
+            /*
             for(int room: cs1.getDomainRooms()){
                 if(checkTimeSlotRoom(cs1,s1,room) && checkTimeSlotRoom(cs2,s2,room)){
                     if(!assignTimeSlotRoom(cs1,s1,room)) return false;
@@ -754,7 +799,60 @@ public class SummerSemesterSolver implements Solver {
                     break;
                 }
             }
+            */
+
         }
+
+        // iterate over classIds of clusterIds
+        // two classes of the same cluster are assign with the same room
+        for(List<Long> cl: clusterClassId){
+            if(cl.size() == 1){
+                Long clsId = cl.get(0);
+                List<ClassSegment> Li = mClassId2ClassSegments.get(clsId);
+                ClassSegment cs1 = Li.get(0); ClassSegment cs2 = Li.get(1);
+                int s1 = solutionSlot.get(cs1.getId());
+                int s2 = solutionSlot.get(cs2.getId());
+                for(int room: cs1.getDomainRooms()){
+                    if(checkTimeSlotRoom(cs1,s1,room) && checkTimeSlotRoom(cs2,s2,room)){
+                        if(!assignTimeSlotRoom(cs1,s1,room)) return false;
+                        if(!assignTimeSlotRoom(cs2,s2,room)) return false;
+                        scheduled.add(cs1); scheduled.add(cs2);
+                        break;
+                    }
+                }
+            }else if(cl.size() == 2){
+                Long id1 = cl.get(0); Long id2 = cl.get(1);
+                List<ClassSegment> Li1 = mClassId2ClassSegments.get(id1);
+                List<ClassSegment> Li2 = mClassId2ClassSegments.get(id2);
+
+                ClassSegment cs11 = Li1.get(0); ClassSegment cs12 = Li1.get(1);
+                ClassSegment cs21 = Li2.get(0); ClassSegment cs22 = Li2.get(1);
+
+                int s11 = solutionSlot.get(cs11.getId());
+                int s12 = solutionSlot.get(cs12.getId());
+                int s21 = solutionSlot.get(cs21.getId());
+                int s22 = solutionSlot.get(cs22.getId());
+                List<Integer> D = Util.intersectList2(cs11.getDomainRooms(),cs22.getDomainRooms());
+                for(int room: D){
+                    if(checkTimeSlotRoom(cs11,s11,room) && checkTimeSlotRoom(cs12,s12,room)
+                    && checkTimeSlotRoom(cs21,s21,room) && checkTimeSlotRoom(cs22,s22,room)){
+                        if(!assignTimeSlotRoom(cs11,s11,room)) return false;
+                        if(!assignTimeSlotRoom(cs12,s12,room)) return false;
+                        if(!assignTimeSlotRoom(cs21,s21,room)) return false;
+                        if(!assignTimeSlotRoom(cs22,s22,room)) return false;
+
+                        scheduled.add(cs11); scheduled.add(cs12);
+                        scheduled.add(cs21); scheduled.add(cs22);
+
+                        break;
+                    }
+                }
+            }else{
+                log.info("scheduleClassSegments23, cluster contains more than 2 classes -> BUG????");
+                return false;
+            }
+        }
+
         for(ClassSegment cs: scheduled) L.remove(cs);
         return true;
     }

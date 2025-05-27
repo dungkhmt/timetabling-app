@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.generaltimetabling.service;
 
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAssignSessionToClassesSummer;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
@@ -16,6 +17,9 @@ import java.util.List;
 
 public interface TimeTablingClassService {
     List<TimeTablingClassSegment> createClassSegment(ModelInputCreateClassSegment I);
+
+    TimeTablingClass updateSession(TimeTablingClass cls, String crew);
+    List<TimeTablingClass> assignSessionToClassesSummer(ModelInputAssignSessionToClassesSummer I);
 
     List<TimeTablingClassSegment> createClassSegmentForSummerSemester(ModelInputCreateClassSegment I);
 

@@ -9,6 +9,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.Conne
 import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAssignSessionToClassesSummer;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
@@ -156,6 +157,48 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             res.add(cs);
         }
         return res;
+    }
+
+    @Override
+    public TimeTablingClass updateSession(TimeTablingClass cls, String crew) {
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassId(cls.getId());
+        for(TimeTablingClassSegment cs: classSegments){
+            cs.setCrew(crew);
+        }
+        classSegments = timeTablingClassSegmentRepo.saveAll(classSegments);
+        cls.setCrew(crew);
+        cls = timeTablingClassRepo.save(cls);
+        return cls;
+    }
+
+    @Override
+    public List<TimeTablingClass> assignSessionToClassesSummer(ModelInputAssignSessionToClassesSummer I) {
+        List<TimeTablingClass> res = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        Map<String, List<TimeTablingClass>> mCourse2Classes = new HashMap<>();
+        for(TimeTablingClass cls: res){
+            String courseCode = cls.getModuleCode();
+            if(mCourse2Classes.get(courseCode)==null)
+                mCourse2Classes.put(courseCode, new ArrayList<>());
+            mCourse2Classes.get(courseCode).add(cls);
+        }
+        for(String course: mCourse2Classes.keySet()) {
+            List<TimeTablingClass> CLS = mCourse2Classes.get(course);
+            int sz = CLS.size();
+            for (int i = 0; i < sz / 2; i++) {
+                TimeTablingClass cls = CLS.get(i);
+                //cls.setCrew("S");
+                updateSession(cls,"S");
+                log.info("assignSessionToClassesSummer, course " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getId() + "," + "S");
+            }
+            for (int i = sz / 2 + 1; i < sz; i++) {
+                TimeTablingClass cls = CLS.get(i);
+                updateSession(cls,"C");
+                log.info("assignSessionToClassesSummer, course " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getId() + "," + "C");
+
+                //cls.setCrew("C");
+            }
+        }
+        return res ;
     }
 
     @Override

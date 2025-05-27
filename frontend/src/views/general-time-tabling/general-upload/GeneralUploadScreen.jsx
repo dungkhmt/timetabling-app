@@ -42,6 +42,30 @@ const GeneralUploadScreen = () => {
     }
   } = useGeneralSchedule();
 
+  function handleAssignSessionForSummer(){
+    let body = {
+      semester: selectedSemester.semester
+    };
+
+    request(
+      "post",
+      "/general-classes/assign-session-to-classes-for-summer-semester",
+      (res) => {
+        console.log('Assign session to classes ',res.data);
+        setSelectedIds([]);
+        setSelectedRows([]);
+      },
+      {
+        onError: (e) => {
+          setSelectedIds([]);
+          setSelectedRows([]);
+        }
+      },
+      body
+    );
+  }
+
+  
   function handleCreateSegmentForSummer(){
     let body = {
       semester: selectedSemester.semester
@@ -313,6 +337,20 @@ const GeneralUploadScreen = () => {
               >
                 Tạo ca học
               </Button> */}
+              <Button
+                startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
+                sx={{ 
+                  minWidth: '140px',
+                  textTransform: 'none',
+                  fontSize: '14px'
+                }}
+                disabled={isDeletingBySemester || !selectedSemester}
+                onClick={handleAssignSessionForSummer}
+                variant="contained"
+                color="success"
+              >
+                Thiết lập buổi học
+              </Button>
               <Button
                 startIcon={isDeletingBySemester ? <FacebookCircularProgress /> : null}
                 sx={{ 
