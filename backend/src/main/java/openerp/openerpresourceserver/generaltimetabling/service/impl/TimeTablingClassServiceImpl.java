@@ -8,15 +8,13 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentClassSolver;
 import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAssignSessionToClassesSummer;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.SaveScheduleToVersionRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
@@ -43,7 +41,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     private ClusterClassRepo clusterClassRepo;
 
     @Autowired
-    private PlanGeneralClassRepository planGeneralClassRepository;
+    private PlanGeneralClassRepo planGeneralClassRepository;
 
     @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
@@ -138,7 +136,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public List<TimeTablingClassSegment> createClassSegment(ModelInputCreateClassSegment I) {
+    public List<TimeTablingClassSegment> createClassSegment(CreateClassSegmentRequest I) {
         List<TimeTablingClassSegment> res = new ArrayList<>();
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
         log.info("createClassSegment, semester = " + I.getSemester() + " classes.sz = " + cls.size());
@@ -202,7 +200,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public List<TimeTablingClassSegment> createClassSegmentForSummerSemester(ModelInputCreateClassSegment I) {
+    public List<TimeTablingClassSegment> createClassSegmentForSummerSemester(CreateClassSegmentRequest I) {
         ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         //List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
@@ -500,7 +498,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public int removeClassSegment(ModelInputCreateClassSegment I) {
+    public int removeClassSegment(CreateClassSegmentRequest I) {
         List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
         List<Long> classIds = cls.stream().map(c -> c.getId()).toList();
         List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, I.getVersionId());

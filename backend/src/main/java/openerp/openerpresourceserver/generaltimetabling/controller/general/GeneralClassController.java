@@ -4,13 +4,14 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAssignSessionToClassesSummer;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
@@ -26,6 +27,7 @@ import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,6 +44,7 @@ public class GeneralClassController {
     private GeneralClassService gService;
     private ExcelService excelService;
     private ClassGroupService classGroupService;
+    private ClusterRepo clusterRepo;
 
     private TimeTablingClassService timeTablingClassService;
 
@@ -151,16 +154,16 @@ public class GeneralClassController {
     public ResponseEntity<?> getClassDetailWithSubClasses(Principal principal, @PathVariable Long classId){
         ModelResponseGeneralClass cls = gService.getClassDetailWithSubClasses(classId);
         return ResponseEntity.ok().body(cls);
-    }    
-    
+    }
+
     @PostMapping("/export-excel")
     public ResponseEntity requestExportExcel(@RequestParam("semester") String semester, @RequestBody ExportExcelRequest requestDto) {
         log.info("Controler API -> requestExportExcel start...");
         String filename = String.format("TKB_{}.xlsx", semester);
         InputStreamResource file = new InputStreamResource(excelService.exportGeneralExcel(
-            semester, 
-            requestDto.getVersionId(), 
-            requestDto.getNumberSlotsPerSession()
+                semester,
+                requestDto.getVersionId(),
+                requestDto.getNumberSlotsPerSession()
         ));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
@@ -174,9 +177,9 @@ public class GeneralClassController {
         log.info("Controler API -> requestExportExcel start...");
         String filename = String.format("TKB_{}.xlsx", semester);
         InputStreamResource file = new InputStreamResource(excelService.exportGeneralExcelWithAllSession(
-            semester, 
-            requestDto.getVersionId(), 
-            requestDto.getNumberSlotsPerSession()
+                semester,
+                requestDto.getVersionId(),
+                requestDto.getNumberSlotsPerSession()
         ));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
@@ -224,7 +227,9 @@ public class GeneralClassController {
             @RequestParam("timeLimit") int timeLimit) {
         log.info("Controler API -> requestAutoScheduleRoom...");
         return ResponseEntity.ok(gService.autoScheduleRoom(semester, groupName, timeLimit));
-    }    @DeleteMapping("/")
+    }
+
+    @DeleteMapping("/")
     public ResponseEntity<Integer> requestDeleteClass(@RequestParam("generalClassId") Long generalClassId) {
         return ResponseEntity.ok(timeTablingClassService.deleteByIds(List.of(generalClassId)));
     }
@@ -269,12 +274,11 @@ public class GeneralClassController {
 
     @GetMapping("/get-by-cluster/{clusterId}")
     public ResponseEntity<?> getGeneralClassesByCluster(
-        @PathVariable Long clusterId,
-        @RequestParam(required = false) Long versionId) {
+            @PathVariable Long clusterId,
+            @RequestParam(required = false) Long versionId) {
         List<ModelResponseTimeTablingClass> classes = timeTablingClassService.getClassByCluster(clusterId, versionId);
         return ResponseEntity.ok(classes);
     }
-    private ClusterRepo clusterRepo;
 
     @GetMapping("/get-clusters-by-semester")
     public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("semester") String semester) {
