@@ -21,6 +21,7 @@ const ViewClassPlanDialog = ({
   isOpen,
   closeDialog,
   row,
+  refreshMainPlanTable,
 }) => {
   const [generalClasses, setGeneralClasses] = useState([]);
   const [openInputDialog, setOpenInputDialog] = useState(false);
@@ -29,8 +30,9 @@ const ViewClassPlanDialog = ({
     classType: "LT",
   });
 
-  useEffect(() => {
-    if (planClassId) {
+  // Function to refresh the class list for this plan
+  const refreshClassList = () => {
+    if (planClassId && semester) {
       setGeneralClasses([]);
       request(
         "get",
@@ -47,6 +49,10 @@ const ViewClassPlanDialog = ({
         null
       );
     }
+  };
+
+  useEffect(() => {
+    refreshClassList();
   }, [planClassId]);
 
   const handleOpenInputDialog = () => {
@@ -60,7 +66,6 @@ const ViewClassPlanDialog = ({
       classType: "LT",
     });
   };
-
   const handleMakeGeneralClass = () => {
     request(
       "post",
@@ -72,6 +77,9 @@ const ViewClassPlanDialog = ({
         });
         toast.success("Thêm lớp thành công!");
         handleCloseInputDialog();
+        
+        // Refresh the main plan class table
+        refreshMainPlanTable();
       },
       (error) => {
         if (error.response.status == 410) {

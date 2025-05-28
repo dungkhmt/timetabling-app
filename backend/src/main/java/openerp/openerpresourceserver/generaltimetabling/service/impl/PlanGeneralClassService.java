@@ -68,72 +68,11 @@ public class PlanGeneralClassService {
     //public void makeClass(MakeGeneralClassRequest request, String groupName) {
     public TimeTablingClass makeClass(CreateTimeTablingClassRequest request, Long groupId) {
         log.info("makeClass, groupId = " + groupId);
-        //List<Group> groups = groupRepo.getAllByGroupName(groupName);
-        //if (groups == null || groups.isEmpty()) {
-        //    throw new NotFoundException("Không tìm thấy nhóm lớp " + groupName);
-        //}
         Group gr = groupRepo.findById(groupId).orElse(null);
         if(gr == null){
             throw new NotFoundException("Không tìm thấy nhóm lớp " + groupId);
         }
         String groupName = gr.getGroupName();
-        //Long groupId = groups.get(0).getId();
-        //Long groupId = gr.getId();
-
-        /*
-        GeneralClass newClass = new GeneralClass();
-
-        newClass.setRefClassId(request.getId());
-        newClass.setSemester(request.getSemester());
-        newClass.setModuleCode(request.getModuleCode());
-        newClass.setModuleName(request.getModuleName());
-        newClass.setMass(request.getMass());
-        newClass.setGroupName(groupName);
-        newClass.setCrew(request.getCrew());
-        //newClass.setQuantityMax(request.getQuantityMax());
-        if(request.getLectureExerciseMaxQuantity()!=null) newClass.setQuantityMax(request.getLectureExerciseMaxQuantity());
-        if(request.getLectureMaxQuantity()!=null)newClass.setQuantityMax(request.getLectureMaxQuantity());
-        if(request.getExerciseMaxQuantity()!=null)newClass.setQuantityMax(request.getExerciseMaxQuantity());
-        newClass.setLearningWeeks(request.getLearningWeeks());
-        newClass.setDuration(request.getDuration());
-        if (request.getClassType() != null && !request.getClassType().isEmpty()) {
-            newClass.setClassType(request.getClassType());
-        } else {
-            newClass.setClassType("LT+BT");
-        }
-
-
-        if(request.getWeekType().equals("Chẵn")) {
-            List<Integer> weekIntList = LearningWeekExtractor.extractArray(request.getLearningWeeks()).stream().filter(num->num%2==0).toList();
-            String weekListString = weekIntList.stream().map(num -> num + "-" + num)
-                    .collect(Collectors.joining(","));
-            newClass.setLearningWeeks(weekListString);
-        } else if(request.getWeekType().equals("Lẻ")) {
-            List<Integer> weekIntList = LearningWeekExtractor.extractArray(request.getLearningWeeks()).stream().filter(num->num%2!=0).toList();
-            String weekListString = weekIntList.stream().map(num -> num + "-" + num)
-                    .collect(Collectors.joining(","));
-            newClass.setLearningWeeks(weekListString);
-        } else if(request.getWeekType().equals("Chẵn+Lẻ")) {
-            newClass.setLearningWeeks(request.getLearningWeeks());
-        }
-
-        Long nextId = planGeneralClassRepository.getNextReferenceValue();
-        //newClass.setParentClassId(nextId);
-        newClass.setClassCode(nextId.toString());
-
-        List<RoomReservation> roomReservations = new ArrayList<>();
-        RoomReservation roomReservation =  new RoomReservation();
-        roomReservation.setGeneralClass(newClass);
-        roomReservations.add(roomReservation);
-        roomReservation.setDuration(request.getDuration());
-        roomReservation.setCrew(newClass.getCrew());
-        newClass.setTimeSlots(roomReservations);
-        generalClassRepository.save(newClass);
-        ClassGroup classGroup = new ClassGroup(newClass.getId(),groupId);
-        classGroupRepo.save(classGroup);
-        */
-
-        // make class in new table timetabling_class
         TimeTablingClass cls = new TimeTablingClass();
 
         cls.setRefClassId(request.getId());
@@ -189,16 +128,6 @@ public class PlanGeneralClassService {
 
         for(TimeTablingTimeTableVersion v: versions) {
             TimeTablingClassSegment cs = timeTablingClassService.createClassSegment(cls.getId(),cls.getCrew(),cls.getDuration(),v.getId());
-            /*
-            TimeTablingClassSegment cs = new TimeTablingClassSegment();
-            Long csId = timeTablingClassSegmentRepo.getNextReferenceValue();
-            cs.setId(csId);
-            cs.setClassId(cls.getId());
-            cs.setCrew(cls.getCrew());
-            cs.setDuration(cls.getDuration());
-            cs.setVersionId(v.getId());
-            cs = timeTablingClassSegmentRepo.save(cs);
-            */
         }
         return cls;
     }
@@ -363,8 +292,8 @@ public class PlanGeneralClassService {
             log.info("generateClassSegmentFromClass, save roomReservation " + rr.getId() + " for class " + gc.getId() + " course " + gc.getModuleCode());
         }
         return classes.size();
-    }
-
+    }    
+    
     @Transactional
     public List<TimeTablingClass> generateTimeTablingClassFromPlan(UpdateTimeTablingClassFromPlanRequest I){
         List<TimeTablingClass> res = new ArrayList<>();
@@ -378,11 +307,6 @@ public class PlanGeneralClassService {
             }
         }
         for(PlanGeneralClass pl: plan){
-            //Group g = groupRepo.findByGroupName(pl.getProgramName()).orElse(null);
-            //Long groupId = null;
-            //if(g != null) {
-            //    groupId = g.getId();
-            //}
 
             log.info("generateTimeTablingClassFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
 
@@ -409,43 +333,23 @@ public class PlanGeneralClassService {
                 TimeTablingClass cls = makeClass(r, pl.getGroupId());
                 res.add(cls);
             }
-            //}else{
-            //    log.info("generateClassesFromPlan, cannot find group from name " + pl.getProgramName());
-            //}
+            
+            // Increment the numberOfClasses field for this plan and save it
+            pl.setNumberOfClasses(pl.getNumberOfClasses() + 1);
+            planGeneralClassRepo.save(pl);
+            log.info("Incremented numberOfClasses for plan " + pl.getModuleCode() + " to " + pl.getNumberOfClasses());
         }
 
         return res;
     }
     public List<GeneralClass> generateClassesFromPlan(UpdateTimeTablingClassFromPlanRequest I){
-        /*
-        List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
-        for(GeneralClass gc: classes){
-            log.info("generateClassesFromPlan, consider class " + gc.getId() + "/" + classes.size());
-            List<RoomReservation> rrs = new ArrayList<>();
-            RoomReservation rr = new RoomReservation();
-            rr.setCrew(gc.getCrew());
-            rr.setDuration(gc.getDuration());
-            rr.setGeneralClass(gc);
-            rr = roomReservationRepo.save(rr);
-
-            rrs.add(rr);
-            //gc.setTimeSlots(rrs);
-            //gc = generalClassRepository.save(gc);
-        }
-
-         */
-
         List<PlanGeneralClass> plan = planGeneralClassRepo.findAllBySemester(I.getSemester());
         log.info("generateClassesFromPlan, number of plan courses = " + plan.size());
         List<GeneralClass> classes = new ArrayList<>();
         for(PlanGeneralClass pl: plan){
-            //Group g = groupRepo.findByGroupName(pl.getProgramName()).orElse(null);
-            //Long groupId = null;
-            //if(g != null) {
-            //    groupId = g.getId();
-            //}
             log.info("generateClassesFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
 
+                pl.setNumberOfClasses(pl.getNumberOfClasses()+1);
                 for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
                     CreateTimeTablingClassRequest r = new CreateTimeTablingClassRequest();
                     r.setNbClasses(pl.getNumberOfClasses());
@@ -468,17 +372,28 @@ public class PlanGeneralClassService {
 
                     makeClass(r, pl.getGroupId());
                 }
-            //}else{
-            //    log.info("generateClassesFromPlan, cannot find group from name " + pl.getProgramName());
-            //}
+                planGeneralClassRepo.save(pl);
         }
 
 
         return classes;
-    }
-
+    }    
+    
+    @Transactional
     public List<TimeTablingClass> makeMultipleClasses(BulkMakeGeneralClassRequest request) {
         List<TimeTablingClass> createdClasses = new ArrayList<>();
+
+        // Get the reference plan class and update the number of classes if it exists
+        Long planClassId = request.getClassRequest().getId();
+        if (planClassId != null) {
+            PlanGeneralClass planClass = planGeneralClassRepo.findById(planClassId).orElse(null);
+            if (planClass != null) {
+                // Increment the numberOfClasses field by the quantity being created
+                planClass.setNumberOfClasses(planClass.getNumberOfClasses() + request.getQuantity());
+                planGeneralClassRepo.save(planClass);
+                log.info("Incremented numberOfClasses for plan " + planClass.getModuleCode() + " to " + planClass.getNumberOfClasses());
+            }
+        }
 
         for (int i = 0; i < request.getQuantity(); i++) {
             TimeTablingClass newClass = new TimeTablingClass();
@@ -613,6 +528,7 @@ public class PlanGeneralClassService {
         savedClass.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
         savedClass.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
         savedClass.setWeekType(planClass.getWeekType());
+        savedClass.setGroupId(planClass.getGroupId());
         savedClass.setProgramName(planClass.getProgramName());
         savedClass = planGeneralClassRepo.save(savedClass);
 

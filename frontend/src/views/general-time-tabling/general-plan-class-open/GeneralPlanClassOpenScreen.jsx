@@ -17,9 +17,10 @@ const GeneralPlanClassOpenScreen = () => {
   const [isImportLoading, setImportLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [openNewClassDialog, setOpenNewClassDialog] = useState(false);
-  const { states, setters, handlers } = useGeneralSchedule();
+  const { states, setters } = useGeneralSchedule();
 
   function getPlanClass() {
+    if (!selectedSemester?.semester) return; 
     request(
       "get",
       `/plan-general-classes/?semester=${selectedSemester.semester}`,
@@ -57,14 +58,14 @@ const GeneralPlanClassOpenScreen = () => {
 
       request(
         "post",
-        //`/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T&groupName=${states.selectedGroup?.groupName}`,
         `/excel/upload-plan?semester=${selectedSemester?.semester}&createclass=T&groupId=${states.selectedGroup?.id}`,
 
         (res) => {
           setImportLoading(false);
           toast.success("Upload file thành công!");
           console.log(res?.data);
-          setPlanClasses(res?.data);
+          //setPlanClasses(res?.data); // Remove this
+          if (selectedSemester) getPlanClass(); // Add this
         },
         (err) => {
           if (err.response?.status === 410) {
@@ -92,7 +93,7 @@ const GeneralPlanClassOpenScreen = () => {
       (res) => {
         toast.success("Sinh lớp thành công!");
         console.log(res?.data);
-        getPlanClass();
+        if (selectedSemester) getPlanClass();
         setImportLoading(false);
       },
       (err) => {
@@ -119,7 +120,7 @@ const GeneralPlanClassOpenScreen = () => {
       (res) => {
         toast.success("Sinh lớp thành công!");
         console.log(res?.data);
-        getPlanClass();
+        if (selectedSemester) getPlanClass();
         setImportLoading(false);
       },
       (err) => {
@@ -145,7 +146,7 @@ const GeneralPlanClassOpenScreen = () => {
       (res) => {
         toast.success("Xóa kế hoạch mở lớp thành công!");
         console.log(res?.data);
-        getPlanClass();
+        if (selectedSemester) getPlanClass();
         setImportLoading(false);
       },
       (err) => {
@@ -168,11 +169,12 @@ const GeneralPlanClassOpenScreen = () => {
         .map((id) => `planClassId=${id}`)
         .join("&")}`,
       (res) => {
-        setPlanClasses((prev) =>
-          prev.filter((row) => !selectedRows.includes(row.id))
-        );
+        // setPlanClasses((prev) =>  // Remove this block
+        //   prev.filter((row) => !selectedRows.includes(row.id))
+        // );
         setSelectedRows([]);
         toast.success("Xóa lớp thành công!");
+        if (selectedSemester) getPlanClass(); // Add this
       },
       (error) => {
         toast.error("Có lỗi khi xóa lớp!");
@@ -256,6 +258,7 @@ const GeneralPlanClassOpenScreen = () => {
           </div>
           <div className="flex flex-row gap-2 justify-end">
             <InputFileUpload
+              disabled={states.selectedGroup == null}
               isUploading={isImportLoading}
               selectedFile={selectedFile}
               setSelectedFile={setSelectedFile}

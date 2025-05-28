@@ -20,7 +20,8 @@ export default function InputFileUpload({
   setSelectedFile,
   selectedSemester,
   submitHandler,
-  isUploading
+  isUploading,
+  disabled = false,
 }) {
   const inputRef = React.useRef();
   console.log(selectedSemester);
@@ -54,7 +55,7 @@ export default function InputFileUpload({
       </Button>
       <Button
         startIcon = {isUploading ? <FacebookCircularProgress/> : null}
-        disabled={selectedFile === null || isUploading}
+        disabled={selectedFile === null || isUploading || disabled}
         variant="outlined"
         sx={{
           width: "120px",

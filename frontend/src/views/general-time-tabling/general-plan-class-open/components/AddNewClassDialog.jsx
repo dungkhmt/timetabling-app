@@ -83,35 +83,6 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
     }
   };
 
-  const handleGroupChange = (e) => {
-    const selectedId = e.target.value;
-    // Find the selected group to get both ID and name
-    const selectedGroup = allGroups.find(group => group.id === selectedId);
-    
-    if (selectedGroup) {
-      setFormData({
-        ...formData,
-        groupId: selectedGroup.id,
-        programName: typeof selectedGroup.groupName === 'string' ? selectedGroup.groupName.trim() : selectedGroup.groupName
-      });
-    } else {
-      setFormData({
-        ...formData,
-        groupId: "",
-        programName: ""
-      });
-    }
-
-    // Clear errors
-    if (errors.groupId || errors.programName) {
-      setErrors({
-        ...errors,
-        groupId: null,
-        programName: null
-      });
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     // Trim string values to remove leading and trailing whitespace
