@@ -14,7 +14,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.helper.ClassTimeComparator;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.mapper.RoomOccupationMapper;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
@@ -82,7 +82,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     private ClusterClassRepo clusterClassRepo;
 
     @Autowired
-    private PlanGeneralClassRepository planGeneralClassRepository;
+    private PlanGeneralClassRepo planGeneralClassRepo;
 
     @Override
     public ModelResponseGeneralClass getClassDetailWithSubClasses(Long classId) {
@@ -900,7 +900,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 clusterName = clusterName + n;
                 if(cnt < names.size()) clusterName = clusterName + ", ";
             }
-            Long nextId = planGeneralClassRepository.getNextReferenceValue();
+            Long nextId = planGeneralClassRepo.getNextReferenceValue();
             Cluster newCluster = new Cluster();
             newCluster.setId(nextId);
             newCluster.setName(clusterName);
@@ -1072,7 +1072,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
     @Transactional
     @Override
-    public List<RoomReservation> createClassSegment(ModelInputCreateClassSegment I) {
+    public List<RoomReservation> createClassSegment(CreateClassSegmentRequest I) {
 
         //List<GeneralClass> cls = gcoRepo.findAllBySemester(I.getSemester()); NOT work WHY?
         List<GeneralClass> allcls = gcoRepo.findAll();
@@ -1282,7 +1282,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
     @Transactional
     @Override
-    public int removeClassSegment(ModelInputCreateClassSegment I) {
+    public int removeClassSegment(CreateClassSegmentRequest I) {
         int cnt = 0;
         List<GeneralClass> cls = gcoRepo.findAllBySemester(I.getSemester());
         log.info("removeClassSegment, number of classes = " + cls.size());

@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class GroupDeleteRequest {
+public class DeleteGroupRequest {
 
     private Long id;
 

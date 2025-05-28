@@ -4,9 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdatePlanClassRequest;
@@ -18,7 +18,6 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Pla
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.impl.PlanGeneralClassService;
-import org.aspectj.weaver.ast.Not;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -29,11 +28,10 @@ import java.util.List;
 
 @Log4j2
 @RequestMapping("/plan-general-classes")
-@Controller
+@RestController
 @AllArgsConstructor
 public class PlanGeneralClassController {
     private PlanGeneralClassService planClassService;
-    private TimeTablingClassService timeTablingClassService;
 
     @ExceptionHandler(InvalidFieldException.class)
     public ResponseEntity resolveInvalidFieldException(InvalidFieldException e) {
@@ -48,14 +46,14 @@ public class PlanGeneralClassController {
 
 
     @PostMapping("/make-class")
-    public ResponseEntity<?> requestMakeClass(@RequestBody MakeGeneralClassRequest request
+    public ResponseEntity<?> requestMakeClass(@RequestBody CreateTimeTablingClassRequest request
     ) {
             //return ResponseEntity.ok(planClassService.makeClass(request));
             return null;
     }
 
     @PostMapping("/make-subclass")
-    public ResponseEntity<?> requestMakeSubClass(@RequestBody ModelInputCreateSubClass request) {
+    public ResponseEntity<?> requestMakeSubClass(@RequestBody CreateSubClassRequest request) {
         //return ResponseEntity.ok(planClassService.makeSubClass(request));
         return ResponseEntity.ok(planClassService.makeSubClassNew(request));
 
@@ -63,7 +61,7 @@ public class PlanGeneralClassController {
 
 
     @PostMapping("/make-multiple-classes")
-    public ResponseEntity<List<GeneralClass>> requestMakeMultipleClasses(@RequestBody BulkMakeGeneralClassRequest request) {
+    public ResponseEntity<List<TimeTablingClass>> requestMakeMultipleClasses(@RequestBody BulkMakeGeneralClassRequest request) {
         return ResponseEntity.ok(planClassService.makeMultipleClasses(request));
     }
     @PostMapping("/generate-class-segment-from-classes")
@@ -72,7 +70,7 @@ public class PlanGeneralClassController {
         return ResponseEntity.ok().body(cnt);
     }
     @PostMapping("/generate-classes-from-plan")
-    public ResponseEntity<?> generateClassesFromPlan(Principal principal, @RequestBody ModelInputGenerateClassesFromPlan I){
+    public ResponseEntity<?> generateClassesFromPlan(Principal principal, @RequestBody UpdateTimeTablingClassFromPlanRequest I){
         log.info("generate-classes-from-plan, semester = " + I.getSemester());
         //List<GeneralClass> classes = planClassService.generateClassesFromPlan(I);
         List<TimeTablingClass> classes = planClassService.generateTimeTablingClassFromPlan(I);
@@ -94,8 +92,8 @@ public class PlanGeneralClassController {
     }
 
     @PostMapping("/update-general-class")
-    public ResponseEntity requestUpdateGeneralClass(@RequestBody UpdateGeneralClassRequest request) {
-        return  ResponseEntity.ok(planClassService.updateGeneralClass(request.getGeneralClass()));
+    public ResponseEntity<?> requestUpdateGeneralClass(@RequestBody UpdateGeneralClassRequest request) {
+        return  ResponseEntity.ok(planClassService.updateGeneralClass(request.getTimetablingClass()));
     }
 
     @PostMapping("/update-plan-class")

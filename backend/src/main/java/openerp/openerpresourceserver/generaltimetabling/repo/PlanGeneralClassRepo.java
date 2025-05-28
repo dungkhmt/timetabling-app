@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PlanGeneralClassRepository extends JpaRepository<PlanGeneralClass, Long> {
+public interface PlanGeneralClassRepo extends JpaRepository<PlanGeneralClass, Long> {
     List<PlanGeneralClass> findAllBySemester(String semester);
 
     void deleteAllBySemester(String semester);

@@ -4,7 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.Utils;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.*;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
@@ -54,7 +54,7 @@ public class ExcelService {
     private RoomOccupationService roomOccupationService;
 
     @Autowired
-    private PlanGeneralClassRepository planGeneralClassRepository;
+    private PlanGeneralClassRepo planGeneralClassRepo;
 
     @Autowired
     private PlanGeneralClassService planGeneralClassService;
@@ -63,7 +63,9 @@ public class ExcelService {
     private ClassGroupRepo classGroupRepo;
 
     @Autowired
-    private GroupRepo groupRepo;    @Autowired
+    private GroupRepo groupRepo;    
+    
+    @Autowired
     private TimeTablingClassRepo timeTablingClassRepo;
     
     @Autowired 
@@ -487,7 +489,7 @@ public class ExcelService {
             log.info("savePlanClasses, extract from excel GOT " + planClasses.size() + " items");
             //return planGeneralClassRepository.saveAll(planClasses);
             for(PlanGeneralClass pl: planClasses) pl.setGroupId(groupId);
-            planGeneralClassRepository.saveAll(planClasses);
+            planGeneralClassRepo.saveAll(planClasses);
             log.info("savePlanClasse planCLasses CREATED!");
 
             //createClass = false;
@@ -497,7 +499,7 @@ public class ExcelService {
                 for(PlanGeneralClass p: planClasses) {
                     log.info("savePlanClasses, start to create class for plan " + p.getModuleCode() + " nbClasses = " + p.getNumberOfClasses());
                     for(int i = 1;i <= p.getNumberOfClasses();i++) {
-                        MakeGeneralClassRequest req = new MakeGeneralClassRequest();
+                        CreateTimeTablingClassRequest req = new CreateTimeTablingClassRequest();
                         req.setId(p.getId());
                         req.setNbClasses(p.getNumberOfClasses());
                         req.setClassType(p.getClassType());
@@ -522,7 +524,7 @@ public class ExcelService {
                     }
                 }
             }
-            planClasses = planGeneralClassRepository.findAllBySemester(semester);
+            planClasses = planGeneralClassRepo.findAllBySemester(semester);
             return planClasses;
         } catch (IOException e) {
             log.error(e.getMessage());

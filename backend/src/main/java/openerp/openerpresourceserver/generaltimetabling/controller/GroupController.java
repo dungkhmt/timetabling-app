@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import openerp.openerpresourceserver.generaltimetabling.exception.GroupNotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.exception.GroupUsedException;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.CreateGroupRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GroupDeleteRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.request.DeleteGroupRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GroupDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.PriorityGroupUpdateDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGroupNameRequest;
@@ -104,7 +104,7 @@ public class GroupController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<String> deletePriorityGroup(@RequestBody GroupDeleteRequest deleteRequest) {
+    public ResponseEntity<String> deletePriorityGroup(@RequestBody DeleteGroupRequest deleteRequest) {
         try {
             groupService.deletePriorityGroup(deleteRequest.getId(), deleteRequest.getRoomId());
             return new ResponseEntity<>(HttpStatus.OK);

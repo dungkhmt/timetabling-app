@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,7 +18,6 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
@@ -28,7 +26,6 @@ import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -45,7 +42,6 @@ public class GeneralClassController {
     private GeneralClassService gService;
     private ExcelService excelService;
     private ClassGroupService classGroupService;
-    private ClusterRepo clusterRepo;
 
     private TimeTablingClassService timeTablingClassService;
 
@@ -228,11 +224,9 @@ public class GeneralClassController {
             @RequestParam("timeLimit") int timeLimit) {
         log.info("Controler API -> requestAutoScheduleRoom...");
         return ResponseEntity.ok(gService.autoScheduleRoom(semester, groupName, timeLimit));
-    }
-
-    @DeleteMapping("/")
-    public ResponseEntity<GeneralClass> requestDeleteClass(@RequestParam("generalClassId") Long generalClassId) {
-        return ResponseEntity.ok(gService.deleteClassById(generalClassId));
+    }    @DeleteMapping("/")
+    public ResponseEntity<Integer> requestDeleteClass(@RequestParam("generalClassId") Long generalClassId) {
+        return ResponseEntity.ok(timeTablingClassService.deleteByIds(List.of(generalClassId)));
     }
 
     @DeleteMapping("/delete-by-ids")
@@ -280,6 +274,7 @@ public class GeneralClassController {
         List<ModelResponseTimeTablingClass> classes = timeTablingClassService.getClassByCluster(clusterId, versionId);
         return ResponseEntity.ok(classes);
     }
+    private ClusterRepo clusterRepo;
 
     @GetMapping("/get-clusters-by-semester")
     public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("semester") String semester) {
@@ -288,13 +283,13 @@ public class GeneralClassController {
     }
 
     @PostMapping("/remove-class-segments")
-    public ResponseEntity<?> removeClassSegments(Principal principal, @RequestBody ModelInputCreateClassSegment I){
+    public ResponseEntity<?> removeClassSegments(Principal principal, @RequestBody CreateClassSegmentRequest I){
         int res = gService.removeClassSegment(I);
         res = timeTablingClassService.removeClassSegment(I);
         return ResponseEntity.ok().body(res);
     }
     @PostMapping("/create-class-segments")
-    public ResponseEntity<?> createClassSegments(Principal principal, @RequestBody ModelInputCreateClassSegment I){
+    public ResponseEntity<?> createClassSegments(Principal principal, @RequestBody CreateClassSegmentRequest I){
         List<RoomReservation> res = gService.createClassSegment(I);
         timeTablingClassService.createClassSegment(I);
         return ResponseEntity.ok().body(res);
@@ -306,7 +301,7 @@ public class GeneralClassController {
     }
 
     @PostMapping("/create-class-segments-for-summer-semester")
-    public ResponseEntity<?> createClassSegmentsForSummerSemester(Principal principal, @RequestBody ModelInputCreateClassSegment I){
+    public ResponseEntity<?> createClassSegmentsForSummerSemester(Principal principal, @RequestBody CreateClassSegmentRequest I){
         List<RoomReservation> res = gService.createClassSegment(I);
         timeTablingClassService.createClassSegmentForSummerSemester(I);
         return ResponseEntity.ok().body(res);

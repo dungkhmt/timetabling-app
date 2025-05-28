@@ -17,7 +17,6 @@ export const usePlanGeneralTableCol = (setGeneralClasses) => {
       ]
     });
   };
-
   const handleSaveClass = (generalClass) => {
     console.log(generalClass);
     request(
@@ -33,7 +32,7 @@ export const usePlanGeneralTableCol = (setGeneralClasses) => {
           toast.error("Cập nhật lớp thất bại");
         }
       },
-      { generalClass },
+      { timetablingClass: generalClass },
       null,
       null
     );

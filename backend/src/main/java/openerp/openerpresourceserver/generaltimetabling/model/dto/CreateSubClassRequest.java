@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModelInputCreateSubClass {
+public class CreateSubClassRequest {
     private Long fromParentClassId;
     private String classType;
     private int numberStudents;

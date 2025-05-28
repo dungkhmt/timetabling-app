@@ -7,9 +7,9 @@ import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldEx
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValidator;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.MakeGeneralClassRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateSubClass;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputGenerateClassesFromPlan;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.BulkMakeGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenRequest;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class PlanGeneralClassService {
     private GeneralClassRepository generalClassRepository;
-    private PlanGeneralClassRepository planGeneralClassRepository;
+    private PlanGeneralClassRepo planGeneralClassRepo;
     private AcademicWeekRepo academicWeekRepo;
     private ClassGroupRepo classGroupRepo;
 
@@ -60,13 +60,13 @@ public class PlanGeneralClassService {
 
     @Transactional
     public int clearPlanClass(String semesterId){
-        planGeneralClassRepository.deleteAllBySemester(semesterId);
+        planGeneralClassRepo.deleteAllBySemester(semesterId);
         return 0;
     }
 
     @Transactional
     //public void makeClass(MakeGeneralClassRequest request, String groupName) {
-    public TimeTablingClass makeClass(MakeGeneralClassRequest request, Long groupId) {
+    public TimeTablingClass makeClass(CreateTimeTablingClassRequest request, Long groupId) {
         log.info("makeClass, groupId = " + groupId);
         //List<Group> groups = groupRepo.getAllByGroupName(groupName);
         //if (groups == null || groups.isEmpty()) {
@@ -204,7 +204,7 @@ public class PlanGeneralClassService {
     }
 
     @Transactional
-    public List<GeneralClass> makeSubClass(ModelInputCreateSubClass request) {
+    public List<GeneralClass> makeSubClass(CreateSubClassRequest request) {
         GeneralClass parentClass = generalClassRepository.findById(request.getFromParentClassId()).orElse(null);
         if (parentClass == null) return Collections.emptyList();
         List<ClassGroup> classGroup = classGroupRepo.findByClassId(request.getFromParentClassId());
@@ -232,7 +232,7 @@ public class PlanGeneralClassService {
                 newClass.setClassType("LT+BT");
             }
 
-            Long nextId = planGeneralClassRepository.getNextReferenceValue();
+            Long nextId = planGeneralClassRepo.getNextReferenceValue();
             List<RoomReservation> roomReservations = new ArrayList<>();
             RoomReservation roomReservation = new RoomReservation();
             roomReservation.setGeneralClass(newClass);
@@ -255,7 +255,7 @@ public class PlanGeneralClassService {
         return newClasses;
     }
     @Transactional
-    public List<TimeTablingClass> makeSubClassNew(ModelInputCreateSubClass request) {
+    public List<TimeTablingClass> makeSubClassNew(CreateSubClassRequest request) {
         TimeTablingClass parentClass = timeTablingClassRepo.findById(request.getFromParentClassId()).orElse(null);
         if (parentClass == null) return Collections.emptyList();
         List<ClassGroup> classGroup = classGroupRepo.findByClassId(request.getFromParentClassId());
@@ -316,12 +316,12 @@ public class PlanGeneralClassService {
     }
 
     public List<PlanGeneralClass> getAllClasses(String semester) {
-        return planGeneralClassRepository.findAllBySemester(semester);
+        return planGeneralClassRepo.findAllBySemester(semester);
     }
 
     @Transactional
     public void deleteAllClasses(String semester) {
-        planGeneralClassRepository.deleteAllBySemester(semester);
+        planGeneralClassRepo.deleteAllBySemester(semester);
     }
 
     public List<GeneralClass> getPlanClassById(String semester, Long planClassId) {
@@ -333,8 +333,8 @@ public class PlanGeneralClassService {
     }
 
     @Transactional
-    public GeneralClass updateGeneralClass(GeneralClass generalClass) {
-        GeneralClass updateGeneralClass = generalClassRepository.findById(generalClass.getId()).orElse(null);
+    public TimeTablingClass updateGeneralClass(TimeTablingClass generalClass) {
+        TimeTablingClass updateGeneralClass = timeTablingClassRepo.findById(generalClass.getId()).orElse(null);
         if (updateGeneralClass == null) throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
         List<AcademicWeek> foundWeeks = academicWeekRepo.findAllBySemester(updateGeneralClass.getSemester());
         if (foundWeeks.isEmpty()) {
@@ -350,7 +350,7 @@ public class PlanGeneralClassService {
         updateGeneralClass.setDuration(generalClass.getDuration());
         updateGeneralClass.setLearningWeeks(generalClass.getLearningWeeks());
         updateGeneralClass.setClassCode(generalClass.getClassCode());
-        return generalClassRepository.save(updateGeneralClass);
+        return timeTablingClassRepo.save(updateGeneralClass);
     }
     public int generateClassSegmentFromClass(ModelInputGenerateClassSegmentFromClass I){
         List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
@@ -366,9 +366,9 @@ public class PlanGeneralClassService {
     }
 
     @Transactional
-    public List<TimeTablingClass> generateTimeTablingClassFromPlan(ModelInputGenerateClassesFromPlan I){
+    public List<TimeTablingClass> generateTimeTablingClassFromPlan(UpdateTimeTablingClassFromPlanRequest I){
         List<TimeTablingClass> res = new ArrayList<>();
-        List<PlanGeneralClass> plan = planGeneralClassRepository.findAllBySemester(I.getSemester());
+        List<PlanGeneralClass> plan = planGeneralClassRepo.findAllBySemester(I.getSemester());
         log.info("generateTimeTablingClassFromPlan, number of plan courses = " + plan.size());
        // List<GeneralClass> classes = new ArrayList<>();
         for(PlanGeneralClass pl: plan){
@@ -387,7 +387,7 @@ public class PlanGeneralClassService {
             log.info("generateTimeTablingClassFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
 
             for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
-                MakeGeneralClassRequest r = new MakeGeneralClassRequest();
+                CreateTimeTablingClassRequest r = new CreateTimeTablingClassRequest();
                 r.setNbClasses(pl.getNumberOfClasses());
                 r.setWeekType(pl.getWeekType());
                 r.setId(pl.getId());
@@ -416,7 +416,7 @@ public class PlanGeneralClassService {
 
         return res;
     }
-    public List<GeneralClass> generateClassesFromPlan(ModelInputGenerateClassesFromPlan I){
+    public List<GeneralClass> generateClassesFromPlan(UpdateTimeTablingClassFromPlanRequest I){
         /*
         List<GeneralClass> classes = generalClassRepository.findAllBySemester(I.getSemester());
         for(GeneralClass gc: classes){
@@ -435,7 +435,7 @@ public class PlanGeneralClassService {
 
          */
 
-        List<PlanGeneralClass> plan = planGeneralClassRepository.findAllBySemester(I.getSemester());
+        List<PlanGeneralClass> plan = planGeneralClassRepo.findAllBySemester(I.getSemester());
         log.info("generateClassesFromPlan, number of plan courses = " + plan.size());
         List<GeneralClass> classes = new ArrayList<>();
         for(PlanGeneralClass pl: plan){
@@ -447,7 +447,7 @@ public class PlanGeneralClassService {
             log.info("generateClassesFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
 
                 for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
-                    MakeGeneralClassRequest r = new MakeGeneralClassRequest();
+                    CreateTimeTablingClassRequest r = new CreateTimeTablingClassRequest();
                     r.setNbClasses(pl.getNumberOfClasses());
                     r.setWeekType(pl.getWeekType());
                     r.setId(pl.getId());
@@ -477,11 +477,11 @@ public class PlanGeneralClassService {
         return classes;
     }
 
-    public List<GeneralClass> makeMultipleClasses(BulkMakeGeneralClassRequest request) {
-        List<GeneralClass> createdClasses = new ArrayList<>();
+    public List<TimeTablingClass> makeMultipleClasses(BulkMakeGeneralClassRequest request) {
+        List<TimeTablingClass> createdClasses = new ArrayList<>();
 
         for (int i = 0; i < request.getQuantity(); i++) {
-            GeneralClass newClass = new GeneralClass();
+            TimeTablingClass newClass = new TimeTablingClass();
             int maxQty = Math.max(
                     request.getClassRequest().getLectureExerciseMaxQuantity() != null ? request.getClassRequest().getLectureExerciseMaxQuantity() : 0,
                     Math.max(
@@ -501,12 +501,12 @@ public class PlanGeneralClassService {
             newClass.setDuration(request.getClassRequest().getDuration());
             newClass.setClassType(request.getClassType());
 
-            Long nextId = planGeneralClassRepository.getNextReferenceValue();
+            Long nextId = planGeneralClassRepo.getNextReferenceValue();
             newClass.setClassCode(nextId.toString());
             newClass.setCourse(request.getClassRequest().getModuleCode());
 
 
-            createdClasses.add(generalClassRepository.save(newClass));
+            createdClasses.add(timeTablingClassRepo.save(newClass));
         }
 
         return createdClasses;
@@ -514,7 +514,7 @@ public class PlanGeneralClassService {
 
     @Transactional
     public PlanGeneralClass updatePlanClass(PlanGeneralClass planClass) {
-        PlanGeneralClass planGeneralClass = planGeneralClassRepository.findById(planClass.getId()).orElse(null);
+        PlanGeneralClass planGeneralClass = planGeneralClassRepo.findById(planClass.getId()).orElse(null);
         if (planGeneralClass == null) throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
         List<AcademicWeek> foundWeeks = academicWeekRepo.findAllBySemester(planClass.getSemester());
         if (foundWeeks.isEmpty()) {
@@ -531,16 +531,16 @@ public class PlanGeneralClassService {
         planGeneralClass.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
         planGeneralClass.setQuantityMax(planClass.getQuantityMax());
         planGeneralClass.setClassType(planClass.getClassType());
-        return planGeneralClassRepository.save(planGeneralClass);
+        return planGeneralClassRepo.save(planGeneralClass);
     }
 
     @Transactional
     public List<PlanGeneralClass> deleteClassesByIds(List<Long> planClassIds){
-        List<PlanGeneralClass> foundClasses = planGeneralClassRepository.findAllById(planClassIds);
+        List<PlanGeneralClass> foundClasses = planGeneralClassRepo.findAllById(planClassIds);
         if(foundClasses == null){
             throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
         }
-        planGeneralClassRepository.deleteAllById(planClassIds);
+        planGeneralClassRepo.deleteAllById(planClassIds);
         // delete generated classes and class-segments
         List<TimeTablingClass> CLS = timeTablingClassRepo.findAllByRefClassIdIn(planClassIds);
         List<Long> classIds = CLS.stream().map(cls -> cls.getId()).toList();
@@ -555,9 +555,9 @@ public class PlanGeneralClassService {
 
     @Transactional
     public PlanGeneralClass deleteClassById(Long planClassId) {
-        PlanGeneralClass foundClass = planGeneralClassRepository.findById(planClassId).orElse(null);
+        PlanGeneralClass foundClass = planGeneralClassRepo.findById(planClassId).orElse(null);
         if (foundClass == null) throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
-        planGeneralClassRepository.deleteById(planClassId);
+        planGeneralClassRepo.deleteById(planClassId);
         return foundClass;
     }
 
@@ -614,13 +614,13 @@ public class PlanGeneralClassService {
         savedClass.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
         savedClass.setWeekType(planClass.getWeekType());
         savedClass.setProgramName(planClass.getProgramName());
-        savedClass = planGeneralClassRepository.save(savedClass);
+        savedClass = planGeneralClassRepo.save(savedClass);
 
         log.info("PlanGeneralClass successfully saved: {}", savedClass);
 
         // Process MakeGeneralClassRequest for each class
         for (int i = 1; i <= planClass.getNumberOfClasses(); i++) {
-            MakeGeneralClassRequest req = new MakeGeneralClassRequest();
+            CreateTimeTablingClassRequest req = new CreateTimeTablingClassRequest();
             req.setId(savedClass.getId());
             req.setNbClasses(planClass.getNumberOfClasses());
             req.setClassType(planClass.getClassType());

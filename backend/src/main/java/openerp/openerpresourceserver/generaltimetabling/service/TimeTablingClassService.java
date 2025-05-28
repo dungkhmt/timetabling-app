@@ -7,16 +7,14 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelI
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.SaveScheduleToVersionRequest;
 
 import java.util.List;
 
 public interface TimeTablingClassService {
-    List<TimeTablingClassSegment> createClassSegment(ModelInputCreateClassSegment I);
+    List<TimeTablingClassSegment> createClassSegment(CreateClassSegmentRequest I);
 
     TimeTablingClass updateSession(TimeTablingClass cls, String crew);
     List<TimeTablingClass> assignSessionToClassesSummer(ModelInputAssignSessionToClassesSummer I);
@@ -33,7 +31,7 @@ public interface TimeTablingClassService {
 
     List<ModelResponseTimeTablingClass> findAllByClassIdIn(List<Long> classIds);
 
-    int removeClassSegment(ModelInputCreateClassSegment I);
+    int removeClassSegment(CreateClassSegmentRequest I);
 
     int deleteByIds(List<Long> ids);
 
@@ -52,6 +50,7 @@ public interface TimeTablingClassService {
     public int computeClassCluster(ModelInputComputeClassCluster I);
 
     public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId);
+    
     public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId, Long versionId);
 
     public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests);

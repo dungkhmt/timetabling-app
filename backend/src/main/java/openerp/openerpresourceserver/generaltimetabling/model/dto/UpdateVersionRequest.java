@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ModelRequestUpdateVersion {
+public class UpdateVersionRequest {
     private String name;
     private String status;
     private Integer numberSlotsPerSession;

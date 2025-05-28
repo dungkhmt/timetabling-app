@@ -4,12 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 public class UpdateGeneralClassRequest {
-    private GeneralClass generalClass;
+    private TimeTablingClass timetablingClass;
 }

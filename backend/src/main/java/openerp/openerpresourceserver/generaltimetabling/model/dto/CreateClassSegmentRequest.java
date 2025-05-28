@@ -9,7 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModelInputGenerateClassesFromPlan {
+public class CreateClassSegmentRequest {
     private String semester;
+    private Long versionId;
 }
 

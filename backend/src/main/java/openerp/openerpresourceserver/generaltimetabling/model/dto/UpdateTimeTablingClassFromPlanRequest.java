@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModelInputCreateClassSegment {
+public class UpdateTimeTablingClassFromPlanRequest {
     private String semester;
-    private Long versionId;
 }
 

@@ -36,7 +36,7 @@ const GeneralUploadScreen = () => {
     },
     handlers: {
       handleDeleteBySemester,
-      handleUploadFile,
+      uploadFile, 
       handleDeleteByIds,
       getClassesByCluster
     }
@@ -118,7 +118,7 @@ const GeneralUploadScreen = () => {
 
   const handleSubmitFile = async () => {
     if (selectedFile) {
-      await handleUploadFile(selectedFile);
+      await uploadFile(selectedSemester.semester, selectedFile); // Changed from handleUploadFile
       setSelectedFile(null);
       setSelectedIds([]);
     }

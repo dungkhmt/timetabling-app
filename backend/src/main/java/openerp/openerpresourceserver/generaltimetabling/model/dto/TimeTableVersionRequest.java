@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ModelRequestTimeTableVersion {
+public class TimeTableVersionRequest {
     private String name;
     private String status;
     private String semester;

@@ -1,9 +1,8 @@
 package openerp.openerpresourceserver.generaltimetabling.service;
 
-import java.io.InputStream;
 import java.util.List;
 
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputComputeClassCluster;
@@ -13,7 +12,6 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
-import org.springframework.transaction.annotation.Transactional;
 
 
 public interface GeneralClassService {
@@ -60,8 +58,8 @@ public interface GeneralClassService {
 
     List<GeneralClassDto> getGeneralClassByCluster(Long clusterId);
 
-    List<RoomReservation> createClassSegment(ModelInputCreateClassSegment I);
+    List<RoomReservation> createClassSegment(CreateClassSegmentRequest I);
 
-    int removeClassSegment(ModelInputCreateClassSegment I);
+    int removeClassSegment(CreateClassSegmentRequest I);
 
 }

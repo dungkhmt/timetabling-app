@@ -2,9 +2,8 @@ package openerp.openerpresourceserver.generaltimetabling.controller;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelRequestTimeTableVersion;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelRequestUpdateVersion;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.TimeTableVersionRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateVersionRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingVersionService;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/timetabling-versions")
@@ -27,7 +25,7 @@ public class TimeTablingVersionController {
     private TimeTablingClassService timeTablingClassService;    
     
     @PostMapping("/create")
-    public ResponseEntity<TimeTablingTimeTableVersion> createVersion(@RequestBody ModelRequestTimeTableVersion request) {
+    public ResponseEntity<TimeTablingTimeTableVersion> createVersion(@RequestBody TimeTableVersionRequest request) {
         log.info("Received request to create new timetabling version: {}", request);
         
         if (request.getName() == null || request.getStatus() == null || request.getSemester() == null || request.getUserId() == null) {
@@ -82,7 +80,7 @@ public class TimeTablingVersionController {
     @PutMapping("/{id}")
     public ResponseEntity<TimeTablingTimeTableVersion> updateVersion(
             @PathVariable Long id,
-            @RequestBody ModelRequestUpdateVersion request) {
+            @RequestBody UpdateVersionRequest request) {
         log.info("Received request to update timetabling version with id {}: {}", id, request);
         
         // Name and status can be optional for updates, but numberSlotsPerSession might also be optional
