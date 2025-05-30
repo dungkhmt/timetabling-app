@@ -33,6 +33,7 @@ public class Util {
         return res;
     }
     public static int intersect(List<Integer> L1, List<Integer> L2){
+        if(L1 == null || L2 == null) return 0;
         int res = 0;
         for(Integer e: L1){
             if(L2.contains(e)) res += 1;

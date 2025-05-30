@@ -630,7 +630,10 @@ public class GeneralClassServiceImp implements GeneralClassService {
             }
         }
         V2ClassScheduler optimizer = new V2ClassScheduler(params);
-        List<Classroom> rooms = classroomRepo.findAll();
+        //List<Classroom> rooms = classroomRepo.findAll();
+        List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");
+
+
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         List<Group> groups = groupRepo.findAll();
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);

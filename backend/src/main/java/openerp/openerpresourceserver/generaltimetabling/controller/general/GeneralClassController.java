@@ -16,10 +16,12 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseT
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
@@ -308,6 +310,12 @@ public class GeneralClassController {
     public ResponseEntity<?> createClassSegmentsForSummerSemester(Principal principal, @RequestBody CreateClassSegmentRequest I){
         List<RoomReservation> res = gService.createClassSegment(I);
         timeTablingClassService.createClassSegmentForSummerSemester(I);
+        return ResponseEntity.ok().body(res);
+    }
+    @PostMapping("/search-rooms")
+    public ResponseEntity<?> searchRoom(Principal principal, @RequestBody ModelInputSearchRoom I){
+        log.info("searchRoom, capacity = " + I.getSearchRoomCapacity() + " timeSlots = " + I.getTimeSlots());
+        List<Classroom> res = timeTablingClassService.searchRoom(I);
         return ResponseEntity.ok().body(res);
     }
 }

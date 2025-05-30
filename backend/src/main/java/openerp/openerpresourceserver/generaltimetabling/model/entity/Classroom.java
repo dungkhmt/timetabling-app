@@ -26,4 +26,7 @@ public class Classroom {
 
     @Column(name = "description", length = 255)
     private String description;
+
+    @Column(name="status")
+    private String status;
 }

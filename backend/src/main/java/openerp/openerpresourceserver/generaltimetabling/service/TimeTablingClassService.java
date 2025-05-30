@@ -7,9 +7,11 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelI
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
 
 import java.util.List;
 
@@ -58,4 +60,6 @@ public interface TimeTablingClassService {
     TimeTablingClassSegment createClassSegment(Long classId, String crew, Integer duration, Long versionId);
 
     List<TimeTablingClass> createClassFromPlan(PlanGeneralClass p);
+
+    List<Classroom> searchRoom(ModelInputSearchRoom I);
 }

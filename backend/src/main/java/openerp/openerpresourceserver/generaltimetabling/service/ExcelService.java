@@ -85,17 +85,18 @@ public class ExcelService {
             return fieldValueA.compareTo(fieldValueB);
         });
 
-        classes = Utils.sort(classes);
+        //classes = Utils.sort(classes);
 
         // Lấy tất cả class IDs
         List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
         
         // Lấy các segments cho các classes này theo versionId
         List<TimeTablingClassSegment> segments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
-        
+        classes = Utils.sort(classes,segments);
         // Tạo map từ class ID -> các segments liên quan
         Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
         for (TimeTablingClassSegment segment : segments) {
+
             if (!mClassId2ClassSegments.containsKey(segment.getClassId())) {
                 mClassId2ClassSegments.put(segment.getClassId(), new ArrayList<>());
             }

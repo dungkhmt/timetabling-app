@@ -519,9 +519,11 @@ public class V2ClassScheduler {
             Group g = mId2Group.get(groupId);
             if(g.getPriorityBuilding()!=null){
                 String buildingId = g.getPriorityBuilding();
-                for(Classroom r: mBuilding2ClassRooms.get(buildingId)) {
-                    if(r.getQuantityMax() >= gc.getQuantityMax())
-                        mClassId2PrioritizedClassRooms.get(classId).add(r);
+                if(mBuilding2ClassRooms.get(buildingId)!=null) {
+                    for (Classroom r : mBuilding2ClassRooms.get(buildingId)) {
+                        if (r.getQuantityMax() >= gc.getQuantityMax())
+                            mClassId2PrioritizedClassRooms.get(classId).add(r);
+                    }
                 }
             }
         }
@@ -795,14 +797,15 @@ public class V2ClassScheduler {
 
 
                     //log.info("mapData, roomPriority[" + idx + "/" + n + "].sz = " + roomPriority[idx].size() + " domain timeSlots.sz = " + D[idx].size());
-                    if(roomPriority[idx].size() == 24){
-                        log.info("mapData, WHY THIS???, course " + gc.getModuleCode() + " SL SV = " + vol[idx]);
-                    }
+                    //if(roomPriority[idx].size() == 24){
+                    //    log.info("maupData, WHY THIS???, course " + gc.getModuleCode() + " SL SV = " + vol[idx]);
+                    //}
                     classSegments[idx] = new ClassSegment(idx, type,instanceIndex, gc.getId(),gc.getParentClassId(),relatedGroups[idx],null,d[idx],courseIndex[idx],vol[idx],D[idx],roomPriority[idx],isScheduled,gc.getModuleCode(),gc.getGroupName(),gc.getClassCode());
 
                 }
             }
         }
+        log.info("mapDataNew FINISHED create classSegments");
 
         //int[] ins = new int[n];
         //for(int i = 0; i < n; i++) ins[i] = 0;// number of instances of class-segment i
@@ -863,6 +866,7 @@ public class V2ClassScheduler {
 
         MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation,mIndex2Room,classes);
 
+        log.info("mapDataNew FINISHED..");
         //data.print();
         return DW;
     }

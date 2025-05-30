@@ -43,7 +43,9 @@ const GeneralScheduleScreen = () => {
 
   const[isDeletingBySemester, setIsDeletingBySemester] = useState(false);
   const[isCreateBySemester, setIsCreateBySemester] = useState(false);
-  
+  const[openSearchRoom, setOpenSearchRoom] = useState(false);
+  const[searchRoomCapacity, setSearchRoomCapacity] = useState(90);
+  const[timeSlots,setTimeSlots] = useState("");
 
   const days = [2, 3, 4, 5, 6, 7, 8];
 
@@ -213,6 +215,46 @@ const GeneralScheduleScreen = () => {
     );
   }
 
+  const handleChangeSearchRoomCapacity = (event) => {
+      setSearchRoomCapacity(event.target.value);
+  }
+  const handleChangeSearchTimeSlots = (event) => {
+    setTimeSlots(event.target.value);
+  }
+  const handleClickSearchRoom = () => {
+    setOpenSearchRoom(true);
+  }
+  const performSearchRoom = () => {
+    let body = {
+      searchRoomCapacity: searchRoomCapacity,
+      timeSlots: timeSlots,
+      versionId: selectedVersion.id
+    };
+
+   
+    
+    request(
+      "post",
+      "/general-classes/search-rooms",
+      (res) => {
+        console.log('Search Room: ', res.data);
+        
+        toast.success("tìm thành công");
+        //setTimeout(() => {
+        //  handlers.handleRefreshClasses();
+        //  setIsDeletingBySemester(false);
+        //}, 500);
+      },
+      {
+        onError: (e) => {
+          
+          toast.error("Có lỗi khi tìm phòng");
+          
+        }
+      },
+      body
+    );
+  }
   // Version selection UI
   if (showVersionSelection) {
     return (
@@ -526,6 +568,18 @@ const GeneralScheduleScreen = () => {
                     fontSize: '14px'
                   }}
                   disabled={isCreateBySemester || !states.selectedSemester || states.loading}
+                  onClick={handleClickSearchRoom}
+                  variant="contained"
+                  color="secondary"
+                >Tìm kiếm phòng</Button>
+                <Button
+                  startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
+                  sx={{ 
+                    minWidth: '120px',
+                    textTransform: 'none',
+                    fontSize: '14px'
+                  }}
+                  disabled={isCreateBySemester || !states.selectedSemester || states.loading}
                   onClick={handleCreateSegment}
                   variant="contained"
                   color="secondary"
@@ -751,6 +805,51 @@ const GeneralScheduleScreen = () => {
             sx={{ minWidth: "80px", padding: "6px 16px" }}
           >
             Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openSearchRoom}
+        onClose={() => setOpenSearchRoom(false)}
+      >
+        <DialogTitle>Tìm kiếm phòng</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <TextField
+              label="Enter your name"
+              value={searchRoomCapacity}
+              onChange={handleChangeSearchRoomCapacity}
+              variant="outlined" // or "filled" or "standard"
+              error={searchRoomCapacity.length === 0}
+              helperText={!searchRoomCapacity.length ? 'Name is required' : ''}
+            />
+            <TextField
+              label="Enter your timeSlots"
+              value={timeSlots}
+              onChange={handleChangeSearchTimeSlots}
+              variant="outlined" // or "filled" or "standard"
+              error={timeSlots.length === 0}
+              helperText={!timeSlots.length ? 'Name is required' : ''}
+            />
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ padding: "16px", gap: "8px" }}>
+          <Button
+            onClick={() => setOpenSearchRoom(false)}
+            variant="outlined"
+            sx={{ minWidth: "80px", padding: "6px 16px" }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={performSearchRoom}
+            color="error"
+            variant="contained"
+            autoFocus
+            sx={{ minWidth: "80px", padding: "6px 16px" }}
+          >
+            Tìm phòng
           </Button>
         </DialogActions>
       </Dialog>

@@ -16,9 +16,11 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOc
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,10 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Autowired
     private GroupRepo groupRepo;
+
+    @Autowired
+    private ClassroomRepo classroomRepo;
+
     @Transactional
     private void createClassSegment(TimeTablingClass gc, List<Integer> seqSlots, Long versionId) {
         log.info("createClassSegments, classId " + gc.getId() + ", crew " + gc.getCrew() + "  course "
@@ -173,28 +179,116 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     public List<TimeTablingClass> assignSessionToClassesSummer(ModelInputAssignSessionToClassesSummer I) {
         List<TimeTablingClass> res = timeTablingClassRepo.findAllBySemester(I.getSemester());
         Map<String, List<TimeTablingClass>> mCourse2Classes = new HashMap<>();
+        Map<Long, TimeTablingClass> mID2Class = new HashMap<>();
+        Map<Long, List<Long>> mClassID2ChildrenIds = new HashMap<>();
         for(TimeTablingClass cls: res){
             String courseCode = cls.getModuleCode();
             if(mCourse2Classes.get(courseCode)==null)
                 mCourse2Classes.put(courseCode, new ArrayList<>());
             mCourse2Classes.get(courseCode).add(cls);
+            log.info("assignSessionToClassesSummer, add class " + cls.getClassCode() + " to course " + courseCode + " -> sz = " + mCourse2Classes.get(courseCode).size());
+            mID2Class.put(cls.getId(),cls);
         }
+        Set<Long> classIds = new HashSet<>();
+        for(TimeTablingClass cls: res){
+            mClassID2ChildrenIds.put(cls.getId(), new ArrayList<>());
+            classIds.add(cls.getId());
+        }
+        log.info("assignSessionToClassesSummer, list classses = " + res.size());
+        for(TimeTablingClass cls: res){
+            Long parentId = cls.getParentClassId();
+            if(parentId != null) {
+                if (mClassID2ChildrenIds.get(parentId) == null)
+                    mClassID2ChildrenIds.put(parentId, new ArrayList<>());
+                mClassID2ChildrenIds.get(parentId).add(cls.getId());
+                log.info("assignSessionToClassesSummer add child class " + cls.getClassCode() + " to parent " + parentId);
+            }
+        }
+
         for(String course: mCourse2Classes.keySet()) {
             List<TimeTablingClass> CLS = mCourse2Classes.get(course);
-            int sz = CLS.size();
-            for (int i = 0; i < sz / 2; i++) {
-                TimeTablingClass cls = CLS.get(i);
-                //cls.setCrew("S");
-                updateSession(cls,"S");
-                log.info("assignSessionToClassesSummer, course " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getId() + "," + "S");
-            }
-            for (int i = sz / 2 + 1; i < sz; i++) {
-                TimeTablingClass cls = CLS.get(i);
-                updateSession(cls,"C");
-                log.info("assignSessionToClassesSummer, course " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getId() + "," + "C");
+            List<TimeTablingClass> CLS_LT = new ArrayList<>();
+            List<TimeTablingClass> CLS_LT_BT = new ArrayList<>();
+            for(TimeTablingClass cls: CLS) {
+                if (cls.getClassType().equals("LT")) {
+                    CLS_LT.add(cls);
+                    log.info("assignSessionToClassesSummer CONSIDER course " + course + " -> add LT class " + cls.getClassCode());
+                } else if (cls.getClassType().equals("LT+BT")){
+                    CLS_LT_BT.add(cls);
+                    log.info("assignSessionToClassesSummer CONSIDER course " + course + " -> add LT+BT class " + cls.getClassCode());
 
-                //cls.setCrew("C");
+                }else{
+                    //log.info("assignSessionToClassesSummer, UNKNOWN ClassType " + cls.getClassType() + " classCode " + cls.getClassCode());
+                }
             }
+            // divide LT classes and follows are BT classes
+            if(CLS_LT.size() > 0){
+                TimeTablingClass aCls = CLS_LT.get(0);
+                int duration = aCls.getDuration();
+                int sz = CLS_LT.size();
+                int mid = sz/2;
+                for (int i = 0; i < mid; i++) {
+                    TimeTablingClass cls = CLS_LT.get(i);
+                    //cls.setCrew("S");
+                    updateSession(cls, "S");
+                    classIds.remove(cls.getId());
+
+                    for(Long cid: mClassID2ChildrenIds.get(cls.getId())){
+                        TimeTablingClass childCLS = mID2Class.get(cid);
+                        updateSession(childCLS,"S");
+                        classIds.remove(childCLS.getId());
+                        log.info("assignSessionToClassesSummer, course BT " + course + ", i = " + i + "/" + sz + " updateSession Child BTF (" + childCLS.getClassCode() + ")" + "S");
+                    }
+                    log.info("assignSessionToClassesSummer, course LT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + ")," + "S");
+                }
+                for (int i = mid; i < sz; i++) {
+                    TimeTablingClass cls = CLS_LT.get(i);
+                    updateSession(cls, "C");
+                    classIds.remove(cls.getId());
+
+                    for(Long cid: mClassID2ChildrenIds.get(cls.getId())){
+                        TimeTablingClass childCLS = mID2Class.get(cid);
+                        updateSession(childCLS,"C");
+                        classIds.remove(childCLS.getId());
+                        log.info("assignSessionToClassesSummer, course BT " + course + ", i = " + i + "/" + sz + " updateSession Child BT (" + childCLS.getClassCode() + ")" + "C");
+                    }
+                    log.info("assignSessionToClassesSummer, course LT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + ")," + "C");
+                }
+            }
+
+            // divide LT+BT
+            if(CLS_LT_BT.size() > 0) {
+                TimeTablingClass aCls = CLS_LT_BT.get(0);
+                int duration = aCls.getDuration();
+
+                int sz = CLS_LT_BT.size();
+                int mid = sz / 2;
+                if (sz % 4 == 2 && duration == 5){// duration 5 -> employ combination 2 + 3
+                    mid = mid + 1; // example 6 classes -> 4 morning, 2 afternoon (better than 3+3)
+                                    // 10 classes -> 6 morning, 4 afternoon (better than 5+5)
+                }
+                        for (int i = 0; i < mid; i++) {
+                            TimeTablingClass cls = CLS_LT_BT.get(i);
+                            //cls.setCrew("S");
+                            updateSession(cls, "S");
+                            classIds.remove(cls.getId());
+                            log.info("assignSessionToClassesSummer, course LT+BT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + "," + "S");
+                        }
+                        for (int i = mid; i < sz; i++) {
+                            TimeTablingClass cls = CLS_LT_BT.get(i);
+                            updateSession(cls, "C");
+                            classIds.remove(cls.getId());
+                            log.info("assignSessionToClassesSummer, course LT+BT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + "," + "C");
+
+                            //cls.setCrew("C");
+                        }
+
+            }
+        }
+        log.info("assignSessionToClassesSummer, REMAINS " + classIds.size() + " NOT ASSIGNED");
+        for(Long id: classIds){
+            TimeTablingClass cls = mID2Class.get(id);
+            log.info("assignSessionToClassesSummer, REMAINS class not assigned id = " + cls.getId() + " code " + cls.getClassCode()+ " course " + cls.getModuleCode() + " type " + cls.getClassType() + " children " + mClassID2ChildrenIds.get(cls.getId()).size() + " parentId = " + cls.getParentClassId());
         }
         return res ;
     }
@@ -980,5 +1074,48 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         */
 
         return null;
+    }
+
+    private boolean overlap(String crew, int day, int startSlot, int endSlot,
+                            List<String> crews, List<Integer> days, List<Integer> startSlots, List<Integer> durations){
+        for(int i = 0; i < crews.size(); i++){
+            if(crew.equals(crews.get(i))&& day == days.get(i) && Util.overLap(startSlot, endSlot-startSlot+1,startSlots.get(i),durations.get(i))){
+                return true;
+            }
+        }
+        return false;
+    }
+    @Override
+    public List<Classroom> searchRoom(ModelInputSearchRoom I) {
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo
+                .findAllByVersionId(Long.valueOf(I.getVersionId()));
+        List<Classroom> rooms = classroomRepo.findAll();
+        List<Classroom> res = new ArrayList<>();
+        List<String> sessions = new ArrayList<>();
+        List<Integer> days = new ArrayList<>();
+        List<Integer> startSlots = new ArrayList<>();
+        List<Integer> durations = new ArrayList<>();
+        String[] s = I.getTimeSlots().split(";");
+        for(String es: s){
+            String[] a = es.split("-");
+            sessions.add(a[0]);
+            days.add(Integer.valueOf(a[1]));
+            startSlots.add(Integer.valueOf(a[2]));
+            durations.add(Integer.valueOf(a[3]));
+        }
+        for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
+            boolean ok = true;
+            for(TimeTablingClassSegment cs: classSegments) {
+
+                if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
+                    if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
+                        ok = false; break;
+                    }
+                }
+
+            }
+            if(ok) res.add(r);
+        }
+        return res;
     }
 }

@@ -22,6 +22,8 @@ public interface ClassroomRepo extends JpaRepository<Classroom, String> {
 
     List<Classroom> getClassroomByClassroom(String classroom);
 
+    List<Classroom> findAllByStatus(String status);
+
     void deleteById(String id);
 
     @Query(value = "SELECT c FROM Classroom c WHERE " +

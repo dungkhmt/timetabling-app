@@ -1194,7 +1194,7 @@ public class SummerSemesterSolver implements Solver {
         return true;
     }
 
-    private boolean scheduleGroupLTandBT(List<ClassSegment> L, int session, boolean assignRoom){
+    private boolean scheduleGroupLTandChildrenBT(List<ClassSegment> L, int session, boolean assignRoom){
         for(ClassSegment cs: L){
             //log.info("scheduleGroupLTandBT, cs = course " + cs.getCourseCode() + " classId " + cs.getClassId() + " type " + cs.getType() + " duration " + cs.getDuration());
         }
@@ -1491,7 +1491,7 @@ public class SummerSemesterSolver implements Solver {
         List<ClassSegment> CS1 = mClassId2ClassSegments.get(classId1);
         List<ClassSegment> CS2 = mClassId2ClassSegments.get(classId2);
         if(CS1 == null || CS2 == null){
-            log.info("overlapTimeTableClasses, CS1 or CS2 NULL");
+            log.info("overlapTimeTableClasses, CS1 or CS2 NULL"); return false;
         }
         for(ClassSegment cs1: CS1){
             for(ClassSegment cs2: CS2){
@@ -1562,10 +1562,14 @@ public class SummerSemesterSolver implements Solver {
             mClassId2ConflictClassIds.put(id,new ArrayList<>());
         }
         for(Long id: mClassId2ClassSegments.keySet()){
+            ModelResponseTimeTablingClass cls = mClassId2Class.get(id);
             for(Long id1: mClassId2ClassSegments.keySet())if(id < id1){
                 if(overlapTimeTableClasses(id,id1)){
                     mClassId2ConflictClassIds.get(id).add(id1);
                     mClassId2ConflictClassIds.get(id1).add(id);
+                    ModelResponseTimeTablingClass cls1 = mClassId2Class.get(id1);
+                    if(cls.getClassCode().equals("92051")|| cls.getClassCode().equals("91651"))
+                      log.info("reAssignRoom, CONFLICT of class " + cls.getClassCode() + " AND " + cls1.getClassCode());
                 }
             }
         }
@@ -1627,19 +1631,42 @@ public class SummerSemesterSolver implements Solver {
             ModelResponseTimeTablingClass cls = classes.get(i);
             if(mClassId2Room.get(cls.getId())!=null) continue;// already assigned room
             for(int r: mClassId2Rooms.get(cls.getId())){
+                Long idConsecutive = null;
+                if(mClassId2ConsecutiveClassId.get(cls.getId())!=null){
+                    idConsecutive = mClassId2ConsecutiveClassId.get(cls.getId());
+                    //mClassId2Room.put(id1,r);
+                    //log.info("reAssignRoom, co-assign class[" + i + "/" + classes.size() + "] " + id1 + " to room " + r);
+
+                }
                 boolean ok = true;
-                for(Long id: mClassId2ConflictClassIds.get(cls.getId())){
-                    if(mClassId2Room.get(id)!=null && mClassId2Room.get(id)==r){
-                        ok = false; break;// has conflict class assigned to the same room r
+                if(idConsecutive == null) {
+                    for (Long id : mClassId2ConflictClassIds.get(cls.getId())) {
+                        if (mClassId2Room.get(id) != null && mClassId2Room.get(id) == r) {
+                            ok = false;
+                            break;// has conflict class assigned to the same room r
+                        }
+                    }
+                }else{// check both class
+                    for (Long id : mClassId2ConflictClassIds.get(cls.getId())) {
+                        if (mClassId2Room.get(id) != null && mClassId2Room.get(id) == r) {
+                            ok = false;
+                            break;// has conflict class assigned to the same room r
+                        }
+                    }
+                    for (Long id : mClassId2ConflictClassIds.get(idConsecutive)) {
+                        if (mClassId2Room.get(id) != null && mClassId2Room.get(id) == r) {
+                            ok = false;
+                            break;// has conflict class assigned to the same room r
+                        }
                     }
                 }
                 if(ok){
                     mClassId2Room.put(cls.getId(),r);
                     log.info("reAssignRoom, assign class[" + i + "/" + classes.size() + "] " + cls.getId() + " to room " + r);
-                    if(mClassId2ConsecutiveClassId.get(cls.getId())!=null){
-                        Long id1 = mClassId2ConsecutiveClassId.get(cls.getId());
-                        mClassId2Room.put(id1,r);
-                        log.info("reAssignRoom, co-assign class[" + i + "/" + classes.size() + "] " + id1 + " to room " + r);
+                    if(idConsecutive!=null){
+                        //Long id1 = mClassId2ConsecutiveClassId.get(cls.getId());
+                        mClassId2Room.put(idConsecutive,r);
+                        log.info("reAssignRoom, co-assign class[" + i + "/" + classes.size() + "] " + idConsecutive + " to room " + r);
 
                     }
                     break;
@@ -1740,7 +1767,7 @@ public class SummerSemesterSolver implements Solver {
         Set<String> sMI  = new HashSet<>(Arrays.asList(new String[]{
                 "MI1111","MI1121","MI1131","MI1141","MI1112","MI1142","MI1113","MI1036","MI1016","MI2020",
                 "MI2021","MI3180","MI1026","MI1132","MI1143","MI2010","MI2110","MI1122","MI1133",
-                "MI1144","MI1114","MI1124","MI1046","MI1134"
+                "MI1144","MI1114","MI1124","MI1046","MI1134","MI1110Q","MI1140Q"
         }));
 
 
@@ -1804,10 +1831,10 @@ public class SummerSemesterSolver implements Solver {
             log.info("solve group ED size = " + ED[session].size());
             scheduleGroup(ED[session],session,false);
             log.info("solve scheduleGroupLTandBT MI size = " + MI[session].size());
-            if(!scheduleGroupLTandBT(MI[session],session,false)) return;
+            if(!scheduleGroupLTandChildrenBT(MI[session],session,false)) return;
             log.info("After solve scheduleGroupLTandBT MI remain size = " + MI[session].size());
             log.info("solve scheduleGroupLTandBT SSH size = " + SSH[session].size());
-            if(!scheduleGroupLTandBT(SSH[session],session,false)) return;
+            if(!scheduleGroupLTandChildrenBT(SSH[session],session,false)) return;
 
             log.info("solve group MI size = " + MI[session].size());
             if(!scheduleGroup(MI[session],session,false)) return;
