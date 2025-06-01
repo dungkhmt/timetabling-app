@@ -1085,7 +1085,58 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         return false;
     }
-    @Override
+    private List<Classroom> searchRoomAND(ModelInputSearchRoom I,
+                                          List<Classroom> rooms,
+                                          List<TimeTablingClassSegment> classSegments,
+                                          List<String> sessions, List<Integer> days,
+                                          List<Integer> startSlots, List<Integer> durations){
+        List<Classroom> res = new ArrayList<>();
+        for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
+            boolean ok = true;
+            for(TimeTablingClassSegment cs: classSegments) {
+
+                if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
+                    if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
+                        ok = false; break;
+                    }
+                }
+
+            }
+            if(ok) res.add(r);
+        }
+        return res;
+    }
+    private List<Classroom> searchRoomOR(ModelInputSearchRoom I,
+                                          List<Classroom> rooms,
+                                          List<TimeTablingClassSegment> classSegments,
+                                          List<String> sessions, List<Integer> days,
+                                          List<Integer> startSlots, List<Integer> durations) {
+        List<Classroom> res = new ArrayList<>();
+        for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
+            boolean ok = false;
+            for(int i = 0; i < sessions.size(); i++){
+                String session = sessions.get(i);
+                int day = days.get(i);
+                int startSlot = startSlots.get(i);
+                int duration = durations.get(i);
+                boolean overlap = false;
+                for(TimeTablingClassSegment cs: classSegments) {
+                    if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
+                        if(session.equals(cs.getCrew())&&day==cs.getWeekday()&&
+                                Util.overLap(startSlot,duration,cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1)){
+                            overlap = true; break;
+                        }
+                    }
+                }
+                if(!overlap){
+                    ok = true; break;
+                }
+            }
+            if(ok) res.add(r);
+        }
+        return res;
+    }
+        @Override
     public List<Classroom> searchRoom(ModelInputSearchRoom I) {
         List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo
                 .findAllByVersionId(Long.valueOf(I.getVersionId()));
@@ -1105,35 +1156,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 startSlots.add(Integer.valueOf(a[2]));
                 durations.add(Integer.valueOf(a[3]));
             }
-            for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
-                boolean ok = false;
-                for(int i = 0; i < sessions.size(); i++){
-                    String session = sessions.get(i);
-                    int day = days.get(i);
-                    int startSlot = startSlots.get(i);
-                    int duration = durations.get(i);
-                    boolean overlap = false;
-                    for(TimeTablingClassSegment cs: classSegments) {
-                        if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
-                            if(session.equals(cs.getCrew())&&day==cs.getWeekday()&&
-                            Util.overLap(startSlot,duration,cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1)){
-                                overlap = true; break;
-                            }
-                        }
-                    }
-                    if(!overlap){
-                        ok = true; break;
-                    }
-                }
-                //for(TimeTablingClassSegment cs: classSegments) {
-                //    if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
-                //        if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
-                //            ok = false; break;
-                //        }
-                //    }
-                //}
-                if(ok) res.add(r);
-            }
+            res = searchRoomOR(I,rooms,classSegments,sessions,days,startSlots,durations);
+
         }else if(key.contains(":")){ // search AND condition
             String[] s = key.split(":");
             for(String es: s){
@@ -1143,20 +1167,17 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 startSlots.add(Integer.valueOf(a[2]));
                 durations.add(Integer.valueOf(a[3]));
             }
-            for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
-                boolean ok = true;
-                for(TimeTablingClassSegment cs: classSegments) {
 
-                    if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
-                        if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
-                            ok = false; break;
-                        }
-                    }
+            res = searchRoomAND(I,rooms,classSegments,sessions,days,startSlots,durations);
 
-                }
-                if(ok) res.add(r);
-            }
+        }else{// only one element
+            String[] a = key.split("-");
+            sessions.add(a[0]);
+            days.add(Integer.valueOf(a[1]));
+            startSlots.add(Integer.valueOf(a[2]));
+            durations.add(Integer.valueOf(a[3]));
 
+            res = searchRoomOR(I,rooms,classSegments,sessions,days,startSlots,durations);
         }
         return res;
     }
