@@ -1095,26 +1095,68 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         List<Integer> days = new ArrayList<>();
         List<Integer> startSlots = new ArrayList<>();
         List<Integer> durations = new ArrayList<>();
-        String[] s = I.getTimeSlots().split(";");
-        for(String es: s){
-            String[] a = es.split("-");
-            sessions.add(a[0]);
-            days.add(Integer.valueOf(a[1]));
-            startSlots.add(Integer.valueOf(a[2]));
-            durations.add(Integer.valueOf(a[3]));
-        }
-        for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
-            boolean ok = true;
-            for(TimeTablingClassSegment cs: classSegments) {
-
-                if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
-                    if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
-                        ok = false; break;
+        String key = I.getTimeSlots();
+        if(key.contains(";")){// search OR condition
+            String[] s = key.split(";");
+            for(String es: s){
+                String[] a = es.split("-");
+                sessions.add(a[0]);
+                days.add(Integer.valueOf(a[1]));
+                startSlots.add(Integer.valueOf(a[2]));
+                durations.add(Integer.valueOf(a[3]));
+            }
+            for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
+                boolean ok = false;
+                for(int i = 0; i < sessions.size(); i++){
+                    String session = sessions.get(i);
+                    int day = days.get(i);
+                    int startSlot = startSlots.get(i);
+                    int duration = durations.get(i);
+                    boolean overlap = false;
+                    for(TimeTablingClassSegment cs: classSegments) {
+                        if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
+                            if(session.equals(cs.getCrew())&&day==cs.getWeekday()&&
+                            Util.overLap(startSlot,duration,cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1)){
+                                overlap = true; break;
+                            }
+                        }
+                    }
+                    if(!overlap){
+                        ok = true; break;
                     }
                 }
-
+                //for(TimeTablingClassSegment cs: classSegments) {
+                //    if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
+                //        if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
+                //            ok = false; break;
+                //        }
+                //    }
+                //}
+                if(ok) res.add(r);
             }
-            if(ok) res.add(r);
+        }else if(key.contains(":")){ // search AND condition
+            String[] s = key.split(":");
+            for(String es: s){
+                String[] a = es.split("-");
+                sessions.add(a[0]);
+                days.add(Integer.valueOf(a[1]));
+                startSlots.add(Integer.valueOf(a[2]));
+                durations.add(Integer.valueOf(a[3]));
+            }
+            for(Classroom r: rooms)if(r.getQuantityMax() >= I.getSearchRoomCapacity()){
+                boolean ok = true;
+                for(TimeTablingClassSegment cs: classSegments) {
+
+                    if(cs.getRoom() != null && cs.getRoom().equals(r.getId())){
+                        if(overlap(cs.getCrew(),cs.getWeekday(),cs.getStartTime(),cs.getEndTime(),sessions,days,startSlots,durations)){
+                            ok = false; break;
+                        }
+                    }
+
+                }
+                if(ok) res.add(r);
+            }
+
         }
         return res;
     }

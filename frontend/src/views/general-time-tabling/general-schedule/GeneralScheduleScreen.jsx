@@ -23,6 +23,7 @@ import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { Clear, ArrowBack } from "@mui/icons-material";
 import {toast} from "react-toastify";
 import { request } from "api";
+import { StandardTable } from "erp-hust/lib/StandardTable";
 
 
 const GeneralScheduleScreen = () => {
@@ -46,6 +47,18 @@ const GeneralScheduleScreen = () => {
   const[openSearchRoom, setOpenSearchRoom] = useState(false);
   const[searchRoomCapacity, setSearchRoomCapacity] = useState(90);
   const[timeSlots,setTimeSlots] = useState("");
+  const[searchRoomData, setSearchRoomData] = useState([]);
+
+  const searchRoomColumns = [
+    {
+      title: "ID",
+      field: "id"
+    },
+    {
+      title: "Qty",
+      field: "quantityMax"
+    }
+  ];
 
   const days = [2, 3, 4, 5, 6, 7, 8];
 
@@ -238,7 +251,7 @@ const GeneralScheduleScreen = () => {
       "/general-classes/search-rooms",
       (res) => {
         console.log('Search Room: ', res.data);
-        
+        setSearchRoomData(res.data);
         toast.success("tìm thành công");
         //setTimeout(() => {
         //  handlers.handleRefreshClasses();
@@ -816,6 +829,7 @@ const GeneralScheduleScreen = () => {
         <DialogTitle>Tìm kiếm phòng</DialogTitle>
         <DialogContent>
           <DialogContentText>
+            <>
             <TextField
               label="Enter your name"
               value={searchRoomCapacity}
@@ -832,6 +846,15 @@ const GeneralScheduleScreen = () => {
               error={timeSlots.length === 0}
               helperText={!timeSlots.length ? 'Name is required' : ''}
             />
+            </>
+            <>
+             <StandardTable
+                columns={searchRoomColumns}
+                data={searchRoomData}
+                hideCommandBar
+                 
+            />
+            </>
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ padding: "16px", gap: "8px" }}>
