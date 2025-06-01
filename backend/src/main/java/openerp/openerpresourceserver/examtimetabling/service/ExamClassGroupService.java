@@ -101,7 +101,7 @@ public class ExamClassGroupService {
             idListBuilder.append(existingIds.get(i));
         }
         
-        String sql = "DELETE FROM exam_timetabling_class_group WHERE id IN (" + idListBuilder.toString() + ")";
+        String sql = "DELETE FROM exam_timetabling_group WHERE id IN (" + idListBuilder.toString() + ")";
         Query query = entityManager.createNativeQuery(sql);
         int deletedCount = query.executeUpdate();
         

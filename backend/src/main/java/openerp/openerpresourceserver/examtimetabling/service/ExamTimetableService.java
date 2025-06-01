@@ -60,7 +60,6 @@ public class ExamTimetableService {
         
         LocalDateTime now = LocalDateTime.now();
         examTimetable.setCreatedAt(now);
-        examTimetable.setUpdatedAt(now);
         ExamTimetable savedTimetable = examTimetableRepository.save(examTimetable);
         
         String insertSql = "INSERT INTO exam_timetable_assignment " +
@@ -83,7 +82,7 @@ public class ExamTimetableService {
     public List<ExamTimetableDTO> getAllTimetablesByExamPlanId(UUID examPlanId) {
         long totalClasses = examClassRepository.countByExamPlanId(examPlanId);
         
-        List<ExamTimetable> timetables = examTimetableRepository.findByExamPlanIdAndDeletedAtIsNull(examPlanId);
+        List<ExamTimetable> timetables = examTimetableRepository.findByExamPlanId(examPlanId);
         
         return timetables.stream().map(timetable -> {
             ExamTimetableDTO dto = new ExamTimetableDTO();
@@ -91,7 +90,6 @@ public class ExamTimetableService {
             dto.setName(timetable.getName());
             dto.setExamPlanId(timetable.getExamPlanId());
             dto.setCreatedAt(timetable.getCreatedAt());
-            dto.setUpdatedAt(timetable.getUpdatedAt());
             
             long completedAssignments = examTimetableAssignmentRepository
                 .countByExamTimetableIdAndRoomIdIsNotNullAndExamSessionIdIsNotNull(timetable.getId());
@@ -139,7 +137,6 @@ public class ExamTimetableService {
         timetable.setName(name);
         
         // Update timestamp
-        timetable.setUpdatedAt(LocalDateTime.now());
         
         return examTimetableRepository.save(timetable);
     }
@@ -179,7 +176,6 @@ public class ExamTimetableService {
         detailDTO.setSessionCollectionId(collection.getId());
         detailDTO.setSessionCollectionName(collection.getName());
         detailDTO.setCreatedAt(timetable.getCreatedAt());
-        detailDTO.setUpdatedAt(timetable.getUpdatedAt());
         detailDTO.setCompletedAssignments(completedAssignments);
         detailDTO.setTotalAssignments(totalAssignments);
         

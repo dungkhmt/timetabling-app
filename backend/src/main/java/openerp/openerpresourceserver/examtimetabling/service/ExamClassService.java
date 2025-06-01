@@ -88,10 +88,10 @@ public class ExamClassService {
         
         String bulkInsertSql = 
             "INSERT INTO exam_timetable_assignment " +
-            "(id, exam_timetable_id, exam_timtabling_class_id, created_at, updated_at) " +
-            "SELECT uuid_generate_v4(), id, :examClassId, :now, :now " +
+            "(id, exam_timetable_id, exam_timtabling_class_id) " +
+            "SELECT uuid_generate_v4(), id, :examClassId " +
             "FROM exam_timetable " + 
-            "WHERE exam_plan_id = :examPlanId AND deleted_at IS NULL";
+            "WHERE exam_plan_id = :examPlanId";
         
         Query query = entityManager.createNativeQuery(bulkInsertSql);
         query.setParameter("examClassId", savedClass.getId());
@@ -222,7 +222,7 @@ public class ExamClassService {
     }
 
     private List<UUID> getTimetableIdsForExamPlan(UUID examPlanId) {
-        String sql = "SELECT id FROM exam_timetable WHERE exam_plan_id = :examPlanId AND deleted_at IS NULL";
+        String sql = "SELECT id FROM exam_timetable WHERE exam_plan_id = :examPlanId";
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("examPlanId", examPlanId);
         

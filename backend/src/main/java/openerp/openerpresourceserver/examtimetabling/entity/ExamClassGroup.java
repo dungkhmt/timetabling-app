@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "exam_timetabling_class_group")
+@Table(name = "exam_timetabling_group")
 public class ExamClassGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

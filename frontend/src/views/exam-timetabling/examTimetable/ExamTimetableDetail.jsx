@@ -10,7 +10,8 @@ import {
   Grid,
   Paper,
   Typography,
-  Tooltip
+  Tooltip,
+  DialogTitle
 } from '@mui/material';
 import {
   Edit,
@@ -397,6 +398,12 @@ const TimetableDetailPage = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Timetable Information Card */}
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
+            Lịch Thi
+        </Typography>
+      </Box>
+
       <Card sx={{ 
         mb: 4, 
         boxShadow: 2, 

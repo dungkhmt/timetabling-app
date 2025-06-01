@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.examtimetabling.algorithm;
 
 import openerp.openerpresourceserver.examtimetabling.algorithm.mapdata.MapDataExamTimeTablingInput;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.AssignmentDetails;
+import openerp.openerpresourceserver.examtimetabling.algorithm.model.ExamTimetableSolution;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingData;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingSolution;
 import openerp.openerpresourceserver.examtimetabling.entity.*;
@@ -113,7 +114,7 @@ public class ExamTimetablingService {
 
                     // Step 2: Apply algorithm
                     ExamTimetableAlgorithm timetableAlgorithm = new ExamTimetableAlgorithm();
-                    TimetablingSolution solution = timetableAlgorithm.assign(data);
+                    ExamTimetableSolution solution = timetableAlgorithm.assign(data);
 
                     if (!solution.isComplete()) {
                         log.warn("Failed to find complete assignment. Assigned: {}/{}", 
