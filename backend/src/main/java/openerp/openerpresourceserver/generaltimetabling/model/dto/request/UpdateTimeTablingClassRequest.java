@@ -10,6 +10,6 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Tim
 @NoArgsConstructor
 @Getter
 @Setter
-public class UpdateGeneralClassRequest {
+public class UpdateTimeTablingClassRequest {
     private TimeTablingClass timetablingClass;
 }

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateSubClassRequest {
+public class CreateSubClassDto {
     private Long fromParentClassId;
     private String classType;
     private int numberStudents;

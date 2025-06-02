@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateTimeTablingClassFromPlanRequest {
+public class UpdateTimeTablingClassFromPlanDto {
     private String semester;
 }
 
