@@ -249,20 +249,19 @@ public class PlanGeneralClassService {
     }
 
     @Transactional
-    public void deleteAllClasses(String semester) {
-        planGeneralClassRepo.deleteAllBySemester(semester);
-    }
+//    public void deleteAllClasses(String semester) {
+//        planGeneralClassRepo.deleteAllBySemester(semester);
+//    }
 
-    public List<GeneralClass> getPlanClassById(String semester, Long planClassId) {
-        return generalClassRepository.findClassesByRefClassIdAndSemester(planClassId, semester);
-    }
-    public List<TimeTablingClass> getClassOfPlan(String semester, Long planClassId){
+//    public List<GeneralClass> getPlanClassById(String semester, Long planClassId) {
+//        return generalClassRepository.findClassesByRefClassIdAndSemester(planClassId, semester);
+//    }
+    public List<TimeTablingClass> getClassOfPlan(Long planClassId){
         List<TimeTablingClass> timeTablingClasses = timeTablingClassRepo.findAllByRefClassId(planClassId);
         return timeTablingClasses;
     }
-
     @Transactional
-    public TimeTablingClass updateGeneralClass(TimeTablingClass generalClass) {
+    public TimeTablingClass updateTimeTablingClass(TimeTablingClass generalClass) {
         TimeTablingClass updateGeneralClass = timeTablingClassRepo.findById(generalClass.getId()).orElse(null);
         if (updateGeneralClass == null) throw new NotFoundException("Không tìm thấy lớp kế hoạch!");
         List<AcademicWeek> foundWeeks = academicWeekRepo.findAllBySemester(updateGeneralClass.getSemester());
@@ -342,42 +341,42 @@ public class PlanGeneralClassService {
 
         return res;
     }
-    public List<GeneralClass> generateClassesFromPlan(UpdateTimeTablingClassFromPlanRequest I){
-        List<PlanGeneralClass> plan = planGeneralClassRepo.findAllBySemester(I.getSemester());
-        log.info("generateClassesFromPlan, number of plan courses = " + plan.size());
-        List<GeneralClass> classes = new ArrayList<>();
-        for(PlanGeneralClass pl: plan){
-            log.info("generateClassesFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
-
-                pl.setNumberOfClasses(pl.getNumberOfClasses()+1);
-                for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
-                    CreateTimeTablingClassRequest r = new CreateTimeTablingClassRequest();
-                    r.setNbClasses(pl.getNumberOfClasses());
-                    r.setWeekType(pl.getWeekType());
-                    r.setId(pl.getId());
-                    r.setProgramName(pl.getProgramName());
-                    r.setCrew(pl.getCrew());
-                    r.setWeekType(pl.getWeekType());
-                    r.setLectureExerciseMaxQuantity(pl.getLectureExerciseMaxQuantity());
-                    r.setLectureMaxQuantity(pl.getLectureMaxQuantity());
-                    r.setExerciseMaxQuantity(pl.getExerciseMaxQuantity());
-                    r.setModuleName(pl.getModuleName());
-                    r.setSemester(pl.getSemester());
-                    r.setLearningWeeks(pl.getLearningWeeks());
-                    r.setModuleCode(pl.getModuleCode());
-                    r.setModuleName(pl.getModuleName());
-                    r.setDuration(pl.getDuration());
-                    r.setQuantityMax(pl.getQuantityMax());
-                    r.setMass(pl.getMass());
-
-                    makeClass(r, pl.getGroupId());
-                }
-                planGeneralClassRepo.save(pl);
-        }
-
-
-        return classes;
-    }    
+//    public List<GeneralClass> generateClassesFromPlan(UpdateTimeTablingClassFromPlanRequest I){
+//        List<PlanGeneralClass> plan = planGeneralClassRepo.findAllBySemester(I.getSemester());
+//        log.info("generateClassesFromPlan, number of plan courses = " + plan.size());
+//        List<GeneralClass> classes = new ArrayList<>();
+//        for(PlanGeneralClass pl: plan){
+//            log.info("generateClassesFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
+//
+//                pl.setNumberOfClasses(pl.getNumberOfClasses()+1);
+//                for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
+//                    CreateTimeTablingClassRequest r = new CreateTimeTablingClassRequest();
+//                    r.setNbClasses(pl.getNumberOfClasses());
+//                    r.setWeekType(pl.getWeekType());
+//                    r.setId(pl.getId());
+//                    r.setProgramName(pl.getProgramName());
+//                    r.setCrew(pl.getCrew());
+//                    r.setWeekType(pl.getWeekType());
+//                    r.setLectureExerciseMaxQuantity(pl.getLectureExerciseMaxQuantity());
+//                    r.setLectureMaxQuantity(pl.getLectureMaxQuantity());
+//                    r.setExerciseMaxQuantity(pl.getExerciseMaxQuantity());
+//                    r.setModuleName(pl.getModuleName());
+//                    r.setSemester(pl.getSemester());
+//                    r.setLearningWeeks(pl.getLearningWeeks());
+//                    r.setModuleCode(pl.getModuleCode());
+//                    r.setModuleName(pl.getModuleName());
+//                    r.setDuration(pl.getDuration());
+//                    r.setQuantityMax(pl.getQuantityMax());
+//                    r.setMass(pl.getMass());
+//
+//                    makeClass(r, pl.getGroupId());
+//                }
+//                planGeneralClassRepo.save(pl);
+//        }
+//
+//
+//        return classes;
+//    }
     
     @Transactional
     public List<TimeTablingClass> makeMultipleClasses(BulkMakeGeneralClassRequest request) {

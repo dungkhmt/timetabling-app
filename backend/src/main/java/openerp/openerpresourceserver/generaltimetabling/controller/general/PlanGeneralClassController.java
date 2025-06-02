@@ -84,16 +84,15 @@ public class PlanGeneralClassController {
 
 
     @GetMapping("/view-class")
-    public ResponseEntity requestViewPlanClass(@RequestParam("semester") String semester,
-                                               @RequestParam("planClassId") Long planClassId){
+    public ResponseEntity requestViewPlanClass(@RequestParam("planClassId") Long planClassId){
         //return ResponseEntity.ok(planClassService.getPlanClassById(semester, planClassId));
-        List<TimeTablingClass> timeTablingClasses = planClassService.getClassOfPlan(semester, planClassId);
+        List<TimeTablingClass> timeTablingClasses = planClassService.getClassOfPlan(planClassId);
         return ResponseEntity.ok().body(timeTablingClasses);
     }
 
     @PostMapping("/update-general-class")
     public ResponseEntity<?> requestUpdateGeneralClass(@RequestBody UpdateGeneralClassRequest request) {
-        return  ResponseEntity.ok(planClassService.updateGeneralClass(request.getTimetablingClass()));
+        return  ResponseEntity.ok(planClassService.updateTimeTablingClass(request.getTimetablingClass()));
     }
 
     @PostMapping("/update-plan-class")
