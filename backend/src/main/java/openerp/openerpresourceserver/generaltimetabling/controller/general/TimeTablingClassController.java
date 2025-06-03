@@ -40,7 +40,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Gen
 @RequestMapping("/general-classes")
 @AllArgsConstructor
 @Log4j2
-public class GeneralClassController {
+public class TimeTablingClassController {
     private GeneralClassService gService;
     private ExcelService excelService;
     private ClassGroupService classGroupService;

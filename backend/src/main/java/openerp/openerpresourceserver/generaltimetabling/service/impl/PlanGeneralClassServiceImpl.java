@@ -240,8 +240,6 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         for(PlanGeneralClass pl: plan){
 
             log.info("generateTimeTablingClassFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
-
-            for (int i = 1; i <= pl.getNumberOfClasses(); i++) {
                 CreateTimeTablingClassDto r = new CreateTimeTablingClassDto();
                 r.setNbClasses(pl.getNumberOfClasses());
                 r.setWeekType(pl.getWeekType());
@@ -263,8 +261,6 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
 
                 TimeTablingClass cls = makeClass(r, pl.getGroupId());
                 res.add(cls);
-            }
-            
             // Increment the numberOfClasses field for this plan and save it
             pl.setNumberOfClasses(pl.getNumberOfClasses() + 1);
             planGeneralClassRepo.save(pl);

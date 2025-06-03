@@ -145,8 +145,8 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
       });
     }
   };
+  
   const handleSubmit = () => {
-    // Create a trimmed version of the form data
     const trimmedFormData = Object.keys(formData).reduce((acc, key) => {
       // If the value is a string, trim it
       if (typeof formData[key] === 'string') {
@@ -157,7 +157,6 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
       return acc;
     }, {});
     
-    // Check if group is selected
     if (!selectedGroup) {
       toast.error("Vui lòng chọn chương trình học từ màn hình chính trước khi tạo lớp!");
       return;
