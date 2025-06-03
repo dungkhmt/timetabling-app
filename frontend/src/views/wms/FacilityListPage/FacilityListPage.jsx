@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { toast } from "react-toastify";
-import { useHistory } from "react-router-dom";
 import FacilityListHeader from "./components/FacilityListHeader";
 import FacilityFilters from "./components/FacilityFilters";
 import FacilityTable from "./components/FacilityTable";
+import FacilityMapModal from "./components/FacilityMapModal";
 import { useWms2Data } from "../../../services/useWms2Data";
 import {MENU_CONSTANTS} from "../common/constants/screenId";
 import {withAuthorization} from "../common/components/withAuthorization";
+import { useHandleNavigate } from "../common/utils/functions";
 
 const FacilityListPage = () => {
   const [loading, setLoading] = useState(true);
   const [facilities, setFacilities] = useState([]);
+  const [mapModalOpen, setMapModalOpen] = useState(false);
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -23,7 +25,7 @@ const FacilityListPage = () => {
     statusId: []
   });
 
-  const history = useHistory();
+  const navigate = useHandleNavigate();
   const { getFacilitiesWithFilters } = useWms2Data();
 
   // Fetch facilities on component mount and when pagination changes
@@ -102,12 +104,22 @@ const FacilityListPage = () => {
 
   // Navigate to create new facility
   const handleCreateFacility = () => {
-    history.push("/wms/admin/facility/create");
+    navigate("/wms/admin/facility/create");
   };
 
   // Navigate to facility detail page
   const handleViewFacilityDetail = (facilityId) => {
-    history.push(`/wms/admin/facility/details/${facilityId}`);
+    navigate(`/wms/admin/facility/details/${facilityId}`);
+  };
+
+  // Handle view map
+  const handleViewMap = () => {
+    setMapModalOpen(true);
+  };
+
+  // Close map modal
+  const handleCloseMapModal = () => {
+    setMapModalOpen(false);
   };
 
   return (
@@ -115,6 +127,7 @@ const FacilityListPage = () => {
       <FacilityListHeader
         onCreateFacility={handleCreateFacility}
         onResetFilters={handleResetFilters}
+        onViewMap={handleViewMap}
       />
 
       <FacilityFilters
@@ -131,6 +144,12 @@ const FacilityListPage = () => {
         pagination={pagination}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+
+      <FacilityMapModal
+        open={mapModalOpen}
+        onClose={handleCloseMapModal}
+        facilities={facilities}
       />
     </Box>
   );

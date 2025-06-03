@@ -6,6 +6,7 @@ import openerp.openerpresourceserver.wms.constant.enumrator.FacilityStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.facility.CreateFacilityReq;
+import openerp.openerpresourceserver.wms.dto.facility.FacilityGetListRes;
 import openerp.openerpresourceserver.wms.dto.filter.FacilityGetListFilter;
 import openerp.openerpresourceserver.wms.entity.Address;
 import openerp.openerpresourceserver.wms.entity.Facility;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -70,20 +73,42 @@ public class FacilityServiceImpl implements FacilityService{
     }
 
     @Override
-    public ApiResponse<Pagination<Facility>> getFacilities(Integer page, Integer limit, FacilityGetListFilter filters) {
+    public ApiResponse<Pagination<FacilityGetListRes>> getFacilities(Integer page, Integer limit, FacilityGetListFilter filters) {
         var pageRequest = CommonUtil.getPageRequest(page, limit);
         var facilitySpec = new FacilitySpecification(filters);
         var facilityPage = facilityRepo.findAll(facilitySpec, pageRequest);
 
-        var pagination = Pagination.<Facility>builder()
-                .data(facilityPage.getContent())
+        var facilityIds = facilityPage.getContent().stream()
+                .map(Facility::getId)
+                .toList();
+
+        var addresses = addressRepo.findAllByEntityIdInAndEntityType(facilityIds, EntityType.FACILITY.name());
+
+        var addressMap = addresses.stream()
+                .collect(
+                        Collectors.toMap(Address::getEntityId, Function.identity())
+                );
+
+        var facilityGetListRes = facilityPage.getContent().
+                stream().map(
+                        facility ->{
+                            var facilityRes =  generalMapper.convertToDto(facility, FacilityGetListRes.class);
+                            var address = addressMap.get(facility.getId());
+                            facilityRes.setLatitude(address.getLatitude());
+                            facilityRes.setLongitude(address.getLongitude());
+                            return facilityRes;
+                        }
+                ).<FacilityGetListRes>toList();
+
+        var pagination = Pagination.<FacilityGetListRes>builder()
+                .data(facilityGetListRes)
                 .page(page)
                 .size(limit)
                 .totalElements(facilityPage.getTotalElements())
                 .totalPages(facilityPage.getTotalPages())
                 .build();
 
-        return ApiResponse.<Pagination<Facility>>builder()
+        return ApiResponse.<Pagination<FacilityGetListRes>>builder()
                 .code(200)
                 .message("Get facilities successfully")
                 .data(pagination)
