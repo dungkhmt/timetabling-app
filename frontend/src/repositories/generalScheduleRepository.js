@@ -173,14 +173,18 @@ export const generalScheduleRepository = {
   },
 
   removeTimeSlot: async (params = {}) => {
-    const { generalClassId, roomReservationId } = params;
+    const { generalClassId, roomReservationId, versionId } = params; 
     if (!generalClassId || !roomReservationId) {
       throw new Error("generalClassId and roomReservationId are required");
     }
     const cleanId = generalClassId.toString().split("-")[0];
+    let url = `/general-classes/${cleanId}/class-segment/${roomReservationId}`;
+    if (versionId !== undefined && versionId !== null) { 
+      url += `?versionId=${versionId}`;
+    }
     return await request(
       "delete",
-      `/general-classes/${cleanId}/room-reservations/${roomReservationId}`
+      url
     );
   },
 

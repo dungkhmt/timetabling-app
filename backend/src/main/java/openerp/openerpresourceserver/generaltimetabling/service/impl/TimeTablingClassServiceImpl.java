@@ -1181,4 +1181,68 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         return res;
     }
+
+    @Transactional
+    @Override
+    public void mergeAndDeleteClassSegments(Long timeTablingClassId, Long timeTablingClassSegmentIdToDelete, Long versionId) {
+        TimeTablingClass targetClass = timeTablingClassRepo.findById(timeTablingClassId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy lớp với ID: " + timeTablingClassId));
+
+        TimeTablingClassSegment segmentToDelete = timeTablingClassSegmentRepo.findById(timeTablingClassSegmentIdToDelete)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy ca học với ID: " + timeTablingClassSegmentIdToDelete));
+
+        if (!segmentToDelete.getClassId().equals(targetClass.getId())) {
+            throw new NotFoundException("Ca học ID " + timeTablingClassSegmentIdToDelete + " không thuộc lớp ID " + timeTablingClassId);
+        }
+
+       
+        if (versionId != null && !Objects.equals(segmentToDelete.getVersionId(), versionId)) {
+            log.error("Phiên bản của ca học cần xóa (ID {}, versionId {}) không khớp với phiên bản yêu cầu ({}).",
+                segmentToDelete.getId(), segmentToDelete.getVersionId(), versionId);
+            throw new IllegalStateException("Thao tác không thể thực hiện do xung đột phiên bản của ca học cần xóa.");
+        }
+
+
+        Long parentSegmentId = segmentToDelete.getParentId();
+        if (parentSegmentId == null) {
+           
+            log.warn("Ca học (ID: {}) không có ca học cha. Không thể thực hiện logic gộp.", segmentToDelete.getId());
+            throw new NotFoundException("Ca học (ID: " + segmentToDelete.getId() + ") không có ca học cha. Không thể tự động gộp và xóa theo logic này.");
+        }
+
+        TimeTablingClassSegment parentSegment = timeTablingClassSegmentRepo.findById(parentSegmentId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy ca học cha (ID: " + parentSegmentId + ") để gộp vào."));
+
+        if (!parentSegment.getClassId().equals(targetClass.getId())) {
+            log.error("Ca học cha ID {} (classId={}) không thuộc cùng lớp với ca học con ID {} (classId={}). Lớp mục tiêu ID {}",
+                parentSegment.getId(), parentSegment.getClassId(),
+                segmentToDelete.getId(), segmentToDelete.getClassId(),
+                targetClass.getId());
+            throw new IllegalStateException("Thông tin ca học cha không hợp lệ: không cùng lớp với ca học con.");
+        }
+        if (!Objects.equals(parentSegment.getVersionId(), segmentToDelete.getVersionId())) {
+            log.error("Ca học cha ID {} (versionId={}) không cùng phiên bản với ca học con ID {} (versionId={}).",
+                parentSegment.getId(), parentSegment.getVersionId(),
+                segmentToDelete.getId(), segmentToDelete.getVersionId());
+            throw new IllegalStateException("Thông tin ca học cha không hợp lệ: không cùng phiên bản với ca học con.");
+        }
+        if (versionId != null && !Objects.equals(parentSegment.getVersionId(), versionId)) {
+            log.error("Phiên bản của ca học cha (ID {}, versionId {}) không khớp với phiên bản yêu cầu ({}).",
+                parentSegment.getId(), parentSegment.getVersionId(), versionId);
+            throw new IllegalStateException("Thao tác không thể thực hiện do xung đột phiên bản của ca học cha.");
+        }
+
+        parentSegment.setDuration(parentSegment.getDuration() + segmentToDelete.getDuration());
+        timeTablingClassSegmentRepo.save(parentSegment);
+        log.info("Đã gộp thời lượng từ ca học ID {} (duration={}) vào ca học cha ID {}. Ca học cha duration mới: {}",
+                segmentToDelete.getId(), segmentToDelete.getDuration(), parentSegment.getId(), parentSegment.getDuration());
+
+        
+        log.info("Ca học ID {} sẽ được xóa.", segmentToDelete.getId());
+
+        timeTablingClassSegmentRepo.delete(segmentToDelete);
+        log.info("Đã xóa thành công ca học ID {}", timeTablingClassSegmentIdToDelete);
+    }
+
+
 }

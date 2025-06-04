@@ -61,5 +61,7 @@ public interface TimeTablingClassService {
 
     List<TimeTablingClass> createClassFromPlan(PlanGeneralClass p);
 
+    public void mergeAndDeleteClassSegments(Long timeTablingClassId, Long timeTablingClassSegmentIdToDelete, Long versionId);
+
     List<Classroom> searchRoom(ModelInputSearchRoom I);
 }

@@ -16,4 +16,3 @@ public class CreateSubClassDto {
     private int duration;
     private int numberClasses;
 }
-

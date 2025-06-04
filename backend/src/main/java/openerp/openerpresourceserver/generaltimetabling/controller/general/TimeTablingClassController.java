@@ -255,15 +255,16 @@ public class TimeTablingClassController {
         return ResponseEntity.ok("Xóa lớp thành công");
     }
 
-    @DeleteMapping("/{generalClassId}/room-reservations/{roomReservationId}")
+    @DeleteMapping("/{timeTablingClassId}/class-segment/{timeTablingClassSegmentId}")
     public ResponseEntity<String> requestDeleteRoomReservation(
-            @PathVariable("generalClassId") Long generalClassId,
-            @PathVariable("roomReservationId") Long roomReservationId
+            @PathVariable("timeTablingClassId") Long timeTablingClassId,
+            @PathVariable("timeTablingClassSegmentId") Long timeTablingClassSegmentId,
+            @RequestParam(name = "versionId", required = false) Long versionId 
     ) {
-        gService.deleteRoomReservation(generalClassId, roomReservationId);
-        return ResponseEntity.ok("Xóa lớp thành công");
+        timeTablingClassService.mergeAndDeleteClassSegments(timeTablingClassId, timeTablingClassSegmentId, versionId);
+        return ResponseEntity.ok("Xóa phân đoạn ca học và gộp vào ca cha thành công");
     }
-
+    
     @PostMapping("/compute-class-cluster")
     public ResponseEntity<?> computeClassCluster(Principal principal, @RequestBody ModelInputComputeClassCluster I){
         log.info("computeClassCluster, semester = " + I.getSemester());

@@ -26,6 +26,7 @@ import { toast } from "react-toastify";
 const TimeTable = ({
   classes,
   selectedSemester,
+  selectedVersion, 
   selectedGroup,
   onSaveSuccess,
   loading,
@@ -195,7 +196,7 @@ const TimeTable = ({
 
       await handlers.handleAddTimeSlot({
         generalClassId: selectedClassForSlot.generalClassId,
-        parentId: selectedClassForSlot.roomReservationId,
+        parentId: selectedClassForSlot.roomReservationId, // Đây là ID của segment cha (nếu là tách từ segment đã có lịch) hoặc null/undefined
         duration: periodsToAdd,
       });
 
@@ -203,7 +204,7 @@ const TimeTable = ({
       onSaveSuccess();
     } catch (error) {
       console.error("Error adding time slot:", error);
-      toast.error(error.response?.data || "Thêm ca học thất bại!"); // Add better error handling
+      toast.error(error.response?.data || "Thêm ca học thất bại!");
     }
   };
 
@@ -215,10 +216,12 @@ const TimeTable = ({
       await handlers.handleRemoveTimeSlot({
         generalClassId: generalClassId.toString(),
         roomReservationId: roomReservationId,
+        versionId: selectedVersion?.id, // Sử dụng selectedVersion.id
       });
       onSaveSuccess();
     } catch (error) {
       console.error("Error removing time slot:", error);
+      toast.error(error.response?.data || "Xóa ca học thất bại!");
     }
   };
 
