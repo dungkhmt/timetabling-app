@@ -111,7 +111,7 @@ function App() {
           <ToastContainer
             position="bottom-center"
             transition={Slide}
-            autoClose={3000}
+            autoClose={1500}
             limit={3}
             hideProgressBar={true}
             newestOnTop
