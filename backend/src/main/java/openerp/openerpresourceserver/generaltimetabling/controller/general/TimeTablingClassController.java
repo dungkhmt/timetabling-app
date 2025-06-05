@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -29,7 +28,6 @@ import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,7 +40,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Gen
 @RequestMapping("/general-classes")
 @AllArgsConstructor
 @Log4j2
-public class GeneralClassController {
+public class TimeTablingClassController {
     private GeneralClassService gService;
     private ExcelService excelService;
     private ClassGroupService classGroupService;
@@ -257,15 +255,16 @@ public class GeneralClassController {
         return ResponseEntity.ok("Xóa lớp thành công");
     }
 
-    @DeleteMapping("/{generalClassId}/room-reservations/{roomReservationId}")
+    @DeleteMapping("/{timeTablingClassId}/class-segment/{timeTablingClassSegmentId}")
     public ResponseEntity<String> requestDeleteRoomReservation(
-            @PathVariable("generalClassId") Long generalClassId,
-            @PathVariable("roomReservationId") Long roomReservationId
+            @PathVariable("timeTablingClassId") Long timeTablingClassId,
+            @PathVariable("timeTablingClassSegmentId") Long timeTablingClassSegmentId,
+            @RequestParam(name = "versionId", required = false) Long versionId 
     ) {
-        gService.deleteRoomReservation(generalClassId, roomReservationId);
-        return ResponseEntity.ok("Xóa lớp thành công");
+        timeTablingClassService.mergeAndDeleteClassSegments(timeTablingClassId, timeTablingClassSegmentId, versionId);
+        return ResponseEntity.ok("Xóa phân đoạn ca học và gộp vào ca cha thành công");
     }
-
+    
     @PostMapping("/compute-class-cluster")
     public ResponseEntity<?> computeClassCluster(Principal principal, @RequestBody ModelInputComputeClassCluster I){
         log.info("computeClassCluster, semester = " + I.getSemester());

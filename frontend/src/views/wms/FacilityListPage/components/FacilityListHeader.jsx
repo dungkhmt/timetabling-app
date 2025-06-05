@@ -8,8 +8,9 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import MapIcon from "@mui/icons-material/Map";
 
-const FacilityListHeader = ({ onCreateFacility, onResetFilters }) => {
+const FacilityListHeader = ({ onCreateFacility, onResetFilters, onViewMap }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -25,13 +26,21 @@ const FacilityListHeader = ({ onCreateFacility, onResetFilters }) => {
         Quản lý cơ sở
       </Typography>
       
-      <Box display="flex" gap={1}>
+      <Box display="flex" gap={1} flexWrap="wrap">
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
           onClick={onResetFilters}
         >
           Làm mới
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<MapIcon />}
+          onClick={onViewMap}
+          color="secondary"
+        >
+          Xem vị trí các kho
         </Button>
         <Button
           variant="contained"

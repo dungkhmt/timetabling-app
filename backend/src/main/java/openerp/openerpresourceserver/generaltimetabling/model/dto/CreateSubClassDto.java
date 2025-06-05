@@ -9,7 +9,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateTimeTablingClassFromPlanRequest {
-    private String semester;
+public class CreateSubClassDto {
+    private Long fromParentClassId;
+    private String classType;
+    private int numberStudents;
+    private int duration;
+    private int numberClasses;
 }
-

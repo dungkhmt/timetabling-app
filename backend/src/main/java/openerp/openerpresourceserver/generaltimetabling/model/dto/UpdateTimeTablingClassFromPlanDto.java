@@ -9,11 +9,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateSubClassRequest {
-    private Long fromParentClassId;
-    private String classType;
-    private int numberStudents;
-    private int duration;
-    private int numberClasses;
+public class UpdateTimeTablingClassFromPlanDto {
+    private String semester;
 }
-

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateTimeTablingClassRequest {
+public class CreateTimeTablingClassDto {
     private Long id;
     private Integer quantityMax;
     private Integer exerciseMaxQuantity;

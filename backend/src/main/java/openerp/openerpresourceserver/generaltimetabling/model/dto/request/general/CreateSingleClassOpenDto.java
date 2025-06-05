@@ -1,6 +1,5 @@
 package openerp.openerpresourceserver.generaltimetabling.model.dto.request.general;
 
-import jakarta.persistence.*;
 import lombok.*;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValidator;
@@ -12,7 +11,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateSingleClassOpenRequest {
+public class CreateSingleClassOpenDto {
 
         private Long id;
         private Integer quantityMax;

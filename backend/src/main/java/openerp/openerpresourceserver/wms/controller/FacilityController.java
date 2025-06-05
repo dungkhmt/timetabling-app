@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.facility.CreateFacilityReq;
+import openerp.openerpresourceserver.wms.dto.facility.FacilityGetListRes;
 import openerp.openerpresourceserver.wms.dto.filter.FacilityGetListFilter;
 import openerp.openerpresourceserver.wms.entity.Facility;
 import openerp.openerpresourceserver.wms.service.FacilityService;
@@ -27,8 +28,8 @@ public class FacilityController {
     }
 
     @PostMapping("/get-all")
-    public ApiResponse<Pagination<Facility>> getFacilities(@RequestParam Integer page, @RequestParam Integer limit,
-                                                           @RequestBody FacilityGetListFilter filters) {
+    public ApiResponse<Pagination<FacilityGetListRes>> getFacilities(@RequestParam Integer page, @RequestParam Integer limit,
+                                                                     @RequestBody FacilityGetListFilter filters) {
         return facilityService.getFacilities(page, limit, filters);
     }
 

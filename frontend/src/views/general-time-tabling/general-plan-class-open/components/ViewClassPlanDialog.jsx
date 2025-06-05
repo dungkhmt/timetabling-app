@@ -36,7 +36,7 @@ const ViewClassPlanDialog = ({
       setGeneralClasses([]);
       request(
         "get",
-        `/plan-general-classes/view-class?semester=${semester}&planClassId=${planClassId}`,
+        `/plan-general-classes/view-class?planClassId=${planClassId}`,
         (res) => {
           console.log(res.data);
           setGeneralClasses(res.data);

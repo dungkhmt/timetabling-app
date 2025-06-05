@@ -4,7 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.Utils;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.*;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
@@ -15,7 +15,6 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassOpened
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Schedule;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.service.impl.PlanGeneralClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -500,7 +499,7 @@ public class ExcelService {
                 for(PlanGeneralClass p: planClasses) {
                     log.info("savePlanClasses, start to create class for plan " + p.getModuleCode() + " nbClasses = " + p.getNumberOfClasses());
                     for(int i = 1;i <= p.getNumberOfClasses();i++) {
-                        CreateTimeTablingClassRequest req = new CreateTimeTablingClassRequest();
+                        CreateTimeTablingClassDto req = new CreateTimeTablingClassDto();
                         req.setId(p.getId());
                         req.setNbClasses(p.getNumberOfClasses());
                         req.setClassType(p.getClassType());
