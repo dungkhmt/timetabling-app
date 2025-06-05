@@ -625,6 +625,9 @@ class CombinationConstraint{
             if(solver.LOGGING && log != null) log.println("propagate(" + sc + "), combinations[" + idxCourse + "].sz = " + combinations.get(idxCourse).size());
         }
     }
+    public int getNbCombinations(){
+        return combinations.get(combinations.size()-1).size();
+    }
     public void backtrack(SolutionClass sc, int idxClass, int idxCourse, List<Combination> newComs){
         for(int i = 1; i <= newComs.size(); i++){
             combinations.get(idxCourse).pop();
@@ -742,6 +745,7 @@ public class BacktrackingOneGroup {
     int maxCombinationLength = 0;
     int maxSolutions4Course = 0;
     int nbTries = 0;
+    int nbCombinations = 0;
     public void inputFile(String filename){
         try{
             BufferedReader in = new BufferedReader(new InputStreamReader( new FileInputStream(filename)));
@@ -1176,8 +1180,8 @@ public class BacktrackingOneGroup {
         }
     }
     public void statistic(){
-        System.out.println("maxCombinationLength = " + maxCombinationLength);
-        System.out.println("maxSolution4Course = " + maxSolutions4Course);
+        System.out.println("Combinations length = " + nbCombinations);
+        //System.out.println("maxSolution4Course = " + maxSolutions4Course);
         System.out.println("#Tries = " + nbTries);
         System.out.println("#Solutions = " + nbSolutions);
         System.out.println("#Failures = " + nbFailures);

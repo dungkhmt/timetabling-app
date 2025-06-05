@@ -61,7 +61,7 @@ public class BacktrackingMaintainCombinations extends BacktrackingOneGroup{
                         best_x[i].put(c,x[idxClass]);
                     }
                 }
-
+                if(comCtrs != null) nbCombinations = comCtrs.getNbCombinations();
                 System.out.println("update best " + bestObj + " checkCombinations = " + ok);
             }
         }else{// failure
