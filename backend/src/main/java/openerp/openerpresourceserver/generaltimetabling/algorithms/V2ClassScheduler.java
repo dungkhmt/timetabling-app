@@ -14,6 +14,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.hechuan.Greed
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentRoomReservationSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolver;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolverVersion2;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidClassStudentQuantityException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
@@ -1044,7 +1045,8 @@ public class V2ClassScheduler {
         */
         Solver solver = null;
         if(algorithm.equals(Constants.SUMMER_SEMESTER)){
-            solver = new SummerSemesterSolver(D);
+            //solver = new SummerSemesterSolver(D);
+            solver = new SummerSemesterSolverVersion2(D);
         }else {
             MultiClusterSolver msolver = new MultiClusterSolver(D);
             msolver.oneClusterAlgorithm = algorithm;
