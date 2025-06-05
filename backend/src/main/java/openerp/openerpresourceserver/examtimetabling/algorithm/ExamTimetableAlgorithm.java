@@ -37,20 +37,17 @@ public class ExamTimetableAlgorithm {
         // Create initial solution with multiple attempts for unassigned classes
         ExamTimetableSolution solution = createInitialAssignmentWithRetries(data);
         
-        if (solution.getAssignedClasses().size() < data.getExamClasses().size()) {
-            log.warn("Could not assign all classes: {}/{} assigned", 
-                    solution.getAssignedClasses().size(), data.getExamClasses().size());
-        } else {
-            log.info("All classes successfully assigned in initial solution");
-        }
+        System.out.println("Total assigned classes: " + solution.getAssignedClasses().size() + "/" + data.getExamClasses().size());
 
         return solution;
         
         // Phase 2: Improve solution using local search (Temporary discarded for now)
         // ExamTimetableSolution optimizedSolution = optimizeSolution(solution, data);
         
-        // log.info("Optimization complete. Final solution quality: {}", optimizedSolution.getQualityScore());
+        // System.out.println("Optimization complete. Final solution quality: " + optimizedSolution.getQualityScore());
+        // System.out.println("Total assigned classes: " + solution.getAssignedClasses().size() + "/" + data.getExamClasses().size());
         
+
         // return optimizedSolution;
     }
 
@@ -577,7 +574,7 @@ public class ExamTimetableAlgorithm {
             }
         }
 
-        log.info("Time slot assignment completed: {}/{} courses assigned successfully", 
+        System.out.printf("Time slot assignment completed: {}/{} courses assigned successfully", 
             assignedCourses, totalCourses);
 
         return courseToTimeSlot;
@@ -865,51 +862,55 @@ public class ExamTimetableAlgorithm {
     }
     
     /**
-     * Optimize solution using local search
+     * Optimize solution using Simulated Annealing
      */
     private ExamTimetableSolution optimizeSolution(ExamTimetableSolution initialSolution, TimetablingData data) {
-        ExamTimetableSolution currentSolution = initialSolution;
+        ExamTimetableSolution currentSolution = deepCopy(initialSolution);
         currentSolution.calculateMetrics(data);
-        
-        double bestScore = currentSolution.getQualityScore();
+
+        double currentScore = currentSolution.getQualityScore();
         ExamTimetableSolution bestSolution = deepCopy(currentSolution);
-        
+        double bestScore = currentScore;
+
         Random random = new Random();
         int iterations = 0;
-        int noImprovementCount = 0;
-        
-        while (iterations < MAX_ITERATIONS && noImprovementCount < 100) {
-            System.err.println("---------------------------------");
-            System.err.println("Iteration: " + iterations + ", Best Score: " + bestScore);
+
+        double temperature = 1.0;         // Initial temperature
+        double coolingRate = 0.995;       // Cooling factor (between 0 and 1)
+        double minTemperature = 1e-4;     // Stop when temperature is low
+
+        while (iterations < MAX_ITERATIONS && temperature > minTemperature) {
             iterations++;
             
+            // Generate a neighbor solution
             ExamTimetableSolution neighborSolution = applyRandomMove(currentSolution, data, random);
-            
             neighborSolution.calculateMetrics(data);
             
             double neighborScore = neighborSolution.getQualityScore();
-            System.err.println("Neighbor Score: " + neighborScore);
-            if (neighborScore > bestScore) {
-                bestScore = neighborScore;
-                bestSolution = deepCopy(neighborSolution);
+            double delta = neighborScore - currentScore;
+            
+            if (delta > 0 || Math.exp(delta / temperature) > random.nextDouble()) {
+                // Accept neighbor (better or with acceptance probability)
                 currentSolution = neighborSolution;
-                noImprovementCount = 0;
+                currentScore = neighborScore;
                 
-                log.debug("Improvement found at iteration {}. New score: {}", iterations, bestScore);
-            } else {
-                double acceptanceProbability = Math.exp((neighborScore - bestScore) / (1.0 - iterations / (double)MAX_ITERATIONS));
-                if (random.nextDouble() < acceptanceProbability) {
-                    currentSolution = neighborSolution;
-                    log.debug("Accepting worse solution with probability {}", acceptanceProbability);
+                if (neighborScore > bestScore) {
+                    bestSolution = deepCopy(neighborSolution);
+                    bestScore = neighborScore;
+                    System.err.println("---------------------------------");
+                    System.err.println("Iteration: " + iterations + ", Temperature: " + temperature + ", Best Score: " + bestScore);
+                    System.err.println("New best solution found. Score: " + bestScore);
                 }
-                
-                noImprovementCount++;
             }
+
+            // Cool down
+            temperature *= coolingRate;
         }
-        
-        log.info("Optimization completed after {} iterations", iterations);
+
+        System.err.println("Simulated Annealing completed after " + iterations + " iterations. Final best score: " + bestScore);
         return bestSolution;
     }
+
     
     /**
      * Apply a random move to generate a neighbor solution

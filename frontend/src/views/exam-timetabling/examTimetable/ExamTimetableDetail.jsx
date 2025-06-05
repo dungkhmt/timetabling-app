@@ -40,6 +40,7 @@ import { useExamRoomData } from 'services/useExamRoomData';
 import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
 import UnassignConfirmDialog from './components/UnassignConfirmDialog'
 import UnsavedChangesWarningModal from './components/UnsavedChangesWarningModal'
+import { toast } from 'react-toastify'
 
 const convertDateFormat = (dateStr) =>{
   const [year, month, day] = dateStr.split('-');
@@ -242,6 +243,9 @@ const TimetableDetailPage = () => {
       const examClassAssignmentLookup = new Map(
         examTimetableAssignments.map(assignment => [assignment.id, assignment.examTimetableClassId])
       );
+
+      await unassignAssignments(selectedAssignments);
+
       const result = await autoAssign({
         examTimetableId: timetable.id,
         classIds: selectedAssignments.map(id => examClassAssignmentLookup.get(id)),
@@ -280,6 +284,8 @@ const TimetableDetailPage = () => {
     try {
       setIsUnassigning(true);
       await unassignAssignments(selectedAssignments);
+      toast.success('Hủy phân công lịch thi thành công!');
+
       setSelectedAssignments([]);
       setIsUnassigning(false);
       setIsUnassignDialogOpen(false);

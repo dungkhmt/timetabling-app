@@ -47,9 +47,9 @@ public class ExamTimetableSolution extends TimetablingSolution {
     
     // Constants for optimization weights
     private static final double WEIGHT_GROUP_SPACING = 10.0;  // 1st priority
-    private static final double WEIGHT_ROOM_BALANCE = 5.0;    // 2nd priority
-    private static final double WEIGHT_TIMESLOT_BALANCE = 5.0; // 2nd priority
-    private static final double WEIGHT_EARLY_SLOTS = 2.0;     // 3rd priority
+    private static final double WEIGHT_TIMESLOT_BALANCE = 7.0; // 2nd priority
+    private static final double WEIGHT_ROOM_BALANCE = 3.0;    // 3nd priority
+    private static final double WEIGHT_EARLY_SLOTS = 2.0;     // 4rd priority
     
     /**
      * Calculate metrics for the current solution based on the preprocessed data
