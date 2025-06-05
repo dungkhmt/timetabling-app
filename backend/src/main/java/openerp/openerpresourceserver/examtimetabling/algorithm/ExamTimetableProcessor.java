@@ -55,10 +55,15 @@ public class ExamTimetableProcessor {
         List<ExamClass> examClasses = examClassRepository.findAllByIdIn(classIds);
         data.setExamClasses(examClasses);
         
-        Map<String, List<ExamClass>> classesByCourseId = examClasses.stream()
+        // Original course grouping
+        Map<String, List<ExamClass>> originalCourseGroups = examClasses.stream()
             .collect(Collectors.groupingBy(ExamClass::getCourseId));
+        
+        // Split large courses into smaller sub-courses
+        Map<String, List<ExamClass>> classesByCourseId = splitLargeCourses(originalCourseGroups);
         data.setClassesByCourseId(classesByCourseId);
         
+        // Rest of the method remains the same...
         Map<String, List<ExamClass>> classesByGroupId = examClasses.stream()
             .filter(ec -> ec.getGroupId() != null && !ec.getGroupId().isEmpty())
             .collect(Collectors.groupingBy(ExamClass::getGroupId));
@@ -96,6 +101,71 @@ public class ExamTimetableProcessor {
         return examDates.stream()
             .map(dateStr -> LocalDate.parse(dateStr, formatter))
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Split large courses into smaller sub-courses
+     * Courses with >10 classes will be split based on group and size constraints
+     */
+    private Map<String, List<ExamClass>> splitLargeCourses(Map<String, List<ExamClass>> originalCourseGroups) {
+        Map<String, List<ExamClass>> newCourseGroups = new HashMap<>();
+        
+        for (Map.Entry<String, List<ExamClass>> entry : originalCourseGroups.entrySet()) {
+            String originalCourseId = entry.getKey();
+            List<ExamClass> classes = entry.getValue();
+            
+            // If course has <= 10 classes, keep it as is
+            if (classes.size() <= 10) {
+                newCourseGroups.put(originalCourseId, classes);
+                continue;
+            }
+            
+            // Step 1: Group classes by description group (groupId)
+            Map<String, List<ExamClass>> classesByGroup = classes.stream()
+                .collect(Collectors.groupingBy(ec -> 
+                    ec.getExamClassGroupId() != null ? ec.getExamClassGroupId().toString() : "NO_GROUP"));
+            
+            // Step 2: Separate large groups (>5) and small groups (<=5)
+            List<List<ExamClass>> largeGroups = new ArrayList<>();
+            List<List<ExamClass>> smallGroups = new ArrayList<>();
+            
+            for (List<ExamClass> group : classesByGroup.values()) {
+                if (group.size() > 5) {
+                    largeGroups.add(group);
+                } else {
+                    smallGroups.add(group);
+                }
+            }
+            
+            // Step 3: Create new courses from large groups
+            int subCourseCounter = 1;
+            for (List<ExamClass> largeGroup : largeGroups) {
+                String newCourseId = originalCourseId + "_SUB_" + subCourseCounter++;
+                newCourseGroups.put(newCourseId, largeGroup);
+            }
+            
+            // Step 4: Combine small groups to create new courses
+            List<ExamClass> currentCombinedGroup = new ArrayList<>();
+            
+            for (List<ExamClass> smallGroup : smallGroups) {
+                currentCombinedGroup.addAll(smallGroup);
+                
+                // If combined group reaches 5 or more classes, create a new course
+                if (currentCombinedGroup.size() >= 5) {
+                    String newCourseId = originalCourseId + "_SUB_" + subCourseCounter++;
+                    newCourseGroups.put(newCourseId, new ArrayList<>(currentCombinedGroup));
+                    currentCombinedGroup.clear();
+                }
+            }
+            
+            // Step 5: Handle remaining small groups that couldn't be combined
+            if (!currentCombinedGroup.isEmpty()) {
+                String newCourseId = originalCourseId + "_SUB_" + subCourseCounter++;
+                newCourseGroups.put(newCourseId, currentCombinedGroup);
+            }
+        }
+        
+        return newCourseGroups;
     }
     
     /**

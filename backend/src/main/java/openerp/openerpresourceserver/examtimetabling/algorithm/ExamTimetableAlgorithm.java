@@ -57,6 +57,7 @@ public class ExamTimetableAlgorithm {
     private ExamTimetableSolution createInitialAssignmentWithRetries(TimetablingData data) {
         ExamTimetableSolution solution = new ExamTimetableSolution();
         
+        
         // Track assigned class IDs
         Set<UUID> assignedClassIds = new HashSet<>();
         int totalClasses = data.getExamClasses().size();
@@ -73,6 +74,7 @@ public class ExamTimetableAlgorithm {
             
             // Create filtered data with updated prohibited slots
             TimetablingData filteredData = filterUnassignedClasses(data, assignedClassIds, prohibitedSlots);
+            System.out.println("Filtered Course groups found: " + filteredData.getClassesByCourseId().size() + " course groups found");
             
             // Create initial solution for remaining classes
             ExamTimetableSolution iterationSolution = createInitialAssignment(filteredData);
@@ -154,11 +156,27 @@ public class ExamTimetableAlgorithm {
                 .collect(Collectors.toList());
         filteredData.setExamClasses(unassignedClasses);
         
-        // Rebuild class groupings
-        Map<String, List<ExamClass>> classesByCourseId = unassignedClasses.stream()
-                .collect(Collectors.groupingBy(ExamClass::getCourseId));
-        filteredData.setClassesByCourseId(classesByCourseId);
+        Map<String, List<ExamClass>> filteredClassesByCourseId = new HashMap<>();
         
+        // Iterate through the original sub-course groups
+        for (Map.Entry<String, List<ExamClass>> entry : originalData.getClassesByCourseId().entrySet()) {
+            String subCourseId = entry.getKey();
+            List<ExamClass> classesInSubCourse = entry.getValue();
+            
+            // Filter to only include unassigned classes from this sub-course
+            List<ExamClass> unassignedClassesInSubCourse = classesInSubCourse.stream()
+                .filter(ec -> !assignedClassIds.contains(ec.getId()))
+                .collect(Collectors.toList());
+            
+            // Only keep the sub-course if it has unassigned classes
+            if (!unassignedClassesInSubCourse.isEmpty()) {
+                filteredClassesByCourseId.put(subCourseId, unassignedClassesInSubCourse);
+            }
+        }
+        
+        filteredData.setClassesByCourseId(filteredClassesByCourseId);
+        
+        // Group by description group remains the same
         Map<String, List<ExamClass>> classesByGroupId = unassignedClasses.stream()
                 .filter(ec -> ec.getGroupId() != null && !ec.getGroupId().isEmpty())
                 .collect(Collectors.groupingBy(ExamClass::getGroupId));
@@ -247,7 +265,7 @@ public class ExamTimetableAlgorithm {
         
         // Step 1: Group classes by course ID (they must be scheduled together)
         Map<String, List<ExamClass>> courseGroups = data.getClassesByCourseId();
-        
+
         // Step 2: Sort course groups by most constrained first
         List<Map.Entry<String, List<ExamClass>>> sortedCourseGroups = sortCourseGroupsByConstraints(courseGroups, data);
         
@@ -271,7 +289,8 @@ public class ExamTimetableAlgorithm {
      */
     private List<Map.Entry<String, List<ExamClass>>> sortCourseGroupsByConstraints(
         Map<String, List<ExamClass>> courseGroups, TimetablingData data) {
-
+        
+        System.out.println("Sorting course groups by constraints..." + courseGroups.size() + " groups found");
         // Build course conflict graph based on group membership
         Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
 
@@ -334,6 +353,7 @@ public class ExamTimetableAlgorithm {
         Map<String, LocalDate> groupLatestDate = new HashMap<>();
 
         int totalCourses = sortedCourseGroups.size();
+        System.out.printf("Total courses to assign: %d%n", totalCourses);
         int assignedCourses = 0;
 
         // For each course, find a valid time slot
