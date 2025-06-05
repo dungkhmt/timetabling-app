@@ -33,13 +33,11 @@ public interface ExamTimetableAssignmentRepository extends JpaRepository<ExamTim
     "a.date " +
     "FROM exam_timetable_assignment a " +
     "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
-    "WHERE a.exam_timetable_id = :timetableId AND a.deleted_at IS NULL", 
+    "WHERE a.exam_timetable_id = :timetableId", 
     nativeQuery = true)
     List<Map<String, Object>> findAssignmentsWithDetailsByTimetableId(UUID timetableId);
 
-    List<ExamTimetableAssignment> findByExamTimetableIdAndDeletedAtIsNull(UUID timetableId);
-
-    long countByExamTimetableIdAndDeletedAtIsNull(UUID timetableId);
+    long countByExamTimetableId(UUID timetableId);
 
     @Query(value = "SELECT a FROM ExamTimetableAssignment a " +
             "WHERE a.examTimetableId = :timetableId AND a.roomId IS NOT NULL AND a.examSessionId IS NOT NULL AND a.date IS NOT NULL")

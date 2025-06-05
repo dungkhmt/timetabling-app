@@ -601,7 +601,12 @@ const TimetableStatisticsPanel = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Add Back Button */}
+       <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
+            Thống Kê Lịch Thi
+        </Typography>
+      </Box>
+
       <Box sx={{ display: 'flex', mb: 2 }}>
         <Button 
           variant="contained" 
@@ -611,6 +616,7 @@ const TimetableStatisticsPanel = () => {
           <ArrowBackIcon sx={{ mr: 1 }} />
           Quay lại danh sách
         </Button>
+        
       </Box>
 
       <Grid container spacing={3} sx={{ minHeight: 'calc(100vh - 200px)' }}>

@@ -56,9 +56,6 @@ public class ExamTimetableAssignment {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "deleted_at", nullable = true)
-    private LocalDateTime deletedAt;
-    
     @PrePersist
     protected void onCreate() {
         if (id == null) {

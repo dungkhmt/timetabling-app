@@ -113,7 +113,7 @@ public class ExamPlanService {
   }
 
   public List<ExamPlan> findAllActivePlans() {
-    return examPlanRepository.findByDeleteAtIsNull();
+    return examPlanRepository.findAll();
   }
 
   public ExamPlanStatisticsDTO getExamPlanStatistics(UUID examPlanId) {

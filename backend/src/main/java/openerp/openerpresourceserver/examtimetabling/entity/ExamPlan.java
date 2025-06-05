@@ -40,27 +40,4 @@ public class ExamPlan {
 
     @Column(name = "semester_id")
     private Long semesterId;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-    
-    @Column(name = "delete_at", nullable = true)
-    private LocalDateTime deleteAt;
-    
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

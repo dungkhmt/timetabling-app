@@ -13,12 +13,43 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ExamTimetableSolution extends TimetablingSolution {
+     // Maps class ID to its assignment details
+    private Map<UUID, AssignmentDetails> assignedClasses;
+    
+    // Maps course ID to time slot ID
+    private Map<String, UUID> courseTimeSlotAssignments;
+    
+    // Maps time slot ID to list of class IDs assigned to it
+    private Map<UUID, List<UUID>> timeSlotClassAssignments;
+    
+    // Maps room ID to number of times it's used
+    private Map<String, Integer> roomUsageCounts;
+    
+    // Maps time slot ID to number of times it's used
+    private Map<UUID, Integer> timeSlotUsageCounts;
+    
+    // Optimization metrics
+    private int groupSpacingViolations; // 1st priority
+    private double roomBalanceMetric;   // 2nd priority
+    private double timeSlotBalanceMetric; // 2nd priority
+    private int earlySlotAssignments;   // 3rd priority
+    
+    // Overall quality score (weighted sum of metrics)
+    private double qualityScore;
+    
+    public ExamTimetableSolution() {
+        this.assignedClasses = new HashMap<>();
+        this.courseTimeSlotAssignments = new HashMap<>();
+        this.timeSlotClassAssignments = new HashMap<>();
+        this.roomUsageCounts = new HashMap<>();
+        this.timeSlotUsageCounts = new HashMap<>();
+    }
     
     // Constants for optimization weights
     private static final double WEIGHT_GROUP_SPACING = 10.0;  // 1st priority
-    private static final double WEIGHT_ROOM_BALANCE = 5.0;    // 2nd priority
-    private static final double WEIGHT_TIMESLOT_BALANCE = 5.0; // 2nd priority
-    private static final double WEIGHT_EARLY_SLOTS = 2.0;     // 3rd priority
+    private static final double WEIGHT_TIMESLOT_BALANCE = 7.0; // 2nd priority
+    private static final double WEIGHT_ROOM_BALANCE = 3.0;    // 3nd priority
+    private static final double WEIGHT_EARLY_SLOTS = 2.0;     // 4rd priority
     
     /**
      * Calculate metrics for the current solution based on the preprocessed data

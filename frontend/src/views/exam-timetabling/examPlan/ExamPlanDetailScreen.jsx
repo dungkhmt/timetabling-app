@@ -100,6 +100,11 @@ const ExamPlanDetailPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
+            Kế Hoạch Thi
+        </Typography>
+      </Box>
       <Grid container spacing={3} sx={{ minHeight: 'calc(100vh - 200px)' }}> {/* Set a minimum height */}
         <Grid item xs={12} md={8} sx={{ display: 'flex', flexDirection: 'column' }}>
           {/* Plan Information Card */}

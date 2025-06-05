@@ -10,5 +10,5 @@ import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
 
 @Repository
 public interface ExamTimetableRepository extends JpaRepository<ExamTimetable, UUID> {
-    List<ExamTimetable> findByExamPlanIdAndDeletedAtIsNull(UUID examPlanId);
+    List<ExamTimetable> findByExamPlanId(UUID examPlanId);
 }

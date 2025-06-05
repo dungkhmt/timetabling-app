@@ -60,7 +60,6 @@ public class ExamTimetableService {
         
         LocalDateTime now = LocalDateTime.now();
         examTimetable.setCreatedAt(now);
-        examTimetable.setUpdatedAt(now);
         ExamTimetable savedTimetable = examTimetableRepository.save(examTimetable);
         
         String insertSql = "INSERT INTO exam_timetable_assignment " +
@@ -83,7 +82,7 @@ public class ExamTimetableService {
     public List<ExamTimetableDTO> getAllTimetablesByExamPlanId(UUID examPlanId) {
         long totalClasses = examClassRepository.countByExamPlanId(examPlanId);
         
-        List<ExamTimetable> timetables = examTimetableRepository.findByExamPlanIdAndDeletedAtIsNull(examPlanId);
+        List<ExamTimetable> timetables = examTimetableRepository.findByExamPlanId(examPlanId);
         
         return timetables.stream().map(timetable -> {
             ExamTimetableDTO dto = new ExamTimetableDTO();
@@ -91,7 +90,6 @@ public class ExamTimetableService {
             dto.setName(timetable.getName());
             dto.setExamPlanId(timetable.getExamPlanId());
             dto.setCreatedAt(timetable.getCreatedAt());
-            dto.setUpdatedAt(timetable.getUpdatedAt());
             
             long completedAssignments = examTimetableAssignmentRepository
                 .countByExamTimetableIdAndRoomIdIsNotNullAndExamSessionIdIsNotNull(timetable.getId());
@@ -139,7 +137,6 @@ public class ExamTimetableService {
         timetable.setName(name);
         
         // Update timestamp
-        timetable.setUpdatedAt(LocalDateTime.now());
         
         return examTimetableRepository.save(timetable);
     }
@@ -166,7 +163,7 @@ public class ExamTimetableService {
             .countByExamTimetableIdAndRoomIdIsNotNullAndExamSessionIdIsNotNull(timetable.getId());
         
         long totalAssignments = assignmentRepository
-            .countByExamTimetableIdAndDeletedAtIsNull(timetable.getId());
+            .countByExamTimetableId(timetable.getId());
             
         // Build response DTO
         ExamTimetableDetailDTO detailDTO = new ExamTimetableDetailDTO();
@@ -179,7 +176,6 @@ public class ExamTimetableService {
         detailDTO.setSessionCollectionId(collection.getId());
         detailDTO.setSessionCollectionName(collection.getName());
         detailDTO.setCreatedAt(timetable.getCreatedAt());
-        detailDTO.setUpdatedAt(timetable.getUpdatedAt());
         detailDTO.setCompletedAssignments(completedAssignments);
         detailDTO.setTotalAssignments(totalAssignments);
         
@@ -337,7 +333,6 @@ public class ExamTimetableService {
                     "COUNT(a.id) as assignment_count " +
                     "FROM exam_timetable_assignment a " +
                     "WHERE a.exam_timetable_id = :timetableId " +
-                    "AND a.deleted_at IS NULL " +
                     "AND a.room_id IS NOT NULL " +
                     "AND a.date IS NOT NULL " +
                     "GROUP BY a.date " +
@@ -407,7 +402,6 @@ public class ExamTimetableService {
         String usedRoomsSql = "SELECT COUNT(DISTINCT room_id) " +
                      "FROM exam_timetable_assignment " +
                      "WHERE exam_timetable_id = :timetableId " +
-                     "AND deleted_at IS NULL " +
                      "AND room_id IS NOT NULL";
         
         Query usedRoomsQuery = entityManager.createNativeQuery(usedRoomsSql);
@@ -439,7 +433,7 @@ public class ExamTimetableService {
                     "COUNT(*) as total, " +
                     "COUNT(CASE WHEN room_id IS NOT NULL AND exam_session_id IS NOT NULL THEN 1 END) as assigned " +
                     "FROM exam_timetable_assignment " +
-                    "WHERE exam_timetable_id = :timetableId AND deleted_at IS NULL";
+                    "WHERE exam_timetable_id = :timetableId";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("timetableId", timetableId);
@@ -464,7 +458,6 @@ public class ExamTimetableService {
                     "FROM exam_timetable_assignment a " +
                     "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
-                    "AND a.deleted_at IS NULL " +
                     "GROUP BY c.description " +
                     "ORDER BY c.description";
         
@@ -499,7 +492,6 @@ public class ExamTimetableService {
                                     "WHERE a.exam_timetable_id = :timetableId " +
                                     "AND c.description = :description " +
                                     "AND a.date IS NOT NULL " +
-                                    "AND a.deleted_at IS NULL " +
                                     ") " +
                                     "SELECT course_id, date FROM RankedAssignments WHERE rn = 1 " +
                                     "ORDER BY date";
@@ -577,7 +569,6 @@ public class ExamTimetableService {
                     "FROM exam_timetable_assignment a " +
                     "JOIN exam_timetable_session s ON a.exam_session_id = s.id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
-                    "AND a.deleted_at IS NULL " +
                     "AND a.room_id IS NOT NULL " +
                     "GROUP BY s.name " +
                     "ORDER BY assignment_count DESC";
@@ -604,7 +595,6 @@ public class ExamTimetableService {
                     "FROM exam_timetable_assignment a " +
                     "JOIN timetabling_classroom r ON a.room_id = r.classroom_id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
-                    "AND a.deleted_at IS NULL " +
                     "GROUP BY r.classroom " +
                     "ORDER BY assignment_count DESC";
         
@@ -653,7 +643,6 @@ public class ExamTimetableService {
                     "JOIN timetabling_classroom r ON a.room_id = r.classroom_id " +
                     "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
-                    "AND a.deleted_at IS NULL " +
                     "AND r.quantity_max < c.number_students * 2";
         
         Query query = entityManager.createNativeQuery(sql);
@@ -672,7 +661,6 @@ public class ExamTimetableService {
                     "FROM exam_timetable_assignment a " +
                     "JOIN timetabling_classroom r ON a.room_id = r.classroom_id " +
                     "WHERE a.exam_timetable_id = :timetableId " +
-                    "AND a.deleted_at IS NULL " +
                     "GROUP BY building_name " +
                     "ORDER BY assignment_count DESC";
         

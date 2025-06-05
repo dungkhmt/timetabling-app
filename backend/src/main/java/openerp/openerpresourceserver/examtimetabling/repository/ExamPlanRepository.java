@@ -8,5 +8,5 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ExamPlanRepository extends JpaRepository<ExamPlan, UUID> {
-  List<ExamPlan> findByDeleteAtIsNull();
+  List<ExamPlan> findAll();
 }

@@ -8,10 +8,10 @@ export const useExamSessionData = () => {
   const { data: examSessions, isLoading, error, refetch } = useQuery(
     'examSessions',
     examSessionService.getAllExamSessions,
-    {
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-      cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
-    }
+    // {
+    //   staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    //   cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
+    // }
   );
 
   const createSessionMutation = useMutation(examSessionService.createExamSession, {
