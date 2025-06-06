@@ -291,6 +291,10 @@ public class ExamTimetableAlgorithm {
         Map<String, List<ExamClass>> courseGroups, TimetablingData data) {
         
         System.out.println("Sorting course groups by constraints..." + courseGroups.size() + " groups found");
+
+        // for (Map.Entry<String, List<ExamClass>> courseEntry : courseGroups.entrySet()) {
+        //     System.out.println(courseEntry.getKey());
+        // }
         // Build course conflict graph based on group membership
         Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
 
@@ -354,6 +358,8 @@ public class ExamTimetableAlgorithm {
 
         int totalCourses = sortedCourseGroups.size();
         System.out.printf("Total courses to assign: %d%n", totalCourses);
+        
+     
         int assignedCourses = 0;
 
         // For each course, find a valid time slot
@@ -663,23 +669,30 @@ public class ExamTimetableAlgorithm {
     private Map<String, Set<String>> buildCourseConflictGraph(TimetablingData data) {
         Map<String, Set<String>> courseConflictGraph = new HashMap<>();
         
-        // Initialize empty sets for all courses
+        // Initialize empty sets for all courses (including sub-courses)
         for (String courseId : data.getClassesByCourseId().keySet()) {
             courseConflictGraph.put(courseId, new HashSet<>());
         }
         
         // 1. Add conflicts from same group (different course IDs)
-        // Group courses by group ID
+        // Group courses by group ID using the sub-course structure
         Map<String, Set<String>> coursesByGroup = new HashMap<>();
         
-        // Build mapping of which courses are in which groups
-        for (ExamClass examClass : data.getExamClasses()) {
-            String courseId = examClass.getCourseId();
-            String groupId = examClass.getGroupId();
+        // Build mapping of which sub-courses are in which groups
+        for (Map.Entry<String, List<ExamClass>> courseEntry : data.getClassesByCourseId().entrySet()) {
+            String subCourseId = courseEntry.getKey(); // This could be "MATH101" or "MATH101_SUB_1"
+            List<ExamClass> classesInSubCourse = courseEntry.getValue();
             
-            if (groupId != null && !groupId.isEmpty()) {
+            // Get the group IDs that this sub-course belongs to
+            Set<String> groupIds = classesInSubCourse.stream()
+                .map(ExamClass::getGroupId)
+                .filter(groupId -> groupId != null && !groupId.isEmpty())
+                .collect(Collectors.toSet());
+            
+            // Add this sub-course to each group it belongs to
+            for (String groupId : groupIds) {
                 coursesByGroup.computeIfAbsent(groupId, k -> new HashSet<>())
-                    .add(courseId);
+                    .add(subCourseId);
             }
         }
         
@@ -700,10 +713,13 @@ public class ExamTimetableAlgorithm {
         }
         
         // 2. Add conflicts from ConflictExamTimetablingClass table
-        // Build a map of class ID to course ID for quick lookup
-        Map<UUID, String> classIdToCourseId = new HashMap<>();
-        for (ExamClass examClass : data.getExamClasses()) {
-            classIdToCourseId.put(examClass.getId(), examClass.getCourseId());
+        // Build a map of class ID to sub-course ID for quick lookup
+        Map<UUID, String> classIdToSubCourseId = new HashMap<>();
+        for (Map.Entry<String, List<ExamClass>> courseEntry : data.getClassesByCourseId().entrySet()) {
+            String subCourseId = courseEntry.getKey();
+            for (ExamClass examClass : courseEntry.getValue()) {
+                classIdToSubCourseId.put(examClass.getId(), subCourseId);
+            }
         }
         
         // Process each conflict pair from the conflict graph
@@ -711,16 +727,16 @@ public class ExamTimetableAlgorithm {
             UUID classId1 = entry.getKey();
             Set<UUID> conflictingClassIds = entry.getValue();
             
-            String courseId1 = classIdToCourseId.get(classId1);
-            if (courseId1 == null) continue; // Skip if we can't find course ID
+            String subCourseId1 = classIdToSubCourseId.get(classId1);
+            if (subCourseId1 == null) continue; // Skip if we can't find sub-course ID
             
             for (UUID classId2 : conflictingClassIds) {
-                String courseId2 = classIdToCourseId.get(classId2);
-                if (courseId2 == null || courseId1.equals(courseId2)) continue; // Skip same course conflicts
+                String subCourseId2 = classIdToSubCourseId.get(classId2);
+                if (subCourseId2 == null || subCourseId1.equals(subCourseId2)) continue; // Skip same sub-course conflicts
                 
-                // Add conflict between these courses
-                courseConflictGraph.computeIfAbsent(courseId1, k -> new HashSet<>()).add(courseId2);
-                courseConflictGraph.computeIfAbsent(courseId2, k -> new HashSet<>()).add(courseId1);
+                // Add conflict between these sub-courses
+                courseConflictGraph.computeIfAbsent(subCourseId1, k -> new HashSet<>()).add(subCourseId2);
+                courseConflictGraph.computeIfAbsent(subCourseId2, k -> new HashSet<>()).add(subCourseId1);
             }
         }
         
