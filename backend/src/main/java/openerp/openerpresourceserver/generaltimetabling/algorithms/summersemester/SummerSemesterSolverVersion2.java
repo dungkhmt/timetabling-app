@@ -6,6 +6,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.Class
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.wms.exception.DataExistedException;
 
 import java.util.*;
 @Log4j2
@@ -63,6 +64,9 @@ public class SummerSemesterSolverVersion2 implements Solver {
             mCourse2Classes.get(course).add(cls);
         }
         occupation = new int[Constant.daysPerWeek+2][Constant.slotPerCrew+1];
+        for(int d = 0; d <= Constant.daysPerWeek+1; d++)
+            for(int s = 0; s <= Constant.slotPerCrew; s++)
+                occupation[d][s] =  0;
     }
     public void printRoomsUsed(){
         Set<Classroom> R = new HashSet<>();
@@ -84,7 +88,11 @@ public class SummerSemesterSolverVersion2 implements Solver {
     }
     private boolean  assignTimeSlot(ClassSegment cs, int timeSlot){
         solutionSlot.put(cs.getId(),timeSlot);
+        DaySessionSlot dss = new DaySessionSlot(timeSlot);
+        for(int s = 0; s < cs.getDuration(); s++)
+            occupation[dss.day][dss.slot + s] += 1;
         return true;
+
     }
     private boolean  assignTimeSlotRoom(ClassSegment cs, int timeSlot, int room){
         log.info("assignTimeSlotRoom start (cs.getId() " + cs.getId() + " timeSlot " + timeSlot + " room " + room + ")") ;
@@ -117,7 +125,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
         List<ClassSegment> CS = mClassId2ClassSegments.get(classId);
         if(CS != null && CS.size()> 0){
             ClassSegment cs = CS.get(0);
-            if(solutionSlot.get(cs.getId())!=null) return true;
+            if(solutionSlot.get(cs.getId())!=null && solutionSlot.get(cs.getId()) >= 0) return true;
         }
         return false;
     }
@@ -128,6 +136,9 @@ public class SummerSemesterSolverVersion2 implements Solver {
         public MatchScore(int score, Map<ClassSegment, ClassSegment> m) {
             this.score = score;
             this.m = m;
+        }
+        public String toString(){
+            return "[score " + score + ", sz = " + (m == null ? "null" : m.keySet().size()) + "]";
         }
     }
     private MatchScore matchScore(Long classId1, Long classId2, int nbSlotPerSession){
@@ -169,17 +180,18 @@ public class SummerSemesterSolverVersion2 implements Solver {
     }
     private int findConsecutiveSlot(ClassSegment cs, ClassSegment matchClassSegment){
         if(solutionSlot.get(matchClassSegment.getId())==null){
-            log.info("findConsecutiveSlot, BUG???"); return -1;
+            log.info("findConsecutiveSlot, matchClassSegment " + matchClassSegment.str() + " not scheduled -> BUG???"); return -1;
         }
         int sl = solutionSlot.get(matchClassSegment.getId());
         DaySessionSlot dss = new DaySessionSlot(sl);
+        log.info("findConsecutiveSlot, matchClassSegment " + matchClassSegment.str() + " schedule = " + dss.toString());
         int slot = dss.slot - cs.getDuration();
         if(slot >= 1)
             return new DaySessionSlot(dss.day,dss.session,slot).hash();
-        slot = sl + matchClassSegment.getDuration();
+        slot = dss.slot + matchClassSegment.getDuration();
         if(slot + cs.getDuration() - 1 <= Constant.slotPerCrew)
             return new DaySessionSlot(dss.day,dss.session,slot).hash();
-        log.info("findConsecutiveSlot, BUG???"); return -1;
+        log.info("findConsecutiveSlot, before and after not legal -> BUG???"); return -1;
     }
     private int findSeparateDay(List<Integer> D){
         int d = -1;
@@ -216,15 +228,19 @@ public class SummerSemesterSolverVersion2 implements Solver {
         return sel_slot;
     }
     private boolean assignSlot4Class(Long id, MatchScore ms, int session){
+        ModelResponseTimeTablingClass cls = mClassId2Class.get(id);
         List<ClassSegment> CS = new ArrayList<>();
         for(ClassSegment cs: mClassId2ClassSegments.get(id)) CS.add(cs);
         while(CS.size() > 0) {
             // consider first class-segment matched
             boolean ok = false;
             for (ClassSegment cs : CS) {
-                if (ms.m.get(cs.getId()) != null) {
-                    ClassSegment m_cs = ms.m.get(cs.getId());
+                if (ms.m.get(cs) != null) {
+                    ClassSegment m_cs = ms.m.get(cs);
+                    log.info("assignSlot4Class, findConsecutiveSlot for class-segment " + cs.str() + " matched class segment = " + m_cs.str());
                     int startSlot = findConsecutiveSlot(cs, m_cs);
+                    DaySessionSlot dss = new DaySessionSlot(startSlot);
+                    log.info("assignSlot4Class, findConsecutiveSlot for class-segment " + cs.str() + " of class " + cls.getClassCode() + " RETURN startSlot = " + startSlot + " dss.slot =  " + dss.slot);
                     assignTimeSlot(cs,startSlot);
                     CS.remove(cs); ok = true; break;
                 }
@@ -235,6 +251,8 @@ public class SummerSemesterSolverVersion2 implements Solver {
         for(ClassSegment cs: CS){
             int slot = findSeparateSlot(cs,session);
             if(slot != -1){
+                DaySessionSlot dss = new DaySessionSlot(slot);
+                log.info("assignSlot4Class, findSeparateSlot for class-segment " + cs.str() + " of class " + cls.getClassCode() + " RETURN slot = " + slot + " dss.slot =  " + dss.slot + " dayPerWeek = " + Constant.daysPerWeek + " slotPerCrew = " + Constant.slotPerCrew);
                 assignTimeSlot(cs,slot);
             }else{
                 log.info("assignSlot4Class, CANNOT find any slot for class segment " + cs.str() + "?????");
@@ -242,20 +260,27 @@ public class SummerSemesterSolverVersion2 implements Solver {
         }
         return true;
     }
-    private boolean findGreedyTimeSlotForClass(Long id, int session, Map<String, List<Long>> mCourse2ClassId){
+    private boolean findGreedyTimeSlotForClass(Long id, int session, Map<String, Set<Long>> mCourse2ClassId){
         List<ClassSegment> CS = mClassId2ClassSegments.get(id);
         ModelResponseTimeTablingClass cls = mClassId2Class.get(id);
         String courseCode = cls.getModuleCode();
+        log.info("findGreedyTimeSlotForClass, consider course " + courseCode + " class cls = " + cls.str());
         // FIRST try to find another class of the same course that can be matched
         MatchScore maxScore = null;
         Long sel_id = null;
-        for(ModelResponseTimeTablingClass clsi: mCourse2Classes.get(courseCode)){
+        //for(ModelResponseTimeTablingClass clsi: mCourse2Classes.get(courseCode)){
+        for(Long idi: mCourse2ClassId.get(courseCode)){
+            ModelResponseTimeTablingClass clsi = mClassId2Class.get(idi);
             if(!isScheduled(clsi.getId())) continue;
             if(mClassId2MatchedClassId.get(clsi.getId())!=null) continue;
             List<ClassSegment> CSi = mClassId2ClassSegments.get(clsi.getId());
             MatchScore ms = matchScore(id,clsi.getId(), Constant.slotPerCrew);
-            if(maxScore == null || ms.score > maxScore.score){
-                maxScore = ms; sel_id = clsi.getId();
+            log.info("findGreedyTimeSlotForClass class " + cls.str() + " matchScore = " + ms.toString() + " with " + clsi.str());
+            if(ms.score >= 0) {
+                if (maxScore == null || ms.score > maxScore.score) {
+                    maxScore = ms;
+                    sel_id = clsi.getId();
+                }
             }
         }
 
@@ -269,8 +294,11 @@ public class SummerSemesterSolverVersion2 implements Solver {
                     if(mClassId2MatchedClassId.get(clsi.getId())!=null) continue;
                     List<ClassSegment> CSi = mClassId2ClassSegments.get(clsi.getId());
                     MatchScore ms = matchScore(id,clsi.getId(), Constant.slotPerCrew);
-                    if(maxScore == null || ms.score > maxScore.score){
-                        maxScore = ms; sel_id = clsi.getId();
+                    if(ms.score >= 0) {
+                        if (maxScore == null || ms.score > maxScore.score) {
+                            maxScore = ms;
+                            sel_id = clsi.getId();
+                        }
                     }
                 }
             }
@@ -280,6 +308,8 @@ public class SummerSemesterSolverVersion2 implements Solver {
                 for(ClassSegment cs: mClassId2ClassSegments.get(id)){
                     int slot = findSeparateSlot(cs,session);
                     if(slot != -1){
+                        DaySessionSlot dss = new DaySessionSlot(slot);
+                        log.info("findGreedyTimeSlotForClass, NOT MATCHED -> findSeparateSlot for class-segment " + cs.getId() + " of class " + cls.getClassCode() + " RETURN slot = " + slot + " dss.slot = " + dss.slot);
                         assignTimeSlot(cs,slot);
                     }else{
                         log.info("assignSlot4Class, CANNOT find any slot for class segment " + cs.str() + "?????");
@@ -292,7 +322,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
     }
     private boolean scheduleGroup(List<ClassSegment> L, int session, boolean assignRoom) {
         //Map<Long, List<ClassSegment>> mClassId2ClassSegments = new HashMap<>();
-        Map<String, List<Long>> mCourse2ClassId = new HashMap<>();
+        Map<String, Set<Long>> mCourse2ClassId = new HashMap<>();
         for (ClassSegment cs : L) {
             //if (mClassId2ClassSegments.get(cs.getClassId()) == null)
             //    mClassId2ClassSegments.put(cs.getClassId(), new ArrayList<>());
@@ -300,12 +330,17 @@ public class SummerSemesterSolverVersion2 implements Solver {
 
             String courseCode = cs.getCourseCode();
             if(mCourse2ClassId.get(courseCode)==null)
-                mCourse2ClassId.put(courseCode,new ArrayList<>());
+                mCourse2ClassId.put(courseCode,new HashSet<>());
             mCourse2ClassId.get(courseCode).add(cs.getClassId());
         }
         for(String courseCode: mCourse2ClassId.keySet()) {
+            String ids = "";
+            for(Long id: mCourse2ClassId.get(courseCode)) ids = ids + id + ",";
+            log.info("scheduleGroup, session = " + session + " consider course " + courseCode + " nbClasses = " + mCourse2ClassId.size() + ": " + ids);
+
             for (Long id : mCourse2ClassId.get(courseCode)) {
                 //List<ClassSegment> CS = mClassId2ClassSegments.get(id);
+
                 boolean ok = findGreedyTimeSlotForClass(id,session,mCourse2ClassId);
                 if(!ok){
                     log.info("scheduleGroup -> CANNOT schedule class " + id + "????");
@@ -314,7 +349,8 @@ public class SummerSemesterSolverVersion2 implements Solver {
         }
         return true;
     }
-    private int detectSession(List<ClassSegment> L){
+    private int
+    detectSession(List<ClassSegment> L){
         // return 0 if cs is morning or afternoon
         // 1 if cs is morning
         // 2 if cs is afternoon
@@ -323,6 +359,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
             for (int s : cs.getDomainTimeSlots()) {
                 DaySessionSlot dss = new DaySessionSlot(s);
                 S.add(dss.session);
+                //log.info("detectSession, class segment " + cs.str() + " -> dds = " + dss.toString() + " add session " + dss.session);
             }
         }
         if(S.size() > 1) return 0;// both morning and afternoon
@@ -379,7 +416,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
         solutionRoom = new HashMap<>();
         Map<Long, List<ClassSegment>> mClassId2ClassSegments= new HashMap<>();
         for(ClassSegment cs: I.getClassSegments()){
-            log.info("solve... cs = " + cs.getClassId() + " course " + cs.getCourseCode() + " type = " + cs.getType() + " duration " + cs.getDuration() + " domain-rooms = " + cs.getDomainRooms().size());
+            //log.info("solve... cs = " + cs.getClassId() + " course " + cs.getCourseCode() + " type = " + cs.getType() + " duration " + cs.getDuration() + " domain-rooms = " + cs.getDomainRooms().size());
             if(mClassId2ClassSegments.get(cs.getClassId())==null)
                 mClassId2ClassSegments.put(cs.getClassId(),new ArrayList<>());
             mClassId2ClassSegments.get(cs.getClassId()).add(cs);
@@ -471,7 +508,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
 
             for (Long id : ids) {
                 for(ClassSegment cs: mClassId2ClassSegments.get(id)){
-                    log.info("solver, id = " + id + " class-segment " + cs.toString());
+                    //log.info("solver, id = " + id + " class-segment " + cs.toString());
                     if(sCH.contains(cs.getCourseCode())){
                         CH[session].add(cs);
                     }else if(sETEE.contains(cs.getCourseCode())){
@@ -484,7 +521,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
                         ME[session].add(cs);
                     }else if(sMI.contains(cs.getCourseCode())){
                         MI[session].add(cs);
-                        log.info("solver, id = " + id + " class-segment " + cs.toString() + " MI.add(" + cs.getCourseCode() + ") -> sz = " + MI[session].size());
+                        //log.info("solver, id = " + id + " class-segment " + cs.toString() + " MI.add(" + cs.getCourseCode() + ") -> sz = " + MI[session].size());
                     }else if(sSSH.contains(cs.getCourseCode())){
                         SSH[session].add(cs);
                     }
@@ -507,6 +544,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
             scheduleGroup(EM[session],session,false);
             log.info("solve group ED size = " + ED[session].size());
             scheduleGroup(ED[session],session,false);
+            /*
             log.info("solve scheduleGroupLTandBT MI size = " + MI[session].size());
             if(!scheduleGroupLTandChildrenBT(MI[session],session,false)) return;
             log.info("After solve scheduleGroupLTandBT MI remain size = " + MI[session].size());
@@ -519,7 +557,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
 
             log.info("solve group MSSH size = " + SSH[session].size());
             if(!scheduleGroup(SSH[session],session,false)) return;
-
+            */
         }
         reAssignRooms();
         Set<ClassSegment> CS=new HashSet<>();

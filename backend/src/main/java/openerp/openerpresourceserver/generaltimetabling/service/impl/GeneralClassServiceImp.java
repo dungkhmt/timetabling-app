@@ -14,6 +14,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.helper.ClassTimeComparator;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.mapper.RoomOccupationMapper;
+import openerp.openerpresourceserver.generaltimetabling.model.Constant;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
@@ -83,6 +84,9 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
     @Autowired
     private PlanGeneralClassRepo planGeneralClassRepo;
+
+    @Autowired
+    private TimeTablingVersionRepo timeTablingVersionRepo;
 
     @Override
     public ModelResponseGeneralClass getClassDetailWithSubClasses(Long classId) {
@@ -595,7 +599,10 @@ public class GeneralClassServiceImp implements GeneralClassService {
         synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
-
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
+        if(ver!=null){
+            //Constant.slotPerCrew = ver.getNumberSlotsPerSession();
+        }
         String PARAM_ROOM_PRIORITY = "Y";
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
@@ -629,7 +636,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 mId2RoomReservations.get(cs.getRoom()).add(cs);
             }
         }
-        V2ClassScheduler optimizer = new V2ClassScheduler(params);
+        V2ClassScheduler optimizer = new V2ClassScheduler(params, ver);
         //List<Classroom> rooms = classroomRepo.findAll();
         List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");
 

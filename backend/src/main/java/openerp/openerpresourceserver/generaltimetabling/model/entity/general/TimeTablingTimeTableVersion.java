@@ -37,6 +37,8 @@ public class TimeTablingTimeTableVersion {
     @Column(name = "number_slots_per_session")
     private Integer numberSlotsPerSession;
 
+
+
     @PrePersist
     protected void onCreate() {
         createdStamp = new Date();

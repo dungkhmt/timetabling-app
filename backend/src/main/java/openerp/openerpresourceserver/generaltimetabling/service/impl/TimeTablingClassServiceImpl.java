@@ -466,12 +466,12 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             TimeTablingClass c = cls.get(i);
             if(appeared.get(c) == false) {
                 s_cls.add(c); appeared.put(c,true);
-                log.info("getTimeTablingClassDtos, process sorting, add parent class " + c.getId() + "," + c.getClassType() + "," + c.getModuleCode());
+                //log.info("getTimeTablingClassDtos, process sorting, add parent class " + c.getId() + "," + c.getClassType() + "," + c.getModuleCode());
                 if (mClass2Children.get(c) != null) {
                     for (TimeTablingClass cc : mClass2Children.get(c)) {
                         s_cls.add(cc);
                         appeared.put(cc, true);
-                        log.info("getTimeTablingClassDtos, process sorting, add child class " + cc.getId() + "," + cc.getClassType() + "," + cc.getModuleCode() + ", parent " + cc.getParentClassId());
+                        //log.info("getTimeTablingClassDtos, process sorting, add child class " + cc.getId() + "," + cc.getClassType() + "," + cc.getModuleCode() + ", parent " + cc.getParentClassId());
                     }
                 }
             }

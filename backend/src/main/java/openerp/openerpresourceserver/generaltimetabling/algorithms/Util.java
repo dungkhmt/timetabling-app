@@ -82,7 +82,7 @@ public class Util {
     }
     public static List<Integer> generateSlotsFromEarliest(int maxDayScheduled, int slotPerSession, String crew, int duration){
         int startCrew = 0; int endCrew = 1;
-        if(crew != null){
+        if(crew != null && !crew.equals("")){
             int fKIP = crew.equals("S") ? 0 : 1;
             startCrew = fKIP; endCrew = fKIP;
         }

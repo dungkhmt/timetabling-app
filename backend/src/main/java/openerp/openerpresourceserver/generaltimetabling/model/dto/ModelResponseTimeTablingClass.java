@@ -43,4 +43,8 @@ public class ModelResponseTimeTablingClass {
     private List<TimeTablingClassSegment> timeSlots = new ArrayList<TimeTablingClassSegment>();
     private String learningWeeks;
     private String foreignLecturer;
+
+    public String str(){
+        return "[id = " + id + ", course " + moduleCode + ", code " + classCode + "]";
+    }
 }

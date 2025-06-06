@@ -39,9 +39,11 @@ public class V2ClassScheduler {
     private int MAX_DAY_SCHEDULED = 7;
 
     private AlgorithmConfigParams algoParams = new AlgorithmConfigParams();
+    private TimeTablingTimeTableVersion version = null;
 
-    public V2ClassScheduler(List<TimeTablingConfigParams> params){
+    public V2ClassScheduler(List<TimeTablingConfigParams> params,TimeTablingTimeTableVersion version){
         this.params = params;
+        this.version = version;
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
                 MAX_DAY_SCHEDULED = Integer.valueOf(p.getValue());
@@ -51,6 +53,7 @@ public class V2ClassScheduler {
                 log.info("V2ClassScheduler constructor, algoParams.USED_ROOM_PRIORITY = " + algoParams.USED_ROOM_PRIORITY);
             }
         }
+        algoParams.SLOT_PER_SESSION = version.getNumberSlotsPerSession();
     }
 
     //private RoomOccupationService roomOccupationService;
