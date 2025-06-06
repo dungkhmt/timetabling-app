@@ -120,7 +120,7 @@ const UpdateTimetableModal = ({ timetableName, open, onClose, timetableId, onUpd
           disabled={isSubmitting}
           startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
         >
-          {isSubmitting ? 'Đang tạo...' : 'Cập nhật lịch thi'}
+          {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật lịch thi'}
         </Button>
       </DialogActions>
     </Dialog>

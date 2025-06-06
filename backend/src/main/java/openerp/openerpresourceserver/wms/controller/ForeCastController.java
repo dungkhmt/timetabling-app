@@ -3,11 +3,8 @@ package openerp.openerpresourceserver.wms.controller;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.forecast.DailyProductForecastDTO;
-import openerp.openerpresourceserver.wms.dto.forecast.MonthlyProductForecastDTO;
 import openerp.openerpresourceserver.wms.service.ForecastService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 

@@ -10,7 +10,8 @@ import {
   Grid,
   Paper,
   Typography,
-  Tooltip
+  Tooltip,
+  DialogTitle
 } from '@mui/material';
 import {
   Edit,
@@ -39,6 +40,7 @@ import { useExamRoomData } from 'services/useExamRoomData';
 import { useExamTimetableAssignmentData } from 'services/useExamTimetableAssignmentData';
 import UnassignConfirmDialog from './components/UnassignConfirmDialog'
 import UnsavedChangesWarningModal from './components/UnsavedChangesWarningModal'
+import { toast } from 'react-toastify'
 
 const convertDateFormat = (dateStr) =>{
   const [year, month, day] = dateStr.split('-');
@@ -241,6 +243,9 @@ const TimetableDetailPage = () => {
       const examClassAssignmentLookup = new Map(
         examTimetableAssignments.map(assignment => [assignment.id, assignment.examTimetableClassId])
       );
+
+      await unassignAssignments(selectedAssignments);
+
       const result = await autoAssign({
         examTimetableId: timetable.id,
         classIds: selectedAssignments.map(id => examClassAssignmentLookup.get(id)),
@@ -279,6 +284,8 @@ const TimetableDetailPage = () => {
     try {
       setIsUnassigning(true);
       await unassignAssignments(selectedAssignments);
+      toast.success('Hủy phân công lịch thi thành công!');
+
       setSelectedAssignments([]);
       setIsUnassigning(false);
       setIsUnassignDialogOpen(false);
@@ -397,6 +404,12 @@ const TimetableDetailPage = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Timetable Information Card */}
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
+            Lịch Thi
+        </Typography>
+      </Box>
+
       <Card sx={{ 
         mb: 4, 
         boxShadow: 2, 

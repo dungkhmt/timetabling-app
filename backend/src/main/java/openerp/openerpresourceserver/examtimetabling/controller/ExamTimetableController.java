@@ -222,6 +222,8 @@ public class ExamTimetableController {
             @Valid @RequestBody AutoAssignRequestDTO request) {
         try {
             long startTime = System.currentTimeMillis();
+
+            // examTimetableAssignmentService.unassignAssignments(request.getClassIds());
             
             boolean success = examTimetablingService.autoAssignClass(
                 request.getExamTimetableId(),

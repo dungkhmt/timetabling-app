@@ -90,6 +90,11 @@ const ExamTimeTableView = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+       <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
+            Lịch Thi
+        </Typography>
+      </Box>
       <Box sx={{ 
         mb: 2,
         display: 'flex',

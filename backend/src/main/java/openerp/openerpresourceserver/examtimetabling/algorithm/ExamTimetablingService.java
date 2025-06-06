@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.examtimetabling.algorithm;
 
 import openerp.openerpresourceserver.examtimetabling.algorithm.mapdata.MapDataExamTimeTablingInput;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.AssignmentDetails;
+import openerp.openerpresourceserver.examtimetabling.algorithm.model.ExamTimetableSolution;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingData;
 import openerp.openerpresourceserver.examtimetabling.algorithm.model.TimetablingSolution;
 import openerp.openerpresourceserver.examtimetabling.entity.*;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -23,6 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,7 +38,7 @@ public class ExamTimetablingService {
 
     @Autowired
     private ClassroomRepo classroomRepo;
-
+    
     @Autowired
     private ExamClassRepository examClassRepository;
     
@@ -55,7 +59,6 @@ public class ExamTimetablingService {
     
     @Autowired
     private ExamPlanRepository examPlanRepository;
-
     /**
      * Main method to automatically assign classes to rooms and time slots with time limit
      * 
@@ -87,7 +90,7 @@ public class ExamTimetablingService {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         
         try {
-            clearExistingAssignments(examTimetableId, classIds);
+            // clearExistingAssignments(examTimetableId, classIds);
             log.info("Cleared existing assignments for {} classes", classIds.size());
             
             Future<Boolean> future = executor.submit(() -> {
@@ -113,7 +116,7 @@ public class ExamTimetablingService {
 
                     // Step 2: Apply algorithm
                     ExamTimetableAlgorithm timetableAlgorithm = new ExamTimetableAlgorithm();
-                    TimetablingSolution solution = timetableAlgorithm.assign(data);
+                    ExamTimetableSolution solution = timetableAlgorithm.assign(data);
 
                     if (!solution.isComplete()) {
                         log.warn("Failed to find complete assignment. Assigned: {}/{}", 
@@ -153,12 +156,13 @@ public class ExamTimetablingService {
         List<ExamTimetableAssignment> existingAssignments = 
             examTimetableAssignmentRepository.findByExamTimetableIdAndExamTimetablingClassIdIn(
                 examTimetableId, classIds);
-        
+
         for (ExamTimetableAssignment assignment : existingAssignments) {
             assignment.setRoomId(null);
             assignment.setExamSessionId(null);
             assignment.setDate(null);
             assignment.setWeekNumber(null);
+            assignment.setSession(null);
         }
         
         examTimetableAssignmentRepository.saveAll(existingAssignments);
@@ -190,7 +194,6 @@ public class ExamTimetablingService {
             ));
         
         List<ExamTimetableAssignment> updatedAssignments = new ArrayList<>();
-        
         for (Map.Entry<UUID, AssignmentDetails> entry : solution.getAssignedClasses().entrySet()) {
             UUID classId = entry.getKey();
             AssignmentDetails details = entry.getValue();
@@ -213,10 +216,8 @@ public class ExamTimetablingService {
                 log.warn("No existing assignment found for class ID: {}", classId);
             }
         }
-        
         if (!updatedAssignments.isEmpty()) {
             examTimetableAssignmentRepository.saveAll(updatedAssignments);
-            log.info("Updated {} assignment records", updatedAssignments.size());
         }
     }
     

@@ -169,8 +169,7 @@ public class ExamTimetableAssignmentService {
             "  AND CAST(a.id AS VARCHAR) != :assignmentId " +
             "  AND CAST(a.room_id AS VARCHAR) = :roomId " +
             "  AND a.date = :date " +
-            "  AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
-            "  AND a.deleted_at IS NULL";
+            "  AND CAST(a.exam_session_id AS VARCHAR) = :sessionId ";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("timetableId", timetableId);
@@ -268,8 +267,7 @@ public class ExamTimetableAssignmentService {
                 "WHERE a.exam_timetable_id = :timetableId " +
                 "  AND a.exam_timtabling_class_id = :conflictClassId " +
                 "  AND a.date = :date " +
-                "  AND CAST(a.exam_session_id AS VARCHAR) = :sessionId " +
-                "  AND a.deleted_at IS NULL";
+                "  AND CAST(a.exam_session_id AS VARCHAR) = :sessionId ";
             
             Query timeOverlapQuery = entityManager.createNativeQuery(timeOverlapSql);
             timeOverlapQuery.setParameter("timetableId", timetableId);
@@ -395,7 +393,6 @@ public class ExamTimetableAssignmentService {
             "FROM exam_timetable_assignment a " +
             "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
             "WHERE a.exam_timetable_id = :timetableId " +
-            "AND a.deleted_at IS NULL " +
             "ORDER BY c.description";
         
         Query query = entityManager.createNativeQuery(sql);
@@ -464,8 +461,7 @@ public class ExamTimetableAssignmentService {
                      "    date = NULL, " +
                      "    week_number = NULL, " +
                      "    updated_at = NOW() " +
-                     "WHERE id IN (" + idList + ") " +
-                     "AND deleted_at IS NULL";
+                     "WHERE id IN (" + idList + ") ";
         
         Query query = entityManager.createNativeQuery(sql);
         int updatedCount = query.executeUpdate();
@@ -489,8 +485,7 @@ public class ExamTimetableAssignmentService {
             "FROM exam_timetable_assignment a " +
             "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
             "LEFT JOIN exam_timetable_session s ON CAST(a.exam_session_id AS VARCHAR) = CAST(s.id AS VARCHAR) " +
-            "WHERE CAST(a.id AS VARCHAR) IN :assignmentIds " +
-            "AND a.deleted_at IS NULL";
+            "WHERE CAST(a.id AS VARCHAR) IN :assignmentIds ";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("assignmentIds", assignmentIds);
@@ -722,8 +717,7 @@ public class ExamTimetableAssignmentService {
                      "FROM exam_timetable_assignment " +
                      "WHERE room_id IS NOT NULL " +
                      "AND exam_session_id IS NOT NULL " +
-                     "AND date IS NOT NULL " +
-                     "AND deleted_at IS NULL";
+                     "AND date IS NOT NULL ";
         
         Query query = entityManager.createNativeQuery(sql);
         List<Object[]> results = query.getResultList();
@@ -837,7 +831,6 @@ public class ExamTimetableAssignmentService {
             "  COUNT(*) as assignment_count " +
             "FROM exam_timetable_assignment a " +
             "WHERE a.exam_timetable_id = :timetableId " +
-            "  AND a.deleted_at IS NULL " +
             "  AND a.room_id IS NOT NULL " +
             "  AND a.date IS NOT NULL " +
             "  AND a.session IS NOT NULL " +
@@ -898,8 +891,6 @@ public class ExamTimetableAssignmentService {
             "   c.exam_timetabling_class_id_2 = a1.exam_timtabling_class_id) " +
             "WHERE a1.exam_timetable_id = :timetableId " +
             "  AND a2.exam_timetable_id = :timetableId " +
-            "  AND a1.deleted_at IS NULL " +
-            "  AND a2.deleted_at IS NULL " +
             "  AND a1.date IS NOT NULL " +
             "  AND a1.session IS NOT NULL";
         

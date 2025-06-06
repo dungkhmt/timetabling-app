@@ -35,7 +35,7 @@ public class SessionCollectionService {
         
         // First, fetch all sessions used in assignments in a single query
         String usedSessionsSql = "SELECT DISTINCT exam_session_id FROM exam_timetable_assignment " +
-                                "WHERE exam_session_id IS NOT NULL AND deleted_at IS NULL";
+                                "WHERE exam_session_id IS NOT NULL";
         
         Query query = entityManager.createNativeQuery(usedSessionsSql);
         
@@ -144,8 +144,7 @@ public class SessionCollectionService {
     
     private boolean sessionIsInUse(UUID sessionId) {
         String sql = "SELECT COUNT(*) FROM exam_timetable_assignment " +
-                     "WHERE exam_session_id = :sessionId " +
-                     "AND deleted_at IS NULL";
+                     "WHERE exam_session_id = :sessionId ";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("sessionId", sessionId);
@@ -194,8 +193,7 @@ public class SessionCollectionService {
     private boolean isCollectionInUse(UUID collectionId) {
         String sql = "SELECT COUNT(*) FROM exam_timetable_assignment a " +
                      "JOIN exam_timetable_session s ON a.exam_session_id = s.id " +
-                     "WHERE s.exam_timetable_session_collection_id = :collectionId " +
-                     "AND a.deleted_at IS NULL";
+                     "WHERE s.exam_timetable_session_collection_id = :collectionId ";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("collectionId", collectionId);
