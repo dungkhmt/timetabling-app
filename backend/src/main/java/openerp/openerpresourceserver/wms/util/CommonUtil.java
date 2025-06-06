@@ -27,10 +27,10 @@ public class CommonUtil {
 
     public static List<LocalDate> getAllWeeklyStartDates(LocalDate from, LocalDate to) {
         List<LocalDate> dates = new ArrayList<>();
-        LocalDate current = from.with(DayOfWeek.MONDAY);
-        while (!current.isAfter(to)) {
+        LocalDate current = to.with(DayOfWeek.MONDAY);
+        while (current.isAfter(from)) {
             dates.add(current);
-            current = current.plusWeeks(1);
+            current = current.minusWeeks(1);
         }
         return dates;
     }

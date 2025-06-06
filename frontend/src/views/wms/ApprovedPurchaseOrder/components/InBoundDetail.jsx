@@ -59,7 +59,7 @@ const InBoundDetailContent = () => {
         mb={2}
       >
         <Typography variant="h5" fontWeight="bold" gutterBottom>
-          Thông tin chi tiết phiếu nhập: {shipmentData.id}
+          Thông tin chi tiết phiếu nhập: {shipmentData.id.substring(0,8)}
         </Typography>
 
         {/* Các nút hành động */}

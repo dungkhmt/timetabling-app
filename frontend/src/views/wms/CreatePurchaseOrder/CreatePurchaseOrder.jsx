@@ -7,8 +7,11 @@ import {
     Chip,
     Card,
     CardContent,
+    Tabs,
+    Tab,
+    Divider,
 } from "@mui/material";
-import { useLocation, useHistory } from "react-router-dom"; // React Router v5
+import { useLocation, useHistory } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useWms2Data } from "services/useWms2Data";
 import { OrderFormProvider } from "../common/context/OrderFormContext";
@@ -16,15 +19,39 @@ import BasicInfoForm from "./components/BasicInfoForm";
 import DeliveryInfoForm from "./components/DeliveryInfoForm";
 import ProductSearch from "../common/components/ProductSearch";
 import ProductTable from "../common/components/ProductTable";
+import ProductForecastChart from "./components/ProductForecastChart";
+import ProductChart from "../InventoryReport/components/ProductChart"; // Import từ InventoryReport
 import InsightsIcon from "@mui/icons-material/Insights";
+import ShowChartIcon from "@mui/icons-material/ShowChart";
+import BarChartIcon from "@mui/icons-material/BarChart";
+
+// TabPanel component để hiển thị nội dung tabs
+const TabPanel = ({ children, value, index, ...other }) => {
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`forecast-tabpanel-${index}`}
+            aria-labelledby={`forecast-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ pt: 2 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+};
 
 const CreatePurchaseOrder = () => {
     const { createPurchaseOrder } = useWms2Data();
     const location = useLocation();
-    const history = useHistory(); // Use useHistory from React Router v5
+    const history = useHistory();
     const suggestedItems = location.state?.suggestedItems || [];
     const forecastData = location.state?.forecastData || [];
 
+    const [activeTab, setActiveTab] = useState(0);
     const [order, setOrder] = useState({
         supplierId: "",
         facilityId: "",
@@ -82,6 +109,16 @@ const CreatePurchaseOrder = () => {
         }
     };
 
+    const handleTabChange = (event, newValue) => {
+        setActiveTab(newValue);
+    };
+
+    // Chuẩn bị dữ liệu cho ProductChart (biểu đồ cột)
+    const chartProducts = forecastData.map(item => ({
+        productName: item.productName,
+        quantity: item.totalPredictedQuantity || item.quantity || 0
+    }));
+
     return (
         <OrderFormProvider value={{ order, setOrder, entities, setEntities }}>
             <Box p={3}>
@@ -97,6 +134,7 @@ const CreatePurchaseOrder = () => {
                     )}
                 </Typography>
 
+                {/* Hiển thị thông tin dự báo với tabs */}
                 {forecastData.length > 0 && (
                     <Card sx={{ mb: 3, backgroundColor: "#f5f5f5" }}>
                         <CardContent>
@@ -105,31 +143,83 @@ const CreatePurchaseOrder = () => {
                                 Thông tin dự báo
                             </Typography>
                             <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Dự báo tiêu thụ ngày mai dựa trên dữ liệu lịch sử xuất kho.
+                                Dự báo tiêu thụ dựa trên dữ liệu lịch sử xuất kho và mô hình ARIMA.
                             </Typography>
-                            <Grid container spacing={2} mt={1}>
-                                {forecastData.slice(0, 3).map((item) => (
-                                    <Grid item xs={12} md={4} key={item.productId}>
-                                        <Card variant="outlined">
-                                            <CardContent>
-                                                <Typography variant="subtitle2" noWrap>
-                                                    {item.productName}
-                                                </Typography>
-                                                <Typography variant="body2" color="primary">
-                                                    Dự báo: {item.quantity} {item.unit}
-                                                </Typography>
-                                                <Typography variant="body2">
-                                                    Giá: {item.price} VND
-                                                </Typography>
-                                            </CardContent>
-                                        </Card>
+
+                            {/* Tabs để chuyển đổi giữa các view */}
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
+                                <Tabs value={activeTab} onChange={handleTabChange}>
+                                    <Tab 
+                                        icon={<BarChartIcon />} 
+                                        label="Tổng quan" 
+                                        iconPosition="start"
+                                    />
+                                    <Tab 
+                                        icon={<ShowChartIcon />} 
+                                        label="Chi tiết dự báo" 
+                                        iconPosition="start"
+                                    />
+                                </Tabs>
+                            </Box>
+
+                            {/* Tab 1: Tổng quan với ProductChart (biểu đồ cột) */}
+                            <TabPanel value={activeTab} index={0}>
+                                <Grid container spacing={2}>
+                                    {/* Cards tóm tắt */}
+                                    <Grid item xs={12}>
+                                        <Grid container spacing={2} mb={2}>
+                                            {forecastData.slice(0, 3).map((item) => (
+                                                <Grid item xs={12} md={4} key={item.productId}>
+                                                    <Card variant="outlined">
+                                                        <CardContent>
+                                                            <Typography variant="subtitle2" noWrap>
+                                                                {item.productName}
+                                                            </Typography>
+                                                            <Typography variant="body2" color="primary">
+                                                                Dự báo: {item.totalPredictedQuantity || item.quantity} {item.unit}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                Giá: {item.price?.toLocaleString()} VND
+                                                            </Typography>
+                                                            <Typography variant="caption" color="textSecondary">
+                                                                Tồn kho: {item.currentStock || 0}
+                                                            </Typography>
+                                                        </CardContent>
+                                                    </Card>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
                                     </Grid>
-                                ))}
-                            </Grid>
+                                    
+                                    {/* Biểu đồ cột tổng quan */}
+                                    <Grid item xs={12}>
+                                        <ProductChart 
+                                            products={chartProducts}
+                                            title="Dự báo nhu cầu 7 ngày tới"
+                                            color="#2196f3"
+                                            emptyMessage="Không có dữ liệu dự báo"
+                                        />
+                                    </Grid>
+                                </Grid>
+                            </TabPanel>
+
+                            {/* Tab 2: Chi tiết với ProductForecastChart (biểu đồ đường ARIMA) */}
+                            <TabPanel value={activeTab} index={1}>
+                                <Grid container spacing={3}>
+                                    {forecastData.map((item) => (
+                                        <Grid item xs={12} key={item.productId}>
+                                            <ProductForecastChart forecastData={item} />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </TabPanel>
                         </CardContent>
                     </Card>
                 )}
 
+                <Divider sx={{ mb: 3 }} />
+
+                {/* Form thông tin đơn hàng */}
                 <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
                         <BasicInfoForm />
@@ -139,18 +229,21 @@ const CreatePurchaseOrder = () => {
                     </Grid>
                 </Grid>
 
+                {/* Tìm kiếm và bảng sản phẩm */}
                 <Box mt={3}>
                     <ProductSearch />
                     <ProductTable />
                 </Box>
 
+                {/* Nút lưu */}
                 <Box mt={3} textAlign="right">
                     <Button
                         variant="contained"
                         color="primary"
                         onClick={handleSubmit}
+                        size="large"
                     >
-                        Lưu
+                        Lưu đơn hàng
                     </Button>
                 </Box>
             </Box>

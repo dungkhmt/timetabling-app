@@ -7,8 +7,8 @@ import openerp.openerpresourceserver.wms.dto.delivery.ShipperRouteDTO;
 import openerp.openerpresourceserver.wms.entity.DeliveryBill;
 import openerp.openerpresourceserver.wms.vrp.GeoPoint;
 import openerp.openerpresourceserver.wms.vrp.Node;
-import openerp.openerpresourceserver.wms.vrp.Vehicle;
 import openerp.openerpresourceserver.wms.vrp.VRPRoute;
+import openerp.openerpresourceserver.wms.vrp.Vehicle;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPInput;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPSolution;
 import org.springframework.stereotype.Service;
@@ -87,6 +87,7 @@ public class RouteVisualizationService {
                     DeliveryPointDTO point = new DeliveryPointDTO(
                         bill.getId(),
                         bill.getToCustomer().getName(),
+                        bill.getToCustomer().getAddress(),
                         node.getLatitude(),
                         node.getLongitude(),
                         node.getDemand(),

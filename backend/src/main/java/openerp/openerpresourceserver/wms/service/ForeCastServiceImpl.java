@@ -1,6 +1,5 @@
 package openerp.openerpresourceserver.wms.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,8 +34,8 @@ public class ForeCastServiceImpl implements ForecastService {
     private final ObjectMapper objectMapper;
     private final RedisService redisService;
 
-    private static final int MAX_DAYS_HISTORY = 360; // Maximum 30 days of historical data
-    private static final int FORECAST_DAYS = 7; // Forecast for the next day
+    private static final int HISTORICAL_DAYS = 30; // Last 30 days of historical data
+    private static final int FORECAST_DAYS = 7; // Forecast for the next 7 days
     private static final int LOW_STOCK_THRESHOLD = 1000; // Threshold for low stock products
     private static final int REDIS_EXPIRATION_DAYS = 7 * 24 * 60 * 60; // Cache expiration in days
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -56,12 +55,14 @@ public class ForeCastServiceImpl implements ForecastService {
     public ApiResponse<List<DailyProductForecastDTO>> forecastDailyLowStockProducts() {
         String redisKey = "LOW_STOCK_FORECAST:" + LocalDate.now().format(DATE_FORMATTER);
         List<DailyProductForecastDTO> cachedForecast = null;
+        
         try {
-           cachedForecast  = (List<DailyProductForecastDTO>) redisService.get(redisKey);
+           cachedForecast = (List<DailyProductForecastDTO>) redisService.get(redisKey);
         } catch (Exception e) {
             log.error("Error retrieving forecast from Redis: {}", e.getMessage());
             cachedForecast = null;
         }
+        
         if (cachedForecast != null && !cachedForecast.isEmpty()) {
             return ApiResponse.<List<DailyProductForecastDTO>>builder()
                     .code(200)
@@ -87,11 +88,12 @@ public class ForeCastServiceImpl implements ForecastService {
         List<DailyProductForecastDTO> forecasts = new ArrayList<>();
 
         for (Product product : lowStockProducts) {
-            DailyProductForecastDTO forecast = forecastProductDailyWithArima(product);
-            if (forecast != null && forecast.getQuantity() > 0) {
+            DailyProductForecastDTO forecast = forecastProductWithDetailedData(product);
+            if (forecast != null) {
                 forecasts.add(forecast);
             }
         }
+        
         redisService.save(redisKey, forecasts, REDIS_EXPIRATION_DAYS);
         return ApiResponse.<List<DailyProductForecastDTO>>builder()
                 .code(200)
@@ -100,56 +102,83 @@ public class ForeCastServiceImpl implements ForecastService {
                 .build();
     }
 
-    private DailyProductForecastDTO forecastProductDailyWithArima(Product product) {
+    private DailyProductForecastDTO forecastProductWithDetailedData(Product product) {
         LocalDate today = LocalDate.now();
-        LocalDate startDate = today.minusDays(MAX_DAYS_HISTORY);
+        LocalDate historicalStartDate = today.minusDays(HISTORICAL_DAYS);
 
-        List<Object[]> dailyData = inventoryItemDetailRepo.getDailyQuantitiesByProductAndShipmentType(
+        // Get historical outbound data for the last 30 days
+        List<Object[]> historicalData = inventoryItemDetailRepo.getDailyQuantitiesByProductAndShipmentType(
                 product.getId(),
                 ShipmentType.OUTBOUND.name(),
-                startDate.atStartOfDay(),
+                historicalStartDate.atStartOfDay(),
                 today.atTime(23, 59, 59)
         );
 
-        Map<LocalDate, Integer> rawDailyData = new HashMap<>();
-        for (Object[] dataPoint : dailyData) {
+        // Process historical data
+        Map<LocalDate, Integer> rawHistoricalData = new HashMap<>();
+        for (Object[] dataPoint : historicalData) {
             LocalDate date = ((java.sql.Date) dataPoint[0]).toLocalDate();
             Long quantity = ((Number) dataPoint[1]).longValue();
-            rawDailyData.put(date, quantity.intValue());
+            rawHistoricalData.put(date, quantity.intValue());
         }
 
-        LocalDate current = startDate;
+        // Fill missing dates with 0
+        Map<String, Integer> historicalDataMap = new LinkedHashMap<>();
+        LocalDate current = historicalStartDate;
         while (!current.isAfter(today)) {
-            rawDailyData.putIfAbsent(current, 0);
+            int quantity = rawHistoricalData.getOrDefault(current, 0);
+            historicalDataMap.put(current.format(DATE_FORMATTER), quantity);
             current = current.plusDays(1);
         }
 
-        double[] timeSeriesData = rawDailyData.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .mapToDouble(Map.Entry::getValue)
+        // Prepare time series data for ARIMA
+        double[] timeSeriesData = historicalDataMap.values().stream()
+                .mapToDouble(Integer::doubleValue)
                 .toArray();
 
         try {
+            // Generate forecast using ARIMA
             ForecastResult forecastResult = Arima.auto_forecast_arima(timeSeriesData, FORECAST_DAYS);
             double[] forecast = forecastResult.getForecast();
-            int predictedQuantity = 0;
-            for(int i = 0; i < FORECAST_DAYS; i++) {
-                predictedQuantity += Math.round(forecast[i]);
+
+            // Process forecast data
+            Map<String, Integer> forecastDataMap = new LinkedHashMap<>();
+            int totalPredictedQuantity = 0;
+            
+            for (int i = 0; i < FORECAST_DAYS; i++) {
+                LocalDate forecastDate = today.plusDays(i + 1);
+                int predictedQuantity = Math.max(0, (int) Math.round(forecast[i]));
+                forecastDataMap.put(forecastDate.format(DATE_FORMATTER), predictedQuantity);
+                totalPredictedQuantity += predictedQuantity;
             }
 
-            if (predictedQuantity < 0) {
-                predictedQuantity = 0;
-            }
+            // Calculate statistics
+            List<Integer> historicalValues = new ArrayList<>(historicalDataMap.values());
+            int averageDaily = (int) historicalValues.stream().mapToInt(Integer::intValue).average().orElse(0);
+            int maxDaily = historicalValues.stream().mapToInt(Integer::intValue).max().orElse(0);
+            int minDaily = historicalValues.stream().mapToInt(Integer::intValue).min().orElse(0);
+
+            // Get current stock
+            InventoryItem currentInventory = inventoryItemRepo.findByProductId(product.getId());
+            int currentStock = currentInventory != null ? currentInventory.getQuantity() : 0;
 
             return DailyProductForecastDTO.builder()
                     .productId(product.getId())
                     .productName(product.getName())
-                    .forecastDate(today.plusDays(1)) // Forecast for tomorrow
-                    .quantity(predictedQuantity)
-                    .price(product.getWholeSalePrice()) // Assuming this comes from Product entity
-                    .unit(product.getUnit()) // Default to "Thùng" if null
-                    .discount(BigDecimal.ZERO) // Default value, adjust if available
-                    .tax(BigDecimal.ZERO) // Default value, adjust if available
+                    .forecastDate(today.plusDays(1))
+                    .totalPredictedQuantity(totalPredictedQuantity)
+                    .price(product.getWholeSalePrice())
+                    .unit(product.getUnit())
+                    .discount(BigDecimal.ZERO)
+                    .tax(BigDecimal.ZERO)
+                    .historicalData(historicalDataMap)
+                    .forecastData(forecastDataMap)
+                    .confidenceLevel(0.95) // Standard confidence level
+                    .modelInfo("Auto ARIMA")
+                    .currentStock(currentStock)
+                    .averageDailyOutbound(averageDaily)
+                    .maxDailyOutbound(maxDaily)
+                    .minDailyOutbound(minDaily)
                     .build();
 
         } catch (Exception e) {

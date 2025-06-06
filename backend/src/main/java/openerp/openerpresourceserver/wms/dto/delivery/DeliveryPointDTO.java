@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class DeliveryPointDTO {
     private String id;
     private String customerName;
+    private String fullAddress;
     private double latitude;
     private double longitude;
     private double demand;

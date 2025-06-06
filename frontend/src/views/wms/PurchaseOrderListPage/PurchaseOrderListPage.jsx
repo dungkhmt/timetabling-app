@@ -30,25 +30,76 @@ const PurchaseOrderListPageBase = () => {
   const handleSuggestPurchase = async () => {
     setLoading(true);
     try {
-      const response = await getLowStockForecast();
+      const response = await getLowStockForecast(); // Sử dụng method mới
+      
       if (response?.code === 200 && response?.data && response.data.length > 0) {
-        const suggestedItems = response.data.map(item => ({
+        const forecastData = response.data;
+        
+        // Format suggested items từ forecast data mới
+        const suggestedItems = forecastData.map(item => {
+          // Tính số lượng gợi ý dựa trên logic: nếu tồn kho hiện tại < trung bình xuất trong 7 ngày
+          const recommendedQuantity = Math.max(
+            item.totalPredictedQuantity || 0, // Dự báo 7 ngày
+            (item.averageDailyOutbound || 0) * 7 - (item.currentStock || 0) // Bù đắp thiếu hụt
+          );
+
+          return {
+            productId: item.productId,
+            productName: item.productName,
+            quantity: Math.max(recommendedQuantity, 0), // Đảm bảo không âm
+            unit: item.unit || "Cái",
+            price: item.price || 0,
+            discount: item.discount || 0,
+            tax: item.tax || 0,
+            // Thông tin bổ sung để hiển thị trong form
+            currentStock: item.currentStock || 0,
+            averageDailyOutbound: item.averageDailyOutbound || 0,
+            maxDailyOutbound: item.maxDailyOutbound || 0,
+            forecastDate: item.forecastDate,
+            reason: `Tồn kho thấp (${item.currentStock || 0}), dự báo cần ${item.totalPredictedQuantity || 0} ${item.unit} trong 7 ngày tới`
+          };
+        }).filter(item => item.quantity > 0); // Chỉ lấy những sản phẩm cần nhập
+
+        if (suggestedItems.length === 0) {
+          toast.info("Tất cả sản phẩm đều có đủ tồn kho theo dự báo");
+          return;
+        }
+
+        // Chuẩn bị dữ liệu forecast đầy đủ để truyền sang CreatePurchaseOrder
+        const formattedForecastData = forecastData.map(item => ({
           productId: item.productId,
           productName: item.productName,
-          forecastDate: item.forecastDate,
-          quantity: item.quantity,
-          unit: item.unit || "Thùng", // Default unit if missing
-          price: item.price || 0, // Default price if missing
-          discount: item.discount || 0, // Use provided discount or default to 0
+          totalPredictedQuantity: item.totalPredictedQuantity || 0,
+          currentStock: item.currentStock || 0,
+          averageDailyOutbound: item.averageDailyOutbound || 0,
+          maxDailyOutbound: item.maxDailyOutbound || 0,
+          minDailyOutbound: item.minDailyOutbound || 0,
+          unit: item.unit,
+          price: item.price,
+          discount: item.discount || 0,
+          tax: item.tax || 0,
+          historicalData: item.historicalData || {}, // Dữ liệu lịch sử 30 ngày
+          forecastData: item.forecastData || {}, // Dữ liệu dự báo 7 ngày
+          modelInfo: item.modelInfo || 'Auto ARIMA',
+          confidenceLevel: item.confidenceLevel || 0.95,
+          mse: item.mse,
+          rmse: item.rmse,
+          forecastDate: item.forecastDate
         }));
 
-        // Use history.push to navigate and send data
+        // Navigate với dữ liệu đầy đủ
         history.push({
           pathname: "/wms/purchase/orders/create",
-          state: { suggestedItems, forecastData: response.data }
+          state: { 
+            suggestedItems, 
+            forecastData: formattedForecastData,
+            isFromForecast: true // Flag để biết đây là từ forecast
+          }
         });
+
+        toast.success(`Đã tạo gợi ý cho ${suggestedItems.length} sản phẩm cần nhập thêm`);
       } else {
-        toast.info("Không có sản phẩm nào cần bổ sung hàng tồn kho");
+        toast.info("Không có sản phẩm nào cần bổ sung hàng tồn kho theo dự báo");
       }
     } catch (error) {
       console.error("Error fetching forecast data:", error);

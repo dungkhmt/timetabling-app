@@ -19,7 +19,7 @@ import {
   AccordionDetails,
   Chip,
   Tab,
-  Tabs
+  Tabs, Stack
 } from '@mui/material';
 import {
   ExpandMore,
@@ -29,7 +29,7 @@ import {
   Person,
   LocalShipping,
   Map,
-  DirectionsCar
+  DirectionsCar, RoomOutlined
 } from '@mui/icons-material';
 import RouteMapComponent from './RouteMapComponent';
 
@@ -286,22 +286,45 @@ const AutoAssignRoutesPanel = ({
                       <Typography variant="subtitle2" gutterBottom>
                         Thứ tự giao hàng:
                       </Typography>
-                      
+
                       <List dense>
                         {routesToDisplay[selectedRouteIndex]?.deliveryPoints?.map((point, pointIndex) => (
-                          <ListItem key={pointIndex} divider={pointIndex < routesToDisplay[selectedRouteIndex].deliveryPoints.length - 1}>
-                            <ListItemIcon>
-                              <Chip 
-                                size="small"
-                                label={point.sequenceNumber}
-                                color="primary"
+                            <ListItem
+                                key={pointIndex}
+                                divider={pointIndex < routesToDisplay[selectedRouteIndex].deliveryPoints.length - 1}
+                                alignItems="flex-start"
+                                sx={{ py: 1.5 }}
+                            >
+                              <ListItemIcon sx={{ mt: 1.5 }}>
+                                <Chip
+                                    size="medium"
+                                    label={point.sequenceNumber}
+                                    color="primary"
+                                    sx={{ fontWeight: 'bold' }}
+                                />
+                              </ListItemIcon>
+
+                              <ListItemText
+                                  primary={
+                                    <Typography variant="subtitle1" fontWeight="600">
+                                      {point.customerName}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Stack spacing={0.5} mt={0.5}>
+                                      <Typography variant="body2" color="text.primary">
+                                        Khối lượng cần giao: <strong>{point.demand} kg</strong>
+                                      </Typography>
+                                      <Box display="flex" alignItems="center" color="text.secondary">
+                                        <RoomOutlined fontSize="small" sx={{ mr: 0.5 }} />
+                                        <Typography variant="body2">
+                                          Địa chỉ: {point?.fullAddress}
+                                        </Typography>
+                                      </Box>
+                                    </Stack>
+                                  }
                               />
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={point.customerName}
-                              secondary={`${point.demand} kg`}
-                            />
-                          </ListItem>
+                            </ListItem>
                         ))}
                       </List>
                     </Box>
