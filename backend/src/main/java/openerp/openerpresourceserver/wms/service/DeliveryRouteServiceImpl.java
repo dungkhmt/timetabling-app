@@ -318,7 +318,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                     deliveryRouteGetListRes.setDeliveryPlanId(deliveryRoute.getDeliveryPlan().getId());
                     deliveryRouteGetListRes.setDeliveryPlanName(deliveryRoute.getDeliveryPlan().getDeliveryPlanName());
                     return deliveryRouteGetListRes;
-                }).toList();
+                }).<DeliveryRouteGetListRes>toList();
 
         var pagination = Pagination.<DeliveryRouteGetListRes>builder()
                 .page(page)

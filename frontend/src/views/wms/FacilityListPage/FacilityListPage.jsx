@@ -37,7 +37,7 @@ const FacilityListPage = () => {
     setLoading(true);
     try {
       const response = await getFacilitiesWithFilters(
-        pagination.page + 1, // API pagination is 1-indexed
+        pagination.page, // API pagination is 1-indexed
         pagination.size,
         filters
       );
