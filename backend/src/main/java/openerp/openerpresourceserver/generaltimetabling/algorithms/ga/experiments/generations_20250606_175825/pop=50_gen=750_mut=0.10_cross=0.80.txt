@@ -1,0 +1,98 @@
+Configuration:
+Population Size: 50
+Max Generations: 750
+Mutation Rate: 0.1
+Crossover Rate: 0.8
+
+Results Summary (across 10 runs):
+Teacher Count: 11.10 (±1.64)
+Combination Validity Rate: 100.0%
+Execution Time: 2339.90 ms (±323.95)
+Generations until best: 149.60 (±109.89)
+
+Average Session Utilization:
+Session 0: 4.00
+Session 1: 3.60
+Session 2: 3.00
+Session 3: 4.60
+Session 4: 3.70
+Session 5: 4.00
+Session 6: 4.10
+
+Average Convergence Curve:
+Generation 0: -143.7288
+Generation 10: -69.5238
+Generation 20: -38.5735
+Generation 30: -17.4712
+Generation 40: -10.4708
+Generation 50: -8.5205
+Generation 60: -4.4706
+Generation 70: -3.4700
+Generation 80: -1.5211
+Generation 90: -1.5206
+Generation 100: -0.5206
+Generation 110: -0.5200
+Generation 120: 0.4299
+Generation 130: 0.4305
+Generation 140: 0.4811
+Generation 150: 0.4818
+Generation 160: 0.5325
+Generation 170: 0.5325
+Generation 180: 0.5333
+Generation 190: 0.5833
+Generation 200: 0.5833
+Generation 210: 1.5333
+Generation 220: 1.5333
+Generation 230: 1.6341
+Generation 240: 1.6341
+Generation 250: 1.6341
+Generation 260: 1.6341
+Generation 270: 1.6341
+Generation 280: 1.6341
+Generation 290: 1.6341
+Generation 300: 1.6341
+Generation 310: 1.6341
+Generation 320: 1.6341
+Generation 330: 1.6341
+Generation 340: 1.6841
+Generation 350: 1.7341
+Generation 360: 1.7341
+Generation 370: 1.7341
+Generation 380: 1.7341
+Generation 390: 1.7341
+Generation 400: 1.7341
+Generation 410: 1.7341
+Generation 420: 1.7341
+Generation 430: 1.7341
+Generation 440: 1.7341
+Generation 450: 1.7341
+Generation 460: 1.7341
+Generation 470: 1.7341
+Generation 480: 1.7341
+Generation 490: 1.7341
+Generation 500: 1.7341
+Generation 510: 1.7341
+Generation 520: 1.7341
+Generation 530: 1.7341
+Generation 540: 1.7341
+Generation 550: 1.7341
+Generation 560: 1.7341
+Generation 570: 1.7341
+Generation 580: 1.7341
+Generation 590: 1.7341
+Generation 600: 1.7341
+Generation 610: 1.7341
+Generation 620: 1.7341
+Generation 630: 1.7341
+Generation 640: 1.7341
+Generation 650: 1.7341
+Generation 660: 1.7341
+Generation 670: 1.7341
+Generation 680: 1.7341
+Generation 690: 1.7341
+Generation 700: 1.7341
+Generation 710: 1.7341
+Generation 720: 1.7341
+Generation 730: 1.7341
+Generation 740: 1.7341
+Generation 749: 1.7341

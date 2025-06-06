@@ -1,0 +1,33 @@
+Configuration:
+Population Size: 200
+Max Generations: 100
+Mutation Rate: 0.1
+Crossover Rate: 0.8
+
+Results Summary (across 10 runs):
+Teacher Count: 9.10 (±0.30)
+Combination Validity Rate: 90.0%
+Execution Time: 1528.40 ms (±126.66)
+Generations until best: 56.10 (±22.57)
+
+Average Session Utilization:
+Session 0: 3.60
+Session 1: 4.30
+Session 2: 4.50
+Session 3: 3.60
+Session 4: 3.10
+Session 5: 4.30
+Session 6: 3.60
+
+Average Convergence Curve:
+Generation 0: -93.9257
+Generation 10: -5.7692
+Generation 20: -1.6550
+Generation 30: -0.6526
+Generation 40: 0.4474
+Generation 50: 0.4482
+Generation 60: 0.4482
+Generation 70: 0.4982
+Generation 80: 0.6482
+Generation 90: 0.6491
+Generation 99: 0.6491
