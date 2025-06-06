@@ -22,7 +22,7 @@ public class TimetablingData {
     private List<LocalDate> examDates;
     
     private Map<String, List<ExamClass>> classesByCourseId;
-    private Map<String, List<ExamClass>> classesByGroupId;
+    private Map<Integer, List<ExamClass>> classesByGroupId;
     
     // Constraints
     private Map<UUID, Set<UUID>> conflictGraph;

@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+
 /**
  * Class that implements the calculation of solution metrics and quality score
  * Extends the basic TimetablingSolution with methods specific to the exam timetabling problem
@@ -80,11 +82,11 @@ public class ExamTimetableSolution extends TimetablingSolution {
         int violations = 0;
         
         // Get classes grouped by group ID
-        Map<String, List<ExamClass>> classesByGroupId = data.getClassesByGroupId();
+        Map<Integer, List<ExamClass>> classesByGroupId = data.getClassesByGroupId();
         
         // For each group
-        for (Map.Entry<String, List<ExamClass>> entry : classesByGroupId.entrySet()) {
-            String groupId = entry.getKey();
+        for (Map.Entry<Integer, List<ExamClass>> entry : classesByGroupId.entrySet()) {
+            Integer groupId = entry.getKey();
             List<ExamClass> classesInGroup = entry.getValue();
             
             // Skip groups with only one course

@@ -177,9 +177,9 @@ public class ExamTimetableAlgorithm {
         filteredData.setClassesByCourseId(filteredClassesByCourseId);
         
         // Group by description group remains the same
-        Map<String, List<ExamClass>> classesByGroupId = unassignedClasses.stream()
-                .filter(ec -> ec.getGroupId() != null && !ec.getGroupId().isEmpty())
-                .collect(Collectors.groupingBy(ExamClass::getGroupId));
+        Map<Integer, List<ExamClass>> classesByGroupId = unassignedClasses.stream()
+                .filter(ec -> ec.getExamClassGroupId() != null)
+                .collect(Collectors.groupingBy(ExamClass::getExamClassGroupId));
         filteredData.setClassesByGroupId(classesByGroupId);
         
         // Filter conflict graph to only include unassigned classes
@@ -291,10 +291,6 @@ public class ExamTimetableAlgorithm {
         Map<String, List<ExamClass>> courseGroups, TimetablingData data) {
         
         System.out.println("Sorting course groups by constraints..." + courseGroups.size() + " groups found");
-
-        // for (Map.Entry<String, List<ExamClass>> courseEntry : courseGroups.entrySet()) {
-        //     System.out.println(courseEntry.getKey());
-        // }
         // Build course conflict graph based on group membership
         Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
 
@@ -350,16 +346,14 @@ public class ExamTimetableAlgorithm {
         Map<String, Set<String>> coursesByGroup = buildCourseGroupMap(data);
         
         // Track which groups have already had courses assigned
-        Map<String, Boolean> groupHasAssignedCourses = new HashMap<>();
+        Map<Integer, Boolean> groupHasAssignedCourses = new HashMap<>();
         
         // Track earliest and latest assigned dates for each group
-        Map<String, LocalDate> groupEarliestDate = new HashMap<>();
-        Map<String, LocalDate> groupLatestDate = new HashMap<>();
+        Map<Integer, LocalDate> groupEarliestDate = new HashMap<>();
+        Map<Integer, LocalDate> groupLatestDate = new HashMap<>();
 
         int totalCourses = sortedCourseGroups.size();
         System.out.printf("Total courses to assign: %d%n", totalCourses);
-        
-     
         int assignedCourses = 0;
 
         // For each course, find a valid time slot
@@ -368,10 +362,10 @@ public class ExamTimetableAlgorithm {
             List<ExamClass> classes = courseEntry.getValue();
             
             // Find the group this course belongs to
-            String courseGroup = null;
+            Integer courseGroup = null;
             for (ExamClass examClass : classes) {
-                if (examClass.getGroupId() != null && !examClass.getGroupId().isEmpty()) {
-                    courseGroup = examClass.getGroupId();
+                if (examClass.getExamClassGroupId() != null) {
+                    courseGroup = examClass.getExamClassGroupId();
                     break;
                 }
             }
@@ -399,10 +393,10 @@ public class ExamTimetableAlgorithm {
                             if (otherSlot.isSameDayAs(conflictTimeSlot)) {
                                 preferredToAvoidTimeSlots.add(otherSlot.getId());
                             }
-                            // Day before or day after
-                            else if (otherSlot.isDayBefore(conflictTimeSlot) || otherSlot.isDayAfter(conflictTimeSlot)) {
-                                preferredToAvoidTimeSlots.add(otherSlot.getId());
-                            }
+                            // // Day before or day after
+                            // else if (otherSlot.isDayBefore(conflictTimeSlot) || otherSlot.isDayAfter(conflictTimeSlot)) {
+                            //     preferredToAvoidTimeSlots.add(otherSlot.getId());
+                            // }
                         }
                     }
                 }
@@ -426,17 +420,20 @@ public class ExamTimetableAlgorithm {
                 .collect(Collectors.toList());
             
             if (validTimeSlots.isEmpty()) {
-                log.warn("No valid time slots available for course {}. Skipping.", courseId);
+                System.out.printf("No valid time slots available for course %s. Skipping.", courseId);
                 continue;
             }
             
             if (courseGroup != null) {
+                System.out.printf("Course %s belongs to group %s%n", courseId, courseGroup);
                 boolean isFirstCourseInGroup = !groupHasAssignedCourses.getOrDefault(courseGroup, false);
                 
                 if (isFirstCourseInGroup) {
                     // This is the first course in this group to be assigned
                     
                     // First, try to find slots that also satisfy soft constraints
+
+                    System.out.printf("Number of preferred to avoid time slots: %d\n" ,preferredToAvoidTimeSlots.size());
                     List<TimeSlot> bestTimeSlots = validTimeSlots.stream()
                         .filter(ts -> !preferredToAvoidTimeSlots.contains(ts.getId()))
                         .collect(Collectors.toList());
@@ -445,7 +442,7 @@ public class ExamTimetableAlgorithm {
                         // We have slots that satisfy both hard and soft constraints
                         validTimeSlots = bestTimeSlots;
                     } else {
-                        log.info("Could not find time slot for course {} that satisfies soft constraints. Using one that violates them.", courseId);
+                        System.out.printf("Could not find time slot for course %s that satisfies soft constraints. Using one that violates them.", courseId);
                     }
                     
                     // Choose either the earliest or latest date
@@ -570,6 +567,7 @@ public class ExamTimetableAlgorithm {
                     }
                 }
             } else {
+                System.out.printf("Course %s is not part of a group. Assigning time slot without group constraints.%n", courseId);
                 // This course is not part of a group, still apply soft constraints first
                 // First, try to find slots that also satisfy soft constraints
                 List<TimeSlot> bestTimeSlots = validTimeSlots.stream()
@@ -647,11 +645,11 @@ public class ExamTimetableAlgorithm {
 
         for (ExamClass examClass : data.getExamClasses()) {
             String courseId = examClass.getCourseId();
-            String groupId = examClass.getGroupId();
+            Integer groupId = examClass.getExamClassGroupId();
             
-            if (groupId != null && !groupId.isEmpty()) {
+            if (groupId != null) {
                 for (ExamClass otherClass : data.getExamClasses()) {
-                    if (groupId.equals(otherClass.getGroupId())) {
+                    if (groupId.equals(otherClass.getExamClassGroupId())) {
                         coursesByGroup.computeIfAbsent(courseId, k -> new HashSet<>())
                             .add(otherClass.getCourseId());
                     }
@@ -676,7 +674,7 @@ public class ExamTimetableAlgorithm {
         
         // 1. Add conflicts from same group (different course IDs)
         // Group courses by group ID using the sub-course structure
-        Map<String, Set<String>> coursesByGroup = new HashMap<>();
+        Map<Integer, Set<String>> coursesByGroup = new HashMap<>();
         
         // Build mapping of which sub-courses are in which groups
         for (Map.Entry<String, List<ExamClass>> courseEntry : data.getClassesByCourseId().entrySet()) {
@@ -684,13 +682,13 @@ public class ExamTimetableAlgorithm {
             List<ExamClass> classesInSubCourse = courseEntry.getValue();
             
             // Get the group IDs that this sub-course belongs to
-            Set<String> groupIds = classesInSubCourse.stream()
-                .map(ExamClass::getGroupId)
-                .filter(groupId -> groupId != null && !groupId.isEmpty())
+            Set<Integer> groupIds = classesInSubCourse.stream()
+                .map(ExamClass::getExamClassGroupId)
+                .filter(groupId -> groupId != null)
                 .collect(Collectors.toSet());
             
             // Add this sub-course to each group it belongs to
-            for (String groupId : groupIds) {
+            for (Integer groupId : groupIds) {
                 coursesByGroup.computeIfAbsent(groupId, k -> new HashSet<>())
                     .add(subCourseId);
             }
@@ -802,7 +800,7 @@ public class ExamTimetableAlgorithm {
             for (ExamClass examClass : sortedClasses) {
                 int requiredCapacity = examClass.getNumberOfStudents() * 15 / 10; // Room needs 2n seats
                 
-                String courseGroupKey = courseId + "_" + (examClass.getGroupId() != null ? examClass.getGroupId() : "");
+                String courseGroupKey = courseId + "_" + (examClass.getExamClassGroupId() != null ? examClass.getExamClassGroupId() : "");
                 
                 // Check if we already assigned a building for this course+group
                 String preferredBuilding = courseGroupBuildingMap.get(courseGroupKey);

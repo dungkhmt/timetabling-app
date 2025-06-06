@@ -64,9 +64,9 @@ public class ExamTimetableProcessor {
         data.setClassesByCourseId(classesByCourseId);
         
         // Rest of the method remains the same...
-        Map<String, List<ExamClass>> classesByGroupId = examClasses.stream()
-            .filter(ec -> ec.getGroupId() != null && !ec.getGroupId().isEmpty())
-            .collect(Collectors.groupingBy(ExamClass::getGroupId));
+        Map<Integer, List<ExamClass>> classesByGroupId = examClasses.stream()
+            .filter(ec -> ec.getExamClassGroupId() != null)
+            .collect(Collectors.groupingBy(ExamClass::getExamClassGroupId));
         data.setClassesByGroupId(classesByGroupId);
         
         List<ExamRoom> rooms = examRoomRepository.findAllAsExamRoomDTO();
