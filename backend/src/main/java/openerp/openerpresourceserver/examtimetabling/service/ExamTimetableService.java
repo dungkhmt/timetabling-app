@@ -9,6 +9,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +23,7 @@ import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.examtimetabling.dtos.DailySessionDistributionDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.DistributionItemDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO;
@@ -323,8 +325,76 @@ public class ExamTimetableService {
         
         // Calculate group assignment statistics
         calculateGroupAssignmentStats(timetableId, statistics);
+
+        // Calculate daily session distribution (updated)
+        calculateDailySessionDistribution(timetableId, statistics);
         
         return statistics;
+    }
+
+    private void calculateDailySessionDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {
+        String sql = 
+            "SELECT " +
+            "  a.date, " +
+            "  s.name as session_name, " +
+            "  COUNT(a.id) as assignment_count " +
+            "FROM exam_timetable_assignment a " +
+            "JOIN exam_timetable_session s ON a.exam_session_id = s.id " +
+            "WHERE a.exam_timetable_id = :timetableId " +
+            "  AND a.room_id IS NOT NULL " +
+            "  AND a.date IS NOT NULL " +
+            "  AND a.exam_session_id IS NOT NULL " +
+            "GROUP BY a.date, s.name " +
+            "ORDER BY a.date, assignment_count DESC";
+        
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("timetableId", timetableId);
+        
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        
+        // Group results by date
+        Map<String, List<DistributionItemDTO>> dailySessionMap = new LinkedHashMap<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        
+        for (Object[] row : results) {
+            // Parse date
+            LocalDate date = null;
+            if (row[0] instanceof java.sql.Date) {
+                date = ((java.sql.Date) row[0]).toLocalDate();
+            } else if (row[0] instanceof LocalDate) {
+                date = (LocalDate) row[0];
+            } else if (row[0] instanceof java.sql.Timestamp) {
+                date = ((java.sql.Timestamp) row[0]).toLocalDateTime().toLocalDate();
+            }
+            
+            if (date == null) continue;
+            
+            String formattedDate = date.format(dateFormatter);
+            String sessionName = row[1] != null ? row[1].toString() : "Unknown Session";
+            long assignmentCount = ((Number) row[2]).longValue();
+            
+            // Add to the daily session map
+            dailySessionMap.computeIfAbsent(formattedDate, k -> new ArrayList<>())
+                        .add(new DistributionItemDTO(sessionName, assignmentCount));
+        }
+        
+        // Convert map to list of DTOs
+        List<DailySessionDistributionDTO> dailySessionDistribution = new ArrayList<>();
+        
+        for (Map.Entry<String, List<DistributionItemDTO>> entry : dailySessionMap.entrySet()) {
+            // Sort sessions by assignment count (descending)
+            entry.getValue().sort((a, b) -> Long.compare(b.getCount(), a.getCount()));
+            
+            DailySessionDistributionDTO dailyDistribution = new DailySessionDistributionDTO(
+                entry.getKey(),
+                entry.getValue()
+            );
+            
+            dailySessionDistribution.add(dailyDistribution);
+        }
+        
+        statistics.setDailySessionDistribution(dailySessionDistribution);
     }
 
     private void calculateDailyDistribution(UUID timetableId, TimetableStatisticsDTO statistics) {

@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -342,19 +344,22 @@ public class ExamTimetableAlgorithm {
         // Build course conflict graph (from both group conflicts and explicit conflicts)
         Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
 
-        // Map to track courses in the same group
-        Map<String, Set<String>> coursesByGroup = buildCourseGroupMap(data);
+        // Track group information
+        Map<Integer, List<LocalDate>> groupUsedDates = new HashMap<>(); // Dates used by each group
+        Map<Integer, Integer> groupCourseCount = new HashMap<>(); // Number of courses assigned per group
         
-        // Track which groups have already had courses assigned
-        Map<Integer, Boolean> groupHasAssignedCourses = new HashMap<>();
-        
-        // Track earliest and latest assigned dates for each group
-        Map<Integer, LocalDate> groupEarliestDate = new HashMap<>();
-        Map<Integer, LocalDate> groupLatestDate = new HashMap<>();
-
         int totalCourses = sortedCourseGroups.size();
         System.out.printf("Total courses to assign: %d%n", totalCourses);
         int assignedCourses = 0;
+
+        // Get all available dates sorted
+        List<LocalDate> allAvailableDates = data.getAvailableTimeSlots().stream()
+            .map(TimeSlot::getDate)
+            .distinct()
+            .sorted()
+            .collect(Collectors.toList());
+
+        Random random = new Random();
 
         // For each course, find a valid time slot
         for (Map.Entry<String, List<ExamClass>> courseEntry : sortedCourseGroups) {
@@ -393,26 +398,13 @@ public class ExamTimetableAlgorithm {
                             if (otherSlot.isSameDayAs(conflictTimeSlot)) {
                                 preferredToAvoidTimeSlots.add(otherSlot.getId());
                             }
-                            // // Day before or day after
-                            // else if (otherSlot.isDayBefore(conflictTimeSlot) || otherSlot.isDayAfter(conflictTimeSlot)) {
-                            //     preferredToAvoidTimeSlots.add(otherSlot.getId());
-                            // }
                         }
                     }
                 }
             }
             
-            // Add prohibited time slots to invalid set (these are hard constraints)
-            // for (TimeSlotRoomPair prohibited : data.getProhibitedSlots()) {
-            //     for (TimeSlot timeSlot : data.getAvailableTimeSlots()) {
-            //         if (timeSlot.getSessionId().equals(prohibited.getSessionId()) &&
-            //             timeSlot.getDate().equals(prohibited.getDate())) {
-            //             invalidTimeSlots.add(timeSlot.getId());
-            //         }
-            //     }
-            // }
-            
             UUID assignedTimeSlot = null;
+            LocalDate selectedDate = null;
             
             // Filter to only valid time slots (must satisfy hard constraints)
             List<TimeSlot> validTimeSlots = data.getAvailableTimeSlots().stream()
@@ -420,185 +412,168 @@ public class ExamTimetableAlgorithm {
                 .collect(Collectors.toList());
             
             if (validTimeSlots.isEmpty()) {
-                System.out.printf("No valid time slots available for course %s. Skipping.", courseId);
+                System.out.printf("No valid time slots available for course %s. Skipping.%n", courseId);
                 continue;
             }
             
             if (courseGroup != null) {
-                System.out.printf("Course %s belongs to group %s%n", courseId, courseGroup);
-                boolean isFirstCourseInGroup = !groupHasAssignedCourses.getOrDefault(courseGroup, false);
+                // Initialize group data if first time
+                groupUsedDates.putIfAbsent(courseGroup, new ArrayList<>());
+                groupCourseCount.putIfAbsent(courseGroup, 0);
                 
-                if (isFirstCourseInGroup) {
-                    // This is the first course in this group to be assigned
-                    
-                    // First, try to find slots that also satisfy soft constraints
-
-                    System.out.printf("Number of preferred to avoid time slots: %d\n" ,preferredToAvoidTimeSlots.size());
-                    List<TimeSlot> bestTimeSlots = validTimeSlots.stream()
-                        .filter(ts -> !preferredToAvoidTimeSlots.contains(ts.getId()))
+                int coursePositionInGroup = groupCourseCount.get(courseGroup) + 1;
+                
+                if (coursePositionInGroup == 1) {
+                    // First course: choose from first 3 dates
+                    List<LocalDate> firstThreeDates = allAvailableDates.stream()
+                        .limit(3)
                         .collect(Collectors.toList());
                     
-                    if (!bestTimeSlots.isEmpty()) {
-                        // We have slots that satisfy both hard and soft constraints
-                        validTimeSlots = bestTimeSlots;
-                    } else {
-                        System.out.printf("Could not find time slot for course %s that satisfies soft constraints. Using one that violates them.", courseId);
-                    }
+                    selectedDate = firstThreeDates.get(random.nextInt(firstThreeDates.size()));
+                    System.out.printf("Course %s (1st in group %d): Selected early date %s%n", 
+                        courseId, courseGroup, selectedDate);
                     
-                    // Choose either the earliest or latest date
-                    // Sort by date (ascending)
-                    validTimeSlots.sort(Comparator.comparing(TimeSlot::getDate));
+                } else if (coursePositionInGroup == 2) {
+                    // Second course: choose from last 3 dates
+                    List<LocalDate> lastThreeDates = allAvailableDates.stream()
+                        .skip(Math.max(0, allAvailableDates.size() - 3))
+                        .collect(Collectors.toList());
                     
-                    // Decide whether to use earliest or latest date
-                    Random random = new Random();
-                    boolean useEarliestDate = random.nextBoolean();
+                    selectedDate = lastThreeDates.get(random.nextInt(lastThreeDates.size()));
+                    System.out.printf("Course %s (2nd in group %d): Selected late date %s%n", 
+                        courseId, courseGroup, selectedDate);
                     
-                    if (useEarliestDate && !validTimeSlots.isEmpty()) {
-                        // Group time slots by date
-                        Map<LocalDate, List<TimeSlot>> slotsByDate = validTimeSlots.stream()
-                            .collect(Collectors.groupingBy(TimeSlot::getDate));
-                        
-                        // Get earliest date
-                        LocalDate earliestDate = validTimeSlots.get(0).getDate();
-                        
-                        // Choose the best time slot from this date
-                        List<TimeSlot> slotsOnEarliestDate = slotsByDate.get(earliestDate);
-                        slotsOnEarliestDate.sort(createTimeSlotComparator(data, timeSlotToCourses));
-                        
-                        assignedTimeSlot = slotsOnEarliestDate.get(0).getId();
-                        
-                        // Record this as the earliest date for this group
-                        groupEarliestDate.put(courseGroup, earliestDate);
-                        groupLatestDate.put(courseGroup, earliestDate);
-                    } else if (!validTimeSlots.isEmpty()) {
-                        // Use latest date
-                        Map<LocalDate, List<TimeSlot>> slotsByDate = validTimeSlots.stream()
-                            .collect(Collectors.groupingBy(TimeSlot::getDate));
-                        
-                        // Get latest date
-                        LocalDate latestDate = validTimeSlots.get(validTimeSlots.size() - 1).getDate();
-                        
-                        // Choose the best time slot from this date
-                        List<TimeSlot> slotsOnLatestDate = slotsByDate.get(latestDate);
-                        slotsOnLatestDate.sort(createTimeSlotComparator(data, timeSlotToCourses));
-                        
-                        assignedTimeSlot = slotsOnLatestDate.get(0).getId();
-                        
-                        // Record this as the earliest and latest date for this group
-                        groupEarliestDate.put(courseGroup, latestDate);
-                        groupLatestDate.put(courseGroup, latestDate);
-                    }
-                    
-                    // Mark that this group now has an assigned course
-                    groupHasAssignedCourses.put(courseGroup, true);
                 } else {
-                    // This is NOT the first course in this group
+                    // Third course and beyond: find optimal gap
+                    List<LocalDate> usedDates = new ArrayList<>(groupUsedDates.get(courseGroup));
+                    usedDates.sort(LocalDate::compareTo);
                     
-                    // First, try to find slots that also satisfy soft constraints
-                    List<TimeSlot> bestTimeSlots = validTimeSlots.stream()
-                        .filter(ts -> !preferredToAvoidTimeSlots.contains(ts.getId()))
-                        .collect(Collectors.toList());
+                    // Check if all available dates are used by this group
+                    Set<LocalDate> usedDateSet = new HashSet<>(usedDates);
+                    boolean allDatesUsed = usedDateSet.containsAll(allAvailableDates);
                     
-                    if (!bestTimeSlots.isEmpty()) {
-                        // We have slots that satisfy both hard and soft constraints
-                        validTimeSlots = bestTimeSlots;
-                    } else {
-                        log.info("Could not find time slot for course {} that satisfies soft constraints. Using one that violates them.", courseId);
-                    }
-                    
-                    // Try to schedule it as far away as possible from existing courses
-                    LocalDate currentEarliestDate = groupEarliestDate.get(courseGroup);
-                    LocalDate currentLatestDate = groupLatestDate.get(courseGroup);
-                    
-                    // First, try scheduling before the earliest date
-                    List<TimeSlot> slotBeforeEarliest = validTimeSlots.stream()
-                        .filter(ts -> ts.getDate().isBefore(currentEarliestDate))
-                        .sorted(Comparator.comparing(TimeSlot::getDate).reversed()) // Sort by date descending
-                        .collect(Collectors.toList());
-                    
-                    // Second, try scheduling after the latest date
-                    List<TimeSlot> slotsAfterLatest = validTimeSlots.stream()
-                        .filter(ts -> ts.getDate().isAfter(currentLatestDate))
-                        .sorted(Comparator.comparing(TimeSlot::getDate)) // Sort by date ascending
-                        .collect(Collectors.toList());
-                    
-                    // Decide which option to use (before earliest or after latest)
-                    TimeSlot selectedSlot = null;
-                    
-                    if (!slotBeforeEarliest.isEmpty() && !slotsAfterLatest.isEmpty()) {
-                        // Both options are available, choose the one with more days in between
-                        long daysBeforeEarliest = ChronoUnit.DAYS.between(
-                            slotBeforeEarliest.get(0).getDate(), currentEarliestDate);
-                        long daysAfterLatest = ChronoUnit.DAYS.between(
-                            currentLatestDate, slotsAfterLatest.get(0).getDate());
+                    if (allDatesUsed) {
+                        // All dates used, choose date with minimum courses from this group
+                        Map<LocalDate, Long> dateUsageCount = usedDates.stream()
+                            .collect(Collectors.groupingBy(date -> date, Collectors.counting()));
                         
-                        if (daysBeforeEarliest >= daysAfterLatest) {
-                            selectedSlot = slotBeforeEarliest.get(0);
-                            groupEarliestDate.put(courseGroup, selectedSlot.getDate());
-                        } else {
-                            selectedSlot = slotsAfterLatest.get(0);
-                            groupLatestDate.put(courseGroup, selectedSlot.getDate());
-                        }
-                    } else if (!slotBeforeEarliest.isEmpty()) {
-                        // Only before-earliest is available
-                        selectedSlot = slotBeforeEarliest.get(0);
-                        groupEarliestDate.put(courseGroup, selectedSlot.getDate());
-                    } else if (!slotsAfterLatest.isEmpty()) {
-                        // Only after-latest is available
-                        selectedSlot = slotsAfterLatest.get(0);
-                        groupLatestDate.put(courseGroup, selectedSlot.getDate());
-                    } else {
-                        // Neither option is available, just use the best time slot by standard criteria
-                        validTimeSlots.sort(createTimeSlotComparator(data, timeSlotToCourses));
-                        if (!validTimeSlots.isEmpty()) {
-                            selectedSlot = validTimeSlots.get(0);
+                        selectedDate = dateUsageCount.entrySet().stream()
+                            .min(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey)
+                            .orElse(allAvailableDates.get(0));
+                        
+                        System.out.printf("Course %s (group %d): All dates used, selected least used date %s%n", 
+                            courseId, courseGroup, selectedDate);
                             
-                            // Update group date tracking
-                            if (selectedSlot.getDate().isBefore(currentEarliestDate)) {
-                                groupEarliestDate.put(courseGroup, selectedSlot.getDate());
-                            } else if (selectedSlot.getDate().isAfter(currentLatestDate)) {
-                                groupLatestDate.put(courseGroup, selectedSlot.getDate());
+                    } else {
+                        // Find the largest gap between consecutive used dates
+                        LocalDate finalGapStartDate = null;
+                        LocalDate finalGapEndDate = null;
+                        long maxGapDays = 0;
+                        
+                        for (int i = 0; i < usedDates.size() - 1; i++) {
+                            LocalDate dateA = usedDates.get(i);
+                            LocalDate dateB = usedDates.get(i + 1);
+                            
+                            // Check if there's no other used date between A and B
+                            boolean hasDateBetween = false;
+                            for (LocalDate usedDate : usedDates) {
+                                if (usedDate.isAfter(dateA) && usedDate.isBefore(dateB)) {
+                                    hasDateBetween = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!hasDateBetween) {
+                                long gapDays = ChronoUnit.DAYS.between(dateA, dateB);
+                                if (gapDays > maxGapDays) {
+                                    maxGapDays = gapDays;
+                                    finalGapStartDate = dateA;
+                                    finalGapEndDate = dateB;
+                                }
                             }
                         }
-                    }
-                    
-                    if (selectedSlot != null) {
-                        assignedTimeSlot = selectedSlot.getId();
+                        
+                        if (finalGapStartDate != null && finalGapEndDate != null && maxGapDays > 1) {
+                            // Calculate middle date
+                            long daysBetween = ChronoUnit.DAYS.between(finalGapStartDate, finalGapEndDate);
+                            LocalDate middleDate = finalGapStartDate.plusDays(daysBetween / 2);
+                            
+                            // Ensure middle date is in available dates
+                            if (allAvailableDates.contains(middleDate)) {
+                                selectedDate = middleDate;
+                            } else {
+                                // Find closest available date to the calculated middle
+                                final LocalDate finalMiddleDate = middleDate;
+                                final LocalDate finalGapStart = finalGapStartDate;
+                                final LocalDate finalGapEnd = finalGapEndDate;
+                                
+                                selectedDate = allAvailableDates.stream()
+                                    .filter(date -> date.isAfter(finalGapStart) && date.isBefore(finalGapEnd))
+                                    .min((d1, d2) -> {
+                                        long diff1 = Math.abs(ChronoUnit.DAYS.between(finalMiddleDate, d1));
+                                        long diff2 = Math.abs(ChronoUnit.DAYS.between(finalMiddleDate, d2));
+                                        return Long.compare(diff1, diff2);
+                                    })
+                                    .orElse(finalMiddleDate);
+                            }
+                            
+                            System.out.printf("Course %s (group %d): Found gap between %s and %s, selected middle date %s%n", 
+                                courseId, courseGroup, finalGapStartDate, finalGapEndDate, selectedDate);
+                        } else {
+                            // No significant gap found, choose any unused date
+                            selectedDate = allAvailableDates.stream()
+                                .filter(date -> !usedDateSet.contains(date))
+                                .findFirst()
+                                .orElse(allAvailableDates.get(0));
+                            
+                            System.out.printf("Course %s (group %d): No significant gap, selected unused date %s%n", 
+                                courseId, courseGroup, selectedDate);
+                        }
                     }
                 }
+                
+                // Update group tracking
+                groupUsedDates.get(courseGroup).add(selectedDate);
+                groupCourseCount.put(courseGroup, coursePositionInGroup);
+                
             } else {
                 System.out.printf("Course %s is not part of a group. Assigning time slot without group constraints.%n", courseId);
-                // This course is not part of a group, still apply soft constraints first
-                // First, try to find slots that also satisfy soft constraints
-                List<TimeSlot> bestTimeSlots = validTimeSlots.stream()
-                    .filter(ts -> !preferredToAvoidTimeSlots.contains(ts.getId()))
-                    .collect(Collectors.toList());
-                
-                if (!bestTimeSlots.isEmpty()) {
-                    // We have slots that satisfy both hard and soft constraints
-                    validTimeSlots = bestTimeSlots;
-                }
-                
-                // Just use standard time slot selection
-                validTimeSlots.sort(createTimeSlotComparator(data, timeSlotToCourses));
-                if (!validTimeSlots.isEmpty()) {
-                    assignedTimeSlot = validTimeSlots.get(0).getId();
-                }
+                // This course is not part of a group, use standard selection
+                selectedDate = validTimeSlots.get(0).getDate();
             }
             
-            if (assignedTimeSlot != null) {
+            // Find time slots on the selected date that satisfy constraints
+            final LocalDate finalSelectedDate = selectedDate;
+            List<TimeSlot> slotsOnSelectedDate = validTimeSlots.stream()
+                .filter(ts -> ts.getDate().equals(finalSelectedDate))
+                .collect(Collectors.toList());
+            
+            // Apply soft constraints
+            List<TimeSlot> bestTimeSlots = slotsOnSelectedDate.stream()
+                .filter(ts -> !preferredToAvoidTimeSlots.contains(ts.getId()))
+                .collect(Collectors.toList());
+            
+            if (!bestTimeSlots.isEmpty()) {
+                slotsOnSelectedDate = bestTimeSlots;
+            }
+            
+            if (!slotsOnSelectedDate.isEmpty()) {
+                // Sort by time slot preferences and select the best one
+                slotsOnSelectedDate.sort(createTimeSlotComparator(data, timeSlotToCourses));
+                assignedTimeSlot = slotsOnSelectedDate.get(0).getId();
+                
                 courseToTimeSlot.put(courseId, assignedTimeSlot);
-                
-                timeSlotToCourses.computeIfAbsent(assignedTimeSlot, k -> new HashSet<>())
-                    .add(courseId);
-                
+                timeSlotToCourses.computeIfAbsent(assignedTimeSlot, k -> new HashSet<>()).add(courseId);
                 assignedCourses++;
+                
+                System.out.printf("Course %s assigned to date %s%n", courseId, finalSelectedDate);
             } else {
-                log.warn("Could not find suitable time slot for course {}. Skipping.", courseId);
+                System.out.printf("Could not find suitable time slot for course %s on selected date %s%n", courseId, finalSelectedDate);
             }
         }
 
-        System.out.printf("Time slot assignment completed: {}/{} courses assigned successfully", 
+        System.out.printf("Time slot assignment completed: %d/%d courses assigned successfully%n", 
             assignedCourses, totalCourses);
 
         return courseToTimeSlot;
@@ -623,17 +598,24 @@ public class ExamTimetableAlgorithm {
         TimetablingData data, Map<UUID, Set<String>> timeSlotToCourses) {
 
         return (ts1, ts2) -> {
-            // Sort by preference (early slots last)
             boolean ts1Early = data.getEarlyTimeSlots().contains(ts1.getId());
             boolean ts2Early = data.getEarlyTimeSlots().contains(ts2.getId());
+
+            // Sort by usage count (least used first)
+            int ts1Usage = timeSlotToCourses.getOrDefault(ts1.getId(), Collections.emptySet()).size();
+            int ts2Usage = timeSlotToCourses.getOrDefault(ts2.getId(), Collections.emptySet()).size();
+            int result = Integer.compare(ts1Usage, ts2Usage);
+
+            if (result != 0) {
+                return result; // Prefer less used time slots
+            }
+
+            // Sort by preference (early slots last)
             
             if (ts1Early && !ts2Early) return 1;
             if (!ts1Early && ts2Early) return -1;
-            
-            // Otherwise sort by usage count (least used first)
-            int ts1Usage = timeSlotToCourses.getOrDefault(ts1.getId(), Collections.emptySet()).size();
-            int ts2Usage = timeSlotToCourses.getOrDefault(ts2.getId(), Collections.emptySet()).size();
-            return Integer.compare(ts1Usage, ts2Usage);
+
+            return 1;
         };
     }
 

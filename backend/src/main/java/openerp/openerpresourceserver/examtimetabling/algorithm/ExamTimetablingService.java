@@ -126,7 +126,7 @@ public class ExamTimetablingService {
                     
                     // Step 3: Save results
                     saveSolution(examTimetableId, solution);
-                    log.info("Successfully assigned all {} classes", classIds.size());
+                    System.out.printf("Successfully assigned all %d classes", classIds.size());
                     return true;
                     
                 } catch (Exception e) {
