@@ -368,6 +368,10 @@ class CourseBTSchedulerSummerSemester extends CourseSchedulerSummerSemester{
                 baseSolver.assignTimeSlot(mcs,sl2);
                 for(int s = 0; s < mcs.getDuration(); s++) occupationSlot[sl2 + s] += 1;
                 occupationDay[day] += 1; days.add(day);
+
+                baseSolver.mClassSegment2MatchedClassSegment.put(cs,mcs);
+                baseSolver.mClassSegment2MatchedClassSegment.put(mcs,cs);
+
             }else{
                 //log.info("findAssignSlotForTwoMatchedChildrenClass BUG???");
             }
