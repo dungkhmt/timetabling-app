@@ -86,14 +86,13 @@ public class TwoPhaseSchedulerTest {
         int session = 0;
         List<SolutionClass> initialAssignments = new ArrayList<>();
 
-        // Assign first 5 courses to the first slot of each new day
         for (int i = 0; i < courses.size(); i++) {
             String course = courses.get(i);
             AClass cls = USC.get(course).remove(0);
 
             List<int[]> periods = new ArrayList<>();
             boolean assigned = false;
-
+            // Assign first 5 courses to the first slot of each new day
             if (i < nbSessions) {
                 // Assign to new session
                 int slot = 1;
@@ -157,7 +156,7 @@ public class TwoPhaseSchedulerTest {
             initialAssignments.add(sc);
             candidates.addAll(USC.get(course));
         }
-        System.out.println("\n-- Phase 1 Assignments --");
+        System.out.println("-- Phase 1 Assignments --");
         for (int i = 0; i < courses.size(); i++) {
             for (Map.Entry<AClass, SolutionClass> entry : best_x[i].entrySet()) {
                 AClass cls = entry.getKey();
@@ -172,7 +171,7 @@ public class TwoPhaseSchedulerTest {
     }
 
     public void runPhase2() {
-        System.out.println("\n-- Starting Phase 2 --");
+        System.out.println("-- Starting Phase 2 --");
         int m = courses.size();
         int ic = 0;
 
@@ -180,7 +179,7 @@ public class TwoPhaseSchedulerTest {
             String course = courses.get(ic);
             List<AClass> unscheduled = USC.get(course);
 
-            System.out.println("\nChecking course: " + course + ", index: " + ic);
+            System.out.println("Checking course: " + course + ", index: " + ic);
             System.out.println("Remaining unscheduled classes for course: " + unscheduled.size());
 
             if (!unscheduled.isEmpty()) {
@@ -403,7 +402,7 @@ public class TwoPhaseSchedulerTest {
             String fileName = inputFile.getName(); // e.g., "1.txt"
 
             // Build the output path in the "experiment" package
-            String outputPath = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/src/main/java/openerp/openerpresourceserver/generaltimetabling/algorithms/twophasesheuristic/experiment/" + fileName;
+            String outputPath = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/TimetablingAlgorithmPackage/src/experiment/twophase" + fileName;
             PrintWriter out = new PrintWriter(new FileWriter(outputPath));
 
             for (int i = 0; i < courses.size(); i++) {
@@ -439,10 +438,11 @@ public class TwoPhaseSchedulerTest {
         System.out.println("🔎 Objective function (Total minimum number of teachers): " + totalTeachers);
         return totalTeachers;
     }
+
 //    public static void main(String[] args) {
-//        TwoPhaseSchedulerTest scheduler = new TwoPhaseSchedulerTest();
+//        TwoPhaseHeuristicScheduler scheduler = new TwoPhaseHeuristicScheduler();
 //        long startTime = System.currentTimeMillis();
-//        String inputPath = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/data/ch1-3th-s.txt";
+//        String inputPath = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/TimetablingAlgorithmPackage/data/te2-3th-s.txt";
 //        scheduler.inputFile(inputPath);
 ////        scheduler.printInputSummary();
 //        scheduler.runPhase1Manual();
@@ -450,7 +450,7 @@ public class TwoPhaseSchedulerTest {
 //        long endTime = System.currentTimeMillis();
 //        long duration = endTime - startTime;
 //        scheduler.printFinalSolution();
-////        scheduler.saveFinalSolutionToFile(inputPath);
+//        scheduler.saveFinalSolutionToFile(inputPath);
 //        int scheduledCount = 0;
 //        for (int i = 0; i < scheduler.courses.size(); i++) {
 //            scheduledCount += scheduler.best_x[i].size();
@@ -463,45 +463,47 @@ public class TwoPhaseSchedulerTest {
 //        }
 //        System.out.println("⏱️ Total execution time: " + duration + " ms");
 //    }
-public static void main(String[] args) {
-    File dataFolder = new File("/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/data");
-    File[] files = dataFolder.listFiles((dir, name) -> name.endsWith(".txt"));
 
-    String resultLog = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/Web/web-app/timetabling-app/backend/src/main/java/openerp/openerpresourceserver/generaltimetabling/algorithms/twophasesheuristic/experiment/results-summary.txt";
+    public static void main(String[] args) {
+        File dataFolder = new File("/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/TimetablingAlgorithmPackage/data");
+        File[] files = dataFolder.listFiles((dir, name) -> name.endsWith(".txt"));
 
-    try (PrintWriter resultWriter = new PrintWriter(new FileWriter(resultLog))) {
-        resultWriter.println("Filename\tExecutionTime(ms)\tTeachersCount");
+        String resultLog = "/Users/moctran/Desktop/HUST/2024.2/GraduationResearch/TimetablingAlgorithmPackage/src/experiment/twophase/result.txt";
 
-        for (File file : files) {
-            String inputPath = file.getAbsolutePath();
-            System.out.println("📄 Processing: " + file.getName());
+        try (PrintWriter resultWriter = new PrintWriter(new FileWriter(resultLog))) {
+            resultWriter.println("Filename\tExecutionTime(ms)\tTeachersCount");
 
-            TwoPhaseSchedulerTest scheduler = new TwoPhaseSchedulerTest();
-            long startTime = System.currentTimeMillis();
-            scheduler.inputFile(inputPath);
-            scheduler.runPhase1Manual();
-            scheduler.runPhase2();
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
+            for (File file : files) {
+                String inputPath = file.getAbsolutePath();
+                System.out.println("📄 Processing: " + file.getName());
 
-            int scheduledCount = 0;
-            for (int i = 0; i < scheduler.courses.size(); i++) {
-                scheduledCount += scheduler.best_x[i].size();
+                TwoPhaseSchedulerTest scheduler = new TwoPhaseSchedulerTest();
+                long startTime = System.currentTimeMillis();
+                scheduler.inputFile(inputPath);
+                scheduler.runPhase1Manual();
+                scheduler.runPhase2();
+                long endTime = System.currentTimeMillis();
+                long duration = endTime - startTime;
+
+                int scheduledCount = 0;
+                for (int i = 0; i < scheduler.courses.size(); i++) {
+                    scheduledCount += scheduler.best_x[i].size();
+                }
+
+                int teacherCount = -1;
+                if (scheduledCount == scheduler.totalClasses) {
+                    teacherCount = scheduler.computeTotalTeachers();
+                } else {
+                    System.out.println("⚠️ Not all classes scheduled in " + file.getName());
+                }
+
+                resultWriter.println(file.getName() + "\t" + duration + "\t" + (teacherCount >= 0 ? teacherCount : "Not complete"));
             }
 
-            int teacherCount = -1;
-            if (scheduledCount == scheduler.totalClasses) {
-                teacherCount = scheduler.computeTotalTeachers();
-            } else {
-                System.out.println("⚠️ Not all classes scheduled in " + file.getName());
-            }
-
-            resultWriter.println(file.getName() + "\t" + duration + "\t" + (teacherCount >= 0 ? teacherCount : "Not complete"));
+            System.out.println("✅ Summary saved to: " + resultLog);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        System.out.println("✅ Summary saved to: " + resultLog);
-    } catch (IOException e) {
-        e.printStackTrace();
     }
-}
+
 }

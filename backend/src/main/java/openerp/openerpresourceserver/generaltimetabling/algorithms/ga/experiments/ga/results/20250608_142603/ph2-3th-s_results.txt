@@ -1,0 +1,30 @@
+Results for instance: ph2-3th-s
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	9	true	7519	8
+2	9	true	7450	14
+3	9	true	7423	10
+4	9	true	7470	10
+5	9	true	7453	7
+6	9	true	7467	9
+7	9	true	7572	40
+8	10	true	7502	4
+9	9	true	7513	10
+10	9	true	7544	4
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 9.10 (±0.30)
+Best Teacher Count: 9
+Worst Teacher Count: 10
+
+Execution Time: 7491.30 ms (±44.19)
+Fastest Run: 7423 ms
+Slowest Run: 7572 ms
+
+Generations until best: 11.60 (±9.88)
+Fastest Convergence: 4 generations
+Slowest Convergence: 40 generations

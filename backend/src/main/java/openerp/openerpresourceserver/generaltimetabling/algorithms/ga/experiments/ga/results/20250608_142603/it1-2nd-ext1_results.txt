@@ -1,0 +1,30 @@
+Results for instance: it1-2nd-ext1
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	4	true	13266	12
+2	4	true	13232	11
+3	4	true	13202	11
+4	4	true	13146	23
+5	4	true	13170	9
+6	4	true	13314	10
+7	4	true	13210	18
+8	4	true	13270	9
+9	4	true	13276	10
+10	4	true	13257	8
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 4.00 (±0.00)
+Best Teacher Count: 4
+Worst Teacher Count: 4
+
+Execution Time: 13234.30 ms (±49.45)
+Fastest Run: 13146 ms
+Slowest Run: 13314 ms
+
+Generations until best: 12.10 (±4.48)
+Fastest Convergence: 8 generations
+Slowest Convergence: 23 generations

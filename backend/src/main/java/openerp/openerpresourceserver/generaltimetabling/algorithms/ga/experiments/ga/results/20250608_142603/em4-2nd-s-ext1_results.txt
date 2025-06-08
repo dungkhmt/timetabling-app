@@ -1,0 +1,30 @@
+Results for instance: em4-2nd-s-ext1
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	7	true	14403	63
+2	7	true	14546	32
+3	7	true	14798	23
+4	7	true	14358	19
+5	7	true	14353	21
+6	7	true	14439	27
+7	7	true	14635	18
+8	7	true	14493	18
+9	7	true	14837	48
+10	7	true	14497	23
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 7.00 (±0.00)
+Best Teacher Count: 7
+Worst Teacher Count: 7
+
+Execution Time: 14535.90 ms (±162.72)
+Fastest Run: 14353 ms
+Slowest Run: 14837 ms
+
+Generations until best: 29.20 (±14.17)
+Fastest Convergence: 18 generations
+Slowest Convergence: 63 generations

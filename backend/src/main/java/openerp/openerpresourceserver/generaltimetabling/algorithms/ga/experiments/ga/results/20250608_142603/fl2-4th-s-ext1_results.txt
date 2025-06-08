@@ -1,0 +1,30 @@
+Results for instance: fl2-4th-s-ext1
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	4	true	33387	237
+2	4	true	33858	18
+3	4	true	33412	65
+4	4	true	34247	44
+5	4	true	33955	17
+6	4	true	32920	53
+7	4	true	33572	358
+8	4	true	33467	596
+9	4	true	34134	113
+10	4	true	33422	712
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 4.00 (±0.00)
+Best Teacher Count: 4
+Worst Teacher Count: 4
+
+Execution Time: 33637.40 ms (±384.14)
+Fastest Run: 32920 ms
+Slowest Run: 34247 ms
+
+Generations until best: 221.30 (±240.65)
+Fastest Convergence: 17 generations
+Slowest Convergence: 712 generations

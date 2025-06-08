@@ -1,0 +1,30 @@
+Results for instance: me1-2nd
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	5	true	17862	7
+2	5	true	17785	36
+3	5	true	17898	18
+4	5	true	17913	7
+5	5	true	17596	13
+6	5	true	17795	8
+7	5	true	17784	9
+8	5	true	17885	9
+9	5	true	17899	9
+10	5	true	17911	10
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 5.00 (±0.00)
+Best Teacher Count: 5
+Worst Teacher Count: 5
+
+Execution Time: 17832.80 ms (±93.23)
+Fastest Run: 17596 ms
+Slowest Run: 17913 ms
+
+Generations until best: 12.60 (±8.40)
+Fastest Convergence: 7 generations
+Slowest Convergence: 36 generations

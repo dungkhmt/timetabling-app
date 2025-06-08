@@ -1,0 +1,30 @@
+Results for instance: ch1-3th-s
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	9	true	57416	22
+2	9	true	62814	513
+3	9	true	59307	17
+4	9	true	57452	552
+5	9	true	58905	454
+6	9	true	56380	124
+7	9	true	56344	680
+8	9	true	58784	238
+9	9	true	61622	20
+10	9	true	57882	46
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 9.00 (±0.00)
+Best Teacher Count: 9
+Worst Teacher Count: 9
+
+Execution Time: 58690.60 ms (±2017.13)
+Fastest Run: 56344 ms
+Slowest Run: 62814 ms
+
+Generations until best: 266.60 (±245.14)
+Fastest Convergence: 17 generations
+Slowest Convergence: 680 generations
