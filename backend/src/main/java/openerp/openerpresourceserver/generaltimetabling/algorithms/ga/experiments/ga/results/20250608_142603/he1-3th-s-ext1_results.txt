@@ -1,0 +1,30 @@
+Results for instance: he1-3th-s-ext1
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	8	true	24278	19
+2	8	true	26374	50
+3	8	true	24350	20
+4	8	true	24360	27
+5	8	true	25500	19
+6	8	true	25995	26
+7	8	true	25335	20
+8	8	true	24324	30
+9	8	true	24889	506
+10	8	true	24769	22
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 8.00 (±0.00)
+Best Teacher Count: 8
+Worst Teacher Count: 8
+
+Execution Time: 25017.40 ms (±715.06)
+Fastest Run: 24278 ms
+Slowest Run: 26374 ms
+
+Generations until best: 73.90 (±144.30)
+Fastest Convergence: 19 generations
+Slowest Convergence: 506 generations

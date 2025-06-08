@@ -1,0 +1,28 @@
+Configuration:
+Population Size: 50
+Max Generations: 100
+Mutation Rate: 0.01
+Crossover Rate: 0.8
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	N/A	false	273	98
+2	N/A	false	341	47
+3	N/A	false	296	59
+4	N/A	false	255	76
+5	N/A	false	277	77
+6	N/A	false	316	92
+7	N/A	false	251	54
+8	N/A	false	262	21
+9	N/A	false	427	35
+10	N/A	false	328	89
+
+Results Summary (across 10 runs):
+Combination Validity Rate: 0.0% (0/10 runs)
+No valid solutions found - teacher count statistics unavailable
+Execution Time: 302.60 ms (±50.92)
+Fastest Run (ms): 251
+Slowest Run (ms): 427
+Generations until best: 64.80 (±24.45)
+Fastest Convergence (generations): 21
+Slowest Convergence (generations): 98

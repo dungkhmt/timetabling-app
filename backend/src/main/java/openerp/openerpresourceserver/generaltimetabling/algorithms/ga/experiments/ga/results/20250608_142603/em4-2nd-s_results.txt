@@ -1,0 +1,30 @@
+Results for instance: em4-2nd-s
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	9	true	5603	12
+2	9	true	5620	9
+3	9	true	5610	10
+4	9	true	5851	7
+5	9	true	5666	9
+6	9	true	5636	0
+7	9	true	5652	15
+8	9	true	5632	7
+9	9	true	5786	8
+10	9	true	5652	11
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 9.00 (±0.00)
+Best Teacher Count: 9
+Worst Teacher Count: 9
+
+Execution Time: 5670.80 ms (±77.50)
+Fastest Run: 5603 ms
+Slowest Run: 5851 ms
+
+Generations until best: 8.80 (±3.74)
+Fastest Convergence: 0 generations
+Slowest Convergence: 15 generations

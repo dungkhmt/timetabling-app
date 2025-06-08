@@ -1,0 +1,30 @@
+Results for instance: et1-3th-s
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	13	true	140001	51
+2	13	true	166722	76
+3	13	true	161499	152
+4	13	true	152332	49
+5	13	true	158321	363
+6	13	true	146154	36
+7	13	true	159825	55
+8	15	true	138172	44
+9	13	true	139718	50
+10	13	true	194496	482
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 13.20 (±0.60)
+Best Teacher Count: 13
+Worst Teacher Count: 15
+
+Execution Time: 155724.00 ms (±16111.19)
+Fastest Run: 138172 ms
+Slowest Run: 194496 ms
+
+Generations until best: 135.80 (±149.10)
+Fastest Convergence: 36 generations
+Slowest Convergence: 482 generations

@@ -1,0 +1,30 @@
+Results for instance: fl2-3th-c-ext1
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	3	true	4308	0
+2	3	true	4297	0
+3	3	true	4305	2
+4	3	true	4261	4
+5	3	true	4260	3
+6	3	true	4263	4
+7	3	true	4298	3
+8	3	true	4251	2
+9	3	true	4311	3
+10	3	true	4297	0
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 3.00 (±0.00)
+Best Teacher Count: 3
+Worst Teacher Count: 3
+
+Execution Time: 4285.10 ms (±22.14)
+Fastest Run: 4251 ms
+Slowest Run: 4311 ms
+
+Generations until best: 2.10 (±1.51)
+Fastest Convergence: 0 generations
+Slowest Convergence: 4 generations

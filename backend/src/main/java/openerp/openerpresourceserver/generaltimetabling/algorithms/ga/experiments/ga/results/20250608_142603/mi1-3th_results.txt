@@ -1,0 +1,30 @@
+Results for instance: mi1-3th
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	5	true	5645	15
+2	5	true	5663	30
+3	5	true	5580	8
+4	5	true	5654	4
+5	5	true	5593	10
+6	5	true	5552	64
+7	5	true	5570	21
+8	5	true	5565	18
+9	5	true	5594	3
+10	5	true	5663	187
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 5.00 (±0.00)
+Best Teacher Count: 5
+Worst Teacher Count: 5
+
+Execution Time: 5607.90 ms (±41.44)
+Fastest Run: 5552 ms
+Slowest Run: 5663 ms
+
+Generations until best: 36.00 (±53.09)
+Fastest Convergence: 3 generations
+Slowest Convergence: 187 generations

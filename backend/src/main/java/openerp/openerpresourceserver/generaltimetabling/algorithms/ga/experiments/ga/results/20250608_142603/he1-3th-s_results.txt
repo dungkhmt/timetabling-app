@@ -1,0 +1,30 @@
+Results for instance: he1-3th-s
+Configuration: Default (pop=500, gen=750, mut=0.4, cross=0.75)
+Number of runs: 10
+
+Individual Run Results:
+Run	Teachers	Valid	Time(ms)	Generations
+1	8	true	24350	23
+2	8	true	25702	12
+3	8	true	24710	27
+4	8	true	25213	28
+5	8	true	24415	12
+6	8	true	25996	27
+7	8	true	24992	26
+8	8	true	24357	57
+9	8	true	24015	90
+10	8	true	24708	158
+
+Aggregated Results:
+Valid solutions: 10/10 (100.0%)
+Teacher Count (valid solutions only): 8.00 (±0.00)
+Best Teacher Count: 8
+Worst Teacher Count: 8
+
+Execution Time: 24845.80 ms (±600.85)
+Fastest Run: 24015 ms
+Slowest Run: 25996 ms
+
+Generations until best: 46.00 (±43.46)
+Fastest Convergence: 12 generations
+Slowest Convergence: 158 generations
