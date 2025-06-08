@@ -63,6 +63,15 @@ public class Util {
         }
         return res;
     }
+    public static int intersect(int[] a, int[] b){
+        int res = 0;
+        if(a == null || b == null) return res;
+        for(int i: a){
+            for(int j: b)
+                if(i==j) res+= 1;
+        }
+        return res;
+    }
     public static List<Integer> toIntList(String s, int duration){
         List<Integer> res = new ArrayList<>();
         if(s != null){

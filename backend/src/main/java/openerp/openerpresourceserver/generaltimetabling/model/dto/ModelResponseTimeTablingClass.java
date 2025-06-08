@@ -45,6 +45,6 @@ public class ModelResponseTimeTablingClass {
     private String foreignLecturer;
 
     public String str(){
-        return "[id = " + id + ", course " + moduleCode + ", code " + classCode + "]";
+        return "[id = " + id + ", course " + moduleCode + ", code " + classCode + ", type " + getClassType() + "]";
     }
 }

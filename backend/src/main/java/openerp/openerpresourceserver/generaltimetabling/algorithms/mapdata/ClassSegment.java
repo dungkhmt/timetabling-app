@@ -52,7 +52,7 @@ public class ClassSegment {
     }
 
     public String str(){
-        return "{id = " + id + ", classId = " + classId + ", classCode = " + classCode + ", course = " + courseCode +" }";
+        return "{id = " + id + ", classId = " + classId + ", classCode = " + classCode + ", course = " + courseCode +", dur = " + duration + ", qty = " + nbStudents + " }";
     }
     public String toString(){
         String s = "ClassSegment[" + id + "], classId = " + classId;

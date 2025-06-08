@@ -204,6 +204,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 log.info("assignSessionToClassesSummer add child class " + cls.getClassCode() + " to parent " + parentId);
             }
         }
+        List<TimeTablingClass> morningCLS = new ArrayList<>();
+        List<TimeTablingClass> afternoonCLS = new ArrayList<>();
 
         for(String course: mCourse2Classes.keySet()) {
             List<TimeTablingClass> CLS = mCourse2Classes.get(course);
@@ -221,6 +223,28 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     //log.info("assignSessionToClassesSummer, UNKNOWN ClassType " + cls.getClassType() + " classCode " + cls.getClassCode());
                 }
             }
+            int sz = CLS_LT.size();
+            for(int i = 0; i < CLS_LT.size(); i++){
+                TimeTablingClass cls = CLS_LT.get(i);
+                if(morningCLS.size() > afternoonCLS.size()){
+                    afternoonCLS.add(cls);
+                    log.info("assignSessionToClassesSummer, course LT " + course + ", i = " + i + "/" + sz + " (" + cls.getClassCode() + ")" + "C");
+                    for(Long cid: mClassID2ChildrenIds.get(cls.getId())){
+                        TimeTablingClass childCLS = mID2Class.get(cid);
+                        afternoonCLS.add(childCLS);
+                        log.info("assignSessionToClassesSummer, course BT " + course + ", i = " + i + "/" + sz + " updateSession Child BTF (" + childCLS.getClassCode() + ")" + "C");
+                    }
+                }else{
+                    morningCLS.add(cls);
+                    log.info("assignSessionToClassesSummer, course LT " + course + ", i = " + i + "/" + sz + " (" + cls.getClassCode() + ")" + "S");
+                    for(Long cid: mClassID2ChildrenIds.get(cls.getId())){
+                        TimeTablingClass childCLS = mID2Class.get(cid);
+                        morningCLS.add(childCLS);
+                        log.info("assignSessionToClassesSummer, course BT " + course + ", i = " + i + "/" + sz + " updateSession Child BTF (" + childCLS.getClassCode() + ")" + "S");
+                    }
+                }
+            }
+            /*
             // divide LT classes and follows are BT classes
             if(CLS_LT.size() > 0){
                 TimeTablingClass aCls = CLS_LT.get(0);
@@ -255,29 +279,43 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     log.info("assignSessionToClassesSummer, course LT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + ")," + "C");
                 }
             }
+            */
 
             // divide LT+BT
             if(CLS_LT_BT.size() > 0) {
                 TimeTablingClass aCls = CLS_LT_BT.get(0);
                 int duration = aCls.getDuration();
+                boolean morningLess = morningCLS.size() < afternoonCLS.size();
+                sz = CLS_LT_BT.size();
 
-                int sz = CLS_LT_BT.size();
                 int mid = sz / 2;
-                if (sz % 4 == 2 && duration == 5){// duration 5 -> employ combination 2 + 3
-                    mid = mid + 1; // example 6 classes -> 4 morning, 2 afternoon (better than 3+3)
+                if(sz % 2 == 1){
+                    if(morningLess) mid = sz - mid;
+                }else{// even
+                    if (sz % 4 == 2 && duration == 5){// duration 5 -> employ combination 2 + 3
+                        mid = mid + 1; // example 6 classes -> 4 morning, 2 afternoon (better than 3+3)
                                     // 10 classes -> 6 morning, 4 afternoon (better than 5+5)
+
+                        if(!morningLess) mid = sz - mid;
+                    }
                 }
+
+
+
                         for (int i = 0; i < mid; i++) {
                             TimeTablingClass cls = CLS_LT_BT.get(i);
                             //cls.setCrew("S");
-                            updateSession(cls, "S");
-                            classIds.remove(cls.getId());
+                            //updateSession(cls, "S");
+                            //classIds.remove(cls.getId());
+                            morningCLS.add(cls);
                             log.info("assignSessionToClassesSummer, course LT+BT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + "," + "S");
+
                         }
                         for (int i = mid; i < sz; i++) {
                             TimeTablingClass cls = CLS_LT_BT.get(i);
-                            updateSession(cls, "C");
-                            classIds.remove(cls.getId());
+                            //updateSession(cls, "C");
+                            //classIds.remove(cls.getId());
+                            afternoonCLS.add(cls);
                             log.info("assignSessionToClassesSummer, course LT+BT " + course + ", i = " + i + "/" + sz + " updateSession(" + cls.getClassCode() + "," + "C");
 
                             //cls.setCrew("C");
@@ -285,6 +323,15 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
             }
         }
+        for(TimeTablingClass cls: morningCLS){
+            updateSession(cls, "S");
+            classIds.remove(cls.getId());
+        }
+        for(TimeTablingClass cls: afternoonCLS){
+            updateSession(cls, "C");
+            classIds.remove(cls.getId());
+        }
+        log.info("assignSessionToClassesSummer morning classes = " + morningCLS.size() + " afternoon classes = " + afternoonCLS.size());
         log.info("assignSessionToClassesSummer, REMAINS " + classIds.size() + " NOT ASSIGNED");
         for(Long id: classIds){
             TimeTablingClass cls = mID2Class.get(id);

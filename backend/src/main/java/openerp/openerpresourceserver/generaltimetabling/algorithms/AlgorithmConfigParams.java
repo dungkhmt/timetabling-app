@@ -10,4 +10,6 @@ public class AlgorithmConfigParams {
     public int MAX_DAY_SCHEDULED = 5; // by defalt: days 2, 3, 4, 5, 6
 
     public String USED_ROOM_PRIORITY = "Y";
+
+    public double roomCapRate = 1.15;
 }

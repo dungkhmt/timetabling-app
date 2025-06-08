@@ -758,7 +758,7 @@ public class V2ClassScheduler {
                             List<Classroom> remainRooms = new ArrayList<>();
                             for (Classroom r : rooms)
                                 if (!prioritizedRooms.contains(r)) {
-                                    if (gc.getQuantityMax() <= r.getQuantityMax())
+                                    if (gc.getQuantityMax()*algoParams.roomCapRate <= r.getQuantityMax())
                                         remainRooms.add(r);
                                 }
                             Collections.sort(remainRooms, new Comparator<Classroom>() {
@@ -781,7 +781,7 @@ public class V2ClassScheduler {
                             //log.info("mapDataNew, DO NOT use room priority");
                             // SORT all rooms in increasing order of capacity
                             for(Classroom r: rooms){
-                                if(gc.getQuantityMax() <= r.getQuantityMax())
+                                if(gc.getQuantityMax()*algoParams.roomCapRate <= r.getQuantityMax())
                                     selectedSortedClassRooms.add(r);
                             }
                             Collections.sort(selectedSortedClassRooms, new Comparator<Classroom>() {

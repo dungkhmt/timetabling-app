@@ -90,8 +90,8 @@ public class SummerSemesterSolver implements Solver {
         log.info("assignTimeSlotRoom start (cs.getId() " + cs.getId() + " timeSlot " + timeSlot + " room " + room + ")") ;
         //solutionSlot[csi] = timeSlot;
         //solutionRoom[csi] = room;
-        if(solutionRoom.get(cs.getId())!=null){
-            log.info("assignTimeSlotRoom, BUG??? class-segment id = " + cs.getId() + " classId = " + cs.getClassId() + " course " + cs.getCourseCode() + " was assign to room " + room);
+        if(solutionRoom.get(cs.getId())!=null && solutionRoom.get(cs.getId())!= -1){
+            log.info("assignTimeSlotRoom, BUG??? class-segment id = " + cs.getId() + " classId = " + cs.getClassId() + " course " + cs.getCourseCode() + " was assign to room " + solutionRoom.get(cs.getId()));
             return false;
         }
         solutionSlot.put(cs.getId(),timeSlot);
