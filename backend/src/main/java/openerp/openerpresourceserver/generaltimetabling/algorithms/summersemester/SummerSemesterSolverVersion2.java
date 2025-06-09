@@ -656,6 +656,14 @@ class ClassBasedRoomAssignmentSolver{
             roomSlotOccupation[r][sl + s] = 1;
         roomOccupation[r] += cs.getDuration();
     }
+    public void assignTimeSlotRoom(ClassSegment cs, int sl, int r){
+        //int sl = baseSolver.solutionSlot.get(cs.getId());
+        baseSolver.assignTimeSlotRoom(cs,sl,r);
+        for(int s = 0; s < cs.getDuration(); s++)
+            roomSlotOccupation[r][sl + s] = 1;
+        roomOccupation[r] += cs.getDuration();
+    }
+
     public boolean solve(){
         List<ModelResponseTimeTablingClass> classes = new ArrayList<>();
         for(ModelResponseTimeTablingClass cls: baseSolver.classes) classes.add(cls);
@@ -759,9 +767,13 @@ public class SummerSemesterSolverVersion2 implements Solver {
     Map<String, List<ModelResponseTimeTablingClass>> mCourse2Classes = new HashMap<>();
     Map<String, Set<Long>> mCourse2ClassId = new HashMap<>();
     Map<Long, List<ClassSegment>> mClassId2ClassSegments = new HashMap<>();
+    Map<Long, List<Long>> mClassId2ChildrenIds = new HashMap<>();
     Map<Long, Long> mClassId2MatchedClassId = new HashMap<>();
     Map<ClassSegment, ClassSegment> mClassSegment2MatchedClassSegment = new HashMap<>();
 
+    Map<Integer, List<ClassSegment>> mRoom2AssignedClassSegments = new HashMap<>();
+
+    ClassBasedRoomAssignmentSolver roomSolver;
     int[][] occupation; // occupation[day][s] is number of classes schedule at slot s
 
     int[][] day1 = {
@@ -783,6 +795,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
         this.I = W.data; this.W = W;
         optionDays = new ArrayList<>();
         optionDays.add(day1); optionDays.add(day2); optionDays.add(day3);
+        roomSolver = new ClassBasedRoomAssignmentSolver(this);
 
         mClassId2Class = new HashMap<>();
         for(ModelResponseTimeTablingClass cls: W.classes){
@@ -804,6 +817,13 @@ public class SummerSemesterSolverVersion2 implements Solver {
         for(Long id: mClassId2ClassSegments.keySet()){
             ModelResponseTimeTablingClass cls = mClassId2Class.get(id);
             classes.add(cls);
+            mClassId2ChildrenIds.put(id, new ArrayList<>());
+        }
+        for(ModelResponseTimeTablingClass cls: classes){
+            Long pid = cls.getParentClassId();
+            if(pid != null){
+                mClassId2ChildrenIds.get(pid).add(cls.getId());
+            }
         }
         for(ModelResponseTimeTablingClass cls: classes){
             String course = cls.getModuleCode();
@@ -814,6 +834,9 @@ public class SummerSemesterSolverVersion2 implements Solver {
         for(int d = 0; d <= Constant.daysPerWeek+1; d++)
             for(int s = 0; s <= Constant.slotPerCrew; s++)
                 occupation[d][s] =  0;
+
+        mRoom2AssignedClassSegments = new HashMap<>();
+        for(int r = 0; r < I.getRoomCapacity().length; r++) mRoom2AssignedClassSegments.put(r,new ArrayList<>());
     }
     public void printRoomsUsed(){
         Set<Classroom> R = new HashSet<>();
@@ -851,6 +874,8 @@ public class SummerSemesterSolverVersion2 implements Solver {
         }
         solutionSlot.put(cs.getId(),timeSlot);
         solutionRoom.put(cs.getId(),room);
+
+        mRoom2AssignedClassSegments.get(room).add(cs);
         // update room occupation
         //ClassSegment cs = classSegments.get(csi);
         String os = "";
@@ -1319,8 +1344,11 @@ public class SummerSemesterSolverVersion2 implements Solver {
             if(!scheduleGroup(SSH[session],session,false)) return;
             */
         }
-        ClassBasedRoomAssignmentSolver roomAssignmentSolver = new ClassBasedRoomAssignmentSolver(this);
-        roomAssignmentSolver.solve();
+        //ClassBasedRoomAssignmentSolver roomAssignmentSolver = new ClassBasedRoomAssignmentSolver(this);
+        //roomAssignmentSolver.solve();
+        roomSolver.solve();
+
+        improve();
 
         Set<ClassSegment> CS=new HashSet<>();
         for(int s = 0; s <= 1; s++){
@@ -1735,6 +1763,117 @@ public class SummerSemesterSolverVersion2 implements Solver {
 
     }
 
+    public int selectMinLoadRoom(){
+        int minLoad = 1000000; int selRoom = -1;
+        for(int r: mRoom2AssignedClassSegments.keySet()){
+            if(mRoom2AssignedClassSegments.get(r).size()==0) continue;
+            if(mRoom2AssignedClassSegments.get(r).size() < minLoad){
+                minLoad = mRoom2AssignedClassSegments.get(r).size();
+                selRoom = r;
+            }
+        }
+        return selRoom;
+    }
+    int[] sortRooms(Set<Integer> candRooms){
+        int[] sortedRooms = new int[candRooms.size()];
+        int idx = -1;
+        for(int r: candRooms){ idx++; sortedRooms[idx] = r; }
+        for(int i = 0; i < sortedRooms.length; i++){
+            for(int j = i+1; j < sortedRooms.length; j++){
+                if(mRoom2AssignedClassSegments.get(sortedRooms[i]).size() >
+                        mRoom2AssignedClassSegments.get(sortedRooms[j]).size()){
+                    int tmp = sortedRooms[i]; sortedRooms[i] = sortedRooms[j]; sortedRooms[j] = tmp;
+                }
+            }
+        }
+        return sortedRooms;
+    }
+    public boolean overlap(int slot, ClassSegment cs, ClassSegment csi){
+        if(!isScheduledClassSegment(csi)) return false;
+
+        // return true if slot assigned to class segment cs overlap with the scheduled csi
+        DaySessionSlot newDss = new DaySessionSlot(slot);
+        int sli = solutionSlot.get(csi.getId());
+        DaySessionSlot dssi = new DaySessionSlot(sli);
+        if(dssi.day == newDss.day && dssi.session == newDss.session &&
+                Util.overLap(newDss.slot,cs.getDuration(),dssi.slot,csi.getDuration())){
+            return true;
+        }
+        return false;
+    }
+    public boolean isFeasibleSlot(ClassSegment cs, int slot){
+        int sl = solutionSlot.get(cs.getId());
+        DaySessionSlot dss = new DaySessionSlot(sl);
+        DaySessionSlot newDss = new DaySessionSlot(slot);
+        if(dss.session != newDss.session) return false;
+        Long classId = cs.getClassId();
+        for(ClassSegment csi: mClassId2ClassSegments.get(classId)){
+            if(csi != cs){
+                if(overlap(slot,cs,csi)) return false;
+            }
+        }
+        ModelResponseTimeTablingClass cls = mClassId2Class.get(classId);
+        if(cls.getParentClassId()!=null){
+            Long pid = cls.getParentClassId();
+            ModelResponseTimeTablingClass pcls = mClassId2Class.get(pid);
+            for(ClassSegment csi: mClassId2ClassSegments.get(pid)){
+                if(overlap(slot,cs,csi)) return false;
+            }
+        }
+        for(Long cid: mClassId2ChildrenIds.get(classId)){
+            for(ClassSegment csi: mClassId2ClassSegments.get(cid)){
+                if(overlap(slot,cs,csi)) return false;
+            }
+        }
+        return true;
+    }
+    public SlotRoom selectRoom(ClassSegment cs, Set<Integer> candRooms){
+        int[] sortedRooms = sortRooms(candRooms);
+        for(int r: sortedRooms){
+            for(int sl: cs.getDomainTimeSlots()){
+                boolean slotOK = true;
+                for(int s = 0; s < cs.getDuration(); s++){
+                    if(roomSolver.roomSlotOccupation[r][sl + s]==1){
+                        slotOK = false; break;
+                    }
+                }
+                if(slotOK){
+                    if(isFeasibleSlot(cs,sl)){
+                        return new SlotRoom(sl,r);
+                    }
+                }
+            }
+        }
+        return null;// not found
+    }
+    public void improve(){
+        for(int it = 1; it <= 1000; it++){
+            int selRoom = selectMinLoadRoom();
+            Set<Integer> candRooms = new HashSet<>();
+            for(int r : mRoom2AssignedClassSegments.keySet()){
+                if(mRoom2AssignedClassSegments.get(r).size() > 0 && r != selRoom)
+                    candRooms.add(r);
+            }
+            if(selRoom == -1) break;
+            for(ClassSegment cs: mRoom2AssignedClassSegments.get(selRoom)){
+                if(mClassSegment2MatchedClassSegment.get(cs)!=null) continue;// do not consider matching
+                SlotRoom sr = selectRoom(cs,candRooms);
+                if(sr != null){
+                    mRoom2AssignedClassSegments.get(selRoom).remove(cs);
+                    int sl = solutionSlot.get(cs.getId());
+                    for(int s = 0; s < cs.getDuration(); s++){
+                        roomSolver.roomSlotOccupation[selRoom][sl + s] = 0;
+                    }
+                    solutionSlot.put(cs.getId(),-1); solutionRoom.put(cs.getId(),-1);
+                    //assignTimeSlotRoom(cs,sr.slot,sr.room);
+                    roomSolver.assignTimeSlotRoom(cs,sr.slot,sr.room);
+                    mRoom2AssignedClassSegments.get(sr.room).add(cs);
+                    log.info("improve, step " + it + ": discover one improvement cs " + cs.str());
+                    break;
+                }
+            }
+        }
+    }
     @Override
     public boolean hasSolution() {
         return foundSolution;
