@@ -319,14 +319,21 @@ class CourseBTSchedulerSummerSemester extends CourseSchedulerSummerSemester{
     }
     public boolean findAssignSlotForTwoMatchedChildrenClass(Long id, Long cid1, Long cid2, MatchScore ms){
         Set<Integer> days = collectDaysScheduled(id);
+        Set<Integer> candDays = new HashSet<>();
         ModelResponseTimeTablingClass cls1 = baseSolver.mClassId2Class.get(cid1);
         ModelResponseTimeTablingClass cls2 = baseSolver.mClassId2Class.get(cid2);
 
         log.info("findAssignSlotForTwoMatchedChildrenClass, pid = " + id + " cid1  " + cid1 + " cid2 = " +
                 cid2 + " days = " + days.size() + " cls1 = " + cls1.str() + " cls2 = " + cls2.str() + " match score = " + ms.score);
 
+
         List<ClassSegment> CS1 = baseSolver.mClassId2ClassSegments.get(cid1);
         List<ClassSegment> CS2 = baseSolver.mClassId2ClassSegments.get(cid2);
+        if(CS1.size() == 0 || CS2.size() == 0) return true;
+        for(int sl: CS1.get(0).getDomainTimeSlots()){
+            DaySessionSlot dss = new DaySessionSlot(sl);
+            candDays.add(dss.day);
+        }
         for(ClassSegment cs: CS1){
             if(baseSolver.solutionSlot.get(cs.getId())!=null && baseSolver.solutionSlot.get(cs.getId())!=-1){
                 log.info("findAssignSlotForTwoMatchedChildrenClass, cs " + cs.str() + " WAS ASSIGNED continue");
@@ -334,7 +341,9 @@ class CourseBTSchedulerSummerSemester extends CourseSchedulerSummerSemester{
             }
 
             int day = -1; int minOcc = 100000;
-            for(int d = 2; d < Constant.daysPerWeek + 2; d++) if(!days.contains(d)){
+            //for(int d = 2; d < Constant.daysPerWeek + 2; d++)
+            for(int d: candDays)
+                if(!days.contains(d)){
                 if(occupationDay[d] < minOcc){
                     minOcc = occupationDay[d]; day= d;
                 }
@@ -384,7 +393,9 @@ class CourseBTSchedulerSummerSemester extends CourseSchedulerSummerSemester{
             }
 
             int day = -1; int minOcc = 100000;
-            for(int d = 2; d < Constant.daysPerWeek + 2; d++) if(!days.contains(d)){
+            //for(int d = 2; d < Constant.daysPerWeek + 2; d++)
+            for(int d: candDays)
+                if(!days.contains(d)){
                 if(occupationDay[d] < minOcc){
                     minOcc = occupationDay[d]; day= d;
                 }
@@ -412,15 +423,24 @@ class CourseBTSchedulerSummerSemester extends CourseSchedulerSummerSemester{
     }
     public boolean findAssignSlotForAChildrenClass(Long pid, Long cid){
         Set<Integer> days = collectDaysScheduled(pid);
+        Set<Integer> candDays = new HashSet<>();
         ModelResponseTimeTablingClass cls = baseSolver.mClassId2Class.get(cid);
         List<ClassSegment> CS = baseSolver.mClassId2ClassSegments.get(cid);
+        if(CS.size() == 0) return true;
+        for(int sl: CS.get(0).getDomainTimeSlots()){
+            DaySessionSlot dss = new DaySessionSlot(sl);
+            candDays.add(dss.day);
+        }
+
         log.info("findAssignSlotForAChildrenClass, cid = " + cid + ", child cls = " + cls.str() + " CS = " + CS.size());
         for(ClassSegment cs: CS){
             if(baseSolver.solutionSlot.get(cs.getId())!=null &&
                     baseSolver.solutionSlot.get(cs.getId())!=-1) continue;
 
             int day = -1; int minOcc = 10000000;
-            for(int d = 2; d < Constant.daysPerWeek + 2; d++) if(!days.contains(d)){
+            //for(int d = 2; d < Constant.daysPerWeek + 2; d++)
+            for(int d: candDays)
+                if(!days.contains(d)){
                 if(occupationDay[d] < minOcc){
                     minOcc = occupationDay[d]; day= d;
                 }
@@ -649,6 +669,14 @@ class ClassBasedRoomAssignmentSolver{
         }
         return sel_room;
     }
+    public void unAssignRoom(ClassSegment cs, int r){
+        int sl = baseSolver.solutionSlot.get(cs.getId());
+        baseSolver.unAssignTimeSlotRoom(cs,sl,r);
+        for(int s = 0; s < cs.getDuration(); s++)
+            roomSlotOccupation[r][sl + s] = 0;
+        roomOccupation[r] -= cs.getDuration();
+    }
+
     public void assignRoom(ClassSegment cs, int r){
         int sl = baseSolver.solutionSlot.get(cs.getId());
         baseSolver.assignTimeSlotRoom(cs,sl,r);
@@ -675,7 +703,7 @@ class ClassBasedRoomAssignmentSolver{
         });
         for(int i = 0; i <  classes.size(); i++){
             ModelResponseTimeTablingClass cls = classes.get(i);
-            //log.info("reAssignRooms, after sorting classes, cls[" + i + "/" + classes.size() + "] " + cls.getClassCode() + "," + cls.getModuleCode() + ", qty = " + cls.getQuantityMax());
+            log.info("reAssignRooms, after sorting classes, cls[" + i + "/" + classes.size() + "] " + cls.getClassCode() + "," + cls.getModuleCode() + ", qty = " + cls.getQuantityMax());
         }
         Set<Integer> setRooms = new HashSet<>();
         for(ClassSegment cs: baseSolver.classSegments){
@@ -684,11 +712,23 @@ class ClassBasedRoomAssignmentSolver{
         int[] arrRooms = new int[setRooms.size()];
         int idx = -1;
         for(int r: setRooms){ idx = idx + 1; arrRooms[idx] = r; }
+
+        // SORT decreasing order of capacity
         for(int i = 0; i < arrRooms.length; i++){
             for(int j = i+1; j < arrRooms.length; j++) {
                 //if(baseSolver.I.getRoomCapacity()[arrRooms[i]] > baseSolver.I.getRoomCapacity()[arrRooms[j]]){
+                //if(baseSolver.I.getRoomCapacity()[arrRooms[i]] < baseSolver.I.getRoomCapacity()[arrRooms[j]]){
+                //if(baseSolver.I.getRoomCapacity()[arrRooms[i]] > baseSolver.I.getRoomCapacity()[arrRooms[j]]){
+                boolean swap = false;
                 if(baseSolver.I.getRoomCapacity()[arrRooms[i]] < baseSolver.I.getRoomCapacity()[arrRooms[j]]){
-
+                    swap = true;
+                }else if(baseSolver.I.getRoomCapacity()[arrRooms[i]] == baseSolver.I.getRoomCapacity()[arrRooms[j]]){
+                    String ri = baseSolver.W.mIndex2Room.get(arrRooms[i]).getClassroom();
+                    String rj = baseSolver.W.mIndex2Room.get(arrRooms[j]).getClassroom();
+                    int c = ri.compareTo(rj);
+                    if(c > 0) swap = true;
+                }
+                if(swap) {
                     int tmp = arrRooms[i]; arrRooms[i] = arrRooms[j]; arrRooms[j] = tmp;
                 }
             }
@@ -705,11 +745,12 @@ class ClassBasedRoomAssignmentSolver{
         */
         int maxRoomIndex = 0;
         for(int r: sortedRooms){
-            //log.info("solve, after sorting, room[" + r + "] " + baseSolver.W.mIndex2Room.get(r).getClassroom() + " cap = " + baseSolver.I.getRoomCapacity()[r]);
+            log.info("solve, after sorting, room[" + r + "] " + baseSolver.W.mIndex2Room.get(r).getClassroom() + " cap = " + baseSolver.I.getRoomCapacity()[r]);
             if(r > maxRoomIndex) maxRoomIndex = r;
         }
         int maxSlots = Constant.daysPerWeek*Constant.slotPerCrew*2 + 2;
-        roomSlotOccupation = new int[maxRoomIndex + 1][maxSlots];
+        //roomSlotOccupation = new int[maxRoomIndex + 1][maxSlots];
+        roomSlotOccupation = new int[baseSolver.I.getRoomCapacity().length + 1][maxSlots];
         for(int r = 0; r < sortedRooms.size(); r++){
             for(int sl = 0; sl < maxSlots; sl++) roomSlotOccupation[r][sl] = 0;
         }
@@ -719,6 +760,7 @@ class ClassBasedRoomAssignmentSolver{
             baseSolver.solutionRoom.put(cs.getId(),-1);
         }
         for(ModelResponseTimeTablingClass cls: classes){
+            log.info("solve, consider class " + cls.str() + " qty = " + cls.getQuantityMax());
             List<ClassSegment> CS = baseSolver.mClassId2ClassSegments.get(cls.getId());
             for(ClassSegment cs: CS){
                 //if(mClassSegmentId2AssignedRoom.get(cs.getId())!=null){
@@ -734,6 +776,9 @@ class ClassBasedRoomAssignmentSolver{
                     if(r != -1) {
                         assignRoom(cs, r);
                         assignRoom(mcs, r);
+                        log.info("solve, assign matched class segments cs " + cs.str() + ", mcs " + mcs.str() + " room " + baseSolver.I.getRoomCapacity()[r]);
+                    }else{
+                        log.info("solve, assign matched class segments cs " + cs.str() + ", mcs " + mcs.str() + " cannot find a room");
                     }
                 }else{
                     //log.info("solve selectRoomClassSegment cs = " + cs.str());
@@ -741,11 +786,93 @@ class ClassBasedRoomAssignmentSolver{
                     //log.info("solve selectRoomClassSegment cs = " + cs.str() + " r = " + r + " cap = " + (r != -1 ? baseSolver.I.getRoomCapacity()[r] : -1));
                     if(r != -1) {
                         assignRoom(cs, r);
+                        log.info("solve, assign a class segments cs " + cs.str()  + " room " + baseSolver.I.getRoomCapacity()[r]);
+                    }else{
+                        log.info("solve, assign a class segments cs " + cs.str()  + " cannot find a room ");
+
                     }
                 }
             }
+            log.info("solve finished class cls " + cls.str() + "-------------------");
         }
         return true;
+    }
+
+    public ClassSegment findMaxGapRoomClassSegment(){
+        ClassSegment selCS = null; int maxGap = -1;
+        for(ClassSegment cs: baseSolver.classSegments){
+            if(baseSolver.isScheduledClassSegment(cs) && baseSolver.isScheduledRoomClassSegment(cs)){
+                int sl = baseSolver.solutionSlot.get(cs.getId());
+                int r = baseSolver.solutionRoom.get(cs.getId());
+                int gap = baseSolver.I.getRoomCapacity()[r] - cs.nbStudents;
+                if(gap > maxGap){ maxGap = gap; selCS = cs; }
+            }
+        }
+        return selCS;
+    }
+
+    public int findBestFitRoom(ClassSegment cs){
+        log.info("findBestFitRoom for cs " + cs.str() +" starts....");
+        int sl = baseSolver.solutionSlot.get(cs.getId());
+        int selRoom = -1; int minGap = 100000000;
+        for(int r = 0; r < baseSolver.I.getRoomCapacity().length; r++){
+            boolean ok = true;
+            for(int s = 0; s < cs.getDuration(); s++){
+                if(roomSlotOccupation[r][sl+s] > 0){
+                    ok = false; break;
+                }
+            }
+            if(ok){
+                int gap = baseSolver.I.getRoomCapacity()[r] - (int)(cs.nbStudents * 1.1);
+                if(gap >= 0 && gap < minGap){
+                    minGap = gap; selRoom = r;
+                }
+            }
+        }
+        return selRoom;
+    }
+
+    public void printGapRooms(){
+        int maxGap = -10000000;
+        for(ClassSegment cs: baseSolver.classSegments){
+            if(baseSolver.isScheduledRoomClassSegment(cs)){
+                int r = baseSolver.solutionRoom.get(cs.getId());
+                int gap = baseSolver.I.getRoomCapacity()[r] - cs.nbStudents;
+                if(gap > maxGap) maxGap = gap;
+                log.info("ClassSegment " + cs.str() + " assigned to rppm " + baseSolver.W.mIndex2Room.get(r).getClassroom() + " gap = " + gap + " maxGap = " + maxGap);
+            }
+        }
+    }
+    public int refineRooms(){
+        log.info("refineRooms start....");
+        int cnt = 0;
+        for(int i = 1; i <= 1000; i++){
+            ClassSegment cs = findMaxGapRoomClassSegment();
+            int sl = baseSolver.solutionSlot.get(cs.getId());
+            int r = baseSolver.solutionRoom.get(cs.getId());
+            int gap = baseSolver.I.getRoomCapacity()[r] - cs.nbStudents;
+            log.info("refineRooms, discover max-gap class " + cs.str() + " gap = " + gap);
+            if(gap <= 30){
+                log.info("refineRooms, gap = " + gap + " BREAK"); break;
+            }
+            int selRoom = findBestFitRoom(cs);
+
+            int newGap = baseSolver.I.getRoomCapacity()[selRoom] - cs.nbStudents;
+            log.info("refineRooms, found new room with newGap = " + newGap);
+            if(newGap > 30){
+                log.info("refineRooms, new gap = " + newGap + " BREAK"); break;
+            }
+            log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap);
+            unAssignRoom(cs,r);
+            log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap + " UnAssign OK");
+
+            assignRoom(cs,selRoom);
+
+            log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap + " ReAssign OK");
+
+            cnt++;
+        }
+        return cnt;
     }
 }
 @Log4j2
@@ -892,6 +1019,37 @@ public class SummerSemesterSolverVersion2 implements Solver {
         }
         //printRoomsUsed();
         foundSolution = true;
+        return true;
+    }
+    public boolean  unAssignTimeSlotRoom(ClassSegment cs, int timeSlot, int room){
+        //log.info("assignTimeSlotRoom start (cs.getId() " + cs.getId() + " timeSlot " + timeSlot + " room " + room + ")") ;
+        //solutionSlot[csi] = timeSlot;
+        //solutionRoom[csi] = room;
+        if(solutionRoom.get(cs.getId())!=null && solutionRoom.get(cs.getId()) == -1){
+            log.info("assignTimeSlotRoom, BUG??? class-segment id = " + cs.getId() + " classId = " + cs.getClassId() + " course " + cs.getCourseCode() + " was NOT assign to room ");
+            return false;
+        }
+        solutionSlot.put(cs.getId(),timeSlot);
+        solutionRoom.put(cs.getId(),-1);
+
+        mRoom2AssignedClassSegments.get(room).remove(cs);
+        // update room occupation
+        //ClassSegment cs = classSegments.get(csi);
+        //String os = "";
+        //for(int r: I.getRoomOccupations()[room]) os = os + r + ",";
+        //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room + " occupied by slots " + os);
+        //log.info("assignTimeSlotRoom[" + cs.getId() + "], classId " + cs.getClassId() + " course " + cs.getCourseCode() + " assigned to room used index = " + room + " name = " + W.mIndex2Room.get(room).getClassroom() + " capacity " + W.mIndex2Room.get(room).getQuantityMax());
+        for(int s = 0; s <= cs.getDuration()-1; s++){
+            int sl = timeSlot + s;
+
+            //I.getRoomOccupations()[room].remove(sl);
+
+            //os = os + sl + ",";
+            //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room
+            // + " roomOccupation[" + room + "].add(" + sl + ") -> " + os);
+        }
+        //printRoomsUsed();
+        //foundSolution = true;
         return true;
     }
     public boolean isScheduled(Long classId){
@@ -1253,7 +1411,7 @@ public class SummerSemesterSolverVersion2 implements Solver {
         }));
 
         Set<String> sSSH  = new HashSet<>(Arrays.asList(new String[]{
-                "SSH1151","SSH1111","SSH1121","SSH1131","SSH1141"
+                "SSH1151","SSH1111","SSH1121","SSH1131","SSH1141","SSH1131Q","MIL1220","MIL1210"
         }));
 
         Set<String> sMI  = new HashSet<>(Arrays.asList(new String[]{
@@ -1350,6 +1508,10 @@ public class SummerSemesterSolverVersion2 implements Solver {
 
         improve();
 
+        int cnt = roomSolver.refineRooms();
+        log.info("solve, after refineRoom, nbImprovements is cnt " + cnt);
+        roomSolver.printGapRooms();
+
         Set<ClassSegment> CS=new HashSet<>();
         for(int s = 0; s <= 1; s++){
             for(ClassSegment cs: CH[s]) CS.add(cs);
@@ -1372,6 +1534,9 @@ public class SummerSemesterSolverVersion2 implements Solver {
     }
     public boolean isScheduledClassSegment(ClassSegment cs){
         return solutionSlot.get(cs.getId())!=null && solutionSlot.get(cs.getId())!=-1;
+    }
+    public boolean isScheduledRoomClassSegment(ClassSegment cs){
+        return solutionRoom.get(cs.getId())!=null && solutionRoom.get(cs.getId())!=-1;
     }
     private boolean scheduleGroupLTandChildrenBT(List<ClassSegment> L, int session, boolean assignRoom) {
 

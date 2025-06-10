@@ -375,6 +375,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             if (c.getPartitionLtBtForSummerSemester() != null) {
                 List<List<Integer>> L1 = Util.extractPartition(c.getPartitionLtBtForSummerSemester());
                 mCourseCodeLTBT2Partitions.put(c.getId(), L1);
+                log.info("createClassSegmentForSummerSemester, mCourse2LTBTPartition.put(" + c.getId() + ", L1.sz = " + L1.size() + " partitionConfigLTBTSummer = " + c.getPartitionLtBtForSummerSemester());
             }
         }
 
@@ -417,8 +418,10 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             if (PLTBT == null) {
                 if (LLTBT != null && LLTBT.size() >= 1) {
                     TimeTablingClass gc = LLTBT.get(0);
-                    if (P.partitions.get(gc.getDuration()) != null)
+                    if (P.partitions.get(gc.getDuration()) != null) {
                         PLTBT = P.partitions.get(gc.getDuration());
+                        log.info("createClassSegmentForSummerSemester, course " + courseCode+ " getPartition of duration " + gc.getDuration() + " GOT PLTBT.sz = " + PLTBT.size());
+                    }
                 }
             }
             log.info("createClassSegmentForSummerSemester, for course " + courseCode + " morning sz = " + LS.size());
