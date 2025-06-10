@@ -66,21 +66,6 @@ const AddressForm = ({ address, errors, onChange }) => {
           }}
         />
       </Grid>
-      <Grid item xs={12}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={address.isDefault}
-              onChange={(e) => onChange({
-                target: { name: 'isDefault', value: e.target.checked }
-              })}
-              name="isDefault"
-              color="primary"
-            />
-          }
-          label="Đặt làm địa chỉ mặc định"
-        />
-      </Grid>
     </Grid>
   );
 };

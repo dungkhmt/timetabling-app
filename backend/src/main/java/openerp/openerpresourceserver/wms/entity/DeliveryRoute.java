@@ -1,11 +1,6 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
@@ -13,7 +8,6 @@ import lombok.Data;
 @Table(name = "wms2_delivery_route")
 public class DeliveryRoute {
     @Id
-    @Column(name = "id", length = 40)
     private String id;
 
     @ManyToOne
@@ -28,6 +22,5 @@ public class DeliveryRoute {
     @JoinColumn(name = "assign_to_vehicle_id")
     private Vehicle assignToVehicle;
 
-    @Column(name = "status_id", length = 100)
     private String statusId;
 }

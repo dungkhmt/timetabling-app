@@ -1,10 +1,9 @@
 package openerp.openerpresourceserver.wms.dto.facility;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import lombok.*;
-
-import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * @version 1.0
@@ -21,7 +20,7 @@ public class FacilityGetListRes {
 
     private String name;
 
-    private boolean isDefault;
+    private Boolean isDefault;
 
     private String phone;
 

@@ -48,7 +48,7 @@ public class ReportServiceImpl implements ReportService {
 
         // Chỉ 1 vòng lặp để tính hết các số liệu
         for (OrderHeader order : purchaseOrders) {
-            String status = order.getStatus();
+            String status = order.getStatusId();
             LocalDate date = order.getCreatedStamp().toLocalDate();
 
             dailyCountMap.put(date, dailyCountMap.getOrDefault(date, 0) + 1);

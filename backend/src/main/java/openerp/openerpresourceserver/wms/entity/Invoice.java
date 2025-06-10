@@ -1,7 +1,5 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 import lombok.*;
 import openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator;
@@ -33,7 +31,7 @@ public class Invoice extends BaseEntity {
 
     private String invoiceName;
 
-    private String invoiceStatus;
+    private String statusId;
 
     @ManyToOne
     @JoinColumn(name = "from_supplier_id")

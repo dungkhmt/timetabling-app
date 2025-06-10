@@ -20,7 +20,7 @@ import java.util.Date;
 @Table(name = "user_login")
 public class UserLogin {
     @Id
-    @Column(name = "user_login_id", updatable = false, nullable = false)
+    @Column(name = "user_login_id")
     private String id;
 
     private String email;

@@ -1,14 +1,16 @@
 package openerp.openerpresourceserver.wms.entity;
 
 
+import jakarta.persistence.*;
+import lombok.*;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.*;
-import openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator;
-import org.hibernate.annotations.GenericGenerator;
+import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Getter
 @Setter
@@ -31,37 +33,26 @@ public class OrderHeader extends BaseEntity {
 //            })
     private String id;
 
-    @Column(name = "order_type_id", length = 40)
     private String orderTypeId;
 
-    @Column(name = "order_date")
     private LocalDateTime orderDate;
 
-    @Column(name = "status")
-    private String status;
+    private String statusId;
 
-    @Column(name="sale_channel_id")
     private String saleChannelId;
 
-    @Column(name = "order_name")
     private String orderName;
 
-    @Column(name = "delivery_before_date")
     private LocalDate deliveryBeforeDate;
 
-    @Column(name = "delivery_after_date")
     private LocalDate deliveryAfterDate;
 
-    @Column(name = "note")
     private String note;
 
-    @Column(name = "priority")
     private Integer priority;
 
-    @Column(name = "delivery_address")
     private String deliveryAddress;
 
-    @Column(name = "delivery_phone")
     private String deliveryPhone;
 
     @ManyToOne
@@ -76,10 +67,6 @@ public class OrderHeader extends BaseEntity {
     @JoinColumn(name = "created_by_user_id")
     private UserLogin createdByUser;
 
-    @ManyToOne
-    @JoinColumn(name = "facility_id")
-    private Facility facility;
-
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
 
@@ -92,4 +79,10 @@ public class OrderHeader extends BaseEntity {
     private UserLogin userCancelled;
 
 
+    @Override
+    public void customPrePersist() {
+        if(isBlank(id)) {
+            id = SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX);
+        }
+    }
 }

@@ -1,14 +1,12 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -18,7 +16,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class InventoryItemDetail {
     @Id
-    @Column(name = "id", length = 40)
     private String id;
 
     @ManyToOne
@@ -29,7 +26,6 @@ public class InventoryItemDetail {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    @Column(name = "quantity", precision = 18, scale = 2)
     private Integer quantity;
 
     @ManyToOne

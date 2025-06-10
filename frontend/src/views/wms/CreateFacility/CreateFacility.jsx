@@ -33,10 +33,9 @@ const CreateFacility = () => {
     phone: '',
     postalCode: '',
     address: {
-      addressType: 'WAREHOUSE',
+      addressType: 'FACILITY',
       latitude: null,
       longitude: null,
-      isDefault: true,
       fullAddress: ''
     }
   });

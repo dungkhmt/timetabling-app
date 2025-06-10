@@ -15,7 +15,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class DeliveryBill extends BaseEntity {
     @Id
-    @Column(name = "id", length = 40)
     private String id;
 
     @ManyToOne

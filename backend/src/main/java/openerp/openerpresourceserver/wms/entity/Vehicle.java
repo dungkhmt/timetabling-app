@@ -1,6 +1,8 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -15,30 +17,21 @@ import java.math.BigDecimal;
 public class Vehicle {
 
     @Id
-    @Column(name = "id", nullable = false, length = 40)
     private String id;
 
-    @Column(name = "vehicle_name", length = 255)
     private String vehicleName;
 
-    @Column(name = "vehicle_type_id", length = 40)
     private String vehicleTypeId;
 
-    @Column(name = "capacity")
     private BigDecimal capacity;
 
-    @Column(name = "long")
-    private Integer length;  // `long` is a reserved word in Java, so I renamed it to `length`
+    private BigDecimal length;
 
-    @Column(name = "width")
-    private Integer width;
+    private BigDecimal width;
 
-    @Column(name = "height")
-    private Integer height;
+    private BigDecimal height;
 
-    @Column(name = "status_id", length = 40)
     private String statusId;
 
-    @Column(name = "description", columnDefinition = "text")
     private String description;
 }

@@ -14,6 +14,6 @@ public class OrderItemReq {
     private Integer quantity;
     private BigDecimal price;
     private String unit;
-    private BigDecimal discount;
-    private BigDecimal tax;
+//    private BigDecimal discount;
+//    private BigDecimal tax;
 }

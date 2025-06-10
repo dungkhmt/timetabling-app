@@ -9,10 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import openerp.openerpresourceserver.wms.dto.OrderItemReq;
 
-import java.math.BigDecimal;
-import java.sql.Date;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Setter
@@ -24,12 +21,12 @@ public class CreatePurchaseOrderReq {
     private String supplierId;
     @NotBlank
     private String facilityId;
-    private BigDecimal deliveryCost;
+//    private BigDecimal deliveryCost;
     private String note;
     private String orderName;
-    private String tax;
-    private String amount;
-    private Integer numberOfInvoices;
+//    private String tax;
+//    private String amount;
+//    private Integer numberOfInvoices;
     @NotNull
     private LocalDate deliveryAfterDate;
     private LocalDate deliveryBeforeDate;

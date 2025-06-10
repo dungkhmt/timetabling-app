@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.constant.enumrator.FacilityStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
@@ -23,6 +24,9 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.ADDRESS_ID_PREFIX;
+import static openerp.openerpresourceserver.wms.constant.Constants.FACILITY_ID_PREFIX;
 
 @RequiredArgsConstructor
 @Service
@@ -53,13 +57,13 @@ public class FacilityServiceImpl implements FacilityService{
         var newAddress = generalMapper.convertToEntity(req.getAddress(), Address.class);
 
         if(Objects.isNull(req.getId())) {
-            newFacility.setId(CommonUtil.getUUID());
+            newFacility.setId(SnowFlakeIdGenerator.getInstance().nextId(FACILITY_ID_PREFIX));
         }
 
         newFacility.setStatusId(FacilityStatus.ACTIVE.name());
         newFacility.setAddress(newAddress.getFullAddress());
 
-        newAddress.setId(CommonUtil.getUUID());
+        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
         newAddress.setEntityId(newFacility.getId());
         newAddress.setEntityType(EntityType.FACILITY.name());
 

@@ -38,9 +38,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public ApiResponse<Void> createPurchaseOrder(CreatePurchaseOrderReq purchaseOrder, String name) {
-        var facility = facilityRepo.findById(purchaseOrder.getFacilityId()).orElseThrow(
-                () -> new DataNotFoundException("Facility not found with id: " + purchaseOrder.getFacilityId()));
-
         var supplier = supplierRepo.findById(purchaseOrder.getSupplierId()).orElseThrow(
                 () -> new DataNotFoundException("Supplier not found with id: " + purchaseOrder.getSupplierId()));
 
@@ -48,12 +45,10 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 () -> new DataNotFoundException("User not found with id: " + name));
 
         var orderHeader = generalMapper.convertToEntity(purchaseOrder, OrderHeader.class);
-        orderHeader.setId(CommonUtil.getUUID());
-        orderHeader.setFacility(facility);
         orderHeader.setFromSupplier(supplier);
         orderHeader.setCreatedByUser(userLogin);
         orderHeader.setOrderTypeId(OrderType.PURCHASE_ORDER.name());
-        orderHeader.setStatus(OrderStatus.CREATED.name());
+        orderHeader.setStatusId(OrderStatus.CREATED.name());
 
         List<OrderItem> orderItemList= new ArrayList<>();
         AtomicInteger seq = new AtomicInteger(0);
@@ -64,7 +59,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                     () -> new DataNotFoundException("Product not found with id: " + item.getProductId()));
             orderItem.setOrderItemSeqId(CommonUtil.getSequenceId("ORDITEM", 5, seq.getAndIncrement()));
             orderItem.setProduct(product);
-            orderItem.setId(CommonUtil.getUUID());
             orderItem.setAmount(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             orderItemList.add(orderItem);
         });
@@ -89,7 +83,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .map(purchaseOrder -> {
                     var orderListRes = generalMapper.convertToDto(purchaseOrder, PurchaseOrderListRes.class);
                     orderListRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
-                    orderListRes.setFacilityName(purchaseOrder.getFacility().getName());
                     orderListRes.setCreatedByUserName(purchaseOrder.getCreatedByUser().getFullName());
                     return orderListRes;
                 })
@@ -120,9 +113,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         var purchaseOrderDetailRes = generalMapper.convertToDto(purchaseOrder, PurchaseOrderDetailRes.class);
         purchaseOrderDetailRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
-        purchaseOrderDetailRes.setFacilityName(purchaseOrder.getFacility().getName());
         purchaseOrderDetailRes.setCreatedByUser(purchaseOrder.getCreatedByUser().getFullName());
-        purchaseOrderDetailRes.setStatus(purchaseOrder.getStatus());
+        purchaseOrderDetailRes.setStatus(purchaseOrder.getStatusId());
         purchaseOrderDetailRes.setDeliveryAfterDate(purchaseOrder.getDeliveryAfterDate());
         purchaseOrderDetailRes.setNote(purchaseOrder.getNote());
 

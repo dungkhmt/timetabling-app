@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.CustomerStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
@@ -21,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.ADDRESS_ID_PREFIX;
+import static openerp.openerpresourceserver.wms.constant.Constants.CUSTOMER_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -53,13 +57,13 @@ public class CustomerServiceImpl implements CustomerService {
         var newAddress = generalMapper.convertToEntity(req.getAddress(), Address.class);
 
         if(Objects.isNull(req.getId())) {
-            newCustomer.setId(CommonUtil.getUUID());
+            newCustomer.setId(SnowFlakeIdGenerator.getInstance().nextId(CUSTOMER_ID_PREFIX));
         }
 
         newCustomer.setStatusId(CustomerStatus.ACTIVE.name());
         newCustomer.setAddress(newAddress.getFullAddress());
 
-        newAddress.setId(CommonUtil.getUUID());
+        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
         newAddress.setEntityId(newCustomer.getId());
         newAddress.setEntityType(EntityType.CUSTOMER.name());
 
@@ -67,7 +71,7 @@ public class CustomerServiceImpl implements CustomerService {
         addressRepo.save(newAddress);
 
         return ApiResponse.<Void>builder()
-                .code(200)
+                .code(201)
                 .message("Created customer successfully")
                 .build();
     }

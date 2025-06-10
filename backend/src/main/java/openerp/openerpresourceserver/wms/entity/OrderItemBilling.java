@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 @Builder
 public class OrderItemBilling extends BaseEntity {
     @Id
-    @Column(name = "id", length = 40)
     private String id;
 
     @ManyToOne
@@ -42,13 +41,10 @@ public class OrderItemBilling extends BaseEntity {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "amount", precision = 25, scale = 5)
     private BigDecimal amount;
 
-    @Column(name = "unit")
     private String unit;
 
 }

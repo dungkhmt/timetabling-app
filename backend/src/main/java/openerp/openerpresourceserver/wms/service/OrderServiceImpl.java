@@ -17,7 +17,7 @@ public class OrderServiceImpl implements OrderService {
     public ApiResponse<Void> approveSaleOrder(String id, String name) {
         var orderHeader = orderHeaderRepo.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
-        orderHeader.setStatus(OrderStatus.APPROVED.name());
+        orderHeader.setStatusId(OrderStatus.APPROVED.name());
 
         var userApproved = userLoginRepo.findById(name)
                 .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name));

@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.constant.enumrator.SupplierStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
@@ -19,6 +20,9 @@ import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.ADDRESS_ID_PREFIX;
+import static openerp.openerpresourceserver.wms.constant.Constants.SUPPLIER_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -58,13 +62,13 @@ public class SupplierServiceImpl implements SupplierService {
         var newAddress = generalMapper.convertToEntity(req.getAddress(), Address.class);
 
         if(Objects.isNull(req.getId())) {
-            newSupplier.setId(CommonUtil.getUUID());
+            newSupplier.setId(SnowFlakeIdGenerator.getInstance().nextId(SUPPLIER_ID_PREFIX));
         }
 
         newSupplier.setStatusId(SupplierStatus.ACTIVE.name());
         newSupplier.setAddress(newAddress.getFullAddress());
 
-        newAddress.setId(CommonUtil.getUUID());
+        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
         newAddress.setEntityId(newSupplier.getId());
         newAddress.setEntityType(EntityType.SUPPLIER.name());
 

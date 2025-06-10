@@ -27,16 +27,12 @@ public class Shipment extends BaseEntity {
 //            })
     private String id;
 
-    @Column(name = "shipment_type_id", length = 40)
     private String shipmentTypeId;
 
-    @Column(name = "shipment_name", length = 255)
     private String shipmentName;
 
-    @Column(name = "status_id", length = 40)
     private String statusId;
 
-    @Column(name = "note")
     private String note;
 
     @ManyToOne
@@ -47,7 +43,6 @@ public class Shipment extends BaseEntity {
     @JoinColumn(name = "to_customer_id")
     private Customer toCustomer;
 
-    @Column(name = "expected_delivery_date")
     private LocalDate expectedDeliveryDate;
 
     @ManyToOne

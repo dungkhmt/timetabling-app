@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Table(name = "wms2_shipper")
 public class Shipper {
     @Id
-    @Column(name = "user_login_id", length = 60)
+    @Column(name = "user_login_id")
     private String userLoginId;
 
     @MapsId
@@ -18,16 +18,12 @@ public class Shipper {
     @JoinColumn(name = "user_login_id")
     private UserLogin userLogin;
 
-    @Column(name = "status_id", length = 100)
     private String statusId;
 
-    @Column(name = "last_latitude")
     private BigDecimal lastLatitude;
 
-    @Column(name = "last_longitude")
     private BigDecimal lastLongitude;
 
-    @Column(name = "phone")
     private String phone;
 
     public String getFullName() {
