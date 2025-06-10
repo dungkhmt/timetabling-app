@@ -14,17 +14,17 @@ import java.util.List;
 @Builder
 public class SalesOrderDetailRes {
     private String id;
-    private Integer numberOfInvoices;
     private String orderTypeId;
-    private String status;
+    private String statusId;
     private String saleChannelId;
-    private String facilityName;
-    private String customerName;
-    private String createdByUser;
-    private String deliveryAddress;
+    private String toCustomerName;
+    private String createdByUserName;
+    private String deliveryFullAddress;
+    private String deliveryAddressId;
     private String deliveryPhone;
     private LocalDateTime createdStamp;
     private LocalDate deliveryAfterDate;
+    private LocalDate deliveryBeforeDate;
     private String note;
     private Integer priority;
     private BigDecimal totalAmount;

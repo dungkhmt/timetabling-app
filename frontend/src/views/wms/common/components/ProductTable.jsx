@@ -15,6 +15,7 @@ import {
 import { Delete as DeleteIcon, Add, Remove, Edit } from '@mui/icons-material';
 import { useOrderForm } from "../context/OrderFormContext";
 import DiscountDialog from './DiscountDialog';
+import {formatCurrency} from "../utils/functions";
 
 const ProductTable = () => {
   const { 
@@ -41,13 +42,6 @@ const ProductTable = () => {
     const subtotal = item.price * item.quantity;
     const discountAmount = item.discount || 0;
     return subtotal - discountAmount;
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
   };
 
   const openDiscountDialog = (productId, currentDiscount, itemPrice, itemQuantity) => {

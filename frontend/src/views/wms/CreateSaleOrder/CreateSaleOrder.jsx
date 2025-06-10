@@ -22,6 +22,7 @@ const CreateSaleOrder = () => {
     id: null,
     toCustomerId: "",
     orderName: "",
+    orderDate : null,
     deliveryBeforeDate: null,
     deliveryAfterDate: null,
     deliveryAddressId: "",

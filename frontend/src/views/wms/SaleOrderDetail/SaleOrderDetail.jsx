@@ -1,12 +1,12 @@
 import React from "react";
-import { OrderDetailProvider } from "../common/context/OrderDetailContext";
+import {OrderDetailProvider} from "../common/context/OrderDetailContext";
 import OrderHeader from "./components/OrderHeader";
+import OrderDetailBase from "../common/components/OrderDetailBase";
+import {ORDER_TYPE_ID} from "../common/constants/constants";
 import OrderBasicInfo from "../common/components/OrderBasicInfo";
 import OrderDeliveryInfo from "../common/components/OrderDeliveryInfo";
 import OrderItemsList from "../common/components/OrderItemsList";
 import OrderSummary from "../common/components/OrderSummary";
-import OrderDetailBase from "../common/components/OrderDetailBase";
-import { ORDER_TYPE_ID } from "../common/constants/constants";
 
 const orderLabels = [
   "Tổng quan",

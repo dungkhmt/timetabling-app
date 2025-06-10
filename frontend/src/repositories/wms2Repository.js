@@ -35,10 +35,7 @@ export const wms2Service = {
   },
   getSalesOrders: (page, limit, filters) => {
     return request("post", `/sale-order/get-all?page=${page}&limit=${limit}`, null, null, filters);
-  }, 
-  getSalesOrdersApproved: (page, limit) => {
-    return request("get", `/sale-order/get-approved?page=${page}&limit=${limit}`);
-  }, 
+  },
   getOutBoundsOrder: (orderId, page, limit) => {
     return request("get", `/shipment/outbound/order/${orderId}?page=${page}&limit=${limit}`);
   },

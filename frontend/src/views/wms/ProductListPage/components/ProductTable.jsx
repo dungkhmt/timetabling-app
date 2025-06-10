@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
+import {formatCurrency} from "../../common/utils/functions";
 
 const ProductTable = ({
   products,
@@ -34,16 +35,6 @@ const ProductTable = ({
       default:
         return <Chip label={statusId || "N/A"} size="small" />;
     }
-  };
-
-  const formatCurrency = (value) => {
-    if (!value && value !== 0) return "—";
-    
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0
-    }).format(value);
   };
 
   return (

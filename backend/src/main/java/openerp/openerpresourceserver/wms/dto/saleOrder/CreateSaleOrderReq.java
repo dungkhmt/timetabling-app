@@ -28,6 +28,7 @@ public class CreateSaleOrderReq {
     private String deliveryFullAddress;
     private String deliveryPhone;
     private String note;
+    private LocalDate orderDate;
     @NotBlank
     private String saleChannelId;
     private BigDecimal discount;

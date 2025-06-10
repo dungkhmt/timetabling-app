@@ -20,7 +20,7 @@ const OrderListBase = ({
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
-    page: 1,
+    page: 0,
     size: 10,
     totalElements: 0,
     totalPages: 0
@@ -69,13 +69,13 @@ const OrderListBase = ({
     setPagination(prev => ({
       ...prev,
       size: parseInt(event.target.value, 10),
-      page: 1
+      page: 0
     }));
   };
 
   // Handle applying filters
   const handleApplyFilters = () => {
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination(prev => ({ ...prev, page: 0 }));
     fetchOrders();
   };
 
@@ -83,7 +83,7 @@ const OrderListBase = ({
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
     setFilters(prev => ({ ...prev, status: newValue === "ALL" ? null : newValue }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination(prev => ({ ...prev, page: 0 }));
   };
 
   const handleExportOrders = async () => {

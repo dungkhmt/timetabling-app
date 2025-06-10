@@ -16,8 +16,6 @@ public interface SaleOrderService {
     ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, SaleOrderGetListFilter filters);
 
 
-    ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit);
-
     ApiResponse<Pagination<OrderListExportedRes>> exportSaleOrders(int page, int limit);
 
     void simulateSaleOrder() throws InterruptedException;

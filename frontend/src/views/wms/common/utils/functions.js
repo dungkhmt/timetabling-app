@@ -17,3 +17,24 @@ export const useHandleNavigate = () => {
 
     return handleNavigate;
 };
+
+export const formatCurrency = (
+    value,
+    {
+        locale = "vi-VN",
+        currency = "VND",
+        minimumFractionDigits = 0,
+        maximumFractionDigits = 0,
+        fallback = "0 ₫"
+    } = {}
+) => {
+    if (value === null || value === undefined || isNaN(value)) return fallback;
+
+    return new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        minimumFractionDigits,
+        maximumFractionDigits
+    }).format(value);
+};
+

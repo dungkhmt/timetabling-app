@@ -28,6 +28,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import InfoIcon from '@mui/icons-material/Info';
 import { useWms2Data } from '../../../services/useWms2Data';
 import { toast } from 'react-toastify';
+import {formatCurrency} from "../common/utils/functions";
 
 const ProductDetail = () => {
   const [product, setProduct] = useState(null);
@@ -77,16 +78,6 @@ const ProductDetail = () => {
       default:
         return <Chip label={statusId || 'N/A'} />;
     }
-  };
-
-  const formatCurrency = (value) => {
-    if (!value && value !== 0) return '—';
-
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0
-    }).format(value);
   };
 
   if (loading) {

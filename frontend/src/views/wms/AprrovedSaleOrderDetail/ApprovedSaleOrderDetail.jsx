@@ -5,11 +5,11 @@ import {
 } from "./context/OrderDetailContext";
 import CustomTabs from "../common/components/CustomTabs";
 import OutBoundList from "./components/OutBoundList";
-import OrderBasicInfo from "../SaleOrderDetail/components/OrderBasicInfo";
-import OrderDeliveryInfo from "../SaleOrderDetail/components/OrderDeliveryInfo";
-import OrderItemsList from "../SaleOrderDetail/components/OrderItemsList";
 import { OrderDetailProvider, useOrderDetail } from "../common/context/OrderDetailContext";
 import {ORDER_TYPE_ID} from "../common/constants/constants";
+import OrderBasicInfo from "../common/components/OrderBasicInfo";
+import OrderDeliveryInfo from "../common/components/OrderDeliveryInfo";
+import OrderItemsList from "../common/components/OrderItemsList";
 
 const approveOrderLabels = [
   "Tổng quan",

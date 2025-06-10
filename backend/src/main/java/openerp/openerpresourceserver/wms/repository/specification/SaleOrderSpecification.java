@@ -27,7 +27,7 @@ public class SaleOrderSpecification implements Specification<OrderHeader> {
         List<Predicate> predicates = new ArrayList<>();
 
         String keyword = filter.getKeyword();
-        String status = filter.getStatus();
+        String statusId = filter.getStatus();
         List<String> saleChannelId = filter.getSaleChannelId();
         LocalDateTime startCreatedAt = filter.getStartCreatedAt();
         LocalDateTime endCreatedAt = filter.getEndCreatedAt();
@@ -37,8 +37,8 @@ public class SaleOrderSpecification implements Specification<OrderHeader> {
             predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
         }
 
-        if (status != null && !status.isEmpty()) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
+        if (statusId != null && !statusId.isEmpty()) {
+            predicates.add(criteriaBuilder.equal(root.get("statusId"), statusId));
         }
 
         if (saleChannelId != null && !saleChannelId.isEmpty()) {

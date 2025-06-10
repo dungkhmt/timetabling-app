@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
@@ -25,7 +25,7 @@ public class OrderHeader extends BaseEntity {
 
     private String orderTypeId;
 
-    private LocalDateTime orderDate;
+    private LocalDate orderDate;
 
     private String statusId;
 
@@ -70,6 +70,9 @@ public class OrderHeader extends BaseEntity {
     @JoinColumn(name = "user_cancelled_id")
     private UserLogin userCancelled;
 
+    private Integer totalQuantity;
+
+    private BigDecimal totalAmount;
 
     @Override
     public void customPrePersist() {

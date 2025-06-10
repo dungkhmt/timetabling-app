@@ -140,17 +140,6 @@ export const useWms2Data = () => {
     }
   };
 
-  const getSalesOrdersApproved = async (page, limit) => {
-    try {
-      const response = await wms2Service.getSalesOrdersApproved(page, limit);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching approved sales orders:", error);
-      toast.error("Không thể tải danh sách đơn hàng đã duyệt");
-      return { data: {} };
-    }
-  };
-
   const getOutBoundsOrder = async (id, page, limit) => {
     try {
       const response = await wms2Service.getOutBoundsOrder(id, page, limit);
@@ -674,7 +663,6 @@ const getDeliveryDashboard = async (startDate, endDate) => {
     approveOrder,
     rejectOrder,
     getSalesOrders,
-    getSalesOrdersApproved,
     createOutBoundOrder,
     getMoreInventoryItems,
     getOutBoundsOrder,

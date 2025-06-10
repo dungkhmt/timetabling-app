@@ -14,17 +14,11 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import { ORDER_TYPE_ID } from '../../common/constants/constants';
+import {formatCurrency} from "../../common/utils/functions";
 
 const OrderSummaryCards = ({ reportData, orderType }) => {
   const theme = useTheme();
 
-  // Format currency for display
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(value || 0);
-  };
 
   return (
     <Grid container spacing={3} mb={3}>

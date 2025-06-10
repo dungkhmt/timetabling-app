@@ -100,6 +100,23 @@ const BasicInfoForm = () => {
 
           <Grid item xs={4}>
             <Typography variant="body1" sx={{ pt: 1 }}>
+              Ngày mua hàng:
+            </Typography>
+          </Grid>
+          <Grid item xs={8}>
+            <TextField
+                fullWidth
+                type="date"
+                name="orderDate"
+                value={order.orderDate}
+                onChange={handleInputChange}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <Typography variant="body1" sx={{ pt: 1 }}>
               Chiết khấu đơn hàng:
             </Typography>
           </Grid>
@@ -126,24 +143,6 @@ const BasicInfoForm = () => {
                 }}
               />
             </Box>
-          </Grid>
-
-          <Grid item xs={4}>
-            <Typography variant="body1" sx={{ pt: 1 }}>
-              Ghi chú:
-            </Typography>
-          </Grid>
-          <Grid item xs={8}>
-            <TextField
-              fullWidth
-              size="small"
-              name="note"
-              value={order.note}
-              onChange={handleInputChange}
-              multiline
-              rows={2}
-              placeholder="Nhập ghi chú đơn hàng..."
-            />
           </Grid>
 
         </Grid>

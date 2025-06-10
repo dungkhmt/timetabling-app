@@ -13,7 +13,7 @@ const SaleOrderListPageBase = () => {
 
   const initialFilters = {
     keyword: "",
-    status: null,
+    statusId: null,
     startCreatedAt: null,
     endCreatedAt: null,
     channelId: null

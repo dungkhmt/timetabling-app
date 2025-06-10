@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useOrderDetail } from "../context/OrderDetailContext";
 import { ORDER_TYPE_ID } from "../constants/constants";
+import {formatCurrency} from "../utils/functions";
 
 const OrderItemsList = () => {
   const { orderData } = useOrderDetail();
@@ -35,10 +36,10 @@ const OrderItemsList = () => {
       tableColumns = [
         { id: 'productId', label: 'Mã SP' },
         { id: 'productName', label: 'Tên sản phẩm' },
-        { id: 'unitPrice', label: 'Đơn giá' },
+        { id: 'unit', label: 'Đơn vị' },
         { id: 'quantity', label: 'Số lượng' },
-        { id: 'discountAmount', label: 'Chiết khấu' },
-        { id: 'totalAmount', label: 'Thành tiền' },
+        { id: 'discount', label: 'Chiết khấu' },
+        { id: 'amount', label: 'Thành tiền' },
       ];
       break;
       
@@ -46,39 +47,28 @@ const OrderItemsList = () => {
       tableColumns = [
         { id: 'productId', label: 'Mã SP' },
         { id: 'productName', label: 'Tên sản phẩm' },
-        { id: 'unitPrice', label: 'Đơn giá nhập' },
+        { id: 'unit', label: 'Đơn vị nhập' },
         { id: 'quantity', label: 'Số lượng' },
-        { id: 'totalAmount', label: 'Thành tiền' },
+        { id: 'amount', label: 'Thành tiền' },
       ];
       break;
       
-    case ORDER_TYPE_ID.TRANSFER_ORDER:
-    case ORDER_TYPE_ID.RETURN_ORDER:
     default:
       tableColumns = [
         { id: 'productId', label: 'Mã SP' },
         { id: 'productName', label: 'Tên sản phẩm' },
-        { id: 'unitPrice', label: 'Đơn giá' },
+        { id: 'unit', label: 'Đơn vị' },
         { id: 'quantity', label: 'Số lượng' },
-        { id: 'totalAmount', label: 'Thành tiền' },
+        { id: 'amount', label: 'Thành tiền' },
       ];
       break;
   }
 
-  // Format số tiền
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   // Lấy giá trị theo cột
   const getCellValue = (item, columnId) => {
     switch (columnId) {
-      case 'unitPrice':
-      case 'discountAmount':
-      case 'totalAmount':
+      case 'discount':
+      case 'amount':
         return formatCurrency(item[columnId] || 0);
       case 'quantity':
         return item[columnId] || 0;

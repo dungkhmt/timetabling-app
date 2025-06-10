@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { useOrderDetail } from "../context/OrderDetailContext";
 import { ORDER_TYPE_ID } from "../constants/constants";
+import {formatCurrency} from "../utils/functions";
 
 const OrderSummary = ({ showDetailedPayment = false }) => {
   const { orderData } = useOrderDetail();
@@ -16,14 +17,6 @@ const OrderSummary = ({ showDetailedPayment = false }) => {
 
   // Xác định loại đơn hàng
   const orderTypeId = orderData.orderTypeId || ORDER_TYPE_ID.SALES_ORDER;
-  
-  // Format số tiền
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount || 0);
-  };
 
   // Tổng tiền hàng (chưa thuế, chiết khấu)
   const subtotal = orderData.orderItems?.reduce(

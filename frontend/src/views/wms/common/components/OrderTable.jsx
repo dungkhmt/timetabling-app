@@ -68,9 +68,13 @@ const OrderTable = ({
           <TableHead>
             <TableRow>
               <TableCell>Mã đơn hàng</TableCell>
+              <TableCell>Tên đơn hàng</TableCell>
+              <TableCell>Ngày mua hàng</TableCell>
+              <TableCell>Ngày giao dư kiến</TableCell>
               <TableCell>Ngày tạo</TableCell>
               <TableCell>{type === ORDER_TYPE_ID.SALES_ORDER ? "Khách hàng" : "Nhà cung cấp"}</TableCell>
-              <TableCell>Thành tiền</TableCell>
+              <TableCell>Tổng giá trị đơn</TableCell>
+              <TableCell>Tổng số lượng</TableCell>
               <TableCell>Trạng thái</TableCell>
             </TableRow>
           </TableHead>
@@ -91,6 +95,23 @@ const OrderTable = ({
                 }}
               >
                 <TableCell>{order.id}</TableCell>
+                <TableCell>{order.orderName}</TableCell>
+                <TableCell>
+                  {new Date(order.orderDate).toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </TableCell>
+                <TableCell>
+                  {order.deliveryAfterDate
+                    ? new Date(order.deliveryAfterDate).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })
+                    : "Chưa xác định"}
+                </TableCell>
                 <TableCell>
                   {new Date(order.createdStamp).toLocaleDateString("vi-VN", {
                     day: "2-digit",
@@ -107,10 +128,11 @@ const OrderTable = ({
                     currency: "VND",
                   }).format(order.totalAmount)}
                 </TableCell>
+                <TableCell>{order.totalQuantity}</TableCell>
                 <TableCell>
                   <Chip
-                    label={ORDER_STATUSES[order.status] || "Không xác định"}
-                    color={getStatusColor(order.status)}
+                    label={ORDER_STATUSES[order.statusId] || "Không xác định"}
+                    color={getStatusColor(order.statusId)}
                     variant="outlined"
                     size="small"
                     onClick={(e) => e.stopPropagation()} // Ngăn việc bubble up sự kiện click

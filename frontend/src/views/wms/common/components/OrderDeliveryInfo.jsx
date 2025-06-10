@@ -14,14 +14,7 @@ const OrderDeliveryInfo = () => {
   
   // Thông tin giao hàng chung
   const commonDeliveryItems = [
-    { 
-      label: "Phương thức vận chuyển", 
-      value: orderData.shippingMethod || "-" 
-    },
-    { 
-      label: "Nhà vận chuyển", 
-      value: orderData.shippingCarrier || "-" 
-    },
+
   ];
 
   // Thông tin theo loại đơn hàng
@@ -44,21 +37,12 @@ const OrderDeliveryInfo = () => {
         },
         { 
           label: "Địa chỉ giao hàng", 
-          value: orderData.deliveryAddress || "-" 
+          value: orderData.deliveryFullAddress || "-"
         },
         { 
           label: "Số điện thoại nhận hàng", 
           value: orderData.deliveryPhone || "-" 
-        },
-        { 
-          label: "Phí giao hàng", 
-          value: orderData.deliveryCost 
-            ? new Intl.NumberFormat("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              }).format(orderData.deliveryCost)
-            : "0 ₫" 
-        },
+        }
       ];
       break;
       
@@ -79,51 +63,10 @@ const OrderDeliveryInfo = () => {
         { 
           label: "Địa chỉ giao hàng", 
           value: orderData.deliveryAddress || orderData.facilityAddress || "-" 
-        },
-        { 
-          label: "Chi phí vận chuyển", 
-          value: orderData.deliveryCost 
-            ? new Intl.NumberFormat("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              }).format(orderData.deliveryCost)
-            : "0 ₫" 
-        },
+        }
       ];
       break;
-      
-    case ORDER_TYPE_ID.TRANSFER_ORDER:
-      specificItems = [
-        { 
-          label: "Ngày chuyển dự kiến", 
-          value: orderData.deliveryAfterDate 
-            ? dayjs(orderData.deliveryAfterDate).format("DD/MM/YYYY") 
-            : "-" 
-        },
-        { 
-          label: "Địa chỉ kho nhận", 
-          value: orderData.facilityToAddress || "-" 
-        },
-      ];
-      break;
-      
-    case ORDER_TYPE_ID.RETURN_ORDER:
-      specificItems = [
-        { 
-          label: "Ngày xử lý dự kiến", 
-          value: orderData.deliveryAfterDate 
-            ? dayjs(orderData.deliveryAfterDate).format("DD/MM/YYYY") 
-            : "-" 
-        },
-        { 
-          label: "Địa chỉ trả hàng", 
-          value: orderData.deliveryAddress || "-" 
-        },
-      ];
-      break;
-      
     default:
-      // Mặc định không thêm thông tin gì
       break;
   }
   

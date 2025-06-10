@@ -6,6 +6,7 @@ import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.constant.enumrator.SaleChannel;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
+import openerp.openerpresourceserver.wms.dto.OrderItemReq;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.saleOrder.*;
@@ -26,9 +27,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static openerp.openerpresourceserver.wms.constant.Constants.DEFAULT_ADMIN_USER_NAME;
@@ -61,25 +65,46 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         orderHeader.setToCustomer(toCustomer);
         orderHeader.setCreatedByUser(userCreated);
 
-        AtomicInteger increment = new AtomicInteger(0);
-        var orderItems = request.getOrderItems()
+        var productIds = request.getOrderItems()
                 .stream()
-                .map(orderItem -> {
-                    var product = productRepo.findById(orderItem.getProductId())
-                            .orElseThrow(() -> new DataNotFoundException("Product not found in List of OrderItems with id: " + orderItem.getProductId()));
-                    return OrderItem.builder()
-                            .order(orderHeader)
-                            .product(product)
-                            .quantity(orderItem.getQuantity())
-                            .amount(orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
-                            .orderItemSeqId(increment.incrementAndGet())
-                            .price(orderItem.getPrice())
-                            .unit(orderItem.getUnit())
-                            .build();
-                })
+                .map(OrderItemReq::getProductId)
+                .distinct()
                 .toList();
 
+        List<Product> products = productRepo.findAllById(productIds);
 
+        Map<String, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        var totalQuantity = 0;
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        var seq = 1;
+        var orderItems = new ArrayList<OrderItem>();
+
+        for (OrderItemReq orderItemReq : request.getOrderItems()) {
+            var product = productMap.get(orderItemReq.getProductId());
+            if (product == null) {
+                throw new DataNotFoundException("Product not found in List of OrderItems with id: " + orderItemReq.getProductId());
+            }
+
+            var orderItem = generalMapper.convertToEntity(orderItemReq, OrderItem.class);
+            orderItem.setOrder(orderHeader);
+            orderItem.setProduct(product);
+            orderItem.setOrderItemSeqId(seq++);
+            totalQuantity += orderItem.getQuantity();
+            var amount = (orderItem.getPrice()
+                    .multiply(BigDecimal.valueOf(orderItem.getQuantity())))
+                    .subtract(orderItem.getDiscount());
+            orderItem.setAmount(amount);
+            orderItems.add(orderItem);
+
+            totalAmount = totalAmount.add(amount);
+        }
+
+        totalAmount.subtract(request.getDiscount());
+
+        orderHeader.setTotalQuantity(totalQuantity);
+        orderHeader.setTotalAmount(totalAmount);
 
         orderHeaderRepo.save(orderHeader);
         orderItemRepo.saveAll(orderItems);
@@ -95,70 +120,42 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         var orderHeader = orderHeaderRepo.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + id));
 
+        var saleOrderDetailRes = generalMapper.convertToDto(orderHeader, SalesOrderDetailRes.class);
         var orderItems = orderHeader.getOrderItems();
-        AtomicInteger totalQuantity = new AtomicInteger(0);
-        AtomicDouble totalAmount = new AtomicDouble(0);
-        var orderItemResponses = orderItems
-                .stream()
-                .map(orderItem -> {
-                    var orderItemRes = OrderProductRes.builder()
-                            .id(orderItem.getId())
-                            .orderItemSeqId(orderItem.getOrderItemSeqId())
-                        .productId(orderItem.getProduct().getId())
-                        .productName(orderItem.getProduct().getName())
-                        .quantity(orderItem.getQuantity())
-                        .amount(orderItem.getAmount())
-                        .build();
-                    orderItemRes.setUnit(orderItem.getUnit());
-                    orderItemRes.setPrice(orderItem.getPrice());
-                    orderItemRes.setDiscount(orderItem.getDiscount());
-                    orderItemRes.setTax(orderItem.getTax());
-                    orderItemRes.setAmount(orderItem.getAmount());
-                    totalAmount.addAndGet(orderItem.getQuantity());
-                    totalAmount.addAndGet(orderItem.getAmount().doubleValue());
-                    return orderItemRes;
-                })
-                .toList();
+        List<OrderProductRes> orderItemResponses = new ArrayList<>();
+        for (OrderItem orderItem : orderItems) {
+            var orderItemRes = generalMapper.convertToDto(orderItem, OrderProductRes.class);
+            orderItemRes.setProductId(orderItem.getProduct().getId());
+            orderItemRes.setProductName(orderItem.getProduct().getName());
+            orderItemResponses.add(orderItemRes);
+        }
+
+        saleOrderDetailRes.setCreatedByUserName(orderHeader.getCreatedByUser().getFullName());
+        saleOrderDetailRes.setToCustomerName(orderHeader.getToCustomer().getName());
+        saleOrderDetailRes.setOrderItems(orderItemResponses);
         return ApiResponse.<SalesOrderDetailRes>builder()
                 .code(200)
                 .message("Success")
-                .data(SalesOrderDetailRes.builder()
-                        .id(orderHeader.getId())
-                        .customerName(orderHeader.getToCustomer().getName())
-                        .createdByUser(orderHeader.getCreatedByUser().getFullName())
-                        .createdStamp(orderHeader.getCreatedStamp())
-                        .status(orderHeader.getStatusId())
-                        .note(orderHeader.getNote())
-                        .deliveryAddress(orderHeader.getDeliveryAddressId())
-                        .deliveryAfterDate(orderHeader.getDeliveryAfterDate())
-                        .priority(orderHeader.getPriority())
-                        .totalAmount(BigDecimal.valueOf(totalAmount.get()))
-                        .totalQuantity(totalQuantity.get())
-                        .orderItems(orderItemResponses)
-
-                        .build())
+                .data(saleOrderDetailRes)
                 .build();
     }
 
     @Override
     public ApiResponse<Pagination<OrderListRes>> getAllSaleOrders(int page, int size, SaleOrderGetListFilter filters) {
-        var pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdStamp"));
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdStamp"));
 
         var saleOrderSpec = new SaleOrderSpecification(filters);
         var orderHeaders = orderHeaderRepo.findAll(saleOrderSpec ,pageable);
 
         var orderListRes = orderHeaders
-                .stream()
-                .map(orderHeader -> OrderListRes.builder()
-                        .id(orderHeader.getId())
-                        .customerName(orderHeader.getToCustomer().getName())
-                        .createdStamp(orderHeader.getCreatedStamp())
-                        .status(orderHeader.getStatusId())
-                        .totalAmount(orderHeader.getOrderItems()
-                                .stream()
-                                .map(OrderItem::getAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add))
-                        .build())
+                .<OrderListRes>stream()
+                .map(orderHeader ->
+                {
+                    var orderRes = generalMapper.convertToDto(orderHeader, OrderListRes.class);
+                    orderRes.setCustomerName(orderHeader.getToCustomer().getName());
+                    orderRes.setUserCreatedName(orderHeader.getCreatedByUser().getFullName());
+                    return orderRes;
+                })
                 .toList();
 
         return ApiResponse.<Pagination<OrderListRes>>builder()
@@ -172,40 +169,6 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                         .totalPages(orderHeaders.getTotalPages())
                         .build())
                 .build();
-    }
-
-
-    @Override
-    public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(int page, int limit) {
-        var pageable = PageRequest.of(page, limit);
-        var orderHeaders = orderHeaderRepo.findAllByStatusId(OrderStatus.APPROVED.name(), pageable);
-
-        var orderListRes = orderHeaders
-                .stream()
-                .map(orderHeader -> OrderListRes.builder()
-                        .id(orderHeader.getId())
-                        .customerName(orderHeader.getToCustomer().getName())
-                        .createdStamp(orderHeader.getCreatedStamp())
-                        .status(orderHeader.getStatusId())
-                        .totalAmount(orderHeader.getOrderItems()
-                                .stream()
-                                .map(OrderItem::getAmount)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add))
-                        .build())
-                .toList();
-
-        return ApiResponse.<Pagination<OrderListRes>>builder()
-                .code(200)
-                .message("Success")
-                .data(Pagination.<OrderListRes>builder()
-                        .page(page)
-                        .size(limit)
-                        .data(orderListRes)
-                        .totalElements(orderHeaders.getTotalElements())
-                        .totalPages(orderHeaders.getTotalPages())
-                        .build())
-                .build();
-
     }
 
     @Override

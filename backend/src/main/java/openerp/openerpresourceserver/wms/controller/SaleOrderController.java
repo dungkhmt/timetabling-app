@@ -35,12 +35,6 @@ public class SaleOrderController {
         return saleOrderService.getAllSaleOrders(page, limit, filters);
     }
 
-
-    @GetMapping("/get-approved")
-    public ApiResponse<Pagination<OrderListRes>> getApprovedSaleOrders(@RequestParam int page, @RequestParam int limit) {
-        return saleOrderService.getApprovedSaleOrders(page, limit);
-    }
-
     @GetMapping("/export")
     public ApiResponse<Pagination<OrderListExportedRes>> exportSaleOrders(@RequestParam(defaultValue = "1") int page
             , @RequestParam(defaultValue = "100") int limit) {
