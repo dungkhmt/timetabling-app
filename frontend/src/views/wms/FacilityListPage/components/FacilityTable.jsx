@@ -83,7 +83,7 @@ const FacilityTable = ({
                   <TableCell>{facility.name}</TableCell>
                   <TableCell>{facility.phone || "—"}</TableCell>
                   <TableCell>{facility.postalCode || "—"}</TableCell>
-                  <TableCell>{facility.address || "—"}</TableCell>
+                  <TableCell>{facility.fullAddress || "—"}</TableCell>
                   <TableCell>{getDefaultChip(facility.isDefault)}</TableCell>
                   <TableCell>{getStatusChip(facility.statusId)}</TableCell>
                 </TableRow>

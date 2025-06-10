@@ -18,7 +18,7 @@ public class DeliveryBillItem extends BaseEntity{
     @JoinColumn(name = "delivery_bill_id")
     private DeliveryBill deliveryBill;
 
-    private String deliveryBillItemSeqId;
+    private Integer deliveryBillItemSeqId;
 
     @ManyToOne
     @JoinColumn(name = "product_id")

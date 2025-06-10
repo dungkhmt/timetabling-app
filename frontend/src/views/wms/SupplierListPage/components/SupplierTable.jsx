@@ -78,7 +78,7 @@ const SupplierTable = ({
                   <TableCell>{supplier.name}</TableCell>
                   <TableCell>{supplier.email || "—"}</TableCell>
                   <TableCell>{supplier.phone || "—"}</TableCell>
-                  <TableCell>{supplier.address || "—"}</TableCell>
+                  <TableCell>{supplier.fullAddress || "—"}</TableCell>
                   <TableCell>{getStatusChip(supplier.statusId)}</TableCell>
                 </TableRow>
               ))

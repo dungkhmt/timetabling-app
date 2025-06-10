@@ -20,5 +20,5 @@ public class DeliveryPlanOrder {
 
     private String deliveryBillId;
 
-    private String deliveryPlanOrderSeqId;
+    private Integer deliveryPlanOrderSeqId;
 }

@@ -11,6 +11,7 @@ import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.saleOrder.*;
 import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
+import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.SaleOrderSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
@@ -45,34 +46,20 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     private final ProductRepo productRepo;
     private final ShipmentService shipmentService;
     private final InventoryItemRepo inventoryItemRepo;
+    private final GeneralMapper generalMapper;
     @Qualifier("customExecutor")
     private final ThreadPoolTaskExecutor executor;
     @Override
     public ApiResponse<Void> createSaleOrder(CreateSaleOrderReq request, String name) {
-        var facility = facilityRepo.findById(request.getFacilityId())
-                .orElseThrow(() -> new DataNotFoundException("Facility not found with id: " + request.getFacilityId()));
-        var toCustomer = customerRepo.findById(request.getCustomerId())
-                .orElseThrow(() -> new DataNotFoundException("Customer not found with id" + request.getCustomerId()));
-        var userLogin = userLoginRepo.findById(request.getUserCreatedId())
-                .orElseThrow(() -> new DataNotFoundException("User not found with id" + request.getUserCreatedId()));
+        var toCustomer = customerRepo.findById(request.getToCustomerId())
+                .orElseThrow(() -> new DataNotFoundException("Customer not found with id" + request.getToCustomerId()));
         var userCreated = userLoginRepo.findById(name)
                 .orElseThrow(() -> new DataNotFoundException("User not found with id" + name));
-        // create order header
-        var orderHeader = OrderHeader.builder()
-                .id(CommonUtil.getUUID())
-                .orderTypeId(OrderType.SALES_ORDER.name())
-                .statusId(OrderStatus.CREATED.name())
-                .createdByUser(userCreated)
-                .toCustomer(toCustomer)
-                .saleChannelId(request.getSaleChannel())
-                .orderName(request.getSaleOrderName())
-                .deliveryAddress(request.getDeliveryAddress())
-                .deliveryAfterDate(request.getDeliveryAfterDate())
-                .deliveryBeforeDate(request.getDeliveryBeforeDate())
-                .note(request.getNote())
-                .createdByUser(userLogin)
-                .deliveryPhone(request.getDeliveryPhone())
-                .build();
+        var orderHeader = generalMapper.convertToEntity(request, OrderHeader.class);
+        orderHeader.setOrderTypeId(OrderType.SALES_ORDER.name());
+        orderHeader.setStatusId(OrderStatus.CREATED.name());
+        orderHeader.setToCustomer(toCustomer);
+        orderHeader.setCreatedByUser(userCreated);
 
         AtomicInteger increment = new AtomicInteger(0);
         var orderItems = request.getOrderItems()
@@ -81,13 +68,11 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                     var product = productRepo.findById(orderItem.getProductId())
                             .orElseThrow(() -> new DataNotFoundException("Product not found in List of OrderItems with id: " + orderItem.getProductId()));
                     return OrderItem.builder()
-                            .id(CommonUtil.getUUID())
                             .order(orderHeader)
                             .product(product)
                             .quantity(orderItem.getQuantity())
                             .amount(orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
-                            .id(CommonUtil.getUUID())
-                            .orderItemSeqId(CommonUtil.getSequenceId("ORDITM",5, increment.incrementAndGet()))
+                            .orderItemSeqId(increment.incrementAndGet())
                             .price(orderItem.getPrice())
                             .unit(orderItem.getUnit())
                             .build();
@@ -144,7 +129,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                         .createdStamp(orderHeader.getCreatedStamp())
                         .status(orderHeader.getStatusId())
                         .note(orderHeader.getNote())
-                        .deliveryAddress(orderHeader.getDeliveryAddress())
+                        .deliveryAddress(orderHeader.getDeliveryAddressId())
                         .deliveryAfterDate(orderHeader.getDeliveryAfterDate())
                         .priority(orderHeader.getPriority())
                         .totalAmount(BigDecimal.valueOf(totalAmount.get()))
@@ -246,7 +231,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                             .status(orderHeader.getStatusId())
                             .customerId(orderHeader.getToCustomer().getId())
                             .orderName(orderHeader.getOrderName())
-                            .deliveryAddress(orderHeader.getDeliveryAddress())
+                            .deliveryAddress(orderHeader.getDeliveryAddressId())
                             .deliveryPhone(orderHeader.getDeliveryPhone())
                             .deliveryAfterDate(orderHeader.getDeliveryAfterDate())
                             .saleChannelId(orderHeader.getSaleChannelId())
@@ -314,7 +299,6 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     public OrderHeader saveOrderForCustomer(Customer customer, LocalDateTime orderDateTime, List<Facility> facilities,
                                      List<SaleChannel> saleChannels, List<Product> products, UserLogin userLogin) {
         try {
-            Facility facility = CommonUtil.getRandomElement(facilities);
             SaleChannel saleChannel = CommonUtil.getRandomElement(saleChannels);
 
             OrderHeader orderHeader = OrderHeader.builder()
@@ -324,7 +308,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                     .toCustomer(customer)
                     .saleChannelId(saleChannel.name())
                     .orderName("Simulated Order " + orderDateTime)
-                    .deliveryAddress(customer.getAddress())
+                    .deliveryAddressId(customer.getCurrentAddressId())
                     .deliveryPhone(customer.getPhone())
                     .deliveryAfterDate(orderDateTime.toLocalDate().plusDays(1))
                     .deliveryBeforeDate(orderDateTime.toLocalDate().plusDays(5))
@@ -351,7 +335,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                                 .price(price)
                                 .amount(price.multiply(BigDecimal.valueOf(quantity)))
                                 .unit("Cái")
-                                .orderItemSeqId(CommonUtil.getSequenceId("ORDITM", 5, increment.incrementAndGet()))
+                                .orderItemSeqId(increment.incrementAndGet())
                                 .build();
                         orderItem.setCreatedStamp(orderDateTime);
                         return orderItem;

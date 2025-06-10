@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Grid,
@@ -7,155 +7,158 @@ import {
   MenuItem,
   FormControl,
   Typography,
+  IconButton
 } from "@mui/material";
+import { Edit } from "@mui/icons-material";
 
 import { useOrderForm } from "../../common/context/OrderFormContext";
-import FacilityField from "../../common/components/FacilityField";
 import CustomerField from "../../common/components/CustomerField";
 import RequireField from "views/wms/common/components/RequireField";
 import { SALE_CHANNELS } from "views/wms/common/constants/constants";
+import DiscountDialog from "../../common/components/DiscountDialog";
+
 const BasicInfoForm = () => {
-  const { order, setOrder } = useOrderForm();
-  const [discountTypes] = React.useState(["PERCENT", "FIXED"]);
-  const [orderPurposes] = React.useState([
-    "SALES",
-    "SAMPLE",
-    "GIFT",
-    "REPLACEMENT",
-  ]);
+  const { order, setOrder, calculateItemsTotal } = useOrderForm();
+  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setOrder((prev) => ({ ...prev, [name]: value }));
   };
 
+  const getDiscountDisplay = () => {
+    if (!order.discount || order.discount === 0) return '0';
+    
+    const itemsTotal = calculateItemsTotal();
+    const discountPercentage = itemsTotal > 0 ? (order.discount / itemsTotal) * 100 : 0;
+    
+    // If it's close to a round percentage, show percentage
+    if (Math.abs(discountPercentage - Math.round(discountPercentage * 10) / 10) < 0.01 && discountPercentage <= 100) {
+      return `${Math.round(discountPercentage * 10) / 10}%`;
+    }
+    
+    // Otherwise show fixed amount
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(order.discount);
+  };
+
+  const saveOrderDiscount = (discountAmount) => {
+    setOrder(prev => ({ ...prev, discount: discountAmount }));
+  };
+
+  const getOrderBaseAmount = () => {
+    // Return items total for order-level discount calculation
+    return calculateItemsTotal();
+  };
+
   return (
-    <Box sx={{ mb: 3 }}>
-      <Grid container spacing={2}>
-        
-      <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Kênh bán hàng: <RequireField />
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-        <Select
-          name="saleChannel"
-          value={order.saleChannel}
-          onChange={handleInputChange}
-          fullWidth
-          size="small"
-        >
-          {Object.keys(SALE_CHANNELS).map((channel) => (
-            <MenuItem key={channel} value={channel}>
-              {SALE_CHANNELS[channel]}
-            </MenuItem>
-          ))}
-        </Select>
-        </Grid>
-        <FacilityField />
-
-        <CustomerField />
-
-        <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Ngày giao dự kiến: <RequireField />
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <TextField
-            fullWidth
-            type="date"
-            name="deliveryAfterDate"
-            value={order.deliveryAfterDate}
-            onChange={handleInputChange}
-            size="small"
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
-
-        <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Số hóa đơn (TC):
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <TextField
-            fullWidth
-            size="small"
-            name="numberOfInvoices"
-            value={order.numberOfInvoices}
-            onChange={handleInputChange}
-          />
-        </Grid>
-
-        <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Loại chiết khấu:
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <FormControl fullWidth size="small">
+    <>
+      <Box sx={{ mb: 3 }}>
+        <Grid container spacing={2}>
+          
+          <Grid item xs={4}>
+            <Typography variant="body1" sx={{ pt: 1 }}>
+              Kênh bán hàng: <RequireField />
+            </Typography>
+          </Grid>
+          <Grid item xs={8}>
             <Select
-              name="discountType"
-              value={order.discountType}
+              name="saleChannelId"
+              value={order.saleChannelId}
               onChange={handleInputChange}
+              fullWidth
+              size="small"
             >
-              <MenuItem value="">Không có</MenuItem>
-              {discountTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type === "PERCENT" ? "Phần trăm" : "Số tiền cố định"}
+              <MenuItem value="">Chọn kênh bán hàng</MenuItem>
+              {Object.keys(SALE_CHANNELS).map((channel) => (
+                <MenuItem key={channel} value={channel}>
+                  {SALE_CHANNELS[channel]}
                 </MenuItem>
               ))}
             </Select>
-          </FormControl>
-        </Grid>
+          </Grid>
 
-        <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Giá trị chiết khấu:
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <TextField
-            fullWidth
-            size="small"
-            name="discountValue"
-            value={order.discountValue}
-            onChange={handleInputChange}
-            type="number"
-            disabled={!order.discountType}
-          />
-        </Grid>
+          <CustomerField />
 
-        {/* <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Mục đích đơn hàng:
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <FormControl fullWidth size="small">
-            <Select
-              name="orderPurpose"
-              value={order.orderPurpose}
+          <Grid item xs={4}>
+            <Typography variant="body1" sx={{ pt: 1 }}>
+              Tên đơn hàng:
+            </Typography>
+          </Grid>
+          <Grid item xs={8}>
+            <TextField
+              fullWidth
+              size="small"
+              name="orderName"
+              value={order.orderName}
               onChange={handleInputChange}
+              placeholder="Nhập tên đơn hàng..."
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <Typography variant="body1" sx={{ pt: 1 }}>
+              Chiết khấu đơn hàng:
+            </Typography>
+          </Grid>
+          <Grid item xs={8}>
+            <Box 
+              display="flex" 
+              alignItems="center" 
+              gap={1}
+              sx={{ cursor: 'pointer' }}
+              onClick={() => setDiscountDialogOpen(true)}
             >
-              {orderPurposes.map((purpose) => (
-                <MenuItem key={purpose} value={purpose}>
-                  {purpose === "SALES"
-                    ? "Bán hàng"
-                    : purpose === "SAMPLE"
-                    ? "Mẫu"
-                    : purpose === "GIFT"
-                    ? "Quà tặng"
-                    : "Thay thế"}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid> */}
-      </Grid>
-    </Box>
+              <TextField
+                fullWidth
+                size="small"
+                value={getDiscountDisplay()}
+                placeholder="Nhập chiết khấu..."
+                InputProps={{
+                  readOnly: true,
+                  endAdornment: (
+                    <IconButton size="small">
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  )
+                }}
+              />
+            </Box>
+          </Grid>
+
+          <Grid item xs={4}>
+            <Typography variant="body1" sx={{ pt: 1 }}>
+              Ghi chú:
+            </Typography>
+          </Grid>
+          <Grid item xs={8}>
+            <TextField
+              fullWidth
+              size="small"
+              name="note"
+              value={order.note}
+              onChange={handleInputChange}
+              multiline
+              rows={2}
+              placeholder="Nhập ghi chú đơn hàng..."
+            />
+          </Grid>
+
+        </Grid>
+      </Box>
+
+      <DiscountDialog
+        open={discountDialogOpen}
+        onClose={() => setDiscountDialogOpen(false)}
+        onSave={saveOrderDiscount}
+        currentDiscount={order.discount || 0}
+        baseAmount={getOrderBaseAmount()}
+        title="Cài đặt giảm giá đơn hàng"
+        amountLabel="Tổng tiền đơn hàng"
+      />
+    </>
   );
 };
 

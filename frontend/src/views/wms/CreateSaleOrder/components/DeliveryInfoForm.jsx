@@ -16,17 +16,10 @@ import RequireField from "../../common/components/RequireField";
 
 const DeliveryInfoForm = () => {
   const { order, setOrder } = useOrderForm();
-  const [shippingMethods] = React.useState(["STANDARD", "EXPRESS", "ECONOMY"]);
-  const [shippingCarriers] = React.useState(["VNPOST", "GHTK", "GHN", "VIETTEL"]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setOrder(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setOrder(prev => ({ ...prev, [name]: checked }));
   };
 
   return (
@@ -35,7 +28,7 @@ const DeliveryInfoForm = () => {
 
         <Grid item xs={4}>
           <Typography variant="body1" sx={{ pt: 1 }}>
-            Giao sau ngày: <RequireField />
+           Ngày giao dự kiến: <RequireField />
           </Typography>
         </Grid>
         <Grid item xs={8}>
@@ -44,6 +37,23 @@ const DeliveryInfoForm = () => {
               type="date"
               name="deliveryAfterDate"
               value={order.deliveryAfterDate}
+              onChange={handleInputChange}
+              size="small"
+              InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+
+        <Grid item xs={4}>
+          <Typography variant="body1" sx={{ pt: 1 }}>
+            Giao trước ngày:
+          </Typography>
+        </Grid>
+        <Grid item xs={8}>
+          <TextField
+              fullWidth
+              type="date"
+              name="deliveryBeforeDate"
+              value={order.deliveryBeforeDate}
               onChange={handleInputChange}
               size="small"
               InputLabelProps={{ shrink: true }}
@@ -67,47 +77,19 @@ const DeliveryInfoForm = () => {
 
         <Grid item xs={4}>
           <Typography variant="body1" sx={{ pt: 1 }}>
-            Phương thức vận chuyển:
+            Địa chỉ nhận:{" "}
           </Typography>
         </Grid>
         <Grid item xs={8}>
-          <FormControl fullWidth size="small">
-            <Select
-              name="shippingMethod"
-              value={order.shippingMethod}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="">Chọn phương thức</MenuItem>
-              {shippingMethods.map((method) => (
-                <MenuItem key={method} value={method}>
-                  {method}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <TextField
+            fullWidth
+            size="small"
+            name="deliveryFullAddress"
+            value={order.deliveryFullAddress}
+            onChange={handleInputChange}
+          />
         </Grid>
 
-        <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>
-            Đơn vị vận chuyển
-          </Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <FormControl fullWidth size="small">
-            <Select
-              name="shippingCarrier"
-              value={order.shippingCarrier}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="">Chọn đơn vị</MenuItem>
-              {shippingCarriers.map((carrier) => (
-                <MenuItem key={carrier} value={carrier}>
-                  {carrier}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
 
         <Grid item xs={4}>
           <Typography variant="body1" sx={{ pt: 1 }}>
@@ -131,22 +113,6 @@ const DeliveryInfoForm = () => {
               resize: "vertical"
             }}
             placeholder="Nhập ghi chú..." 
-          />
-        </Grid>
-
-        <Grid item xs={4}>
-          <Typography variant="body1" sx={{ pt: 1 }}>Xuất hóa đơn VAT</Typography>
-        </Grid>
-        <Grid item xs={8}>
-          <FormControlLabel 
-            control={
-              <Checkbox 
-                name="requireVatInvoice"
-                checked={order.requireVatInvoice}
-                onChange={handleCheckboxChange}
-              />
-            }
-            label=""
           />
         </Grid>
       </Grid>

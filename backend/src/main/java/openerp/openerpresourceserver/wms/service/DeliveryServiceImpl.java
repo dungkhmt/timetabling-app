@@ -76,7 +76,7 @@ public class DeliveryServiceImpl implements DeliveryBillService {
             DeliveryBillItem deliveryBillItem = DeliveryBillItem.builder()
                     .id(CommonUtil.getUUID())
                     .deliveryBill(deliveryBill)
-                    .deliveryBillItemSeqId(CommonUtil.getSequenceId("DBI", 5, count.getAndIncrement()))
+                    .deliveryBillItemSeqId(count.getAndIncrement())
                     .product(inventoryItemDetail.getProduct())
                     .quantity(product.getQuantity())
                     .build();

@@ -1,8 +1,6 @@
 package openerp.openerpresourceserver.wms.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
@@ -14,7 +12,10 @@ public class Supplier {
 
     private String name;
 
-    private String address;
+    private String currentAddressId;
+
+    @Transient
+    private String fullAddress;
 
     private String email;
 

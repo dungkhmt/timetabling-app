@@ -15,7 +15,7 @@ public class InvoiceItem {
     @Id
     private String id;
 
-    private String invoiceItemSeqId;
+    private Integer invoiceItemSeqId;
 
     @ManyToOne
     @JoinColumn(name = "invoice_id")

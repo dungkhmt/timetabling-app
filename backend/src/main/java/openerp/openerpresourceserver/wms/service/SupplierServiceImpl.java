@@ -38,7 +38,7 @@ public class SupplierServiceImpl implements SupplierService {
                 .map(supplier -> SupplierListRes.builder()
                         .id(supplier.getId())
                         .name(supplier.getName())
-                        .address(supplier.getAddress())
+                        .address(supplier.getCurrentAddressId())
                         .phone(supplier.getPhone())
                         .build())
                 .toList();
@@ -64,11 +64,11 @@ public class SupplierServiceImpl implements SupplierService {
         if(Objects.isNull(req.getId())) {
             newSupplier.setId(SnowFlakeIdGenerator.getInstance().nextId(SUPPLIER_ID_PREFIX));
         }
+        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
 
         newSupplier.setStatusId(SupplierStatus.ACTIVE.name());
-        newSupplier.setAddress(newAddress.getFullAddress());
+        newSupplier.setCurrentAddressId(newAddress.getId());
 
-        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
         newAddress.setEntityId(newSupplier.getId());
         newAddress.setEntityType(EntityType.SUPPLIER.name());
 
@@ -86,6 +86,23 @@ public class SupplierServiceImpl implements SupplierService {
         var pageReq = CommonUtil.getPageRequest(page, limit);
         var supplierSpec = new SupplierSpecification(filters);
         var supplierPage = supplierRepository.findAll(supplierSpec, pageReq);
+        var addressIds = supplierPage.getContent().stream()
+                .map(Supplier::getCurrentAddressId)
+                .toList();
+
+        var addresses = addressRepo.findAllByEntityIdInAndEntityType(addressIds, EntityType.SUPPLIER.name());
+
+        var addressMap = addresses.stream()
+                .collect(
+                        java.util.stream.Collectors.toMap(Address::getId, address -> address)
+                );
+
+        supplierPage.getContent().forEach(supplier -> {
+            if (addressMap.containsKey(supplier.getCurrentAddressId())) {
+                supplier.setFullAddress(addressMap.get(supplier.getCurrentAddressId()).getFullAddress());
+            }
+                }
+        );
 
         var pagination = Pagination.<Supplier>builder()
                 .page(page)

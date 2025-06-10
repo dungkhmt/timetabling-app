@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 import static openerp.openerpresourceserver.wms.constant.Constants.ADDRESS_ID_PREFIX;
 import static openerp.openerpresourceserver.wms.constant.Constants.CUSTOMER_ID_PREFIX;
@@ -36,6 +37,22 @@ public class CustomerServiceImpl implements CustomerService {
     public ApiResponse<Pagination<Customer>> getCustomers(Integer page, Integer limit) {
         PageRequest pageRequest = PageRequest.of(page, limit);
         Page<Customer> customers = customerRepo.findAll(pageRequest);
+
+        // Fetch addresses for customers
+        var customerIds = customers.getContent().stream()
+                .map(Customer::getId)
+                .toList();
+
+        var addresses = addressRepo.findAllByEntityIdInAndEntityType(customerIds, EntityType.CUSTOMER.name());
+        var addressMap = addresses.stream()
+                .collect(java.util.stream.Collectors.toMap(Address::getEntityId, Function.identity()));
+
+        customers.getContent().forEach(customer -> {
+            Address address = addressMap.get(customer.getId());
+            if (address != null) {
+                customer.setFullAddress(address.getFullAddress());
+            }
+        });
 
         return ApiResponse.<Pagination<Customer>>builder()
                 .code(200)
@@ -59,11 +76,11 @@ public class CustomerServiceImpl implements CustomerService {
         if(Objects.isNull(req.getId())) {
             newCustomer.setId(SnowFlakeIdGenerator.getInstance().nextId(CUSTOMER_ID_PREFIX));
         }
+        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
 
         newCustomer.setStatusId(CustomerStatus.ACTIVE.name());
-        newCustomer.setAddress(newAddress.getFullAddress());
+        newCustomer.setCurrentAddressId(newAddress.getId());
 
-        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
         newAddress.setEntityId(newCustomer.getId());
         newAddress.setEntityType(EntityType.CUSTOMER.name());
 
@@ -82,6 +99,25 @@ public class CustomerServiceImpl implements CustomerService {
         var customerSpec = new CustomerSpecification(filters);
 
         var customerPage = customerRepo.findAll(customerSpec, pageRequest);
+
+        var customerIds = customerPage.getContent().stream()
+                .map(Customer::getId)
+                .toList();
+
+        var addresses = addressRepo.findAllByEntityIdInAndEntityType(customerIds, EntityType.CUSTOMER.name());
+
+        var addressMap = addresses.stream()
+                .collect(
+                        java.util.stream.Collectors.toMap(Address::getEntityId, Function.identity())
+                );
+
+        customerPage.getContent().stream()
+                .forEach(customer -> {
+                    Address address = addressMap.get(customer.getId());
+                    if (address != null) {
+                        customer.setFullAddress(address.getFullAddress());
+                    }
+                });
 
         var pagination = Pagination.<Customer>builder()
                 .data(customerPage.getContent())

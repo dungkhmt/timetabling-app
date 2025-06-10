@@ -59,11 +59,11 @@ public class FacilityServiceImpl implements FacilityService{
         if(Objects.isNull(req.getId())) {
             newFacility.setId(SnowFlakeIdGenerator.getInstance().nextId(FACILITY_ID_PREFIX));
         }
+        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
 
         newFacility.setStatusId(FacilityStatus.ACTIVE.name());
-        newFacility.setAddress(newAddress.getFullAddress());
+        newFacility.setCurrentAddressId(newAddress.getId());
 
-        newAddress.setId(SnowFlakeIdGenerator.getInstance().nextId(ADDRESS_ID_PREFIX));
         newAddress.setEntityId(newFacility.getId());
         newAddress.setEntityType(EntityType.FACILITY.name());
 
@@ -93,16 +93,17 @@ public class FacilityServiceImpl implements FacilityService{
                         Collectors.toMap(Address::getEntityId, Function.identity())
                 );
 
-        var facilityGetListRes = facilityPage.getContent().
+        var facilityGetListRes = facilityPage.<FacilityGetListRes>getContent().
                 stream().map(
                         facility ->{
                             var facilityRes =  generalMapper.convertToDto(facility, FacilityGetListRes.class);
                             var address = addressMap.get(facility.getId());
                             facilityRes.setLatitude(address.getLatitude());
                             facilityRes.setLongitude(address.getLongitude());
+                            facilityRes.setFullAddress(address.getFullAddress());
                             return facilityRes;
                         }
-                ).<FacilityGetListRes>toList();
+                ).toList();
 
         var pagination = Pagination.<FacilityGetListRes>builder()
                 .data(facilityGetListRes)

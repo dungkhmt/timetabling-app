@@ -1,10 +1,7 @@
 package openerp.openerpresourceserver.wms.entity;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -27,7 +24,10 @@ public class Facility extends BaseEntity {
 
     private String statusId;
 
-    private String address;
+    private String currentAddressId;
+
+    @Transient
+    private String fullAddress;
 
     private BigDecimal length;
 

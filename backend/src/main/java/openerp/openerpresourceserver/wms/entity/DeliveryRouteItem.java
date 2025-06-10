@@ -10,7 +10,7 @@ public class DeliveryRouteItem {
     @Id
     private String id;
 
-    private String deliveryRouteSeqId;
+    private Integer deliveryRouteSeqId;
 
     @ManyToOne
     @JoinColumn(name = "delivery_route_id")

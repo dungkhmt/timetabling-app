@@ -21,7 +21,7 @@ public class OrderItem extends BaseEntity {
     @Id
     private String id;
 
-    private String orderItemSeqId;
+    private Integer orderItemSeqId;
 
     @ManyToOne
     @JoinColumn(name = "order_id")

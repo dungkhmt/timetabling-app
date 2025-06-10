@@ -57,7 +57,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setOrder(orderHeader);
             var product = productRepo.findById(item.getProductId()).orElseThrow(
                     () -> new DataNotFoundException("Product not found with id: " + item.getProductId()));
-            orderItem.setOrderItemSeqId(CommonUtil.getSequenceId("ORDITEM", 5, seq.getAndIncrement()));
+            orderItem.setOrderItemSeqId(seq.getAndIncrement());
             orderItem.setProduct(product);
             orderItem.setAmount(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             orderItemList.add(orderItem);

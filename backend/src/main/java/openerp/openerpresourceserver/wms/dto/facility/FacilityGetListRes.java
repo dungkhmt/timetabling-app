@@ -28,7 +28,7 @@ public class FacilityGetListRes {
 
     private String statusId;
 
-    private String address;
+    private String fullAddress;
 
     private Double latitude;
 

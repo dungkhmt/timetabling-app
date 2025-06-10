@@ -21,7 +21,7 @@ public class DeliveryPlanShipper
 
     private String shipperId;
 
-    private String deliveryPlanShipperSeqId;
+    private Integer deliveryPlanShipperSeqId;
 
     private String driverRoleId;
 }

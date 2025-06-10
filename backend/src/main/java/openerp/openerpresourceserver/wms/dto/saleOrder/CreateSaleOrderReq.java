@@ -18,28 +18,19 @@ import java.util.List;
 public class CreateSaleOrderReq {
     private String id;
     @NotBlank
-    private String facilityId;
-    @NotBlank
-    private String customerId;
-    @NotBlank
-    private String userCreatedId;
-    private String saleOrderName;
-    private Integer numberOfInvoices;
+    private String toCustomerId;
+    private String orderName;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate deliveryBeforeDate;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate deliveryAfterDate;
-    private String discountType;
-    private BigDecimal discountValue;
-    private String deliveryAddress;
+    private String deliveryAddressId;
+    private String deliveryFullAddress;
     private String deliveryPhone;
-    private String purpose;
     private String note;
     @NotBlank
-    private String saleChannel;
-    private String deliveryMethod;
-    private String shippingCarrier;
-    private Boolean isExportedInvoice;
+    private String saleChannelId;
+    private BigDecimal discount;
     @Size(min = 1, message = "At least one product is required")
     private List<OrderItemReq> orderItems;
 }

@@ -65,7 +65,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                     .id(CommonUtil.getUUID())
                     .deliveryPlanId(deliveryPlan.getId())
                     .deliveryBillId(deliveryBill.getId())
-                    .deliveryPlanOrderSeqId(CommonUtil.getSequenceId("DPO", 5 ,delveryPlanOrderSeq++))
+                    .deliveryPlanOrderSeqId(delveryPlanOrderSeq++)
                     .build();
             totalWeight = totalWeight.add(deliveryBill.getTotalWeight());
             deliveryPlanOrders.add(deliveryPlanOrder);
@@ -78,7 +78,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                     .id(CommonUtil.getUUID())
                     .deliveryPlanId(deliveryPlan.getId())
                     .shipperId(shipper.getUserLoginId())
-                    .deliveryPlanShipperSeqId(CommonUtil.getSequenceId("DPS", 5 ,deliveryPlanShipperSeq++))
+                    .deliveryPlanShipperSeqId(deliveryPlanShipperSeq++)
                     .driverRoleId(DriverRole.DRIVER.name())
                     .build();
             deliveryPlanShippers.add(deliveryPlanShipper);
@@ -91,7 +91,7 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
                     .id(CommonUtil.getUUID())
                     .deliveryPlanId(deliveryPlan.getId())
                     .vehicleId(vehicle.getId())
-                    .deliveryPlanVehicleSeqId(CommonUtil.getSequenceId("DPV", 5 ,deliveryPlanVehicleSeq++))
+                    .deliveryPlanVehicleSeqId(deliveryPlanVehicleSeq++)
                     .build();
             deliveryPlanVehicles.add(deliveryPlanVehicle);
         }

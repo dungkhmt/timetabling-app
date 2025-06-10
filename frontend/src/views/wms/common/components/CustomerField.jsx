@@ -27,7 +27,10 @@ const CustomerField = () => {
     if (customer) {
       setOrder(prev => ({ 
         ...prev, 
-        customerId: customer.id,
+        toCustomerId: customer.id,
+        deliveryAddressId: customer.currentAddressId,
+        deliveryPhone: customer.phone,
+        deliveryFullAddress: customer.fullAddress
       }));
     }
   };
@@ -43,7 +46,7 @@ const CustomerField = () => {
         <EntityAutocomplete
           options={entities.customers}
           getOptionLabel={(option) => `${option.id} - ${option.name || ''}`}
-          value={entities.customers.find(c => c.id === order.customerId) || null}
+          value={entities.customers.find(c => c.id === order.toCustomerId) || null}
           onChange={handleCustomerSelect}
           onOpen={handleDropdownOpen}
           onScroll={handleScroll}

@@ -21,16 +21,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @AllArgsConstructor
 public class OrderHeader extends BaseEntity {
     @Id
-//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_order_header_sequences")
-//    @GenericGenerator(
-//            name = "wms2_order_header_sequences",
-//            strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
-//            parameters = {
-//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "ORD"),
-//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
-//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_order_header_sequences"),
-//                    @org.hibernate.annotations.Parameter(name = "increment_size", value = "1") // Fix lỗi
-//            })
     private String id;
 
     private String orderTypeId;
@@ -51,7 +41,9 @@ public class OrderHeader extends BaseEntity {
 
     private Integer priority;
 
-    private String deliveryAddress;
+    private String deliveryAddressId;
+
+    private String deliveryFullAddress;
 
     private String deliveryPhone;
 

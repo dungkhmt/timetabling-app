@@ -1,10 +1,8 @@
 import React from "react";
 import {
   Box,
-  Button,
   Chip,
   CircularProgress,
-  IconButton,
   Paper,
   Table,
   TableBody,
@@ -15,10 +13,7 @@ import {
   TableRow,
   Typography
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { useHistory } from "react-router-dom";
+import {useHistory} from "react-router-dom";
 
 const ShipperTable = ({
   shippers,

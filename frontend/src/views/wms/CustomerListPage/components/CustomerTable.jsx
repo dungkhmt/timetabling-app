@@ -79,7 +79,7 @@ const CustomerTable = ({
                   <TableCell>{customer.name}</TableCell>
                   <TableCell>{customer.email || "—"}</TableCell>
                   <TableCell>{customer.phone || "—"}</TableCell>
-                  <TableCell>{customer.address || "—"}</TableCell>
+                  <TableCell>{customer.fullAddress || "—"}</TableCell>
                   <TableCell>{getStatusChip(customer.statusId)}</TableCell>
                 </TableRow>
               ))

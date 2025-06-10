@@ -249,7 +249,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                 DeliveryRouteItem routeItem = new DeliveryRouteItem();
                 routeItem.setId(CommonUtil.getUUID());
                 routeItem.setDeliveryRoute(deliveryRoute);
-                routeItem.setDeliveryRouteSeqId(String.format("DRS%05d", seq));
+                routeItem.setDeliveryRouteSeqId(seq);
                 routeItem.setSequenceId(seq);
                 routeItem.setDeliveryBill(deliveryBill);
                 routeItem.setStatusId("ASSIGNED");

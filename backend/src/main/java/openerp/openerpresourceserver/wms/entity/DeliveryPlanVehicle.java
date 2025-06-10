@@ -20,5 +20,5 @@ public class DeliveryPlanVehicle {
 
     private String vehicleId;
 
-    private String deliveryPlanVehicleSeqId;
+    private Integer deliveryPlanVehicleSeqId;
 }

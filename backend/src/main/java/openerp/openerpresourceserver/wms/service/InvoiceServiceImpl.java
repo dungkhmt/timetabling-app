@@ -56,7 +56,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         for (var inventoryItemDetail : inventoryItemDetails) {
             var newInvoiceItem = InvoiceItem.builder()
                     .id(CommonUtil.getUUID())
-                    .invoiceItemSeqId(CommonUtil.getSequenceId("IVIT", 5, index.getAndIncrement()))
+                    .invoiceItemSeqId(index.getAndIncrement())
                     .invoice(newInvoice)
                     .build();
             newInvoiceItems.add(newInvoiceItem);
@@ -119,7 +119,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         for (var inventoryItemDetail : inventoryItemDetails) {
             var newInvoiceItem = InvoiceItem.builder()
                     .id(CommonUtil.getUUID())
-                    .invoiceItemSeqId(CommonUtil.getSequenceId("IVIT", 5, index.getAndIncrement()))
+                    .invoiceItemSeqId(index.getAndIncrement())
                     .invoice(newInvoice)
                     .build();
             newInvoiceItems.add(newInvoiceItem);
