@@ -3,6 +3,7 @@ import InfoCard from "./InfoCard";
 import { useOrderDetail } from "../context/OrderDetailContext";
 import dayjs from "dayjs";
 import { ORDER_TYPE_ID } from "../constants/constants";
+import { getOrderStatus } from "../utils/functions";
 
 const OrderBasicInfo = () => {
   const { orderData } = useOrderDetail();
@@ -16,7 +17,7 @@ const OrderBasicInfo = () => {
   const commonInfoItems = [
     { label: "Mã đơn hàng", value: orderData.id },
     { label: "Ngày tạo", value: dayjs(orderData.createdStamp).format("DD/MM/YYYY HH:mm") },
-    { label: "Trạng thái", value: orderData?.statusId },
+    { label: "Trạng thái", value: getOrderStatus(orderData?.statusId) || "-" },
     { label: "Người tạo", value: orderData.createdByUserName || "-" },
   ];
   
@@ -33,8 +34,7 @@ const OrderBasicInfo = () => {
       
     case ORDER_TYPE_ID.PURCHASE_ORDER:
       specificItems = [
-        { label: "Nhà cung cấp", value: orderData.supplierName || "-" },
-        { label: "Loại đơn", value: orderData.purchaseType || "Mua hàng" },
+        { label: "Nhà cung cấp", value: orderData.fromSupplierName || "-" },
       ];
       break;
 

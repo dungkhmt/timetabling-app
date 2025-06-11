@@ -16,6 +16,7 @@ import {formatCurrency} from "../utils/functions";
 
 const OrderItemsList = () => {
   const { orderData } = useOrderDetail();
+  console.log("OrderItemsList orderData: ", orderData);
 
   if (!orderData || !orderData.orderItems || orderData.orderItems.length === 0) {
     return (
@@ -37,6 +38,7 @@ const OrderItemsList = () => {
         { id: 'productId', label: 'Mã SP' },
         { id: 'productName', label: 'Tên sản phẩm' },
         { id: 'unit', label: 'Đơn vị' },
+        {id: 'price', label: 'Đơn giá'},
         { id: 'quantity', label: 'Số lượng' },
         { id: 'discount', label: 'Chiết khấu' },
         { id: 'amount', label: 'Thành tiền' },
@@ -48,7 +50,10 @@ const OrderItemsList = () => {
         { id: 'productId', label: 'Mã SP' },
         { id: 'productName', label: 'Tên sản phẩm' },
         { id: 'unit', label: 'Đơn vị nhập' },
+        { id: 'price', label: 'Đơn giá nhập' },
         { id: 'quantity', label: 'Số lượng' },
+        { id: 'discount', label: 'Chiết khấu' },
+        { id: 'tax', label: 'Thuế' },
         { id: 'amount', label: 'Thành tiền' },
       ];
       break;
@@ -68,6 +73,7 @@ const OrderItemsList = () => {
   const getCellValue = (item, columnId) => {
     switch (columnId) {
       case 'discount':
+      case 'price':
       case 'amount':
         return formatCurrency(item[columnId] || 0);
       case 'quantity':
@@ -76,6 +82,8 @@ const OrderItemsList = () => {
         return item[columnId] || item.product?.name || 'Không có tên';
       case 'productId':
         return item[columnId] || item.product?.id || 'Không có mã';
+      case 'tax':
+       return item[columnId] != null ? `${item[columnId]}%` : '-';
       default:
         return item[columnId] || '-';
     }

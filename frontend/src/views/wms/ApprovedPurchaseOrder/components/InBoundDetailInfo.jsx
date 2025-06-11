@@ -5,14 +5,16 @@ import PersonIcon from "@mui/icons-material/Person";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import WarehouseIcon from "@mui/icons-material/Warehouse";
 import NoteIcon from "@mui/icons-material/Note";
+import ScaleIcon from "@mui/icons-material/Scale"; // cho khối lượng
+import NumbersIcon from "@mui/icons-material/Numbers"; // cho số lượng
+import DescriptionIcon from "@mui/icons-material/Description"; // cho tên phiếu
 
-// Component hiển thị một mục thông tin
 const InfoItem = memo(({ icon, label, value, isTitle = false }) => {
   const valueDisplay = value || "-";
 
   return (
-    <Box sx={{ mb: 1, display: "flex", alignItems: "flex-start" }}>
-      {icon && <Box sx={{ mr: 1, color: "primary.main", mt: 0.3 }}>{icon}</Box>}
+    <Box sx={{ mb: 1.5, display: "flex", alignItems: "center" }}>
+      {icon && <Box sx={{ mr: 1.2, color: "primary.main" }}>{icon}</Box>}
       <Box>
         <Typography variant="body2" color="text.secondary" component="span">
           {label}:
@@ -29,7 +31,6 @@ const InfoItem = memo(({ icon, label, value, isTitle = false }) => {
   );
 });
 
-// Component hiển thị trạng thái
 const StatusChip = memo(({ status }) => {
   let color = "default";
   let label = status || "Chưa xác định";
@@ -67,7 +68,6 @@ const StatusChip = memo(({ status }) => {
 });
 
 const InBoundDetailInfo = ({ data }) => {
-  console.log("Data ", data);
   if (!data) return null;
 
   return (
@@ -91,13 +91,16 @@ const InBoundDetailInfo = ({ data }) => {
 
           <Divider sx={{ my: 2 }} />
 
-          <InfoItem  label="Tên phiếu" value={data.shipmentName} />
+          <InfoItem
+            icon={<DescriptionIcon fontSize="small" />}
+            label="Tên phiếu"
+            value={data.shipmentName}
+          />
           <InfoItem
             icon={<PersonIcon fontSize="small" />}
-            label="Khách hàng"
-            value={data.customerName}
+            label="Nhà cung cấp"
+            value={data.fromSupplierName || "Chưa xác định"}
           />
-
           <InfoItem
             icon={<EventIcon fontSize="small" />}
             label="Ngày tạo"
@@ -111,17 +114,21 @@ const InBoundDetailInfo = ({ data }) => {
         <Grid item xs={12} md={6}>
           <Box mb={2}>
             <InfoItem
-              icon={<WarehouseIcon fontSize="small" />}
-              label="Kho xuất"
-              value={data.warehouseName || "Chưa xác định"}
+              icon={<ScaleIcon fontSize="small" />}
+              label="Tổng khối lượng"
+              value={data.totalWeight || "Chưa xác định"}
             />
-            <InfoItem label="Địa chỉ kho" value={data.warehouseAddress} />
+            <InfoItem
+              icon={<NumbersIcon fontSize="small" />}
+              label="Tổng số lượng"
+              value={data.totalQuantity || "Chưa xác định"}
+            />
           </Box>
 
           <Divider sx={{ my: 2 }} />
 
           <InfoItem
-            icon={<EventIcon fontSize="small" />}
+            icon={<WarehouseIcon fontSize="small" />}
             label="Ngày xuất kho dự kiến"
             value={
               data.expectedDeliveryDate &&

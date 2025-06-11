@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.dto.saleOrder;
 
 import lombok.*;
+import openerp.openerpresourceserver.wms.dto.OrderProductRes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

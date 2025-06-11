@@ -1,6 +1,8 @@
-package openerp.openerpresourceserver.wms.dto.saleOrder;
+package openerp.openerpresourceserver.wms.dto.inventoryItem;
 
 import lombok.*;
+
+import java.util.List;
 
 
 @AllArgsConstructor
@@ -9,8 +11,6 @@ import lombok.*;
 @Getter
 @Builder
 public class InventoryItemForOrderRes {
-    private String id;
-    private String facilityName;
-    private Integer quantity;
     private String productId;
+    List<FacilityForOrderRes> facilityForOrderRes;
 }

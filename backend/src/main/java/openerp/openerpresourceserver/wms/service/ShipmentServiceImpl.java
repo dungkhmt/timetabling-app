@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.PartnerType;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentType;
@@ -16,10 +17,16 @@ import openerp.openerpresourceserver.wms.repository.specification.ShipmentSpecif
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static io.micrometer.common.util.StringUtils.isBlank;
+import static openerp.openerpresourceserver.wms.constant.Constants.INVENTORY_ITEM_DETAIL_ID_PREFIX;
+import static openerp.openerpresourceserver.wms.constant.Constants.SHIPMENT_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +38,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final ProductRepo productRepo;
     private final OrderHeaderRepo orderHeaderRepo;
     private final GeneralMapper generalMapper;
+    private final FacilityRepo facilityRepo;
 
     @Override
     public ApiResponse<Void> createOutboundSaleOrder(CreateOutBoundReq req, String name) {
@@ -79,7 +87,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
 
             var inventoryItemDetail = InventoryItemDetail.builder()
-                    .inventoryItem(inventoryItem)
+//                    .inventoryItem(inventoryItem)
                     .quantity(product.getQuantity())
                     .product(productEntity)
                     .shipment(shipment)
@@ -172,55 +180,69 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         var orderItems = orderHeader.getOrderItems();
         var productReqs = req.getProducts();
-        var shipment = Shipment.builder()
-                .id(CommonUtil.getUUID())
-                .shipmentTypeId(ShipmentType.INBOUND.name())
-                .fromSupplier(orderHeader.getFromSupplier())
-                .order(orderHeader)
-                .shipmentName(req.getShipmentName())
-                .note(req.getNote())
-                .expectedDeliveryDate(req.getExpectedDeliveryDate())
-                .createdByUser(userLoginRepo.findById(name).orElseThrow(
-                        () -> new DataNotFoundException("User not found with id: " + name)
-                ))
-                .build();
+
+        var productIds = productReqs.stream()
+                .map(CreateInBoundProductReq::getProductId)
+                .toList();
+
+        var facilityIds = productReqs.stream()
+                .map(CreateInBoundProductReq::getFacilityId)
+                .toList();
+
+
+        Map<String, Product> productMap = productRepo.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, product -> product));
+
+        Map<String, Facility> facilityMap = facilityRepo.findAllById(facilityIds).stream()
+                .collect(Collectors.toMap(Facility::getId, facility -> facility));
+
+        var shipment = generalMapper.convertToEntity(req, Shipment.class);
+        if(isBlank(shipment.getId())) shipment.setId(SnowFlakeIdGenerator.getInstance().nextId(SHIPMENT_ID_PREFIX));
+
+        shipment.setStatusId(ShipmentStatus.CREATED.name());
+        shipment.setShipmentTypeId(ShipmentType.INBOUND.name());
+        shipment.setFromSupplier(orderHeader.getFromSupplier());
+        shipment.setOrder(orderHeader);
+        shipment.setCreatedByUser(userLoginRepo.findById(name).orElseThrow(
+                () -> new DataNotFoundException("User not found with id: " + name)
+        ));
 
         var inventoryItemDetailDOs = new ArrayList<InventoryItemDetail>();
-        for (var product : productReqs) {
-            // Tìm Product theo productId
-            Product productEntity = productRepo.findById(product.getProductId())
-                    .orElseThrow(() -> new DataNotFoundException("Product not found with id: " + product.getProductId()));
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        var totalQuantity = 0;
 
-            // Tìm InventoryItem theo productId và facilityId
-            InventoryItem inventoryItem = inventoryItemRepo.findById(product.getInventoryItemId())
-                    .orElseThrow(() -> new DataNotFoundException("Inventory item not found with productId: " + product.getProductId()));
-
-
+        for (var shipmentItem : productReqs) {
+            Product productEntity = productMap.get(shipmentItem.getProductId());
+            Facility facility = facilityMap.get(shipmentItem.getFacilityId());
             // Kiếm tra số lượng sản phẩm trong OrderItem
             var orderItem = orderItems.stream()
-                    .filter(item -> item.getProduct().getId().equals(product.getProductId()))
+                    .filter(item -> item.getProduct().getId().equals(shipmentItem.getProductId()))
                     .findFirst()
-                    .orElseThrow(() -> new DataNotFoundException("Order item not found with productId: " + product.getProductId()));
+                    .orElseThrow(() -> new DataNotFoundException("Order item not found with productId: " + shipmentItem.getProductId()));
 
             // Kiểm tra số lượng sản phẩm trong OrderItem
-            if (orderItem.getQuantity() < product.getQuantity()) {
+            if (orderItem.getQuantity() < shipmentItem.getQuantity()) {
                 throw new DataNotFoundException("Not enough quantity in order item");
             }
 
+            var inventoryItemDetail = generalMapper.convertToEntity(shipmentItem, InventoryItemDetail.class);
+            inventoryItemDetail.setId(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_DETAIL_ID_PREFIX));
+            inventoryItemDetail.setFacility(facility);
+            inventoryItemDetail.setProduct(productEntity);
+            inventoryItemDetail.setShipment(shipment);
+            inventoryItemDetail.setPrice(orderItem.getPrice());
+            inventoryItemDetail.setUnit(orderItem.getUnit());
+            inventoryItemDetail.setOrderItem(orderItem);
 
-            var inventoryItemDetail = InventoryItemDetail.builder()
-                    .inventoryItem(inventoryItem)
-                    .quantity(product.getQuantity())
-                    .product(productEntity)
-                    .shipment(shipment)
-                    .orderItem(orderItem)
-                    .id(CommonUtil.getUUID())
-                    .build();
+            totalWeight = totalWeight.add((BigDecimal.valueOf(inventoryItemDetail.getProduct().getWeight()))
+                    .multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())));
+            totalQuantity += inventoryItemDetail.getQuantity();
 
             inventoryItemDetailDOs.add(inventoryItemDetail);
-
-
         }
+        shipment.setTotalWeight(totalWeight);
+        shipment.setTotalQuantity(totalQuantity);
+
         shipmentRepo.save(shipment);
         inventoryItemDetailRepo.saveAll(inventoryItemDetailDOs);
 
@@ -234,18 +256,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ApiResponse<Pagination<InboundByOrderRes>> getInBoundByOrder(String orderId, int page, int limit) {
         var pageRequest = CommonUtil.getPageRequest(page, limit);
         var shipments = shipmentRepo.findByOrderId(orderId, pageRequest);
-        var orderHeader = orderHeaderRepo.findById(orderId)
-                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
 
         List<InboundByOrderRes> inBoundByOrderPageRes = shipments.getContent().stream()
-                .map(shipment -> InboundByOrderRes.builder()
-                        .id(shipment.getId())
-                        .shipmentType(shipment.getShipmentTypeId())
-                        .shipmentName(shipment.getShipmentName())
-                        .expectedDeliveryDate(shipment.getExpectedDeliveryDate())
-                        .supplierName(shipment.getFromSupplier().getName())
-                        .statusId(shipment.getStatusId())
-                        .build()
+                .map(shipment ->
+                        {
+                            var res = generalMapper.convertToDto(shipment, InboundByOrderRes.class);
+                            res.setFromSupplierName(shipment.getFromSupplier().getName());
+                            return res;
+                        }
                 ).toList();
 
         return ApiResponse.<Pagination<InboundByOrderRes>>builder()
@@ -268,30 +286,26 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         var inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(shipmentId);
         List<InboundDetailProductRes> products = inventoryItemDetails.stream()
-                .map(inventoryItemDetail -> InboundDetailProductRes.builder()
-                        .id(inventoryItemDetail.getId())
-                        .productId(inventoryItemDetail.getProduct().getId())
-                        .productName(inventoryItemDetail.getProduct().getName())
-                        .quantity(inventoryItemDetail.getQuantity())
-                        .requestedQuantity(inventoryItemDetail.getOrderItem().getQuantity())
-                        .wholeSalePrice(inventoryItemDetail.getProduct().getWholeSalePrice())
-                        .unit(inventoryItemDetail.getProduct().getUnit())
-                        .build()
+                .map(inventoryItemDetail ->
+                {
+                    var inboundDetailProduct = generalMapper.convertToDto(inventoryItemDetail, InboundDetailProductRes.class);
+                    inboundDetailProduct.setProductId(inventoryItemDetail.getProduct().getId());
+                    inboundDetailProduct.setProductName(inventoryItemDetail.getProduct().getName());
+                    inboundDetailProduct.setRequestedQuantity(inventoryItemDetail.getOrderItem().getQuantity());
+                    inboundDetailProduct.setFacilityId(inventoryItemDetail.getFacility().getId());
+                    inboundDetailProduct.setFacilityName(inventoryItemDetail.getFacility().getName());
+                    return inboundDetailProduct;
+                }
                 ).toList();
+
+        var inboundDetailRes = generalMapper.convertToDto(shipment, InboundDetailRes.class);
+        inboundDetailRes.setFromSupplierName(shipment.getFromSupplier().getName());
+        inboundDetailRes.setProducts(products);
 
         return ApiResponse.<InboundDetailRes>builder()
                 .code(200)
                 .message("Get outbound detail success")
-                .data(InboundDetailRes.builder()
-                        .id(shipment.getId())
-                        .shipmentType(shipment.getShipmentTypeId())
-                        .shipmentName(shipment.getShipmentName())
-                        .supplierName(shipment.getFromSupplier().getName())
-                        .statusId(shipment.getStatusId())
-                        .createdStamp(shipment.getCreatedStamp())
-                        .expectedDeliveryDate(shipment.getExpectedDeliveryDate())
-                        .products(products)
-                        .build())
+                .data(inboundDetailRes)
                 .build();
     }
 
@@ -326,14 +340,16 @@ public class ShipmentServiceImpl implements ShipmentService {
                 // Create inventory item detail for the shipment
                 InventoryItemDetail inventoryItemDetail = InventoryItemDetail.builder()
                         .id(CommonUtil.getUUID())
-                        .inventoryItem(inventoryItem)
+//                        .inventoryItem(inventoryItem)
                         .quantity(orderItem.getQuantity())
                         .product(orderItem.getProduct())
                         .shipment(shipment)
-                        .createdStamp(orderHeader.getCreatedStamp())
                         .note("Simulated shipment detail")
                         .orderItem(orderItem)
                         .build();
+
+                inventoryItemDetail.setCreatedStamp(orderHeader.getCreatedStamp());
+                inventoryItemDetail.setLastUpdatedStamp(orderHeader.getLastUpdatedStamp());
 
                 inventoryItemDetailDOs.add(inventoryItemDetail);
             }

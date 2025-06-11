@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
-import openerp.openerpresourceserver.wms.dto.filter.SaleOrderGetListFilter;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -28,7 +27,7 @@ public class PurchaseOrderSpecification implements Specification<OrderHeader> {
         List<Predicate> predicates = new ArrayList<>();
 
         String keyword = filter.getKeyword();
-        String status = filter.getStatus();
+        String statusId = filter.getStatus();
         LocalDateTime startCreatedAt = filter.getStartCreatedAt();
         LocalDateTime endCreatedAt = filter.getEndCreatedAt();
         String orderTypeId = OrderType.PURCHASE_ORDER.name();
@@ -37,8 +36,8 @@ public class PurchaseOrderSpecification implements Specification<OrderHeader> {
             predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
         }
 
-        if (status != null && !status.isEmpty()) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
+        if (statusId != null && !statusId.isEmpty()) {
+            predicates.add(criteriaBuilder.equal(root.get("statusId"), statusId));
         }
 
 

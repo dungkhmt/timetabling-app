@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface InventoryItemRepo extends JpaRepository<InventoryItem, String> {
@@ -17,4 +18,8 @@ public interface InventoryItemRepo extends JpaRepository<InventoryItem, String> 
     InventoryItem findByProductIdAndFacilityId(String id, String id1);
 
     InventoryItem findByProductId(String id);
+
+    InventoryItem findByFacilityIdAndProductIdAndLotIdAndManufacturingDateAndExpirationDate(String facilityId, String productId, String lotId,
+                                                                                            LocalDate manufacturingDate,
+                                                                                            LocalDate expirationDate);
 }

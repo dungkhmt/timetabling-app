@@ -17,8 +17,8 @@ import {formatCurrency} from "../../common/utils/functions";
 const ProductTableRow = memo(({ product }) => {
   // Tính thành tiền
   const totalPrice = 
-    product.wholeSalePrice && product.quantity
-      ? product.wholeSalePrice * (product.quantity)
+    product.price && product.quantity
+      ? product.price * (product.quantity)
       : 0;
 
   // Xác định các số lượng yêu cầu và số lượng thực xuất có khớp nhau không
@@ -30,9 +30,9 @@ const ProductTableRow = memo(({ product }) => {
     <TableRow>
       <TableCell>{product.productId}</TableCell>
       <TableCell>{product.productName}</TableCell>
-      <TableCell align="center">{product.unit || "Chiếc"}</TableCell>
+      <TableCell align="center">{product.unit || "Cái"}</TableCell>
       <TableCell align="center">
-        {product.requestedQuantity || product.quantity}
+        {product.requestedQuantity || ''}
       </TableCell>
       <TableCell align="center">
         {hasQuantityDiscrepancy ? (
@@ -43,11 +43,11 @@ const ProductTableRow = memo(({ product }) => {
             variant="outlined"
           />
         ) : (
-          product.quantity
+          product.quantity || ''
         )}
       </TableCell>
-      <TableCell align="right">{formatCurrency(product.wholeSalePrice)}</TableCell>
-      <TableCell align="right">{formatCurrency(totalPrice)}</TableCell>
+      <TableCell>{product.facilityName || ""}</TableCell>
+      <TableCell align="right">{formatCurrency(product.price)}</TableCell>
     </TableRow>
   );
 });
@@ -65,8 +65,8 @@ const InBoundDetailProducts = ({ products }) => {
 
   // Tính tổng tiền
   const totalAmount = products.reduce((sum, product) => {
-    const productTotal = product.wholeSalePrice ? 
-      product.wholeSalePrice * product.quantity : 0;
+    const productTotal = product.price ? 
+      product.price * product.quantity : 0;
     return sum + productTotal;
   }, 0);
 
@@ -89,9 +89,9 @@ const InBoundDetailProducts = ({ products }) => {
               <TableCell>Tên sản phẩm</TableCell>
               <TableCell align="center">Đơn vị</TableCell>
               <TableCell align="center">SL yêu cầu</TableCell>
-              <TableCell align="center">SL thực xuất</TableCell>
+              <TableCell align="center">SL thực nhập</TableCell>
+              <TableCell>Nhập vào kho</TableCell>
               <TableCell align="right">Đơn giá</TableCell>
-              <TableCell align="right">Thành tiền</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

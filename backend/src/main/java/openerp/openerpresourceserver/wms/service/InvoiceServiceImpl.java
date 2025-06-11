@@ -1,12 +1,17 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
+import openerp.openerpresourceserver.wms.constant.enumrator.InventoryStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.InvoiceType;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
+import openerp.openerpresourceserver.wms.entity.InventoryItem;
 import openerp.openerpresourceserver.wms.entity.Invoice;
 import openerp.openerpresourceserver.wms.entity.InvoiceItem;
 import openerp.openerpresourceserver.wms.entity.OrderItemBilling;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
+import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.stereotype.Service;
@@ -15,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +33,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InventoryItemDetailRepo inventoryItemDetailRepo;
     private final InventoryItemRepo inventoryItemRepo;
     private final OrderItemBillingRepo orderItemBillingRepo;
+    private final GeneralMapper generalMapper;
 
     @Override
     @Transactional
@@ -35,11 +43,11 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         var inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(shipmentId);
 
-        for (var inventoryItemDetail : inventoryItemDetails) {
-            var inventoryItem = inventoryItemDetail.getInventoryItem();
-            inventoryItem.setQuantity(inventoryItem.getQuantity() - inventoryItemDetail.getQuantity());
-            inventoryItemRepo.save(inventoryItem);
-        }
+//        for (var inventoryItemDetail : inventoryItemDetails) {
+//            var inventoryItem = inventoryItemDetail.getInventoryItem();
+//            inventoryItem.setQuantity(inventoryItem.getQuantity() - inventoryItemDetail.getQuantity());
+//            inventoryItemRepo.save(inventoryItem);
+//        }
 
         //Create Invoice here
         var newInvoice = Invoice.builder()
@@ -66,7 +74,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .orderItem(inventoryItemDetail.getOrderItem())
                     .invoiceItem(newInvoiceItem)
                     .inventoryItemDetail(inventoryItemDetail)
-                    .facility(inventoryItemDetail.getInventoryItem().getFacility())
+                    .facility(inventoryItemDetail.getFacility())
                     .product(inventoryItemDetail.getProduct())
                     .quantity(inventoryItemDetail.getQuantity() * -1)
                     .unit(inventoryItemDetail.getProduct().getUnit())
@@ -99,14 +107,33 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .orElseThrow(() -> new DataNotFoundException("Shipment not found with id: " + shipmentId));
 
         var inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(shipmentId);
+
         for (var inventoryItemDetail : inventoryItemDetails) {
-            var inventoryItem = inventoryItemDetail.getInventoryItem();
-            inventoryItem.setQuantity(inventoryItem.getQuantity() + inventoryItemDetail.getQuantity());
-            inventoryItemRepo.save(inventoryItem);
+            var facilityId = inventoryItemDetail.getFacility().getId();
+            var productId = inventoryItemDetail.getProduct().getId();
+            var lotId = inventoryItemDetail.getLotId();
+            var manufacturingDate = inventoryItemDetail.getManufacturingDate();
+            var expirationDate = inventoryItemDetail.getExpirationDate();
+            var inventoryItem = inventoryItemRepo.findByFacilityIdAndProductIdAndLotIdAndManufacturingDateAndExpirationDate(
+                    facilityId, productId, lotId, manufacturingDate, expirationDate);
+
+            if(inventoryItem == null) {
+                // add new inventory item if it does not exist
+                var newInventoryItem = generalMapper.convertToEntity(inventoryItemDetail, InventoryItem.class);
+                newInventoryItem.setId(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_ID_PREFIX));
+                newInventoryItem.setStatusId(InventoryStatus.VALID.name());
+                inventoryItemRepo.save(newInventoryItem);
+            } else {
+                inventoryItem.setQuantity(inventoryItem.getQuantity() + inventoryItemDetail.getQuantity());
+                inventoryItemRepo.save(inventoryItem);
+            }
         }
 
         //Create Invoice here
         var newInvoice = Invoice.builder()
+                .id(SnowFlakeIdGenerator.getInstance().nextId(INVOICE_ID_PREFIX))
+                .invoiceName("Hóa đơn mua - " + shipment.getShipmentName())
+                .invoiceTypeId(InvoiceType.PURCHASE_INVOICE.name())
                 .createdByUser(userLoginRepo.findById(name).orElseThrow(()
                         -> new DataNotFoundException("User not found with name: " + name)))
                 .fromSupplier(shipment.getFromSupplier())
@@ -114,22 +141,22 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         var newInvoiceItems = new ArrayList<InvoiceItem>();
         var newOrderItemBillings = new ArrayList<OrderItemBilling>();
-        AtomicInteger index = new AtomicInteger(0);
+        var seq = 1;
 
         for (var inventoryItemDetail : inventoryItemDetails) {
             var newInvoiceItem = InvoiceItem.builder()
-                    .id(CommonUtil.getUUID())
-                    .invoiceItemSeqId(index.getAndIncrement())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_ID_PREFIX))
+                    .invoiceItemSeqId(seq++)
                     .invoice(newInvoice)
                     .build();
             newInvoiceItems.add(newInvoiceItem);
 
             var orderItemBilling = OrderItemBilling.builder()
-                    .id(CommonUtil.getUUID())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_BILLING_ID_PREFIX))
                     .orderItem(inventoryItemDetail.getOrderItem())
                     .invoiceItem(newInvoiceItem)
                     .inventoryItemDetail(inventoryItemDetail)
-                    .facility(inventoryItemDetail.getInventoryItem().getFacility())
+                    .facility(inventoryItemDetail.getFacility())
                     .product(inventoryItemDetail.getProduct())
                     .quantity(inventoryItemDetail.getQuantity())
                     .unit(inventoryItemDetail.getProduct().getUnit())
@@ -147,7 +174,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         shipmentRepo.save(shipment);
         return ApiResponse.<Void>builder()
                 .code(200)
-                .message("Export shipment success")
+                .message("Import shipment success")
                 .build();
 
     }

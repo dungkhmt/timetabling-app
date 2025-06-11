@@ -3,6 +3,7 @@ import InfoCard from "./InfoCard";
 import { useOrderDetail } from "../context/OrderDetailContext";
 import dayjs from "dayjs";
 import { ORDER_TYPE_ID } from "../constants/constants";
+import { formatCurrency } from "../utils/functions";
 
 const OrderDeliveryInfo = () => {
   const { orderData } = useOrderDetail();
@@ -14,7 +15,9 @@ const OrderDeliveryInfo = () => {
   
   // Thông tin giao hàng chung
   const commonDeliveryItems = [
-
+    {label : "Tông số lượng", value: orderData.totalQuantity || 0},
+    {label: "Tổng giá trị", value: formatCurrency(orderData.totalAmount)},
+    
   ];
 
   // Thông tin theo loại đơn hàng
@@ -54,16 +57,7 @@ const OrderDeliveryInfo = () => {
             ? dayjs(orderData.deliveryAfterDate).format("DD/MM/YYYY") 
             : "-" 
         },
-        { 
-          label: "Hạn giao hàng", 
-          value: orderData.deliveryBeforeDate 
-            ? dayjs(orderData.deliveryBeforeDate).format("DD/MM/YYYY") 
-            : "-" 
-        },
-        { 
-          label: "Địa chỉ giao hàng", 
-          value: orderData.deliveryAddress || orderData.facilityAddress || "-" 
-        }
+
       ];
       break;
     default:

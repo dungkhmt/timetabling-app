@@ -2,8 +2,6 @@ package openerp.openerpresourceserver.wms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator;
-import org.hibernate.annotations.GenericGenerator;
 
 @Data
 @Entity
@@ -15,19 +13,19 @@ import org.hibernate.annotations.GenericGenerator;
 @Builder
 public class Invoice extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_invoice_sequences")
-    @GenericGenerator(
-            name = "wms2_invoice_sequences",
-            strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
-            parameters = {
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "INV"),
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
-                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_invoice_sequences"),
-                    @org.hibernate.annotations.Parameter(name = "increment_size", value = "1") // Fix lỗi
-            })
+//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "wms2_invoice_sequences")
+//    @GenericGenerator(
+//            name = "wms2_invoice_sequences",
+//            strategy = "openerp.openerpresourceserver.wms.entity.sequence.StringPrefixSequenceGenerator",
+//            parameters = {
+//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.VALUE_PREFIX_PARAMETER, value = "INV"),
+//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.NUMBER_FORMAT_PARAMETER, value = "%05d"),
+//                    @org.hibernate.annotations.Parameter(name = StringPrefixSequenceGenerator.SEQUENCE_TABLE_PARAMETER, value = "wms2_invoice_sequences"),
+//                    @org.hibernate.annotations.Parameter(name = "increment_size", value = "1") // Fix lỗi
+//            })
     private String id;
 
-    private String invoiceType;
+    private String invoiceTypeId;
 
     private String invoiceName;
 

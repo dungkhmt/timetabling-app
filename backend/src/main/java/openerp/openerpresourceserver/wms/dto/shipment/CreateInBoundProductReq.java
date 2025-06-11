@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
@@ -15,11 +17,15 @@ public class CreateInBoundProductReq {
     @NotBlank
     private String productId;
     @NotBlank
-    private String inventoryItemId;
+    private String facilityId;
+    @NotBlank
+    private String orderItemId;
     @NotNull
     private Integer quantity;
-//    @NotBlank
-//    private String orderId;
-//    @NotBlank
-//    private String orderItemSeqId;
+
+    private String lotId;
+
+    private LocalDate expirationDate;
+
+    private LocalDate manufacturingDate;
 }

@@ -12,7 +12,6 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import OutBoundListRow from "./InBoundListRow";
 import InBoundListRow from "./InBoundListRow";
 
 const InBoundTable = ({ items = [] }) => {
@@ -34,9 +33,11 @@ const InBoundTable = ({ items = [] }) => {
         <TableHead sx={{ bgcolor: "action.hover" }}>
           <TableRow>
             <TableCell>Mã đơn xuất</TableCell>
-            <TableCell>Tên đơn hàng</TableCell>
+            <TableCell>Tên phiếu nhập</TableCell>
             <TableCell>Nhà cung cấp</TableCell>
-            <TableCell>Ngày giao</TableCell>
+            <TableCell>Ngày giao dự kiến</TableCell>
+            <TableCell>Tổng khối lượng</TableCell>
+            <TableCell>Tổng số lượng</TableCell>
             <TableCell>Trạng thái</TableCell>
           </TableRow>
         </TableHead>

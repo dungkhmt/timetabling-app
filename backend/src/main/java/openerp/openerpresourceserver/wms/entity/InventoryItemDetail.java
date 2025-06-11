@@ -6,7 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @Entity
@@ -14,19 +15,27 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InventoryItemDetail {
+public class InventoryItemDetail extends BaseEntity {
     @Id
     private String id;
 
+//    @ManyToOne
+//    @JoinColumn(name = "inventory_item_id")
+//    private InventoryItem inventoryItem;
+
     @ManyToOne
-    @JoinColumn(name = "inventory_item_id")
-    private InventoryItem inventoryItem;
+    @JoinColumn(name = "facility_id")
+    private Facility facility;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
 
     private Integer quantity;
+
+    private String unit;
+
+    private BigDecimal price;
 
     @ManyToOne
     @JoinColumn(name = "shipment_id")
@@ -38,5 +47,9 @@ public class InventoryItemDetail {
 
     private String note;
 
-    private LocalDateTime createdStamp;
+    private String lotId;
+
+    private LocalDate expirationDate;
+
+    private LocalDate manufacturingDate;
 }

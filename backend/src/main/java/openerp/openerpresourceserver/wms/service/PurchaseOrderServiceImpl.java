@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
-import openerp.openerpresourceserver.wms.dto.ApiResponse;
-import openerp.openerpresourceserver.wms.dto.JsonReq;
-import openerp.openerpresourceserver.wms.dto.OrderItemReq;
-import openerp.openerpresourceserver.wms.dto.Pagination;
+import openerp.openerpresourceserver.wms.dto.*;
 import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.CreatePurchaseOrderReq;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderDetailRes;
@@ -154,16 +151,12 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 () -> new DataNotFoundException("Purchase order not found with id: " + id));
 
         var purchaseOrderDetailRes = generalMapper.convertToDto(purchaseOrder, PurchaseOrderDetailRes.class);
-        purchaseOrderDetailRes.setSupplierName(purchaseOrder.getFromSupplier().getName());
-        purchaseOrderDetailRes.setCreatedByUser(purchaseOrder.getCreatedByUser().getFullName());
-        purchaseOrderDetailRes.setStatus(purchaseOrder.getStatusId());
-        purchaseOrderDetailRes.setDeliveryAfterDate(purchaseOrder.getDeliveryAfterDate());
-        purchaseOrderDetailRes.setNote(purchaseOrder.getNote());
-
+        purchaseOrderDetailRes.setFromSupplierName(purchaseOrder.getFromSupplier().getName());
+        purchaseOrderDetailRes.setCreatedByUserName(purchaseOrder.getCreatedByUser().getFullName());
 
         var orderItemList = purchaseOrder.getOrderItems().stream()
                 .map(orderItem -> {
-                    var orderItemRes = generalMapper.convertToDto(orderItem, openerp.openerpresourceserver.wms.dto.saleOrder.OrderProductRes.class);
+                    var orderItemRes = generalMapper.convertToDto(orderItem, OrderProductRes.class);
                     orderItemRes.setProductName(orderItem.getProduct().getName());
                     orderItemRes.setProductId(orderItem.getProduct().getId());
                     return orderItemRes;

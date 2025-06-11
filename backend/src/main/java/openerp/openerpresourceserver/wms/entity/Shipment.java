@@ -2,8 +2,8 @@ package openerp.openerpresourceserver.wms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -35,6 +35,10 @@ public class Shipment extends BaseEntity {
 
     private String note;
 
+    private BigDecimal totalWeight;
+
+    private Integer totalQuantity;
+
     @ManyToOne
     @JoinColumn(name = "from_supplier_id")
     private Supplier fromSupplier;
@@ -53,14 +57,11 @@ public class Shipment extends BaseEntity {
     @JoinColumn(name = "handled_by_user_id")
     private UserLogin handledByUser;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_cancelled_id")
+    private UserLogin userCancelled;
+
     @ManyToOne
     @JoinColumn(name = "order_id")
     private OrderHeader order;
-
-    @Override
-    public void customPrePersist() {
-       if(statusId == null || statusId.isEmpty()) {
-           statusId = ShipmentStatus.CREATED.name();
-       }
-    }
 }

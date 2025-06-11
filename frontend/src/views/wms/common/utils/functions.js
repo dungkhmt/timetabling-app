@@ -38,3 +38,29 @@ export const formatCurrency = (
     }).format(value);
 };
 
+export const getShipmentStatus = (status) => {
+    const statusMap = {
+        CREATED: "Mới tạo",
+        APPROVED: "Đã duyệt",
+        CANCELLED: "Từ chối",
+        COMPLETED: "Hoàn thành",
+        IMPORTED : "Đã nhập kho",
+        EXPORTED: "Đã xuất kho",
+        IN_PROGRESS: "Đang xử lý",
+        PENDING: "Đang chờ",
+    };
+    return statusMap[status] || "Không xác định";
+};
+
+export const getOrderStatus = (status) => {
+    const statusMap = {
+        CREATED: "Mới tạo",
+        APPROVED: "Đã duyệt",
+        CANCELLED: "Đã hủy",
+        COMPLETED: "Hoàn thành",
+        IN_PROGRESS: "Đang xử lý",
+        PENDING: "Đang chờ",
+    };
+    return statusMap[status] || "Không xác định";
+}
+
