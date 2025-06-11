@@ -5,10 +5,11 @@ import { useEntityData } from "../hooks/useEntityData";
 import { debounce } from 'lodash';
 import { toast } from "react-toastify";
 import { useWms2Data } from 'services/useWms2Data';
+import { ORDER_TYPE_ID } from '../constants/constants';
 
 const PAGE_SIZE = 20;
 
-const ProductSearch = () => {
+const ProductSearch = ({ orderTypeId = ORDER_TYPE_ID.SALES_ORDER }) => {
   const { 
     order, 
     setOrder, 
@@ -20,6 +21,9 @@ const ProductSearch = () => {
   
   const [productSearchText, setProductSearchText] = useState("");
   const { searchProducts } = useWms2Data();
+  
+  const isPurchaseOrder = orderTypeId === ORDER_TYPE_ID.PURCHASE_ORDER;
+  const isSaleOrder = orderTypeId === ORDER_TYPE_ID.SALES_ORDER;
   
   // Đảm bảo rằng products và results luôn là mảng
   useEffect(() => {
@@ -40,7 +44,7 @@ const ProductSearch = () => {
   }, []);
   
   // Use the custom hook for product data (for initial loading)
-  const { loading, handleScroll: handleScrollForAll, handleDropdownOpen } = useEntityData('products', (newData) => {
+  const { handleScroll: handleScrollForAll, handleDropdownOpen } = useEntityData('products', (newData) => {
     // Process new data
     setEntities(prev => {
       const existingData = Array.isArray(prev.products) ? prev.products : [];
@@ -188,8 +192,8 @@ const ProductSearch = () => {
     }
   };
 
-  // Add product to order
   const addProductToOrder = (product) => {
+    console.log("Adding product to order:", product);
     if (!product) return;
     
     // Check if product already exists in order
@@ -203,13 +207,31 @@ const ProductSearch = () => {
       );
       setOrder(prev => ({ ...prev, orderItems: updatedItems }));
     } else {
-      // Add new product to order
+      // Determine price based on order type
+      let productPrice;
+      if (isPurchaseOrder) {
+        // Purchase Order: Use cost price (giá nhập)
+        productPrice = product.costPrice || 0;
+      } else {
+        // Sale Order: Use wholesale price (giá bán)
+        productPrice = product.wholeSalePrice || 0;
+      }
+
+      // Add new product to order with correct price and fields
       const newItem = {
         productId: product.id,
+        productName: product.name, // Store product name for reference
         quantity: 1,
-        price: product.wholeSalePrice,
-        unit: product.unit
+        price: productPrice,
+        unit: product.unit || "Cái",
+        discount: 0,
+        // Add tax field for purchase orders (as percentage)
+        ...(isPurchaseOrder && {
+          tax: product.vatRate // Default VAT rate as percentage, user can modify
+        }),
+        note: ""
       };
+      
       setOrder(prev => ({ 
         ...prev, 
         orderItems: [...prev.orderItems, newItem] 
@@ -238,6 +260,20 @@ const ProductSearch = () => {
     }));
   };
 
+  // Helper function to get display price based on order type
+  const getDisplayPrice = (product) => {
+    if (isPurchaseOrder) {
+      return product.costPrice || 0;
+    } else {
+      return product.wholeSalePrice || 0;
+    }
+  };
+
+  // Helper function to get price label based on order type
+  const getPriceLabel = () => {
+    return isPurchaseOrder ? "Giá nhập" : "Giá bán";
+  };
+
   // Đảm bảo options luôn là mảng
   const safeProductsArray = Array.isArray(entities.products) ? entities.products : [];
   const safeResultsArray = Array.isArray(productSearchState?.results) ? productSearchState.results : [];
@@ -247,8 +283,6 @@ const ProductSearch = () => {
     ? safeResultsArray 
     : safeProductsArray.slice(0, 50); // Limit options if not searching
     
-  // Check if loading
-  const isLoading = productSearchState?.loading || loading;
 
   // Select correct scroll handler based on context
   const handleScrollForResults = productSearchState?.query 
@@ -261,7 +295,9 @@ const ProductSearch = () => {
         options={displayOptions}
         getOptionLabel={(option) => {
           if (typeof option !== 'object' || option === null) return '';
-          return `${option.id || ''} - ${option.name || ''}`;
+          const price = getDisplayPrice(option);
+          const priceLabel = getPriceLabel();
+          return `${option.id || ''} - ${option.name || ''} (${priceLabel}: ${price.toLocaleString()} VND)`;
         }}
         inputValue={productSearchText}
         onInputChange={handleProductSearch}
@@ -279,14 +315,13 @@ const ProductSearch = () => {
         renderInput={(params) => (
           <TextField 
             {...params} 
-            label="Tìm sản phẩm" 
+            label={`Tìm sản phẩm (${getPriceLabel()})`}
             size="small" 
             fullWidth 
             InputProps={{
               ...params.InputProps,
               endAdornment: (
                 <>
-                  {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
                   {params.InputProps.endAdornment}
                 </>
               ),

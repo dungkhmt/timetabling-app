@@ -2,6 +2,7 @@ package openerp.openerpresourceserver.wms.service;
 
 import com.google.common.util.concurrent.AtomicDouble;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.constant.enumrator.SaleChannel;
@@ -35,7 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.micrometer.common.util.StringUtils.isBlank;
 import static openerp.openerpresourceserver.wms.constant.Constants.DEFAULT_ADMIN_USER_NAME;
+import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
 import static openerp.openerpresourceserver.wms.util.CommonUtil.getAllWeeklyStartDates;
 import static openerp.openerpresourceserver.wms.util.CommonUtil.getRandomElements;
 
@@ -60,6 +63,11 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         var userCreated = userLoginRepo.findById(name)
                 .orElseThrow(() -> new DataNotFoundException("User not found with id" + name));
         var orderHeader = generalMapper.convertToEntity(request, OrderHeader.class);
+
+        if(isBlank(orderHeader.getId())) {
+            orderHeader.setId(SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX));
+        }
+
         orderHeader.setOrderTypeId(OrderType.SALES_ORDER.name());
         orderHeader.setStatusId(OrderStatus.CREATED.name());
         orderHeader.setToCustomer(toCustomer);

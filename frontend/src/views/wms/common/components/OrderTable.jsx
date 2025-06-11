@@ -101,7 +101,7 @@ const OrderTable = ({
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
-                  })}
+                  }) || "Chưa xác định"}
                 </TableCell>
                 <TableCell>
                   {order.deliveryAfterDate

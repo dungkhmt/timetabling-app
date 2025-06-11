@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
@@ -16,9 +17,11 @@ public class PurchaseOrderListRes {
     private String id;
     private String orderName;
     private String supplierName;
-    private String facilityName;
-    private String status;
+    private String statusId;
+    private LocalDate orderDate;
+    private LocalDate deliveryAfterDate;
     private LocalDateTime createdStamp;
     private BigDecimal totalAmount;
+    private Integer totalQuantity;
     private String createdByUserName;
 }

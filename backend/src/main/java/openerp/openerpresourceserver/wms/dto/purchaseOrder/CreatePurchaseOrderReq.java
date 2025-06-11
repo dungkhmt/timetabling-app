@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import openerp.openerpresourceserver.wms.dto.JsonReq;
 import openerp.openerpresourceserver.wms.dto.OrderItemReq;
 
 import java.math.BigDecimal;
@@ -18,11 +19,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreatePurchaseOrderReq {
+    private String id;
     @NotBlank
     private String supplierId;
     private String note;
     private String orderName;
     private BigDecimal discount;
+    private List<JsonReq> costs;
+    private LocalDate orderDate;
     @NotNull
     private LocalDate deliveryAfterDate;
     private LocalDate deliveryBeforeDate;

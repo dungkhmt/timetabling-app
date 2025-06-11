@@ -3,14 +3,12 @@ package openerp.openerpresourceserver.wms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
+import openerp.openerpresourceserver.wms.converter.JsonReqListConverter;
+import openerp.openerpresourceserver.wms.dto.JsonReq;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-
-import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Getter
 @Setter
@@ -47,6 +45,9 @@ public class OrderHeader extends BaseEntity {
 
     private String deliveryPhone;
 
+    @Convert(converter = JsonReqListConverter.class)
+    private List<JsonReq> costs;
+
     @ManyToOne
     @JoinColumn(name = "from_supplier_id")
     private Supplier fromSupplier;
@@ -73,11 +74,4 @@ public class OrderHeader extends BaseEntity {
     private Integer totalQuantity;
 
     private BigDecimal totalAmount;
-
-    @Override
-    public void customPrePersist() {
-        if(isBlank(id)) {
-            id = SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX);
-        }
-    }
 }

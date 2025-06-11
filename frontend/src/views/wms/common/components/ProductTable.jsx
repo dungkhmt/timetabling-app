@@ -10,14 +10,16 @@ import {
   TextField,
   IconButton,
   Box,
-  Typography
+  Typography,
+  Chip
 } from '@mui/material';
 import { Delete as DeleteIcon, Add, Remove, Edit } from '@mui/icons-material';
 import { useOrderForm } from "../context/OrderFormContext";
 import DiscountDialog from './DiscountDialog';
-import {formatCurrency} from "../utils/functions";
+import { formatCurrency } from "../utils/functions";
+import { ORDER_TYPE_ID } from '../constants/constants';
 
-const ProductTable = () => {
+const ProductTable = ({ orderTypeId = ORDER_TYPE_ID.SALES_ORDER }) => { // Add orderTypeId prop with default ORDER_TYPE_ID.SALES_ORDER
   const { 
     order, 
     entities,
@@ -34,6 +36,9 @@ const ProductTable = () => {
     baseAmount: 0
   });
 
+  const isPurchaseOrder = orderTypeId === ORDER_TYPE_ID.PURCHASE_ORDER;
+  const isSaleOrder = orderTypeId === ORDER_TYPE_ID.SALES_ORDER;
+
   const getProductDetails = (productId) => {
     return entities.products.find(product => product.id === productId) || {};
   };
@@ -41,7 +46,23 @@ const ProductTable = () => {
   const calculateItemTotal = (item) => {
     const subtotal = item.price * item.quantity;
     const discountAmount = item.discount || 0;
-    return subtotal - discountAmount;
+    const afterDiscount = subtotal - discountAmount;
+    
+    // Only calculate tax for purchase orders
+    if (isPurchaseOrder) {
+      const taxAmount = afterDiscount * (item.tax || 0) / 100;
+      return afterDiscount + taxAmount;
+    }
+    
+    return afterDiscount;
+  };
+
+  const calculateItemTax = (item) => {
+    if (!isPurchaseOrder) return 0;
+    const subtotal = item.price * item.quantity;
+    const discountAmount = item.discount || 0;
+    const afterDiscount = subtotal - discountAmount;
+    return afterDiscount * (item.tax || 0) / 100;
   };
 
   const openDiscountDialog = (productId, currentDiscount, itemPrice, itemQuantity) => {
@@ -71,10 +92,39 @@ const ProductTable = () => {
 
   const getDiscountDisplay = (item) => {
     if (!item.discount || item.discount === 0) return '0';
-    
-    // Always display as specific amount, formatted as currency
     return formatCurrency(item.discount);
   };
+
+  const getVATDisplay = (item) => {
+    if (!isPurchaseOrder || !item.tax) return '0%';
+    return `${item.tax}%`;
+  };
+
+  // Dynamic column configuration based on order type
+  const getColumns = () => {
+    const baseColumns = [
+      { key: 'stt', label: 'STT', width: 60 },
+      { key: 'code', label: 'Mã SP', width: 100 },
+      { key: 'name', label: 'Tên sản phẩm', width: 200 },
+      { key: 'unit', label: 'Đơn vị', width: 80 },
+      { key: 'price', label: 'Đơn giá', width: 120 },
+      { key: 'quantity', label: 'Số lượng', width: 120 },
+      { key: 'discount', label: 'Giảm giá', width: 100 }
+    ];
+
+    if (isPurchaseOrder) {
+      baseColumns.push({ key: 'tax', label: 'VAT', width: 80 });
+    }
+
+    baseColumns.push(
+      { key: 'total', label: 'Thành tiền', width: 120 },
+      { key: 'actions', label: 'Thao tác', width: 80 }
+    );
+
+    return baseColumns;
+  };
+
+  const columns = getColumns();
 
   return (
     <>
@@ -82,15 +132,11 @@ const ProductTable = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>STT</TableCell>
-              <TableCell>Mã sản phẩm</TableCell>
-              <TableCell>Tên sản phẩm</TableCell>
-              <TableCell>Đơn vị</TableCell>
-              <TableCell>Đơn giá</TableCell>
-              <TableCell>Số lượng</TableCell>
-              <TableCell>Giảm giá</TableCell>
-              <TableCell>Thành tiền</TableCell>
-              <TableCell>Thao tác</TableCell>
+              {columns.map((column) => (
+                <TableCell key={column.key} sx={{ width: column.width }}>
+                  {column.label}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -99,10 +145,28 @@ const ProductTable = () => {
                 const product = getProductDetails(item.productId);
                 return (
                   <TableRow key={item.productId}>
+                    {/* STT */}
                     <TableCell>{index + 1}</TableCell>
+                    
+                    {/* Mã sản phẩm */}
                     <TableCell>{product.code || product.id || item.productId}</TableCell>
-                    <TableCell>{product.name || "—"}</TableCell>
+                    
+                    {/* Tên sản phẩm */}
+                    <TableCell>
+                      <Typography variant="body2">
+                        {product.name || "—"}
+                      </Typography>
+                      {isPurchaseOrder && item.productName && (
+                        <Typography variant="caption" color="textSecondary">
+                          {item.productName}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    
+                    {/* Đơn vị */}
                     <TableCell>{item.unit || "—"}</TableCell>
+                    
+                    {/* Đơn giá */}
                     <TableCell>
                       <TextField
                         type="number"
@@ -110,9 +174,11 @@ const ProductTable = () => {
                         value={item.price}
                         onChange={(e) => updateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
                         inputProps={{ min: 0, step: 1000 }}
-                        sx={{ width: 120 }}
+                        sx={{ width: 100 }}
                       />
                     </TableCell>
+                    
+                    {/* Số lượng */}
                     <TableCell>
                       <Box display="flex" alignItems="center" gap={1}>
                         <IconButton 
@@ -135,6 +201,8 @@ const ProductTable = () => {
                         </IconButton>
                       </Box>
                     </TableCell>
+                    
+                    {/* Giảm giá */}
                     <TableCell>
                       <Box 
                         display="flex" 
@@ -151,11 +219,38 @@ const ProductTable = () => {
                         </IconButton>
                       </Box>
                     </TableCell>
+                    
+                    {/* VAT - Only for purchase orders */}
+                    {isPurchaseOrder && (
+                      <TableCell>
+                        <Box display="flex" flexDirection="column" alignItems="center">
+                          <Typography variant="body2" fontWeight="medium">
+                            {getVATDisplay(item)}
+                          </Typography>
+                          {item.tax > 0 && (
+                            <Typography variant="caption" color="secondary">
+                              +{formatCurrency(calculateItemTax(item))}
+                            </Typography>
+                          )}
+                        </Box>
+                      </TableCell>
+                    )}
+                    
+                    {/* Thành tiền */}
                     <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
-                        {formatCurrency(calculateItemTotal(item))}
-                      </Typography>
+                      <Box display="flex" flexDirection="column">
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatCurrency(calculateItemTotal(item))}
+                        </Typography>
+                        {isPurchaseOrder && item.tax > 0 && (
+                          <Typography variant="caption" color="textSecondary">
+                            (Có VAT)
+                          </Typography>
+                        )}
+                      </Box>
                     </TableCell>
+                    
+                    {/* Thao tác */}
                     <TableCell>
                       <IconButton 
                         color="error" 
@@ -170,7 +265,7 @@ const ProductTable = () => {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={columns.length} align="center">
                   <Typography variant="body2" color="text.secondary" py={2}>
                     Chưa có sản phẩm nào được thêm vào đơn hàng
                   </Typography>
@@ -178,12 +273,14 @@ const ProductTable = () => {
               </TableRow>
             )}
           </TableBody>
+          
+          {/* Summary row */}
           {order.orderItems.length > 0 && (
             <TableBody>
-              <TableRow>
-                <TableCell colSpan={7} align="right">
+              <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                <TableCell colSpan={columns.length - 2} align="right">
                   <Typography variant="h6" fontWeight="bold">
-                    Tổng cộng:
+                    {isPurchaseOrder ? 'Tổng cộng (bao gồm VAT):' : 'Tổng cộng:'}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -195,6 +292,25 @@ const ProductTable = () => {
                 </TableCell>
                 <TableCell></TableCell>
               </TableRow>
+              
+              {/* Additional tax summary for purchase orders */}
+              {isPurchaseOrder && (
+                <TableRow>
+                  <TableCell colSpan={columns.length - 2} align="right">
+                    <Typography variant="body2" color="textSecondary">
+                      Trong đó VAT:
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="secondary" fontWeight="medium">
+                      {formatCurrency(
+                        order.orderItems.reduce((total, item) => total + calculateItemTax(item), 0)
+                      )}
+                    </Typography>
+                  </TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              )}
             </TableBody>
           )}
         </Table>

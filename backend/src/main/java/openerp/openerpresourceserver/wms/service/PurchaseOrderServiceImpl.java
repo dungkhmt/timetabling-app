@@ -1,9 +1,12 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
+import openerp.openerpresourceserver.wms.dto.JsonReq;
+import openerp.openerpresourceserver.wms.dto.OrderItemReq;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.filter.PurchaseOrderGetListFilter;
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.CreatePurchaseOrderReq;
@@ -11,11 +14,11 @@ import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderDetailRe
 import openerp.openerpresourceserver.wms.dto.purchaseOrder.PurchaseOrderListRes;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.OrderItem;
+import openerp.openerpresourceserver.wms.entity.Product;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.PurchaseOrderSpecification;
-import openerp.openerpresourceserver.wms.util.CommonUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -23,7 +26,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+
+import static io.micrometer.common.util.StringUtils.isBlank;
+import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -37,31 +43,67 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final ProductRepo productRepo;
 
     @Override
-    public ApiResponse<Void> createPurchaseOrder(CreatePurchaseOrderReq purchaseOrder, String name) {
-        var supplier = supplierRepo.findById(purchaseOrder.getSupplierId()).orElseThrow(
-                () -> new DataNotFoundException("Supplier not found with id: " + purchaseOrder.getSupplierId()));
+    public ApiResponse<Void> createPurchaseOrder(CreatePurchaseOrderReq req, String name) {
+        var supplier = supplierRepo.findById(req.getSupplierId()).orElseThrow(
+                () -> new DataNotFoundException("Supplier not found with id: " + req.getSupplierId()));
 
         var userLogin = userLoginRepo.findById(name).orElseThrow(
                 () -> new DataNotFoundException("User not found with id: " + name));
 
-        var orderHeader = generalMapper.convertToEntity(purchaseOrder, OrderHeader.class);
+        var orderHeader = generalMapper.convertToEntity(req, OrderHeader.class);
+
+        if(isBlank(orderHeader.getId())) {
+            orderHeader.setId(SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX));
+        }
+
         orderHeader.setFromSupplier(supplier);
         orderHeader.setCreatedByUser(userLogin);
         orderHeader.setOrderTypeId(OrderType.PURCHASE_ORDER.name());
         orderHeader.setStatusId(OrderStatus.CREATED.name());
 
-        List<OrderItem> orderItemList= new ArrayList<>();
-        AtomicInteger seq = new AtomicInteger(0);
-        purchaseOrder.getOrderItems().forEach(item -> {
-            var orderItem = generalMapper.convertToEntity(item, OrderItem.class);
+        var orderItemReqList = req.getOrderItems();
+
+        var productIds = orderItemReqList.stream()
+                .map(OrderItemReq::getProductId)
+                .toList();
+
+        var productIdMap = productRepo.findAllById(productIds).stream()
+                .collect(java.util.stream.Collectors.toMap(Product::getId, Function.identity()));
+
+        var orderItemList= new ArrayList<OrderItem>();
+
+        var totalAmount = BigDecimal.ZERO;
+        var totalQuantity = 0;
+        var seq = 1;
+
+        for(var orderItemReq : req.getOrderItems()) {
+            var product = productIdMap.get(orderItemReq.getProductId());
+            if (product == null) {
+                throw new DataNotFoundException("Product not found with id: " + orderItemReq.getProductId());
+            }
+
+            var orderItem = generalMapper.convertToEntity(orderItemReq, OrderItem.class);
             orderItem.setOrder(orderHeader);
-            var product = productRepo.findById(item.getProductId()).orElseThrow(
-                    () -> new DataNotFoundException("Product not found with id: " + item.getProductId()));
-            orderItem.setOrderItemSeqId(seq.getAndIncrement());
             orderItem.setProduct(product);
-            orderItem.setAmount(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            orderItem.setOrderItemSeqId(seq++);
+            var amount = ((orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
+                    .subtract(orderItem.getDiscount()))
+                    .multiply(BigDecimal.ONE.add(orderItem.getTax()));
+            orderItem.setAmount(amount);
+            totalAmount = totalAmount.add(amount);
+            totalQuantity += orderItemReq.getQuantity();
             orderItemList.add(orderItem);
-        });
+        }
+
+        for (JsonReq importCost : req.getCosts()) {
+            var cost = (Integer) importCost.getValue();
+            totalAmount = totalAmount.add(BigDecimal.valueOf(cost));
+        }
+
+        totalAmount = totalAmount.subtract(req.getDiscount());
+
+        orderHeader.setTotalAmount(totalAmount);
+        orderHeader.setTotalQuantity(totalQuantity);
 
         orderHeaderRepo.save(orderHeader);
         orderItemRepo.saveAll(orderItemList);
@@ -76,7 +118,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public ApiResponse<Pagination<PurchaseOrderListRes>> getAllPurchaseOrder(int page, int limit, PurchaseOrderGetListFilter filters) {
-        var pageReq = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "createdStamp"));
+        var pageReq = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "createdStamp"));
         var specification = new PurchaseOrderSpecification(filters);
         var purchaseOrders = orderHeaderRepo.findAll(specification, pageReq);
         List<PurchaseOrderListRes> purchaseOrderListRes = purchaseOrders.getContent().stream()

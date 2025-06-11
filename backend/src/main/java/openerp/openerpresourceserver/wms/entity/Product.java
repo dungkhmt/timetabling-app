@@ -36,4 +36,9 @@ public class Product extends BaseEntity {
     private String imageId;
 
     private String extraProps;
+
+    // 0, 5, 8, 10%
+    private BigDecimal vatRate;
+
+    private String skuCode;
 }

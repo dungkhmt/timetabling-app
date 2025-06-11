@@ -17,13 +17,16 @@ import { useWms2Data } from "services/useWms2Data";
 import { OrderFormProvider } from "../common/context/OrderFormContext";
 import BasicInfoForm from "./components/BasicInfoForm";
 import DeliveryInfoForm from "./components/DeliveryInfoForm";
+import ImportCostForm from "./components/ImportCostForm";
+import OrderSummary from "./components/OrderSummary";
 import ProductSearch from "../common/components/ProductSearch";
 import ProductTable from "../common/components/ProductTable";
 import ProductForecastChart from "./components/ProductForecastChart";
-import ProductChart from "../InventoryReport/components/ProductChart"; // Import từ InventoryReport
+import ProductChart from "../InventoryReport/components/ProductChart";
 import InsightsIcon from "@mui/icons-material/Insights";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import { ORDER_TYPE_ID } from "../common/constants/constants";
 
 // TabPanel component để hiển thị nội dung tabs
 const TabPanel = ({ children, value, index, ...other }) => {
@@ -53,17 +56,16 @@ const CreatePurchaseOrder = () => {
 
     const [activeTab, setActiveTab] = useState(0);
     const [order, setOrder] = useState({
-        supplierId: "",
-        facilityId: "",
-        deliveryCost: "",
-        note: "",
-        orderName: "",
-        tax: "",
-        amount: "",
-        numberOfInvoices: 0,
-        deliveryAfterDate: "",
-        deliveryBeforeDate: "",
-        orderItems: [],
+    id: "", 
+    supplierId: "", 
+    note: "", 
+    orderName: "", 
+    discount: 0, 
+    costs: [],
+    orderDate: null, 
+    deliveryAfterDate: null, 
+    deliveryBeforeDate: null, 
+    orderItems: [], 
     });
 
     const [entities, setEntities] = useState({
@@ -83,11 +85,88 @@ const CreatePurchaseOrder = () => {
         }
     }, [suggestedItems]);
 
+    // Calculate subtotal of all items (price * quantity, before any discounts)
+    const calculateItemsSubtotal = () => {
+        return order.orderItems.reduce((total, item) => {
+            return total + (item.price * item.quantity);
+        }, 0);
+    };
+
+    // Calculate total of all items after applying individual item discounts but before tax
+    const calculateItemsTotal = () => {
+        return order.orderItems.reduce((total, item) => {
+            const itemSubtotal = item.price * item.quantity;
+            const itemDiscountAmount = item.discount || 0;
+            const itemFinalAmount = itemSubtotal - itemDiscountAmount;
+            return total + Math.max(itemFinalAmount, 0);
+        }, 0);
+    };
+
+    // Calculate total import costs
+    const calculateImportCostsTotal = () => {
+        return (order.costs || []).reduce((total, cost) => total + (cost.value || 0), 0);
+    };
+
+    // Calculate final order total with tax and import costs
+    const calculateOrderTotal = () => {
+        const itemsTotal = calculateItemsTotal();
+        
+        // Calculate tax for each item
+        const totalTax = order.orderItems.reduce((total, item) => {
+            const itemSubtotal = item.price * item.quantity;
+            const itemAfterDiscount = itemSubtotal - (item.discount || 0);
+            return total + (itemAfterDiscount * (item.tax || 0) / 100);
+        }, 0);
+
+        const costsTotal = calculateImportCostsTotal();
+        const orderDiscountAmount = order.discount || 0;
+        
+        const finalTotal = itemsTotal + totalTax + costsTotal - orderDiscountAmount;
+        return Math.max(finalTotal, 0);
+    };
+
+    // Update item quantity
+    const updateItemQuantity = (productId, change) => {
+        const updatedItems = order.orderItems.map(item => {
+            if (item.productId === productId) {
+                const newQuantity = Math.max(1, item.quantity + change);
+                return { ...item, quantity: newQuantity };
+            }
+            return item;
+        }).filter(item => item.quantity > 0);
+        
+        setOrder(prev => ({ ...prev, orderItems: updatedItems }));
+    };
+
+    // Update item discount
+    const updateItemDiscount = (productId, discountAmount) => {
+        const updatedItems = order.orderItems.map(item => {
+            if (item.productId === productId) {
+                return { ...item, discount: Math.max(0, discountAmount) };
+            }
+            return item;
+        });
+        setOrder(prev => ({ ...prev, orderItems: updatedItems }));
+    };
+
+    // Update item price
+    const updateItemPrice = (productId, newPrice) => {
+        const updatedItems = order.orderItems.map(item => {
+            if (item.productId === productId) {
+                return { ...item, price: Math.max(0, newPrice) };
+            }
+            return item;
+        });
+        setOrder(prev => ({ ...prev, orderItems: updatedItems }));
+    };
+
+    // Remove item from order
+    const removeItemFromOrder = (productId) => {
+        const updatedItems = order.orderItems.filter(item => item.productId !== productId);
+        setOrder(prev => ({ ...prev, orderItems: updatedItems }));
+    };
+
     const handleSubmit = async () => {
-        if (!order.facilityId) {
-            toast.warning("Vui lòng chọn kho hàng");
-            return;
-        }
         if (!order.supplierId) {
             toast.warning("Vui lòng chọn nhà cung cấp");
             return;
@@ -102,7 +181,22 @@ const CreatePurchaseOrder = () => {
         }
 
         try {
-            await createPurchaseOrder(order);
+            // Prepare data for API call
+            const orderData = {
+                ...order,
+                orderItems: order.orderItems.map(item => ({
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    price: item.price,
+                    unit: item.unit,
+                    discount: item.discount,
+                    tax: item.tax,
+                    note: item.note
+                })),
+                costs: order.costs || []
+            };
+
+            await createPurchaseOrder(orderData);
         } catch (error) {
             console.error("Error creating purchase order:", error);
             toast.error("Lỗi khi tạo đơn hàng: " + (error.message || "Lỗi không xác định"));
@@ -119,8 +213,23 @@ const CreatePurchaseOrder = () => {
         quantity: item.totalPredictedQuantity || item.quantity || 0
     }));
 
+    const orderContextValue = {
+        order,
+        setOrder,
+        entities,
+        setEntities,
+        updateItemQuantity,
+        updateItemDiscount,
+        updateItemPrice,
+        removeItemFromOrder,
+        calculateOrderTotal,
+        calculateItemsTotal,
+        calculateItemsSubtotal,
+        calculateImportCostsTotal
+    };
+
     return (
-        <OrderFormProvider value={{ order, setOrder, entities, setEntities }}>
+        <OrderFormProvider value={orderContextValue}>
             <Box p={3}>
                 <Typography sx={{ fontWeight: 700 }} variant="h5" gutterBottom>
                     Tạo đơn hàng mua
@@ -229,11 +338,17 @@ const CreatePurchaseOrder = () => {
                     </Grid>
                 </Grid>
 
+                {/* Chi phí nhập hàng */}
+                <ImportCostForm />
+
                 {/* Tìm kiếm và bảng sản phẩm */}
                 <Box mt={3}>
-                    <ProductSearch />
-                    <ProductTable />
+                    <ProductSearch orderTypeId={ORDER_TYPE_ID.PURCHASE_ORDER}/>
+                    <ProductTable orderTypeId={ORDER_TYPE_ID.PURCHASE_ORDER} />
                 </Box>
+
+                {/* Order Summary */}
+                <OrderSummary />
 
                 {/* Nút lưu */}
                 <Box mt={3} textAlign="right">
@@ -242,6 +357,8 @@ const CreatePurchaseOrder = () => {
                         color="primary"
                         onClick={handleSubmit}
                         size="large"
+                        disabled={order.orderItems.length === 0}
+                        sx={{ px: 4, py: 1.5 }}
                     >
                         Lưu đơn hàng
                     </Button>
