@@ -7,7 +7,7 @@ import openerp.openerpresourceserver.wms.dto.delivery.DeliveryRouteResponseDTO;
 import openerp.openerpresourceserver.wms.dto.filter.DeliveryRouteGetListFilter;
 
 public interface DeliveryRouteService {
-    ApiResponse<DeliveryRouteResponseDTO> autoAssignDeliveryRoutesForPlan(String deliveryPlanId);
-
     ApiResponse<Pagination<DeliveryRouteGetListRes>> getAlls(int page, int limit, DeliveryRouteGetListFilter filters);
+
+    ApiResponse<DeliveryRouteResponseDTO> autoAssignDeliveryRoutesForPlan(String deliveryPlanId, String solverName);
 }

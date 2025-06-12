@@ -1,7 +1,10 @@
 package openerp.openerpresourceserver.wms.vrp.service;
 
 import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
-import openerp.openerpresourceserver.wms.entity.*;
+import openerp.openerpresourceserver.wms.entity.Address;
+import openerp.openerpresourceserver.wms.entity.DeliveryBill;
+import openerp.openerpresourceserver.wms.entity.Facility;
+import openerp.openerpresourceserver.wms.entity.Shipper;
 import openerp.openerpresourceserver.wms.repository.AddressRepo;
 import openerp.openerpresourceserver.wms.vrp.Node;
 import openerp.openerpresourceserver.wms.vrp.TimeDistance;
@@ -52,7 +55,7 @@ public class RouteOptimizer {
         // Add depot (facility) as the first node (index 0)
         Node depot = new Node(
                 0,
-                "Depot - " + facility.getName(),
+                facility.getName(),
                 facilityAddress.getLatitude(),
                 facilityAddress.getLongitude()
         );
@@ -86,7 +89,7 @@ public class RouteOptimizer {
 
             Node node = new Node(
                 nodeId,
-                "Delivery to " + customer.getName(),
+                customer.getName(),
                 latitude,
                 longitude,
                 bill.getTotalWeight() != null ? bill.getTotalWeight().doubleValue() : 1.0

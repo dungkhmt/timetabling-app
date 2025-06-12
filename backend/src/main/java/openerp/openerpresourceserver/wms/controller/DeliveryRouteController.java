@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.*;
 public class DeliveryRouteController {
     private final DeliveryRouteService deliveryRouteService;
 
-    @GetMapping("/auto-assign/{deliveryPlanId}")
-    public ApiResponse<DeliveryRouteResponseDTO> autoAssignDeliveryRoute(@PathVariable String deliveryPlanId) {
-        return deliveryRouteService.autoAssignDeliveryRoutesForPlan(deliveryPlanId);
+    @GetMapping("/auto-assign/{deliveryPlanId}/{solverName}")
+    public ApiResponse<DeliveryRouteResponseDTO> autoAssignDeliveryRouteWithSolver(
+            @PathVariable String deliveryPlanId,
+            @PathVariable String solverName) {
+        return deliveryRouteService.autoAssignDeliveryRoutesForPlan(deliveryPlanId, solverName);
     }
 
     @PostMapping("get-all")

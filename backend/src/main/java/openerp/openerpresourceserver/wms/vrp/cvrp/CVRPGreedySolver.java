@@ -1,11 +1,7 @@
 package openerp.openerpresourceserver.wms.vrp.cvrp;
 
 import lombok.extern.slf4j.Slf4j;
-import openerp.openerpresourceserver.wms.vrp.GeoPoint;
-import openerp.openerpresourceserver.wms.vrp.Node;
-import openerp.openerpresourceserver.wms.vrp.TimeDistance;
-import openerp.openerpresourceserver.wms.vrp.VRPRoute;
-import openerp.openerpresourceserver.wms.vrp.Vehicle;
+import openerp.openerpresourceserver.wms.vrp.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -95,11 +91,11 @@ public class CVRPGreedySolver implements CVRPSolver {
             
             // If we have added nodes to the route, finalize it
             if (nodeSequence.size() > 1) {
-                // Return to depot
+//                 Return to depot
                 TimeDistance returnTd = input.findTimeDistance(currentNodeIndex, 0);
                 double returnDistance = returnTd.getDistance();
                 double returnDuration = returnTd.getTravelTime();
-                
+
                 routeDistance += returnDistance;
                 routeDuration += returnDuration;
                 nodeSequence.add(0); // Return to depot

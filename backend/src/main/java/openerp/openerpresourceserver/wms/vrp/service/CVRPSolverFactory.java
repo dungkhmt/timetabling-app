@@ -1,48 +1,39 @@
 package openerp.openerpresourceserver.wms.vrp.service;
 
-import jakarta.annotation.PostConstruct;
+import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPCWSSolver;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPGreedySolver;
 import openerp.openerpresourceserver.wms.vrp.cvrp.CVRPSolver;
-import org.springframework.stereotype.Service;
-
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Factory for creating and configuring VRP solvers
- */
-@Service
+@Component
 public class CVRPSolverFactory {
+    
     private final Map<String, CVRPSolver> solvers = new HashMap<>();
     
-    @PostConstruct
-    public void init() {
+    public CVRPSolverFactory() {
         // Register available solvers
-        registerSolver(new CVRPGreedySolver());
-        // Register more solvers as they are implemented
+        solvers.put("greedy", new CVRPGreedySolver());
+        solvers.put("cws", new CVRPCWSSolver());
+        solvers.put("clarke-wright", new CVRPCWSSolver()); // Alias
     }
     
-    private void registerSolver(CVRPSolver solver) {
-        solvers.put(solver.getName().toLowerCase(), solver);
-    }
-    
-    /**
-     * Get a solver by name
-     */
-    public CVRPSolver getSolver(String name) {
-        CVRPSolver solver = solvers.get(name.toLowerCase());
+    public CVRPSolver getSolver(String solverName) {
+        CVRPSolver solver = solvers.get(solverName.toLowerCase());
         if (solver == null) {
-            // Default to greedy solver if requested solver not found
-            solver = solvers.get("greedy best insertion");
+            // Default to greedy if solver not found
+            return solvers.get("greedy");
         }
         return solver;
     }
     
-    /**
-     * Get all available solvers
-     */
-    public Map<String, CVRPSolver> getAllSolvers() {
-        return new HashMap<>(solvers);
+    public Map<String, String> getAvailableSolvers() {
+        Map<String, String> availableSolvers = new HashMap<>();
+        for (Map.Entry<String, CVRPSolver> entry : solvers.entrySet()) {
+            availableSolvers.put(entry.getKey(), entry.getValue().getName());
+        }
+        return availableSolvers;
     }
 }

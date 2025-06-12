@@ -420,10 +420,11 @@ const getOutBoundsForDeliveryBill = async (page, limit, facilityId) => {
     }
   };
 
-  const autoAssignDeliveryRoutes = async (deliveryPlanId) => {
+  const autoAssignDeliveryRoutes = async (deliveryPlanId, solverName = 'cws') => {
     try {
       const response = await wms2Service.autoAssignDeliveryRoutes(
-        deliveryPlanId
+         deliveryPlanId,
+      solverName
       );
       return response.data;
     } catch (error) {
