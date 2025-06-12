@@ -4,8 +4,11 @@ import openerp.openerpresourceserver.examtimetabling.entity.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 /**
  * Class that implements the calculation of solution metrics and quality score
@@ -73,58 +76,95 @@ public class ExamTimetableSolution extends TimetablingSolution {
     }
     
     /**
-     * Calculate violations of the group spacing constraint
-     * (classes in same group with different course IDs should have at least a day between them)
+     * Calculate group spacing violations based on:
+     * 1. Number of days with multiple courses
+     * 2. Rest days between courses in the same group
      */
     private void calculateGroupSpacingViolations(TimetablingData data) {
-        int violations = 0;
+        int totalViolations = 0;
         
         // Get classes grouped by group ID
-        Map<String, List<ExamClass>> classesByGroupId = data.getClassesByGroupId();
+        Map<Integer, List<ExamClass>> classesByGroupId = data.getClassesByGroupId();
         
         // For each group
-        for (Map.Entry<String, List<ExamClass>> entry : classesByGroupId.entrySet()) {
-            String groupId = entry.getKey();
+        for (Map.Entry<Integer, List<ExamClass>> entry : classesByGroupId.entrySet()) {
+            Integer groupId = entry.getKey();
             List<ExamClass> classesInGroup = entry.getValue();
             
-            // Skip groups with only one course
-            Map<String, List<ExamClass>> courseGroups = classesInGroup.stream()
-                .collect(Collectors.groupingBy(ExamClass::getCourseId));
+            // Get unique course IDs in this group
+            Set<String> courseIds = classesInGroup.stream()
+                .map(ExamClass::getCourseId)
+                .collect(Collectors.toSet());
             
-            if (courseGroups.size() <= 1) continue;
+            if (courseIds.size() <= 1) continue; // Skip groups with only one course
             
-            // Get all unique course IDs in this group
-            List<String> courseIds = new ArrayList<>(courseGroups.keySet());
-            
-            // For each pair of courses in the group
-            for (int i = 0; i < courseIds.size(); i++) {
-                for (int j = i + 1; j < courseIds.size(); j++) {
-                    String courseId1 = courseIds.get(i);
-                    String courseId2 = courseIds.get(j);
-                    
-                    // Get their assigned time slots
-                    UUID timeSlotId1 = getCourseTimeSlotAssignments().get(courseId1);
-                    UUID timeSlotId2 = getCourseTimeSlotAssignments().get(courseId2);
-                    
-                    if (timeSlotId1 == null || timeSlotId2 == null) continue;
-                    
-                    // Find the corresponding time slot objects
-                    TimeSlot timeSlot1 = findTimeSlot(timeSlotId1, data.getAvailableTimeSlots());
-                    TimeSlot timeSlot2 = findTimeSlot(timeSlotId2, data.getAvailableTimeSlots());
-                    
-                    if (timeSlot1 == null || timeSlot2 == null) continue;
-                    
-                    // Check if they are scheduled on the same day or consecutive days
-                    if (timeSlot1.isSameDayAs(timeSlot2) || 
-                        timeSlot1.isDayAfter(timeSlot2) || 
-                        timeSlot1.isDayBefore(timeSlot2)) {
-                        violations++;
+            // Get exam dates for all courses in this group
+            List<LocalDate> examDates = new ArrayList<>();
+            for (String courseId : courseIds) {
+                UUID timeSlotId = getCourseTimeSlotAssignments().get(courseId);
+                if (timeSlotId != null) {
+                    TimeSlot timeSlot = findTimeSlot(timeSlotId, data.getAvailableTimeSlots());
+                    if (timeSlot != null) {
+                        examDates.add(timeSlot.getDate());
                     }
                 }
             }
+            
+            if (examDates.size() <= 1) continue;
+            
+            // Sort exam dates
+            examDates.sort(LocalDate::compareTo);
+            
+            // 1. Count days with multiple courses (violation)
+            Map<LocalDate, Long> coursesPerDay = examDates.stream()
+                .collect(Collectors.groupingBy(date -> date, Collectors.counting()));
+            
+            int multipleCoursesDays = (int) coursesPerDay.values().stream()
+                .mapToLong(count -> Math.max(0, count - 1)) // Each extra course on same day is a violation
+                .sum();
+            
+            // 2. Calculate rest day violations
+            int restDayViolations = 0;
+            
+            // Remove duplicates and sort unique dates
+            List<LocalDate> uniqueDates = examDates.stream()
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+            
+            for (int i = 0; i < uniqueDates.size() - 1; i++) {
+                LocalDate currentDate = uniqueDates.get(i);
+                LocalDate nextDate = uniqueDates.get(i + 1);
+                
+                long daysBetween = ChronoUnit.DAYS.between(currentDate, nextDate);
+                
+                // Violations based on days between exams:
+                // 0 days (same day): already counted in multipleCoursesDays
+                // 1 day (consecutive days): high violation
+                // 2 days (1 rest day): medium violation
+                // 3+ days: no violation
+                
+                if (daysBetween == 1) {
+                    restDayViolations += 3; // High penalty for consecutive days
+                } else if (daysBetween == 2) {
+                    restDayViolations += 1; // Medium penalty for only 1 rest day
+                }
+                // daysBetween >= 3: no violation
+            }
+            
+            // Calculate group-specific violations
+            int groupViolations = multipleCoursesDays + restDayViolations;
+            
+            // Weight violations by group size (larger groups should have higher standards)
+            double groupWeight = Math.sqrt(courseIds.size()); // Square root to avoid over-penalizing large groups
+            totalViolations += (int) (groupViolations * groupWeight);
+            
+            // // Debug logging
+            // System.out.printf("Group %d: %d courses, %d unique exam dates, %d same-day violations, %d rest-day violations, total: %d%n",
+            //     groupId, courseIds.size(), uniqueDates.size(), multipleCoursesDays, restDayViolations, groupViolations);
         }
         
-        setGroupSpacingViolations(violations);
+        setGroupSpacingViolations(totalViolations);
     }
     
     /**
@@ -155,41 +195,78 @@ public class ExamTimetableSolution extends TimetablingSolution {
         
         // Normalize to a 0-1 metric where 1 is perfect balance
         // We use an exponential function to scale: e^(-stdDev)
-        double metric = Math.exp(-stdDev);
+        double metric = Math.exp(-stdDev/(mean + 1));
         
         setRoomBalanceMetric(metric);
     }
     
     /**
      * Calculate the balance of time slot usage
-     * (Should be as equal as possible)
+     * Evaluates balance between exam days and balance between sessions within each day
      */
     private void calculateTimeSlotBalanceMetric() {
-        Map<UUID, Integer> timeSlotUsage = getTimeSlotUsageCounts();
-        
-        if (timeSlotUsage.isEmpty()) {
-            setTimeSlotBalanceMetric(1.0); // Perfect balance if no time slots used
+        if (getAssignedClasses().isEmpty()) {
+            setTimeSlotBalanceMetric(1.0);
             return;
         }
         
-        // Calculate standard deviation of time slot usage
-        double mean = timeSlotUsage.values().stream()
-            .mapToInt(Integer::intValue)
-            .average()
-            .orElse(0.0);
+        // Group assignments by date and session
+        Map<LocalDate, Map<UUID, Integer>> dateSessionCounts = new HashMap<>();
         
-        double variance = timeSlotUsage.values().stream()
-            .mapToInt(Integer::intValue)
+        for (AssignmentDetails assignment : getAssignedClasses().values()) {
+            LocalDate date = assignment.getDate();
+            UUID sessionId = assignment.getSessionId();
+            
+            dateSessionCounts.computeIfAbsent(date, k -> new HashMap<>())
+                .put(sessionId, dateSessionCounts.get(date).getOrDefault(sessionId, 0) + 1);
+        }
+        
+        // 1. Calculate balance between exam days
+        List<Integer> classesPerDay = dateSessionCounts.values().stream()
+            .map(sessionMap -> sessionMap.values().stream().mapToInt(Integer::intValue).sum())
+            .collect(Collectors.toList());
+        
+        double dayBalanceMetric = calculateBalanceScore(classesPerDay);
+        
+        // 2. Calculate average balance between sessions within each day
+        List<Double> sessionBalanceScores = new ArrayList<>();
+        
+        for (Map<UUID, Integer> sessionCounts : dateSessionCounts.values()) {
+            if (sessionCounts.size() > 1) { // Only calculate if there are multiple sessions
+                List<Integer> classesPerSession = new ArrayList<>(sessionCounts.values());
+                double sessionBalance = calculateBalanceScore(classesPerSession);
+                sessionBalanceScores.add(sessionBalance);
+            }
+        }
+        
+        double avgSessionBalanceMetric = sessionBalanceScores.isEmpty() ? 1.0 : 
+            sessionBalanceScores.stream().mapToDouble(Double::doubleValue).average().orElse(1.0);
+        
+        // Combine day balance (weight 0.6) and session balance (weight 0.4)
+        double combinedMetric = (0.6 * dayBalanceMetric) + (0.4 * avgSessionBalanceMetric);
+        
+        setTimeSlotBalanceMetric(combinedMetric);
+    }
+
+    /**
+     * Helper method to calculate balance score from a list of counts
+     */
+    private double calculateBalanceScore(List<Integer> counts) {
+        if (counts.isEmpty()) return 1.0;
+        
+        double mean = counts.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+        
+        if (mean == 0) return 1.0;
+        
+        double variance = counts.stream()
             .mapToDouble(count -> Math.pow(count - mean, 2))
             .average()
             .orElse(0.0);
         
         double stdDev = Math.sqrt(variance);
         
-        // Normalize to a 0-1 metric where 1 is perfect balance
-        double metric = Math.exp(-stdDev);
-        
-        setTimeSlotBalanceMetric(metric);
+        // Normalize to 0-1 scale where 1 is perfect balance
+        return Math.exp(-stdDev / (mean + 1)); // Add 1 to prevent division by zero
     }
     
     /**

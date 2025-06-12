@@ -22,4 +22,5 @@ public class TimetableStatisticsDTO {
   private long usedRoomsCount;
   private String sessionCollectionName;
   private List<DistributionItemDTO> dailyDistribution;
+  private List<DailySessionDistributionDTO> dailySessionDistribution;
 }

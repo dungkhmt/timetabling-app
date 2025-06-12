@@ -249,6 +249,7 @@ public class ExamTimetableController {
             }
             
         } catch (Exception e) {
+            e.printStackTrace();
             ExamTimetablingResponse response = new ExamTimetablingResponse();
             response.setSuccess(false);
             response.setMessage("Error processing request: " + e.getMessage());

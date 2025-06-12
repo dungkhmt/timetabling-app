@@ -126,7 +126,7 @@ public class ExamTimetablingService {
                     
                     // Step 3: Save results
                     saveSolution(examTimetableId, solution);
-                    log.info("Successfully assigned all {} classes", classIds.size());
+                    System.out.printf("Successfully assigned all %d classes", classIds.size());
                     return true;
                     
                 } catch (Exception e) {
@@ -141,7 +141,7 @@ public class ExamTimetablingService {
             log.warn("Algorithm timed out after {} minutes", timeLimit);
             return false;
         } catch (Exception e) {
-            log.error("Error during auto assignment", e);
+            e.printStackTrace();
             throw new RuntimeException("Failed to auto-assign classes: " + e.getMessage(), e);
         } finally {
             executor.shutdownNow();

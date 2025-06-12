@@ -8,11 +8,11 @@ export const useExamTimetableAssignmentData = (examTimetableId = null) => {
   const { data: examTimetableAssignments, isLoading, error, refetch } = useQuery(
     'examTimetableAssignments',
     () => examTimetableAssignmentService.getAllExamTimetableAssignments(examTimetableId),
-    {
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-      cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
-      enabled: !!examTimetableId,
-    }
+    // {
+    //   staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    //   cacheTime: 30 * 60 * 1000, // Keep cache for 30 minutes
+    //   enabled: !!examTimetableId,
+    // }
   );
 
   

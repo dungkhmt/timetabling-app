@@ -19,6 +19,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { useExamTimetableData } from 'services/useExamTimetableData';
+import TimeDistribution from './components/TimeDistribution.jsx';
 
 // General Information Component
 const GeneralInfoCard = ({ timetableInfo }) => {
@@ -47,7 +48,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
         </Typography>
         
         <Grid container justifyContent={'space-between'} spacing={1} sx={{ mt: 0.5 }}>
-          <Grid item xs={5}>
+          <Grid item xs={6}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Tổng số lớp:
@@ -57,7 +58,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={7}>
+          <Grid item xs={6}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Lớp đã xếp:
@@ -67,7 +68,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={5}>
+          <Grid item xs={6}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Tổng số phòng:
@@ -77,7 +78,7 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={7}>
+          <Grid item xs={6}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Phòng đã sử dụng:
@@ -97,7 +98,6 @@ const GeneralInfoCard = ({ timetableInfo }) => {
               </Typography>
             </Box>
           </Grid>
-          
         </Grid>
       </CardContent>
     </Card>
@@ -129,6 +129,7 @@ const GroupMultipleExamsCard = ({ groupStats }) => {
 
   const top5Groups = [...groupStats]
     .sort((a, b) => b.daysWithMultipleExams - a.daysWithMultipleExams)
+    .filter(group => group.daysWithMultipleExams > 0)
     .slice(0, 5);
 
   const countByRange = groupStats.reduce((acc, group) => {
@@ -183,7 +184,6 @@ const GroupMultipleExamsCard = ({ groupStats }) => {
                   series={[{
                     dataKey: 'daysWithMultipleExams',
                     valueFormatter: (value) => `${value}`,
-                  
                   }]}
                   height={130}
                   width={top5Groups.length <= 3 ? 300 : undefined} 
@@ -312,7 +312,7 @@ const GroupDetailStatisticsCard = ({ groupStats }) => {
         </FormControl>
       </Box>
       
-      <CardContent >
+      <CardContent>
         {selectedGroupData && (
           <>
             <Grid container spacing={0.5} sx={{ mb: 0.5 }}>
@@ -377,7 +377,18 @@ const GroupDetailStatisticsCard = ({ groupStats }) => {
                 dataset={dailyExamsData}
                 yAxis={[{ 
                   label: null, 
-                  max: 100, 
+                  max: Math.max(...dailyExamsData.map(d => d.count)) * 1.2,
+                  min: 0,
+                  tickNumber: Math.min(
+                    Math.max(...dailyExamsData.map(d => d.count)) + 1,
+                    5
+                  ),
+                  valueFormatter: (value) => {
+                    if (Math.max(...dailyExamsData.map(d => d.count)) < 5) {
+                      return value % 1 === 0 ? value.toString() : '';
+                    }
+                    return Math.round(value).toString();
+                  }
                 }]}
                 xAxis={[{ 
                   scaleType: 'band',
@@ -394,13 +405,13 @@ const GroupDetailStatisticsCard = ({ groupStats }) => {
                   color: '#ef9f5e'
                 }]}
                 height={180}
-                margin={{ left: 10, right: 10, top: 20, bottom: 30 }}
+                margin={{ left: 40, right: 10, top: 20, bottom: 30 }}
                 barProps={{
                   paddingInner: 2, 
                 }}
                 sx={{
                   '.MuiBarElement-root': {
-                    maxWidth: '30px', 
+                    maxWidth: '20px', 
                   },
                 }}
               />
@@ -412,7 +423,7 @@ const GroupDetailStatisticsCard = ({ groupStats }) => {
   );
 };
 
-// Distribution Chart Component
+// Distribution Chart Component (for location distribution only)
 const DistributionChart = ({ title, data, chartType, onModeChange, modes }) => {
   const [selectedMode, setSelectedMode] = useState(modes[0].value);
 
@@ -591,7 +602,8 @@ const TimetableStatisticsPanel = () => {
 
   const timeDistributionData = {
     session: timetableStatistics.sessionDistribution,
-    day: timetableStatistics.dailyDistribution
+    day: timetableStatistics.dailyDistribution,
+    dailySession: timetableStatistics.dailySessionDistribution
   };
 
   const locationDistributionData = {
@@ -601,9 +613,9 @@ const TimetableStatisticsPanel = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-       <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 3, alignItems: "center" }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
-            Thống Kê Lịch Thi
+          Thống Kê Lịch Thi
         </Typography>
       </Box>
 
@@ -616,17 +628,16 @@ const TimetableStatisticsPanel = () => {
           <ArrowBackIcon sx={{ mr: 1 }} />
           Quay lại danh sách
         </Button>
-        
       </Box>
 
       <Grid container spacing={3} sx={{ minHeight: 'calc(100vh - 200px)' }}>
         {/* General Information Card */}
-        <Grid item xs={12} md={6} sx={{ height: '250px' }}>
+        <Grid item xs={12} md={4.5} sx={{ height: '250px' }}>
           <GeneralInfoCard timetableInfo={timetableStatistics} />
         </Grid>
 
         {/* Group Multiple Exams Distribution Card */}
-        <Grid item xs={12} md={6} sx={{ height: '250px' }}>
+        <Grid item xs={12} md={7.5} sx={{ height: '250px' }}>
           <GroupMultipleExamsCard groupStats={timetableStatistics.groupAssignmentStats} />
         </Grid>
 
@@ -635,16 +646,11 @@ const TimetableStatisticsPanel = () => {
           <GroupDetailStatisticsCard groupStats={timetableStatistics.groupAssignmentStats} />
         </Grid>
 
-        {/* Time Distribution Chart */}
+        {/* Time Distribution Chart - Using the new component */}
         <Grid item xs={12} md={6} sx={{ height: '370px' }}>
-          <DistributionChart 
+          <TimeDistribution 
             title="Phân bố lớp theo thời gian"
             data={timeDistributionData}
-            chartType="pie"
-            modes={[
-              { value: 'session', label: 'Theo kíp thi' },
-              { value: 'day', label: 'Theo ngày thi' }
-            ]}
           />
         </Grid>
 
