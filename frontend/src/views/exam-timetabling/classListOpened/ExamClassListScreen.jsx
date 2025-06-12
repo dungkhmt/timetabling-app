@@ -25,6 +25,7 @@ import localText from "./utils/LocalText"
 import { useExamCourseData } from "services/useExamCourseData"
 import { useExamClassGroupData } from "services/useExamClassGroupData"
 import { useExamFacultyData } from "services/useExamFacultyData"
+import { toast } from "react-toastify"
 
 export default function ExamClassListPage() {
   const [selectedExamPlan, setSelectedExamPlan] = useState(null)
@@ -122,6 +123,7 @@ export default function ExamClassListPage() {
         }
       } catch (error) {
         console.error("Error uploading file", error);
+        toast.error("Có lỗi xảy ra khi tải lên danh sách lớp");
         handleCloseUploadModal();
       }
     }
@@ -135,7 +137,7 @@ export default function ExamClassListPage() {
   const handleDialogClose = () => {
     setSuccessDialogOpen(false)
     setConflictDialogOpen(false)
-    window.location.reload()
+    // window.location.reload()
   }
 
   const handleDownloadConflictList = async () => {

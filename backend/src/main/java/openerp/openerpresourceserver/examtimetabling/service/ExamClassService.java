@@ -149,6 +149,11 @@ public class ExamClassService {
                 String managementCode = getStringValue(row.getCell(11));
                 String school = getStringValue(row.getCell(13));
                 Integer examClassGroupId = groupDescriptionId;
+
+                if (classId == null || courseId == null || courseName == null || description == null ||
+                    numberOfStudents == null || school == null || examClassGroupId == null) {
+                    throw new IllegalArgumentException("One or more required fields are null.");
+                }
                 
                 batchParams.add(new Object[]{
                     id, examClassId, classId, courseId, groupId, courseName, 
@@ -157,6 +162,8 @@ public class ExamClassService {
                 });
             } catch (Exception e) {
                 System.out.println("Error processing row " + i + ": " + e.getMessage());
+
+                throw new IllegalArgumentException("Error processing row " + i + ": " + e.getMessage(), e);
             }
         }
         workbook.close();

@@ -19,15 +19,19 @@ export const useExamClassData = (examPlanId = null) => {
       toast.success('Xóa lớp thành công!');
     },
     onError: (error) => {
-      toast.error(error.response?.data || 'Có lỗi xảy ra khi xóa lớp');
+      toast.error('Có lỗi xảy ra khi xóa lớp');
     }
   });
 
   const importExcelMutation = useMutation(
     (formData) => examClassService.importExcel(formData,examPlanId),
     {
+      onSuccess: (response) => {
+        refetch();
+      },
       onError: (error) => {
-        toast.error(error.response?.data || 'Có lỗi xảy ra khi import danh sách lớp');
+        console.log(error);
+        toast.error('Có lỗi xảy ra khi import danh sách lớp');
       }
     }
   );
