@@ -32,7 +32,7 @@ const InBoundTable = ({ items = [] }) => {
       <Table size={isSmall ? "small" : "medium"}>
         <TableHead sx={{ bgcolor: "action.hover" }}>
           <TableRow>
-            <TableCell>Mã đơn xuất</TableCell>
+            <TableCell>Mã đơn nhập</TableCell>
             <TableCell>Tên phiếu nhập</TableCell>
             <TableCell>Nhà cung cấp</TableCell>
             <TableCell>Ngày giao dự kiến</TableCell>

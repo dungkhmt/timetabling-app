@@ -54,8 +54,9 @@ public class ShipmentController {
     @GetMapping("/for-delivery")
     public ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(
             @RequestParam int page,
-            @RequestParam int limit) {
-        return shipmentService.getShipmentForDelivery(page, limit);
+            @RequestParam int limit,
+            @RequestParam String facilityId) {
+        return shipmentService.getShipmentForDelivery(page, limit, facilityId);
     }
 
 

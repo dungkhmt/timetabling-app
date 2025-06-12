@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
@@ -12,6 +15,12 @@ import lombok.Setter;
 public class ShipmentForDeliveryRes {
     private String id;
     private String shipmentName;
-    private String shipmentStatusId;
-    private String customerName;
+    private String statusId;
+    private String toCustomerName;
+    private String deliveryFullAddress;
+    private String deliveryAddressId;
+    private BigDecimal totalWeight;
+    private Integer totalQuantity;
+    private String expectedDeliveryDate;
+    private List<ShipmentProductForDeliveryRes> shipmentItems;
 }

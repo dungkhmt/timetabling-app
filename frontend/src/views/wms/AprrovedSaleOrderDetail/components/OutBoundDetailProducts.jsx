@@ -17,8 +17,8 @@ import {formatCurrency} from "../../common/utils/functions";
 const ProductTableRow = memo(({ product }) => {
   // Tính thành tiền
   const totalPrice = 
-    product.wholeSalePrice && product.quantity
-      ? product.wholeSalePrice * (product.quantity)
+    product.price && product.quantity
+      ? product.price * (product.quantity)
       : 0;
 
   // Xác định các số lượng yêu cầu và số lượng thực xuất có khớp nhau không
@@ -32,7 +32,7 @@ const ProductTableRow = memo(({ product }) => {
       <TableCell>{product.productName}</TableCell>
       <TableCell align="center">{product.unit || "Chiếc"}</TableCell>
       <TableCell align="center">
-        {product.requestedQuantity || product.quantity}
+        {product.requestedQuantity || ''}
       </TableCell>
       <TableCell align="center">
         {hasQuantityDiscrepancy ? (
@@ -46,7 +46,7 @@ const ProductTableRow = memo(({ product }) => {
           product.quantity
         )}
       </TableCell>
-      <TableCell align="right">{formatCurrency(product.wholeSalePrice)}</TableCell>
+      <TableCell align="right">{formatCurrency(product.price)}</TableCell>
       <TableCell align="right">{formatCurrency(totalPrice)}</TableCell>
     </TableRow>
   );
@@ -65,8 +65,8 @@ const OutBoundDetailProducts = ({ products }) => {
 
   // Tính tổng tiền
   const totalAmount = products.reduce((sum, product) => {
-    const productTotal = product.wholeSalePrice ? 
-      product.wholeSalePrice * product.quantity : 0;
+    const productTotal = product.price ? 
+      product.price * product.quantity : 0;
     return sum + productTotal;
   }, 0);
 

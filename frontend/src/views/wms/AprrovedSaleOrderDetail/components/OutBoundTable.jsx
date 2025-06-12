@@ -32,13 +32,13 @@ const OutBoundTable = ({ items = [] }) => {
       <Table size={isSmall ? "small" : "medium"}>
         <TableHead sx={{ bgcolor: "action.hover" }}>
           <TableRow>
-            <TableCell>Mã đơn xuất</TableCell>
-            <TableCell>Tên đơn hàng</TableCell>
-            <TableCell>Khách hàng</TableCell>
-            <TableCell>Địa chỉ giao</TableCell>
-            <TableCell>Số điện thoại</TableCell>
-            <TableCell>Ngày giao</TableCell>
-            <TableCell>Trạng thái</TableCell>
+              <TableCell>Mã đơn xuất</TableCell>
+              <TableCell>Tên phiếu xuất</TableCell>
+              <TableCell>Khách hàng</TableCell>
+              <TableCell>Ngày giao dự kiến</TableCell>
+              <TableCell>Tổng khối lượng</TableCell>
+              <TableCell>Tổng số lượng</TableCell>
+              <TableCell>Trạng thái</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

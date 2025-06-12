@@ -83,6 +83,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setOrder(orderHeader);
             orderItem.setProduct(product);
             orderItem.setOrderItemSeqId(seq++);
+            orderItem.setId(SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX));
             var amount = ((orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
                     .subtract(orderItem.getDiscount()))
                     .multiply(BigDecimal.ONE.add(orderItem.getTax()));

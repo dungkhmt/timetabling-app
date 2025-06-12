@@ -67,18 +67,18 @@ const ShipmentProductTable = () => {
     <Card variant="outlined">
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Sản phẩm
+          Sản phẩm trong phiếu xuất
         </Typography>
 
         {!entities.selectedShipment && (
           <Alert severity="info">
-            Vui lòng chọn lô hàng trước
+            Vui lòng chọn phiếu xuất trước
           </Alert>
         )}
 
         {entities.selectedShipment && products.length === 0 && (
           <Alert severity="info">
-            Lô hàng này không có sản phẩm nào
+            Phiếu xuất này không có sản phẩm nào
           </Alert>
         )}
 
@@ -97,6 +97,9 @@ const ShipmentProductTable = () => {
                   <TableCell>Sản phẩm</TableCell>
                   <TableCell align="right">Số lượng</TableCell>
                   <TableCell align="right">Có sẵn</TableCell>
+                  <TableCell align="right">Khối lượng (kg)</TableCell>
+                  <TableCell align="right">Đơn giá</TableCell>
+                  <TableCell>Đơn vị</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -123,6 +126,21 @@ const ShipmentProductTable = () => {
                       />
                     </TableCell>
                     <TableCell align="right">{product.maxQuantity}</TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2">
+                        {product.weight || 0}
+                      </Typography>
+                    </TableCell>
+                         <TableCell>
+                      <Typography variant="body2">
+                        {product.price || '-'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {product.unit || '-'}
+                      </Typography>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

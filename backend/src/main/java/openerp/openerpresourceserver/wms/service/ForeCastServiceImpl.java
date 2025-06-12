@@ -36,7 +36,7 @@ public class ForeCastServiceImpl implements ForecastService {
 
     private static final int HISTORICAL_DAYS = 30; // Last 30 days of historical data
     private static final int FORECAST_DAYS = 7; // Forecast for the next 7 days
-    private static final int LOW_STOCK_THRESHOLD = 1000; // Threshold for low stock products
+    private static final int LOW_STOCK_THRESHOLD = 20000; // Threshold for low stock products
     private static final int REDIS_EXPIRATION_DAYS = 7 * 24 * 60 * 60; // Cache expiration in days
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -159,8 +159,9 @@ public class ForeCastServiceImpl implements ForecastService {
             int minDaily = historicalValues.stream().mapToInt(Integer::intValue).min().orElse(0);
 
             // Get current stock
-            InventoryItem currentInventory = inventoryItemRepo.findByProductId(product.getId());
-            int currentStock = currentInventory != null ? currentInventory.getQuantity() : 0;
+//            InventoryItem currentInventory = inventoryItemRepo.countByProductId(product.getId());
+            int currentStock = inventoryItemRepo.sumByProductId(product.getId());
+//            currentStock = currentStock != null ? currentStock : 0;
 
             return DailyProductForecastDTO.builder()
                     .productId(product.getId())

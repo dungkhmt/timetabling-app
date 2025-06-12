@@ -42,6 +42,9 @@ export const wms2Service = {
   getMoreInventoryItems: (page, limit, orderId) => {
     return request("get", `/inventory-item/for-inbound/${orderId}?page=${page}&limit=${limit}`);
   }, 
+  getMoreInventoryItemsForOutbound: (page, limit, orderId) => {
+    return request("get", `/inventory-item/for-outbound/${orderId}?page=${page}&limit=${limit}`);
+  },
   createOutBoundOrder : (data) => {
     return request("post", "/shipment/outbound/create", null, null, data);
   }, 
@@ -86,8 +89,8 @@ export const wms2Service = {
   createDeliveryBill: (data) => {
     return request("post", "/delivery-bill/create", null, null, data);
   },
-  getOutBoundsForDeliveryBill : (page, limit) => {
-    return request("get", `/shipment/for-delivery?page=${page}&limit=${limit}`);
+  getOutBoundsForDeliveryBill : (page, limit, facilityId) => {
+    return request("get", `/shipment/for-delivery?page=${page}&limit=${limit}&facilityId=${facilityId}`);
   },
   getDeliveryBills: (page, limit, filters) => {
     return request("post", `/delivery-bill/get-all?page=${page}&limit=${limit}`, null, null, filters);

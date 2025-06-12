@@ -1,7 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
@@ -11,7 +11,7 @@ import openerp.openerpresourceserver.wms.dto.delivery.DeliveryListPageRes;
 import openerp.openerpresourceserver.wms.dto.filter.DeliveryBillGetListFilter;
 import openerp.openerpresourceserver.wms.entity.DeliveryBill;
 import openerp.openerpresourceserver.wms.entity.DeliveryBillItem;
-import openerp.openerpresourceserver.wms.entity.InventoryItemDetail;
+import openerp.openerpresourceserver.wms.entity.Product;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
@@ -24,9 +24,11 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.DELIVERY_BILL_ID_PREFIX;
+import static openerp.openerpresourceserver.wms.constant.Constants.DELIVERY_BILL_ITEM_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -37,56 +39,59 @@ public class DeliveryServiceImpl implements DeliveryBillService {
     private final InventoryItemDetailRepo inventoryItemDetailRepo;
     private final GeneralMapper convert;
     private final UserLoginRepo userLoginRepo;
+    private final GeneralMapper generalMapper;
+    private final FacilityRepo facilityRepo;
+    private final ProductRepo productRepo;
+
     @Override
     public ApiResponse<Void> createDeliveryBill(CreateDeliveryBill req, Principal principal) {
         var shipment = shipmentRepo.findById(req.getShipmentId()).orElseThrow(()
         -> new DataNotFoundException("Shipment not found with id: " + req.getShipmentId()));
         var userLogin = userLoginRepo.findById(principal.getName()).orElseThrow(
                 () -> new DataNotFoundException("User not found with id: " + principal.getName()));
-
-        // Map productId to InventoryItemDetail
-        Map<String ,InventoryItemDetail> inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(req.getShipmentId())
-                .stream().collect(Collectors.toMap(item -> item.getProduct().getId(), Function.identity()));
+        var facility = facilityRepo.findById(req.getFacilityId()).orElseThrow(
+                () -> new DataNotFoundException("Facility not found with id: " + req.getFacilityId())
+        );
 
         List<CreateDeliveryBillProduct> products = req.getProducts();
 
-        var deliveryBill = DeliveryBill.builder()
-                .id(CommonUtil.getUUID())
-                .shipment(shipment)
-                .deliveryBillName(req.getDeliveryBillName())
-                .expectedDeliveryDate(req.getExpectedDeliveryDate() != null ? req.getExpectedDeliveryDate() : shipment.getExpectedDeliveryDate())
-                .priority(req.getPriority() != null ? req.getPriority() : 1)
-                .note(req.getNote())
-                .statusId(DeliveryBillStatus.CREATED.name())
-                .toCustomer(shipment.getToCustomer())
-                .build();
+        var deliveryBill = generalMapper.convertToEntity(req, DeliveryBill.class);
+        deliveryBill.setId(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_BILL_ID_PREFIX));
+        deliveryBill.setShipment(shipment);
+        deliveryBill.setToCustomer(shipment.getToCustomer());
+        deliveryBill.setFacility(facility);
+        deliveryBill.setExpectedDeliveryDate(req.getExpectedDeliveryDate() != null ? req.getExpectedDeliveryDate() : shipment.getExpectedDeliveryDate());
+        deliveryBill.setPriority(req.getPriority() != null ? req.getPriority() : 1);
+        deliveryBill.setStatusId(DeliveryBillStatus.CREATED.name());
 
-        AtomicDouble totalWeight = new AtomicDouble(0);
-        AtomicInteger count = new AtomicInteger(1);
+        var productIds = products.stream()
+                .map(CreateDeliveryBillProduct::getProductId)
+                .collect(Collectors.toList());
+
+        Map<String, Product> productMap = productRepo.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        var totalWeight = BigDecimal.ZERO;
+        var totalQuantity = 0;
+        var seq = 1;
         List<DeliveryBillItem> deliveryBillItems = new ArrayList<>();
-        products.forEach(product -> {
-            InventoryItemDetail inventoryItemDetail = inventoryItemDetails.get(product.getProductId());
-            if (inventoryItemDetail == null) {
-                throw new DataNotFoundException("Product not found in shipment: " + product.getProductId());
+        for(var deliveryBillItemReq: req.getProducts()) {
+            var deliveryBillItem = generalMapper.convertToEntity(deliveryBillItemReq, DeliveryBillItem.class);
+            deliveryBillItem.setId(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_BILL_ITEM_ID_PREFIX));
+            deliveryBillItem.setDeliveryBill(deliveryBill);
+            deliveryBillItem.setDeliveryBillItemSeqId(seq++);
+            var product = productMap.get(deliveryBillItemReq.getProductId());
+            if (product == null) {
+                throw new DataNotFoundException("Product not found with id: " + deliveryBillItemReq.getProductId());
             }
-            // Check if the quantity is available
-            if (inventoryItemDetail.getQuantity() < product.getQuantity()) {
-                throw new IllegalArgumentException("Insufficient quantity for product: " + product.getProductId());
-            }
-            DeliveryBillItem deliveryBillItem = DeliveryBillItem.builder()
-                    .id(CommonUtil.getUUID())
-                    .deliveryBill(deliveryBill)
-                    .deliveryBillItemSeqId(count.getAndIncrement())
-                    .product(inventoryItemDetail.getProduct())
-                    .quantity(product.getQuantity())
-                    .build();
-
-            totalWeight.addAndGet(inventoryItemDetail.getProduct().getWeight() * product.getQuantity());
+            deliveryBillItem.setProduct(product);
             deliveryBillItems.add(deliveryBillItem);
+            totalWeight = totalWeight.add(deliveryBillItem.getWeight().multiply(BigDecimal.valueOf(deliveryBillItem.getQuantity())));
+            totalQuantity += deliveryBillItem.getQuantity();
+        }
 
-        });
-
-        deliveryBill.setTotalWeight(BigDecimal.valueOf(totalWeight.get()));
+        deliveryBill.setTotalWeight(totalWeight);
+        deliveryBill.setTotalQuantity(totalQuantity);
         deliveryBill.setCreatedByUser(userLogin);
         deliveryBillRepo.save(deliveryBill);
         deliveryBillItemRepo.saveAll(deliveryBillItems);

@@ -3,6 +3,8 @@ package openerp.openerpresourceserver.wms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
@@ -25,4 +27,10 @@ public class DeliveryBillItem extends BaseEntity{
     private Product product;
 
     private Integer quantity;
+
+    private String unit;
+
+    private BigDecimal price;
+
+    private BigDecimal weight;
 }

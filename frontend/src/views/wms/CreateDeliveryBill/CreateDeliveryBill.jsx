@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { useHistory } from "react-router-dom";
 import { useWms2Data } from "services/useWms2Data";
 import { DeliveryBillFormProvider } from "../common/context/DeliveryBillFormContext";
+import FacilitySelector from "./components/FacilitySelector";
 import ShipmentSelector from "./components/ShipmentSelector";
 import DeliveryBillInfoForm from "./components/DeliveryBillInfoForm";
 import ShipmentProductTable from "./components/ShipmentProductTable";
@@ -19,8 +20,10 @@ const CreateDeliveryBill = () => {
   
   // State for form data
   const [deliveryBill, setDeliveryBill] = useState({
+    facilityId: "",
     shipmentId: "",
     deliveryBillName: "",
+    deliveryAddressId: "",
     priority: 1,
     note: "",
     expectedDeliveryDate: new Date().toISOString().split('T')[0],
@@ -29,14 +32,20 @@ const CreateDeliveryBill = () => {
 
   // State for lookup data
   const [entities, setEntities] = useState({
+    facilities: [],
+    selectedFacility: null,
     shipments: [],
     selectedShipment: null
   });
 
   const handleSubmit = () => {
     // Validate required fields
+    if (!deliveryBill.facilityId) {
+      toast.warning("Vui lòng chọn kho hàng");
+      return;
+    }
     if (!deliveryBill.shipmentId) {
-      toast.warning("Vui lòng chọn lô hàng");
+      toast.warning("Vui lòng chọn phiếu xuất");
       return;
     }
     if (!deliveryBill.deliveryBillName) {
@@ -54,14 +63,22 @@ const CreateDeliveryBill = () => {
       return;
     }
 
-    // Create payload
+    // Create payload according to CreateDeliveryBill DTO
     const payload = {
+      facilityId: deliveryBill.facilityId,
       shipmentId: deliveryBill.shipmentId,
       deliveryBillName: deliveryBill.deliveryBillName,
+      deliveryAddressId: deliveryBill.deliveryAddressId,
       priority: deliveryBill.priority,
       note: deliveryBill.note,
       expectedDeliveryDate: deliveryBill.expectedDeliveryDate,
-      products: selectedProducts.map(({ productId, quantity }) => ({ productId, quantity }))
+      products: selectedProducts.map(product => ({
+        productId: product.productId,
+        quantity: product.quantity,
+        price: product.price || 0,
+        weight: product.weight || 0,
+        unit: product.unit || ""
+      }))
     };
 
     // Submit form
@@ -88,11 +105,15 @@ const CreateDeliveryBill = () => {
         </Typography>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
+            <FacilitySelector />
+          </Grid>
+
+          <Grid item xs={12} md={4}>
             <ShipmentSelector />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <DeliveryBillInfoForm />
           </Grid>
         </Grid>

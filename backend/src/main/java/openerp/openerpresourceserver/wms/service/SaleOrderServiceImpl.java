@@ -60,6 +60,8 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     private final GeneralMapper generalMapper;
     @Qualifier("customExecutor")
     private final ThreadPoolTaskExecutor executor;
+    private final AddressRepo addressRepo;
+
     @Override
     public ApiResponse<Void> createSaleOrder(CreateSaleOrderReq request, String name) {
         var toCustomer = customerRepo.findById(request.getToCustomerId())
@@ -103,6 +105,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
             orderItem.setOrder(orderHeader);
             orderItem.setProduct(product);
             orderItem.setOrderItemSeqId(seq++);
+            orderItem.setId(SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX));
             totalQuantity += orderItem.getQuantity();
             var amount = (orderItem.getPrice()
                     .multiply(BigDecimal.valueOf(orderItem.getQuantity())))
@@ -239,28 +242,31 @@ public class SaleOrderServiceImpl implements SaleOrderService{
         UserLogin userLogin = userLoginRepo.findById(DEFAULT_ADMIN_USER_NAME)
                 .orElseThrow(() -> new DataNotFoundException("Default admin user not found"));
         List<InventoryItem> inventoryItems = inventoryItemRepo.findAll();
-        // Map inventory Items to Map <ProductId, List<InventoryItem>>
-        var inventoryItemMap = inventoryItems.stream()
-                .collect(Collectors.groupingBy(item -> item.getProduct().getId()));
+
+        List<Address> addresses = addressRepo.findAll();
+
+        //map addresses to customers
+        Map<String, Address> addressMap = addresses.stream()
+                .collect(Collectors.toMap(Address::getId, Function.identity()));
 
         for (LocalDate weekStart : weeks) {
             for (int i = 0; i < 7; i++) {
                 LocalDate day = weekStart.plusDays(i);
 
-                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, 51);
+                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, customers.size()-1);
                 List<Customer> assignedCustomers = getRandomElements(customers, 0, numberOfCustomers);
 
-                for (Customer customer : assignedCustomers) {
+                for (Product product : products) {
                     LocalDateTime timestamp = day.atTime(
                             ThreadLocalRandom.current().nextInt(0, 24),
                             ThreadLocalRandom.current().nextInt(0, 60));
 
                     executor.execute(() -> {
-                        var orderHeader = saveOrderForCustomer(customer, timestamp, facilities, saleChannels, products, userLogin);
+                        var orderHeader = saveOrderForProduct(assignedCustomers, timestamp,  addressMap, saleChannels, product, userLogin);
                         if (orderHeader == null) {
                             return;
                         }
-                        shipmentService.simulateOuboundShipment(orderHeader, userLogin, inventoryItemMap);
+                        shipmentService.simulateOuboundShipment(orderHeader, userLogin, facilities);
                     });
                 }
 
@@ -271,20 +277,22 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public OrderHeader saveOrderForCustomer(Customer customer, LocalDateTime orderDateTime, List<Facility> facilities,
-                                     List<SaleChannel> saleChannels, List<Product> products, UserLogin userLogin) {
+    public OrderHeader saveOrderForProduct(List<Customer> assignedCustomers, LocalDateTime orderDateTime, Map<String, Address> addressMap,
+                                           List<SaleChannel> saleChannels, Product assignedProduct, UserLogin userLogin) {
         try {
             SaleChannel saleChannel = CommonUtil.getRandomElement(saleChannels);
+            Customer assignedCustomer = CommonUtil.getRandomElement(assignedCustomers);
 
             OrderHeader orderHeader = OrderHeader.builder()
-                    .id(CommonUtil.getUUID())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId("SIMULATED_ORD"))
                     .orderTypeId(OrderType.SALES_ORDER.name())
                     .statusId(OrderStatus.CREATED.name())
-                    .toCustomer(customer)
+                    .toCustomer(assignedCustomer)
                     .saleChannelId(saleChannel.name())
                     .orderName("Simulated Order " + orderDateTime)
-                    .deliveryAddressId(customer.getCurrentAddressId())
-                    .deliveryPhone(customer.getPhone())
+                    .deliveryAddressId(assignedCustomer.getCurrentAddressId())
+                    .deliveryFullAddress(addressMap.get(assignedCustomer.getCurrentAddressId()).getFullAddress())
+                    .deliveryPhone(assignedCustomer.getPhone())
                     .deliveryAfterDate(orderDateTime.toLocalDate().plusDays(1))
                     .deliveryBeforeDate(orderDateTime.toLocalDate().plusDays(5))
                     .createdByUser(userLogin)
@@ -293,17 +301,17 @@ public class SaleOrderServiceImpl implements SaleOrderService{
             orderHeader.setCreatedStamp(orderDateTime);
             orderHeaderRepo.save(orderHeader);
 
-            int numItems = ThreadLocalRandom.current().nextInt(1, 6);
-            List<Product> selectedProducts = CommonUtil.getRandomElements(products, 0, numItems);
+//            int numItems = ThreadLocalRandom.current().nextInt(1, 6);
+//            List<Product> selectedProducts = CommonUtil.getRandomElements(products, 0, numItems);
 
             AtomicInteger increment = new AtomicInteger(0);
-            List<OrderItem> orderItems = selectedProducts.stream()
+            List<OrderItem> orderItems = List.of(assignedProduct).stream()
                     .map(product -> {
-                        int quantity = ThreadLocalRandom.current().nextInt(1, 100);
+                        int quantity = ThreadLocalRandom.current().nextInt(80, 100);
                         BigDecimal price = product.getWholeSalePrice();
 
                         var orderItem =  OrderItem.builder()
-                                .id(CommonUtil.getUUID())
+                                .id(SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX))
                                 .order(orderHeader)
                                 .product(product)
                                 .quantity(quantity)

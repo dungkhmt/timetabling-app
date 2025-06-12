@@ -29,6 +29,12 @@ public class DeliveryBill extends BaseEntity {
 
     private BigDecimal totalWeight;
 
+    private Integer totalQuantity;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id")
+    private Facility facility;
+
     @ManyToOne
     @JoinColumn(name = "to_customer_id")
     private Customer toCustomer;

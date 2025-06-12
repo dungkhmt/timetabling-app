@@ -4,6 +4,7 @@ import openerp.openerpresourceserver.wms.entity.InventoryItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,9 +16,10 @@ public interface InventoryItemRepo extends JpaRepository<InventoryItem, String> 
 
     List<InventoryItem> findByQuantityLessThan(int lowStockThreshold);
 
-    InventoryItem findByProductIdAndFacilityId(String id, String id1);
+    List<InventoryItem> findByProductIdAndFacilityId(String id, String id1);
 
-    InventoryItem findByProductId(String id);
+    @Query("SELECT SUM(i.quantity) FROM InventoryItem i WHERE i.product.id = :productId")
+    int sumByProductId(String productId);
 
     InventoryItem findByFacilityIdAndProductIdAndLotIdAndManufacturingDateAndExpirationDate(String facilityId, String productId, String lotId,
                                                                                             LocalDate manufacturingDate,

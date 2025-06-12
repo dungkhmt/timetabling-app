@@ -9,7 +9,7 @@ const ApprovedOrderDetailContext = createContext();
 
 export const ApprovedOrderDetailProvider = ({ children }) => {
   const { id } = useParams();
-  const { getOutBoundsOrder, getMoreInventoryItems, createOutBoundOrder  } = useWms2Data();
+  const { getOutBoundsOrder, getMoreInventoryItems, createOutBoundOrder, getMoreInventoryItemsForOutbound } = useWms2Data();
   
   const getOutBoundsOrderApi = async (id, page, limit) => {
     try {
@@ -50,11 +50,24 @@ export const ApprovedOrderDetailProvider = ({ children }) => {
     }
   }
 
+    const getMoreInventoryItemsForOutboundApi = async (page, limit) => {
+    try {
+      const response = await getMoreInventoryItemsForOutbound(page, limit, id);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facilities:", error);
+      toast.error("Không thể tải danh sách kho hàng");
+      return { data: {} };
+    }
+  }
+
+
   const value = {
     getOutBoundsOrderApi,
     createOutBoundOrder,
     createOutBoundOrderApi,
     getMoreInventoryItemsApi,
+    getMoreInventoryItemsForOutboundApi
     // loading,
   };
 

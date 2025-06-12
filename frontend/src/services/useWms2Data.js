@@ -176,6 +176,21 @@ export const useWms2Data = () => {
     }
   };
 
+  const getMoreInventoryItemsForOutbound = async (page, limit, orderId) => {
+    try {
+      const response = await wms2Service.getMoreInventoryItemsForOutbound(
+        page,
+        limit,
+        orderId
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching facilities:", error);
+      toast.error("Không thể tải danh sách kho hàng"); 
+      return { data: {} };
+    }
+  };
+
   const getOutBoundDetail = async (shipmentId) => {
     try {
       const response = await wms2Service.getOutBoundDetail(shipmentId);
@@ -339,16 +354,16 @@ export const useWms2Data = () => {
     }
   };
 
-  const getOutBoundsForDeliveryBill = async (page, limit) => {
-    try {
-      const response = await wms2Service.getOutBoundsForDeliveryBill(page, limit);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching outbound order:", error);
-      toast.error("Không thể tải thông tin phiếu giao hàng");
-      return { data: {} };
-    }
-  };
+const getOutBoundsForDeliveryBill = async (page, limit, facilityId) => {
+  try {
+    const response = await wms2Service.getOutBoundsForDeliveryBill(page, limit, facilityId);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching outbound order:", error);
+    toast.error("Không thể tải thông tin phiếu giao hàng");
+    return { data: {} };
+  }
+};
 
   const getDeliveryBills = async (page, limit, filters) => {
     try {
@@ -707,6 +722,7 @@ const getDeliveryDashboard = async (startDate, endDate) => {
     getAllOrderBillItems,
     getMonthlyInventoryReport,
     getMonthlyFacilityReport,
-    getDeliveryDashboard
+    getDeliveryDashboard,
+    getMoreInventoryItemsForOutbound
   };
 };

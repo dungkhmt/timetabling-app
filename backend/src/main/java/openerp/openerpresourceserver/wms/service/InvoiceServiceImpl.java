@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Comparator;
 
 import static openerp.openerpresourceserver.wms.constant.Constants.*;
 
@@ -49,8 +49,50 @@ public class InvoiceServiceImpl implements InvoiceService {
 //            inventoryItemRepo.save(inventoryItem);
 //        }
 
+        for(var inventoryItemDetail : inventoryItemDetails) {
+            var facilityId = inventoryItemDetail.getFacility().getId();
+            var productId = inventoryItemDetail.getProduct().getId();
+            // sorted by expiration date
+            var inventoryItems = inventoryItemRepo.findByProductIdAndFacilityId(productId, facilityId)
+                    .stream()
+                    .sorted(Comparator.comparing(InventoryItem::getExpirationDate))
+                    .toList();
+
+            if(inventoryItems.isEmpty()) {
+                throw new DataNotFoundException("Inventory item not found for product: " + productId + " and facility: " + facilityId);
+            }
+
+            var totalAvailableQuantity = inventoryItems.stream()
+                    .mapToInt(InventoryItem::getQuantity)
+                    .sum();
+
+            if(totalAvailableQuantity < inventoryItemDetail.getQuantity()) {
+                throw new RuntimeException("Not enough inventory for product: " + productId + " and facility: " + facilityId);
+            }
+
+            // for each inventory item, reduce the quantity until the required quantity is met
+            int remainingQuantity = inventoryItemDetail.getQuantity();
+            for (var inventoryItem : inventoryItems) {
+                if (remainingQuantity <= 0) {
+                    break;
+                }
+                if (inventoryItem.getQuantity() >= remainingQuantity) {
+                    inventoryItem.setQuantity(inventoryItem.getQuantity() - remainingQuantity);
+                    inventoryItemRepo.save(inventoryItem);
+                    remainingQuantity = 0;
+                } else {
+                    remainingQuantity -= inventoryItem.getQuantity();
+                    inventoryItem.setQuantity(0);
+                    inventoryItemRepo.save(inventoryItem);
+                }
+            }
+        }
+
         //Create Invoice here
         var newInvoice = Invoice.builder()
+                .id(SnowFlakeIdGenerator.getInstance().nextId(INVOICE_ID_PREFIX))
+                .invoiceName("Hóa đơn bán - " + shipment.getShipmentName())
+                .invoiceTypeId(InvoiceType.SALES_INVOICE.name())
                 .createdByUser(userLoginRepo.findById(name).orElseThrow(()
                         -> new DataNotFoundException("User not found with name: " + name)))
                 .toCustomer(shipment.getToCustomer())
@@ -59,12 +101,12 @@ public class InvoiceServiceImpl implements InvoiceService {
         var newInvoiceItems = new ArrayList<InvoiceItem>();
         var newOrderItemBillings = new ArrayList<OrderItemBilling>();
 
-        AtomicInteger index = new AtomicInteger(0);
+        var seq = 1;
 
         for (var inventoryItemDetail : inventoryItemDetails) {
             var newInvoiceItem = InvoiceItem.builder()
                     .id(CommonUtil.getUUID())
-                    .invoiceItemSeqId(index.getAndIncrement())
+                    .invoiceItemSeqId(seq++)
                     .invoice(newInvoice)
                     .build();
             newInvoiceItems.add(newInvoiceItem);

@@ -2,7 +2,8 @@ package openerp.openerpresourceserver.wms.dto.shipment;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -11,8 +12,11 @@ import java.time.LocalDateTime;
 @Builder
 public class OutBoundByOrderRes {
     private String id;
-    private String shipmentType;
+    private String shipmentTypeId;
     private String shipmentName;
-    private String customerName;
+    private String toCustomerName;
+    private BigDecimal totalWeight;
+    private Integer totalQuantity;
     private String statusId;
+    private LocalDate expectedDeliveryDate;
 }

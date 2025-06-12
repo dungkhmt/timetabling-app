@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -15,25 +15,25 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import { useDeliveryBillForm } from "../../common/context/DeliveryBillFormContext";
 import { useWms2Data } from "services/useWms2Data";
+import { getShipmentStatus } from "views/wms/common/utils/functions";
 
 const ShipmentSelector = () => {
   const { deliveryBill, setDeliveryBill, entities, setEntities } = useDeliveryBillForm();
-  const { getOutBoundsForDeliveryBill, getOutBoundDetail } = useWms2Data();
+  const { getOutBoundsForDeliveryBill } = useWms2Data();
   
   const [loading, setLoading] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [inputValue, setInputValue] = useState('');
   const [open, setOpen] = useState(false);
   
-  // Fetch shipments with pagination
+  // Fetch shipments with pagination (only when facility is selected)
   const fetchShipments = useCallback(async (currentPage = 0, replace = true) => {
-    if (loading) return;
+    if (loading || !deliveryBill.facilityId) return;
     
     setLoading(true);
     try {
-      const response = await getOutBoundsForDeliveryBill(currentPage, 20);
+      const response = await getOutBoundsForDeliveryBill(currentPage, 20, deliveryBill.facilityId);
       if (response && response.code === 200) {
         setTotalPages(response.data.totalPages);
         
@@ -54,14 +54,14 @@ const ShipmentSelector = () => {
     } finally {
       setLoading(false);
     }
-  }, [getOutBoundsForDeliveryBill, setEntities]);
+  }, [getOutBoundsForDeliveryBill, deliveryBill.facilityId, setEntities]);
 
-  // Initial data load
+  // Fetch data when facility changes or dropdown opens
   useEffect(() => {
-    if (open) {
+    if (open && deliveryBill.facilityId) {
       fetchShipments(0, true);
     }
-  }, [open]);
+  }, [open, deliveryBill.facilityId]);
 
   // Load more data when scrolling
   const loadMoreItems = () => {
@@ -73,7 +73,7 @@ const ShipmentSelector = () => {
   };
 
   // Handle shipment selection
-  const handleShipmentChange = async (event, newValue) => {
+  const handleShipmentChange = (event, newValue) => {
     if (!newValue) {
       setEntities(prev => ({
         ...prev,
@@ -84,178 +84,163 @@ const ShipmentSelector = () => {
         ...prev,
         shipmentId: "",
         deliveryBillName: "",
+        deliveryAddressId: "",
         products: []
       }));
       return;
     }
 
-    setSearching(true);
-    try {
-      const response = await getOutBoundDetail(newValue.id);
-      if (response && response.code === 200) {
-        const shipment = response.data;
-        
-        // Update selected shipment
-        setEntities(prev => ({
-          ...prev,
-          selectedShipment: shipment
-        }));
-        
-        // Update delivery bill info
-        setDeliveryBill(prev => ({
-          ...prev,
-          shipmentId: shipment.id,
-          deliveryBillName: `Phiếu giao: ${shipment.shipmentName || shipment.id}`
-        }));
-        
-        // Create products with selection state if the shipment has products
-        if (shipment.products && shipment.products.length > 0) {
-          const productsWithSelection = shipment.products.map(product => ({
-            productId: product.productId,
-            productName: product.productName,
-            quantity: product.quantity,
-            maxQuantity: product.quantity,
-            selected: true
-          }));
-          
-          setDeliveryBill(prev => ({
-            ...prev,
-            products: productsWithSelection
-          }));
-        } else {
-          setDeliveryBill(prev => ({
-            ...prev,
-            products: []
-          }));
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching shipment details:", error);
-    } finally {
-      setSearching(false);
+    // Update selected shipment
+    setEntities(prev => ({
+      ...prev,
+      selectedShipment: newValue
+    }));
+    
+    // Update delivery bill info
+    setDeliveryBill(prev => ({
+      ...prev,
+      shipmentId: newValue.id,
+      deliveryBillName: `Phiếu giao: ${newValue.shipmentName || newValue.id}`,
+      deliveryAddressId: newValue.deliveryAddressId || "",
+      // Transform shipment items to delivery bill products
+      products: newValue.shipmentItems ? newValue.shipmentItems.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        maxQuantity: item.quantity,
+        price: item.price || 0,
+        weight: item.weight || 0,
+        unit: item.unit || "",
+        selected: true
+      })) : []
+    }));
+  };
+
+  // Get status color based on shipment status
+  const getStatusColor = (status) => {
+    switch (status?.toUpperCase()) {
+      case "EXPORTED":
+        return "primary";
+      case "SHIPPED":
+      case "PARTIALLY_DELIVERED":
+      case "DELIVERED":
+        return "success";
+      case "PENDING":
+      case "CREATED":
+        return "warning";
+      case "CANCELLED":
+        return "error";
+      default:
+        return "default";
     }
   };
 
- // Get status color based on shipment status
-const getStatusColor = (status) => {
-  switch (status?.toUpperCase()) {
-    case "EXPORTED":
-      return "primary";
-    case "SHIPPED":
-    case "PARTIALLY_DELIVERED":
-    case "DELIVERED":
-    case "IMPORTED":
-      return "success";
-    case "PENDING":
-    case "CREATED":
-      return "warning";
-    case "CANCELLED":
-      return "error";
-    default:
-      return "default";
-  }
-};
-
   const selectedShipment = entities.selectedShipment;
+  const selectedFacility = entities.selectedFacility;
 
   return (
     <Card variant="outlined">
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Thông tin lô hàng
+          Chọn phiếu xuất
         </Typography>
 
-        <Box mb={3}>
-          <Autocomplete
-            options={entities.shipments || []}
-            getOptionLabel={(option) => 
-              `${option.shipmentName || option.id} - ${option.customerName || 'Không có thông tin'}`
-            }
-            loading={loading}
-            value={selectedShipment || null}
-            onChange={handleShipmentChange}
-            onInputChange={(event, newInputValue) => {
-              setInputValue(newInputValue);
-            }}
-            open={open}
-            onOpen={() => {
-              setOpen(true);
-            }}
-            onClose={() => {
-              setOpen(false);
-            }}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            filterOptions={(options, state) => options}
-            ListboxProps={{
-              onScroll: (event) => {
-                const listboxNode = event.currentTarget;
-                if (
-                  listboxNode.scrollTop + listboxNode.clientHeight >=
-                  listboxNode.scrollHeight - 50
-                ) {
-                  loadMoreItems();
-                }
-              },
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Tìm kiếm lô hàng đã xuất kho"
-                variant="outlined"
-                size="small"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <>
-                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  )
-                }}
-              />
-            )}
-            renderOption={(props, option) => (
-              <li {...props}>
-                <Box>
-                  <Typography variant="body1">{option.shipmentName || option.id}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {option.customerName || 'Không có thông tin'}
-                    </Typography>
-                    <Chip 
-                      label={option.statusId || "EXPORTED"} 
-                      size="small" 
-                      color={getStatusColor(option.statusId)}
-                    />
-                  </Box>
-                </Box>
-              </li>
-            )}
-          />
-        </Box>
+        {!selectedFacility && (
+          <Alert severity="warning">
+            Vui lòng chọn kho hàng trước
+          </Alert>
+        )}
 
-        {searching ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-            <CircularProgress size={24} />
+        {selectedFacility && (
+          <Box mb={3}>
+            <Autocomplete
+              options={entities.shipments || []}
+              getOptionLabel={(option) => 
+                `${option.shipmentName || option.id} - ${option.toCustomerName || 'Không có thông tin'}`
+              }
+              loading={loading}
+              value={selectedShipment || null}
+              onChange={handleShipmentChange}
+              onInputChange={(event, newInputValue) => {
+                setInputValue(newInputValue);
+              }}
+              open={open}
+              onOpen={() => {
+                setOpen(true);
+              }}
+              onClose={() => {
+                setOpen(false);
+              }}
+              disabled={!selectedFacility}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={(options, state) => options}
+              ListboxProps={{
+                onScroll: (event) => {
+                  const listboxNode = event.currentTarget;
+                  if (
+                    listboxNode.scrollTop + listboxNode.clientHeight >=
+                    listboxNode.scrollHeight - 50
+                  ) {
+                    loadMoreItems();
+                  }
+                },
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Tìm kiếm phiếu xuất"
+                  variant="outlined"
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <>
+                        {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    )
+                  }}
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props}>
+                  <Box>
+                    <Typography variant="body1">{option.shipmentName || option.id}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {option.toCustomerName || 'Không có thông tin'}
+                      </Typography>
+                      <Chip 
+                        label={getShipmentStatus(option.statusId) || "EXPORTED"} 
+                        size="small" 
+                        color={getStatusColor(option.statusId)}
+                      />
+                    </Box>
+                  </Box>
+                </li>
+              )}
+            />
           </Box>
-        ) : selectedShipment ? (
+        )}
+
+        {selectedShipment ? (
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <Typography variant="body2" color="textSecondary">
-                Mã lô hàng:
+                Mã phiếu xuất:
               </Typography>
               <Typography variant="body1">
-                {selectedShipment.id}
+                {selectedShipment.id.substring(0, 8) || '-'}
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
               <Typography variant="body2" color="textSecondary">
-                Tên lô hàng:
+                Tên phiếu xuất:
               </Typography>
               <Typography variant="body1">
                 {selectedShipment.shipmentName || '-'}
@@ -266,7 +251,7 @@ const getStatusColor = (status) => {
                 Trạng thái:
               </Typography>
               <Chip 
-                label={selectedShipment.statusId || "EXPORTED"} 
+                label={getShipmentStatus(selectedShipment.statusId) || "EXPORTED"} 
                 size="small" 
                 color={getStatusColor(selectedShipment.statusId)}
               />
@@ -276,7 +261,23 @@ const getStatusColor = (status) => {
                 Khách hàng:
               </Typography>
               <Typography variant="body1">
-                {selectedShipment.customerName || '-'}
+                {selectedShipment.toCustomerName || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" color="textSecondary">
+                Tổng số lượng:
+              </Typography>
+              <Typography variant="body1">
+                {selectedShipment.totalQuantity || 0}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" color="textSecondary">
+                Tổng khối lượng:
+              </Typography>
+              <Typography variant="body1">
+                {selectedShipment.totalWeight || 0} kg
               </Typography>
             </Grid>
             <Grid item xs={12}>
@@ -284,15 +285,15 @@ const getStatusColor = (status) => {
                 Địa chỉ giao hàng:
               </Typography>
               <Typography variant="body1">
-                {selectedShipment.deliveryAddress || '-'}
+                {selectedShipment.deliveryFullAddress || '-'}
               </Typography>
             </Grid>
           </Grid>
-        ) : (
+        ) : selectedFacility ? (
           <Alert severity="info">
-            Vui lòng chọn lô hàng đã xuất kho để tạo phiếu giao
+            Vui lòng chọn phiếu xuất để tạo phiếu giao hàng
           </Alert>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

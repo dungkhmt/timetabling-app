@@ -19,4 +19,6 @@ public interface InventoryItemDetailRepo extends JpaRepository<InventoryItemDeta
             "GROUP BY FUNCTION('DATE', iid.shipment.createdStamp) " +
             "ORDER BY FUNCTION('DATE', iid.shipment.createdStamp)")
     List<Object[]> getDailyQuantitiesByProductAndShipmentType(String productId, String shipmentTypeId, LocalDateTime startDate, LocalDateTime endDate);
+
+    List<InventoryItemDetail> findByShipmentIdInAndFacilityId(List<String> shipmentIds, String facilityId);
 }

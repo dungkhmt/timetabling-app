@@ -3,12 +3,8 @@ package openerp.openerpresourceserver.wms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 
 import java.math.BigDecimal;
-
-import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Getter
 @Setter
@@ -44,12 +40,5 @@ public class OrderItem extends BaseEntity {
     private BigDecimal discount;
 
     private BigDecimal tax;
-
-    @Override
-    public void customPrePersist() {
-        if(isBlank(id)) {
-            id = SnowFlakeIdGenerator.getInstance().nextId(ORDER_ITEM_ID_PREFIX);
-        }
-    }
 
 }

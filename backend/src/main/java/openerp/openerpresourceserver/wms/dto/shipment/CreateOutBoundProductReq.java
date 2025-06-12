@@ -1,5 +1,7 @@
 package openerp.openerpresourceserver.wms.dto.shipment;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,9 +12,12 @@ import lombok.Setter;
 @Setter
 @Getter
 public class CreateOutBoundProductReq {
+    @NotBlank
     private String productId;
-    private String inventoryItemId;
+    @NotBlank
+    private String facilityId;
+    @NotBlank
+    private String orderItemId;
+    @NotNull
     private Integer quantity;
-    private String orderId;
-    private String orderItemSeqId;
 }

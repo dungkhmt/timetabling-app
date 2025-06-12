@@ -39,68 +39,85 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final OrderHeaderRepo orderHeaderRepo;
     private final GeneralMapper generalMapper;
     private final FacilityRepo facilityRepo;
+    private final OrderItemRepo orderItemRepo;
 
     @Override
     public ApiResponse<Void> createOutboundSaleOrder(CreateOutBoundReq req, String name) {
-        // Tìm OrderHeader theo orderId
         OrderHeader orderHeader = orderHeaderRepo.findById(req.getOrderId())
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + req.getOrderId()));
+
         var orderItems = orderHeader.getOrderItems();
         var productReqs = req.getProducts();
-        var shipment = Shipment.builder()
-                .id(CommonUtil.getUUID())
-                .shipmentTypeId(ShipmentType.OUTBOUND.name())
-                .toCustomer(orderHeader.getToCustomer())
-                .order(orderHeader)
-                .shipmentName(req.getShipmentName())
-                .note(req.getNote())
-                .expectedDeliveryDate(req.getExpectedDeliveryDate())
-                .createdByUser(userLoginRepo.findById(name).orElseThrow(
-                        () -> new DataNotFoundException("User not found with id: " + name)
-                ))
-                .build();
-        var inventoryItemDetailDOs = new ArrayList<InventoryItemDetail>();
-        for (var product : productReqs) {
-            // Tìm Product theo productId
-            Product productEntity = productRepo.findById(product.getProductId())
-                    .orElseThrow(() -> new DataNotFoundException("Product not found with id: " + product.getProductId()));
 
-            // Tìm InventoryItem theo productId và facilityId
-            InventoryItem inventoryItem = inventoryItemRepo.findById(product.getInventoryItemId())
-                    .orElseThrow(() -> new DataNotFoundException("Inventory item not found with productId: " + product.getProductId()));
+        var productIds = productReqs.stream().map(CreateOutBoundProductReq::getProductId).toList();
+        var facilityIds = productReqs.stream().map(CreateOutBoundProductReq::getFacilityId).toList();
+        var orderItemIds = productReqs.stream().map(CreateOutBoundProductReq::getOrderItemId).toList();
 
-            // Kiểm tra số lượng tồn kho
-            if (inventoryItem.getQuantity() < product.getQuantity()) {
-                throw new DataNotFoundException("Not enough quantity in inventory");
-            }
+        Map<String, Product> productMap = productRepo.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
 
-            // Kiếm tra số lượng sản phẩm trong OrderItem
-            var orderItem = orderItems.stream()
-                    .filter(item -> item.getProduct().getId().equals(product.getProductId()))
-                    .findFirst()
-                    .orElseThrow(() -> new DataNotFoundException("Order item not found with productId: " + product.getProductId()));
+        Map<String, Facility> facilityMap = facilityRepo.findAllById(facilityIds).stream()
+                .collect(Collectors.toMap(Facility::getId, f -> f));
 
-            // Kiểm tra số lượng sản phẩm trong OrderItem
-            if (orderItem.getQuantity() < product.getQuantity()) {
-                throw new DataNotFoundException("Not enough quantity in order item");
-            }
+        Map<String, OrderItem> orderItemMap = orderItemRepo.findAllById(orderItemIds).stream()
+                .collect(Collectors.toMap(OrderItem::getId, i -> i));
 
-
-            var inventoryItemDetail = InventoryItemDetail.builder()
-//                    .inventoryItem(inventoryItem)
-                    .quantity(product.getQuantity())
-                    .product(productEntity)
-                    .shipment(shipment)
-                    .orderItem(orderItem)
-                    .id(CommonUtil.getUUID())
-                    .build();
-
-            inventoryItemDetailDOs.add(inventoryItemDetail);
-
-
+        Shipment shipment = generalMapper.convertToEntity(req, Shipment.class);
+        if (isBlank(shipment.getId())) {
+            shipment.setId(SnowFlakeIdGenerator.getInstance().nextId(SHIPMENT_ID_PREFIX));
         }
+
+        shipment.setShipmentTypeId(ShipmentType.OUTBOUND.name());
+        shipment.setStatusId(ShipmentStatus.CREATED.name());
+        shipment.setOrder(orderHeader);
+        shipment.setToCustomer(orderHeader.getToCustomer());
+
+        shipment.setCreatedByUser(userLoginRepo.findById(name)
+                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + name)));
+
+        List<InventoryItemDetail> detailList = new ArrayList<>();
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        int totalQuantity = 0;
+
+        for (var productReq : productReqs) {
+            Product product = productMap.get(productReq.getProductId());
+            Facility facility = facilityMap.get(productReq.getFacilityId());
+            OrderItem orderItem = orderItemMap.get(productReq.getOrderItemId());
+
+            if (product == null) {
+                throw new DataNotFoundException("Product not found with id: " + productReq.getProductId());
+            }
+            if (facility == null) {
+                throw new DataNotFoundException("Facility not found with id: " + productReq.getFacilityId());
+            }
+            if (orderItem == null) {
+                throw new DataNotFoundException("Order item not found with id: " + productReq.getOrderItemId());
+            }
+            if (orderItem.getQuantity() < productReq.getQuantity()) {
+                throw new DataNotFoundException("Not enough quantity in order item for productId: " + productReq.getProductId());
+            }
+
+            InventoryItemDetail detail = generalMapper.convertToEntity(productReq, InventoryItemDetail.class);
+            detail.setId(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_DETAIL_ID_PREFIX));
+            detail.setProduct(product);
+            detail.setFacility(facility);
+            detail.setShipment(shipment);
+            detail.setOrderItem(orderItem);
+            detail.setUnit(orderItem.getUnit());
+            detail.setPrice(orderItem.getPrice());
+
+            totalWeight = totalWeight.add(product.getWeight()
+                    .multiply(BigDecimal.valueOf(detail.getQuantity())));
+            totalQuantity += detail.getQuantity();
+
+            detailList.add(detail);
+        }
+
+        shipment.setTotalWeight(totalWeight);
+        shipment.setTotalQuantity(totalQuantity);
+
         shipmentRepo.save(shipment);
-        inventoryItemDetailRepo.saveAll(inventoryItemDetailDOs);
+        inventoryItemDetailRepo.saveAll(detailList);
 
         return ApiResponse.<Void>builder()
                 .code(201)
@@ -112,18 +129,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ApiResponse<Pagination<OutBoundByOrderRes>> getOutBoundByOrder(String orderId, int page, int limit) {
         var pageRequest = CommonUtil.getPageRequest(page, limit);
         var shipments = shipmentRepo.findByOrderId(orderId, pageRequest);
-        var orderHeader = orderHeaderRepo.findById(orderId)
-                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
 
-        var outBoundByOrderPageRes = shipments.getContent().stream()
-                .map(shipment -> OutBoundByOrderRes.builder()
-                        .id(shipment.getId())
-                        .shipmentType(shipment.getShipmentTypeId())
-                        .shipmentName(shipment.getShipmentName())
-                        .customerName(shipment.getToCustomer().getName())
-                        .statusId(shipment.getStatusId())
-                        .build()
-                ).toList();
+        List<OutBoundByOrderRes> outBoundByOrderPageRes = shipments.getContent().stream()
+                .map(shipment -> {
+                    var res = generalMapper.convertToDto(shipment, OutBoundByOrderRes.class);
+                    res.setToCustomerName(shipment.getToCustomer().getName());
+                    return res;
+                })
+                .toList();
 
         return ApiResponse.<Pagination<OutBoundByOrderRes>>builder()
                 .code(200)
@@ -138,39 +151,39 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .build();
     }
 
+
     @Override
     public ApiResponse<OutBoundDetailRes> getOutBoundDetail(String shipmentId) {
         var shipment = shipmentRepo.findById(shipmentId)
                 .orElseThrow(() -> new DataNotFoundException("Shipment not found with id: " + shipmentId));
 
         var inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(shipmentId);
-        var products = inventoryItemDetails.stream()
-                .map(inventoryItemDetail -> OutBoundDetailProductRes.builder()
-                        .id(inventoryItemDetail.getId())
-                        .productId(inventoryItemDetail.getProduct().getId())
-                        .productName(inventoryItemDetail.getProduct().getName())
-                        .quantity(inventoryItemDetail.getQuantity())
-                        .requestedQuantity(inventoryItemDetail.getOrderItem().getQuantity())
-                        .wholeSalePrice(inventoryItemDetail.getProduct().getWholeSalePrice())
-                        .unit(inventoryItemDetail.getProduct().getUnit())
-                        .build()
-                ).toList();
+
+        List<InboundDetailProductRes> products = inventoryItemDetails.stream()
+                .map(inventoryItemDetail -> {
+                    var productRes = generalMapper.convertToDto(inventoryItemDetail, InboundDetailProductRes.class);
+                    productRes.setProductId(inventoryItemDetail.getProduct().getId());
+                    productRes.setProductName(inventoryItemDetail.getProduct().getName());
+                    productRes.setRequestedQuantity(inventoryItemDetail.getOrderItem().getQuantity());
+                    productRes.setFacilityId(inventoryItemDetail.getFacility().getId());
+                    productRes.setFacilityName(inventoryItemDetail.getFacility().getName());
+                    return productRes;
+                }).toList();
+
+        var outboundDetailRes = generalMapper.convertToDto(shipment, OutBoundDetailRes.class);
+        outboundDetailRes.setToCustomerName(shipment.getToCustomer().getName());
+        outboundDetailRes.setProducts(products);
+        var orderHeader = shipment.getOrder();
+        outboundDetailRes.setDeliveryFullAddress(orderHeader.getDeliveryFullAddress());
+        outboundDetailRes.setDeliveryPhone(orderHeader.getDeliveryPhone());
 
         return ApiResponse.<OutBoundDetailRes>builder()
                 .code(200)
                 .message("Get outbound detail success")
-                .data(OutBoundDetailRes.builder()
-                        .id(shipment.getId())
-                        .shipmentType(shipment.getShipmentTypeId())
-                        .shipmentName(shipment.getShipmentName())
-                        .customerName(shipment.getToCustomer().getName())
-                        .statusId(shipment.getStatusId())
-                        .createdStamp(shipment.getCreatedStamp())
-                        .expectedDeliveryDate(shipment.getExpectedDeliveryDate())
-                        .products(products)
-                        .build())
+                .data(outboundDetailRes)
                 .build();
     }
+
 
     @Override
     public ApiResponse<Void> createInboundPurchaseOrder(CreateInBoundReq req, String name) {
@@ -234,7 +247,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             inventoryItemDetail.setUnit(orderItem.getUnit());
             inventoryItemDetail.setOrderItem(orderItem);
 
-            totalWeight = totalWeight.add((BigDecimal.valueOf(inventoryItemDetail.getProduct().getWeight()))
+            totalWeight = totalWeight.add((inventoryItemDetail.getProduct().getWeight())
                     .multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())));
             totalQuantity += inventoryItemDetail.getQuantity();
 
@@ -310,17 +323,18 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
-    public void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin, Map<String, List<InventoryItem>> inventoryItemMap) {
+    public void simulateOuboundShipment(OrderHeader orderHeader, UserLogin userLogin, List<Facility> facilities) {
         try {
             // Prepare shipment entity
             Shipment shipment = Shipment.builder()
-                    .id(CommonUtil.getUUID())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId("SIMULATED_SHIP"))
                     .shipmentTypeId(ShipmentType.OUTBOUND.name())
                     .toCustomer(orderHeader.getToCustomer())
                     .order(orderHeader)
                     .shipmentName("Simulated Shipment for " + orderHeader.getOrderName())
                     .expectedDeliveryDate(orderHeader.getDeliveryBeforeDate())
                     .createdByUser(userLogin)
+                    .statusId(ShipmentStatus.EXPORTED.name())
                     .build();
 
             shipment.setCreatedStamp(orderHeader.getCreatedStamp());
@@ -331,21 +345,23 @@ public class ShipmentServiceImpl implements ShipmentService {
             // Process each order item
             for (OrderItem orderItem : orderItems) {
 
-                // find inventory items from the list containing productId
-                List<InventoryItem> filteredInventoryItems = inventoryItemMap.get(orderItem.getProduct().getId());
+//                // find inventory items from the list containing productId
+//                List<InventoryItem> filteredInventoryItems = facilities.get(orderItem.getProduct().getId());
 
                 // random inventory item from the filtered list
-                InventoryItem inventoryItem = CommonUtil.getRandomElement(filteredInventoryItems);
+                Facility facility = CommonUtil.getRandomElement(facilities);
 
                 // Create inventory item detail for the shipment
                 InventoryItemDetail inventoryItemDetail = InventoryItemDetail.builder()
-                        .id(CommonUtil.getUUID())
-//                        .inventoryItem(inventoryItem)
+                        .id(SnowFlakeIdGenerator.getInstance().nextId("SIMULATED_INVD"))
+                        .facility(facility)
                         .quantity(orderItem.getQuantity())
                         .product(orderItem.getProduct())
                         .shipment(shipment)
                         .note("Simulated shipment detail")
                         .orderItem(orderItem)
+                        .unit(orderItem.getUnit())
+                        .price(orderItem.getPrice())
                         .build();
 
                 inventoryItemDetail.setCreatedStamp(orderHeader.getCreatedStamp());
@@ -366,17 +382,53 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
-    public ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit) {
+    public ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit, String facilityId) {
         var pageRequest = CommonUtil.getPageRequest(page, limit);
         var shipments = shipmentRepo.findByStatusId(ShipmentStatus.EXPORTED.name(), pageRequest);
 
-        List<ShipmentForDeliveryRes> shipmentForDeliveryPageRes = shipments.getContent().stream()
-                .map(shipment -> {
-                            var res = generalMapper.convertToDto(shipment, ShipmentForDeliveryRes.class);
-                            res.setCustomerName(shipment.getToCustomer().getName());
-                            return res;
-                        }
-                ).toList();
+        // init shipmentIds
+        List<String> shipmentIds = shipments.getContent().stream()
+                .map(Shipment::getId)
+                .toList();
+
+        // get inventory item details by shipmentIds and facilityId
+        List<InventoryItemDetail> inventoryItemDetails = inventoryItemDetailRepo.findByShipmentIdInAndFacilityId(shipmentIds, facilityId);
+
+        // group inventory item details by shipmentId
+        Map<String, List<InventoryItemDetail>> inventoryItemDetailMap = inventoryItemDetails.stream()
+                .collect(Collectors.groupingBy(inventoryItemDetail ->
+                        inventoryItemDetail.getShipment().getId()));
+
+        var filteredShipments = shipments.getContent().stream()
+                .filter(shipment -> inventoryItemDetailMap.containsKey(shipment.getId()))
+                .toList();
+
+        var shipmentForDeliveryResList = new ArrayList<ShipmentForDeliveryRes>();
+        for(var filteredShipment : filteredShipments) {
+            var totalWeight = BigDecimal.ZERO;
+            var totalQuantity = 0;
+            var shipmentForDeliveryRes = generalMapper.convertToDto(filteredShipment, ShipmentForDeliveryRes.class);
+            shipmentForDeliveryRes.setToCustomerName(filteredShipment.getToCustomer().getName());
+            List<InventoryItemDetail> details = inventoryItemDetailMap.get(filteredShipment.getId());
+            List<ShipmentProductForDeliveryRes> shipmentProductForDeliveryResList = new ArrayList<>();
+            for(InventoryItemDetail detail : details) {
+                var shipmentProductForDeliveryRes = generalMapper.convertToDto(detail, ShipmentProductForDeliveryRes.class);
+                shipmentProductForDeliveryRes.setProductId(detail.getProduct().getId());
+                shipmentProductForDeliveryRes.setProductName(detail.getProduct().getName());
+                shipmentProductForDeliveryRes.setFacilityId(detail.getFacility().getId());
+                shipmentProductForDeliveryRes.setFacilityName(detail.getFacility().getName());
+                shipmentProductForDeliveryRes.setWeight(detail.getProduct().getWeight());
+                // set total weight and quantity
+                totalWeight = totalWeight.add(detail.getProduct().getWeight()
+                        .multiply(BigDecimal.valueOf(detail.getQuantity())));
+                totalQuantity += detail.getQuantity();
+                shipmentProductForDeliveryResList.add(shipmentProductForDeliveryRes);
+            }
+            shipmentForDeliveryRes.setShipmentItems(shipmentProductForDeliveryResList);
+            shipmentForDeliveryRes.setTotalWeight(totalWeight);
+            shipmentForDeliveryRes.setTotalQuantity(totalQuantity);
+            shipmentForDeliveryResList.add(shipmentForDeliveryRes);
+        }
 
         return ApiResponse.<Pagination<ShipmentForDeliveryRes>>builder()
                 .code(200)
@@ -384,7 +436,7 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .data(Pagination.<ShipmentForDeliveryRes>builder()
                         .page(page)
                         .size(limit)
-                        .data(shipmentForDeliveryPageRes)
+                        .data(shipmentForDeliveryResList)
                         .totalElements(shipments.getTotalElements())
                         .totalPages(shipments.getTotalPages())
                         .build())

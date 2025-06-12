@@ -15,9 +15,9 @@ public class Product extends BaseEntity {
 
     private String name;
 
-    private Double weight;
+    private BigDecimal weight;
 
-    private Double height;
+    private BigDecimal height;
 
     private String unit;
 
