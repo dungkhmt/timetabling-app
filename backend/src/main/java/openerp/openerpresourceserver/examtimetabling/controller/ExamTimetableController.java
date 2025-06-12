@@ -21,10 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import openerp.openerpresourceserver.examtimetabling.algorithm.ExamTimetablingService;
+import openerp.openerpresourceserver.examtimetabling.algorithm.AlgorithmService;
 import openerp.openerpresourceserver.examtimetabling.dtos.AssignmentUpdateDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.AutoAssignRequestDTO;
-import openerp.openerpresourceserver.examtimetabling.dtos.ConflictDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ConflictResponseDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamAssignmentDTO;
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDTO;
@@ -32,7 +31,6 @@ import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetableDetailDTO
 import openerp.openerpresourceserver.examtimetabling.dtos.ExamTimetablingResponse;
 import openerp.openerpresourceserver.examtimetabling.dtos.TimetableStatisticsDTO;
 import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetable;
-import openerp.openerpresourceserver.examtimetabling.entity.ExamTimetableAssignment;
 import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableAssignmentService;
 import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableService;
 
@@ -42,7 +40,7 @@ import openerp.openerpresourceserver.examtimetabling.service.ExamTimetableServic
 public class ExamTimetableController {
     private final ExamTimetableService examTimetableService;
     private final ExamTimetableAssignmentService examTimetableAssignmentService;
-    private final ExamTimetablingService examTimetablingService;
+    private final AlgorithmService algorithmService;
     
     @GetMapping("/plan/{examPlanId}")
     public ResponseEntity<List<ExamTimetableDTO>> getAllTimetablesByExamPlanId(@PathVariable UUID examPlanId) {
@@ -225,7 +223,7 @@ public class ExamTimetableController {
 
             // examTimetableAssignmentService.unassignAssignments(request.getClassIds());
             
-            boolean success = examTimetablingService.autoAssignClass(
+            boolean success = algorithmService.autoAssignClass(
                 request.getExamTimetableId(),
                 request.getClassIds(),
                 request.getExamDates(),
