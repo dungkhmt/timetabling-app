@@ -173,5 +173,8 @@ export const wms2Service = {
   },
   getDeliveryDashboard : (startDate, endDate) => {
     return request("get", `/report/delivery/dashboard?startDate=${startDate}&endDate=${endDate}`);
-  }
+  },
+  autoAssignShipment: (orderId) => {
+  return request("get", `/shipment/auto-assign-outbound/${orderId}`);
+},
 };

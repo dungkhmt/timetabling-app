@@ -665,6 +665,16 @@ const getDeliveryDashboard = async (startDate, endDate) => {
   }
 };
 
+const autoAssignShipment = async (orderId) => {
+  try {
+    const response = await wms2Service.autoAssignShipment(orderId);
+    return response.data;
+  } catch (error) {
+    console.error("Error auto-assigning shipment:", error);
+    throw error;
+  }
+};
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -724,6 +734,7 @@ const getDeliveryDashboard = async (startDate, endDate) => {
     getMonthlyInventoryReport,
     getMonthlyFacilityReport,
     getDeliveryDashboard,
-    getMoreInventoryItemsForOutbound
+    getMoreInventoryItemsForOutbound,
+    autoAssignShipment
   };
 };

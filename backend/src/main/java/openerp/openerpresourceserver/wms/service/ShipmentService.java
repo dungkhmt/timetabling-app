@@ -8,6 +8,7 @@ import openerp.openerpresourceserver.wms.entity.Facility;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.entity.UserLogin;
 
+import java.security.Principal;
 import java.util.List;
 
 public interface ShipmentService {
@@ -28,4 +29,6 @@ public interface ShipmentService {
     ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit, String facilityId);
 
     ApiResponse<Pagination<ShipmentGetListRes>> getAll(int page, int limit, ShipmentGetListFilter filters);
+
+    ApiResponse<Void> autoAssignShipment(String orderId, Principal principal);
 }

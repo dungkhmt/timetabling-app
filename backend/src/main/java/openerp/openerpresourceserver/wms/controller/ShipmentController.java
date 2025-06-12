@@ -68,4 +68,11 @@ public class ShipmentController {
         return shipmentService.getAll(page, limit, filters);
     }
 
+    @GetMapping("auto-assign-outbound/{orderId}")
+    public ApiResponse<Void> autoAssignShipment(
+            @PathVariable String orderId,
+            Principal principal) {
+        return shipmentService.autoAssignShipment(orderId, principal);
+    }
+
 }

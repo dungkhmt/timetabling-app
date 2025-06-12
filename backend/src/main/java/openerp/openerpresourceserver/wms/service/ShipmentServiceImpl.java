@@ -1,7 +1,9 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
+import openerp.openerpresourceserver.wms.constant.enumrator.EntityType;
 import openerp.openerpresourceserver.wms.constant.enumrator.PartnerType;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentType;
@@ -15,13 +17,13 @@ import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.ShipmentSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
+import openerp.openerpresourceserver.wms.vrp.TimeDistance;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.security.Principal;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.micrometer.common.util.StringUtils.isBlank;
@@ -30,6 +32,7 @@ import static openerp.openerpresourceserver.wms.constant.Constants.SHIPMENT_ID_P
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ShipmentServiceImpl implements ShipmentService {
     private final UserLoginRepo userLoginRepo;
     private final ShipmentRepo shipmentRepo;
@@ -40,6 +43,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final GeneralMapper generalMapper;
     private final FacilityRepo facilityRepo;
     private final OrderItemRepo orderItemRepo;
+    private final AddressRepo addressRepo;
 
     @Override
     public ApiResponse<Void> createOutboundSaleOrder(CreateOutBoundReq req, String name) {
@@ -486,5 +490,132 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .build();
     }
 
+    // The function is used to create a new shipment from a sales order ensuring FEFO and the minimum distance between the facility
+    // chose and the deliveryAdress of order
+    @Override
+    public ApiResponse<Void> autoAssignShipment(String orderId, Principal principal) {
+        OrderHeader orderHeader = orderHeaderRepo.findById(orderId)
+                .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + orderId));
+
+        var userLogin = userLoginRepo.findById(principal.getName())
+                .orElseThrow(() -> new DataNotFoundException("User not found with id: " + principal.getName()));
+
+        String deliveryAddressId = orderHeader.getDeliveryAddressId();
+        if (isBlank(deliveryAddressId)) {
+            deliveryAddressId = orderHeader.getToCustomer().getCurrentAddressId();
+        }
+
+        String finalDeliveryAddressId = deliveryAddressId;
+        Address deliveryAddress = addressRepo.findById(deliveryAddressId)
+                .orElseThrow(() -> new DataNotFoundException("Delivery address not found with id: " + finalDeliveryAddressId));
+
+        List<OrderItem> orderItems = orderHeader.getOrderItems();
+        if (orderItems.isEmpty()) {
+            throw new DataNotFoundException("Order has no items to ship");
+        }
+
+        List<String> productIds = orderItems.stream()
+                .map(orderItem -> orderItem.getProduct().getId())
+                .distinct()
+                .toList();
+
+        List<InventoryItem> inventoryItems = inventoryItemRepo.findByProductIdIn(productIds);
+
+        List<String> facilityIds = inventoryItems.stream()
+                .map(inventoryItem -> inventoryItem.getFacility().getId())
+                .distinct()
+                .toList();
+
+        Map<String, Address> facilityAddressMap = addressRepo
+                .findAllByEntityIdInAndEntityType(facilityIds, EntityType.FACILITY.name())
+                .stream()
+                .collect(Collectors.toMap(Address::getEntityId, address -> address));
+
+        Shipment newShipment = Shipment.builder()
+                .id(SnowFlakeIdGenerator.getInstance().nextId(SHIPMENT_ID_PREFIX))
+                .shipmentName("Phiếu xuất kho tự động từ đơn hàng " + orderHeader.getId())
+                .shipmentTypeId(ShipmentType.OUTBOUND.name())
+                .statusId(ShipmentStatus.CREATED.name())
+                .toCustomer(orderHeader.getToCustomer())
+                .order(orderHeader)
+                .createdByUser(userLogin)
+                .expectedDeliveryDate(orderHeader.getDeliveryAfterDate())
+                .build();
+
+        List<InventoryItemDetail> inventoryItemDetails = new ArrayList<>();
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        int totalQuantity = 0;
+
+        for (OrderItem orderItem : orderItems) {
+            String productId = orderItem.getProduct().getId();
+            int quantityToShip = orderItem.getQuantity();
+
+            List<InventoryItem> suitableItems = inventoryItems.stream()
+                    .filter(item -> item.getProduct().getId().equals(productId))
+                    .collect(Collectors.toList());
+
+            suitableItems.sort((i1, i2) -> {
+                int compare = Comparator
+                        .comparing(InventoryItem::getExpirationDate, Comparator.nullsLast(LocalDate::compareTo))
+                        .thenComparing(InventoryItem::getReceivedDate, Comparator.nullsLast(LocalDate::compareTo))
+                        .compare(i1, i2);
+
+                if (compare != 0) return compare;
+
+                Address addr1 = facilityAddressMap.get(i1.getFacility().getId());
+                Address addr2 = facilityAddressMap.get(i2.getFacility().getId());
+                double dist1 = TimeDistance.calculateHaversineDistance(
+                        deliveryAddress.getLatitude(), deliveryAddress.getLongitude(),
+                        addr1.getLatitude(), addr1.getLongitude());
+                double dist2 = TimeDistance.calculateHaversineDistance(
+                        deliveryAddress.getLatitude(), deliveryAddress.getLongitude(),
+                        addr2.getLatitude(), addr2.getLongitude());
+                return Double.compare(dist1, dist2);
+            });
+
+            for (InventoryItem inventoryItem : suitableItems) {
+                if (quantityToShip <= 0) break;
+                int available = inventoryItem.getQuantity();
+                if (available <= 0) continue;
+
+                int assignQty = Math.min(available, quantityToShip);
+
+                InventoryItemDetail detail = InventoryItemDetail.builder()
+                        .id(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_DETAIL_ID_PREFIX))
+                        .product(inventoryItem.getProduct())
+                        .facility(inventoryItem.getFacility())
+                        .shipment(newShipment)
+                        .quantity(assignQty)
+                        .unit(orderItem.getUnit())
+                        .price(orderItem.getPrice())
+                        .orderItem(orderItem)
+                        .build();
+
+                inventoryItemDetails.add(detail);
+                quantityToShip -= assignQty;
+
+                totalQuantity += assignQty;
+                if (inventoryItem.getProduct().getWeight() != null) {
+                    totalWeight = totalWeight.add(inventoryItem.getProduct().getWeight().multiply(BigDecimal.valueOf(assignQty)));
+                }
+            }
+
+            if (quantityToShip > 0) {
+                log.warn("Not enough inventory for product {}. Required: {}, Available: {}",
+                        productId, orderItem.getQuantity(), orderItem.getQuantity() - quantityToShip);
+            }
+        }
+
+        newShipment.setTotalQuantity(totalQuantity);
+        newShipment.setTotalWeight(totalWeight);
+
+        shipmentRepo.save(newShipment);
+        inventoryItemDetailRepo.saveAll(inventoryItemDetails);
+
+        return ApiResponse.<Void>builder()
+                .code(201)
+                .message("Shipment created successfully")
+                .build();
+    }
 
 }
