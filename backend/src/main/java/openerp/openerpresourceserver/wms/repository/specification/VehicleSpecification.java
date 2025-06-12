@@ -25,6 +25,7 @@ public class VehicleSpecification implements Specification<Vehicle> {
 
         String keyword = filter.getKeyword();
         String statusId = filter.getStatusId();
+        String deliveryStatusId = filter.getDeliveryStatusId();
 
         if (keyword != null && !keyword.isEmpty()) {
             predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
@@ -33,6 +34,10 @@ public class VehicleSpecification implements Specification<Vehicle> {
 
         if (statusId != null && !statusId.isEmpty()) {
             predicates.add(criteriaBuilder.equal(root.get("statusId"), statusId));
+        }
+
+        if (deliveryStatusId != null && !deliveryStatusId.isEmpty()) {
+            predicates.add(criteriaBuilder.equal(root.get("deliveryStatusId"), deliveryStatusId));
         }
 
         return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

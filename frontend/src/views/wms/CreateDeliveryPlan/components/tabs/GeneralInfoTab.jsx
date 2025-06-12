@@ -19,7 +19,7 @@ import { useWms2Data } from "services/useWms2Data";
 
 const GeneralInfoTab = () => {
   const { deliveryPlan, setDeliveryPlan, entities, setEntities } = useDeliveryPlanForm();
-  const { getMoreFacilities } = useWms2Data();
+  const { getFacilitiesWithFilters } = useWms2Data();
 
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -32,7 +32,9 @@ const GeneralInfoTab = () => {
 
     setLoading(true);
     try {
-      const response = await getMoreFacilities(currentPage, 20);
+      const response = await getFacilitiesWithFilters(currentPage, 20, {
+        
+      });
       if (response && response.code === 200) {
         setTotalPages(response.data.totalPages || 1);
 
@@ -55,7 +57,7 @@ const GeneralInfoTab = () => {
     } finally {
       setLoading(false);
     }
-  }, [getMoreFacilities, setEntities]);
+  }, [getFacilitiesWithFilters, setEntities]);
 
   // Initial load when component mounts
   useEffect(() => {
@@ -212,7 +214,7 @@ const GeneralInfoTab = () => {
                               {facility.name || facility.id}
                             </Typography>
 
-                            {facility.address && (
+                            {facility.fullAddress && (
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                   <Box
                                       component="span"
@@ -234,7 +236,7 @@ const GeneralInfoTab = () => {
                                         overflow: 'hidden'
                                       }}
                                   >
-                                    {facility.address}
+                                    {facility.fullAddress}
                                   </Typography>
                                 </Box>
                             )}
@@ -257,7 +259,7 @@ const GeneralInfoTab = () => {
                 {entities.selectedFacility && (
                     <Box mt={2}>
                       <Typography variant="body2" color="textSecondary">
-                        <strong>Địa chỉ:</strong> {entities.selectedFacility.address || "Không có thông tin"}
+                        <strong>Địa chỉ:</strong> {entities.selectedFacility.fullAddress|| "Không có thông tin"}
                       </Typography>
                       {entities.selectedFacility.phone && (
                           <Typography variant="body2" color="textSecondary" mt={1}>

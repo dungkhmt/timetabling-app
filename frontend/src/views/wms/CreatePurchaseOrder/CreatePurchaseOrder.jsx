@@ -126,10 +126,12 @@ const CreatePurchaseOrder = () => {
     };
 
     // Update item quantity
-    const updateItemQuantity = (productId, change) => {
+    const updateItemQuantity = (productId, change, directSet = false) => {
         const updatedItems = order.orderItems.map(item => {
             if (item.productId === productId) {
-                const newQuantity = Math.max(1, item.quantity + change);
+                const newQuantity = directSet 
+                    ? Math.max(1, change) // Direct set quantity
+                    : Math.max(1, item.quantity + change); // Increment/decrement
                 return { ...item, quantity: newQuantity };
             }
             return item;

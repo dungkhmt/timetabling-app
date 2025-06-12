@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DeliveryBillGetListFilter {
     private String statusId;
+    private String deliveryStatusId;
+    private String facilityId;
     private String keyword;
     private LocalDateTime startCreatedAt;
     private LocalDateTime endCreatedAt;

@@ -23,4 +23,8 @@ public class DeliveryRouteItem {
     private DeliveryBill deliveryBill;
 
     private String statusId;
+
+    private Double latitude;
+
+    private Double longitude;
 }

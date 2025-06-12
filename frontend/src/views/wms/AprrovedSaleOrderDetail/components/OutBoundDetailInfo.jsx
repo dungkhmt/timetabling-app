@@ -42,7 +42,7 @@ const StatusChip = memo(({ status }) => {
       color = "info";
       label = "Khởi tạo";
       break;
-    case "SHIPPED":
+    case "EXPORTED":
       color = "success";
       label = "Đã xuất kho";
       break;

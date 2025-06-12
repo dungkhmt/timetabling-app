@@ -189,9 +189,44 @@ const ProductTable = ({ orderTypeId = ORDER_TYPE_ID.SALES_ORDER }) => { // Add o
                         >
                           <Remove fontSize="small" />
                         </IconButton>
-                        <Typography variant="body2" sx={{ minWidth: 30, textAlign: 'center' }}>
-                          {item.quantity}
-                        </Typography>
+                        <TextField
+                            type="number"
+                            size="small"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newQuantity = Math.max(1, parseInt(e.target.value, 10) || 1);
+                              updateItemQuantity(item.productId, newQuantity, true);
+                            }}
+                            inputProps={{ 
+                              min: 1,
+                              style: { 
+                                textAlign: 'center',
+                                width: '50px',
+                                // Ẩn spinner trên Chrome, Safari, Edge
+                                MozAppearance: 'textfield',
+                              }
+                            }}
+                            sx={{ 
+                              width: 70,
+                              '& .MuiOutlinedInput-root': {
+                                '& input': {
+                                  fontSize: '0.875rem',
+                                  padding: '6px 8px',
+                                  // Ẩn spinner trên Chrome, Safari, Edge
+                                  '&::-webkit-outer-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                  '&::-webkit-inner-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                  // Firefox
+                                  MozAppearance: 'textfield',
+                                }
+                              }
+                            }}
+                          />
                         <IconButton 
                           size="small" 
                           onClick={() => updateItemQuantity(item.productId, 1)}

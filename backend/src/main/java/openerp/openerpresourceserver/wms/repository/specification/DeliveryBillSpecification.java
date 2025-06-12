@@ -26,12 +26,17 @@ public class DeliveryBillSpecification implements Specification<DeliveryBill> {
 
         String keyword = filter.getKeyword();
         String status = filter.getStatusId();
+        String facilityId = filter.getFacilityId();
         LocalDateTime startCreatedAt = filter.getStartCreatedAt();
         LocalDateTime endCreatedAt = filter.getEndCreatedAt();
 
 
         if (keyword != null && !keyword.isEmpty()) {
             predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+        }
+
+        if (facilityId != null && !facilityId.isEmpty()) {
+            predicates.add(criteriaBuilder.equal(root.get("facility").get("id"), facilityId));
         }
 
         if (status != null && !status.isEmpty()) {

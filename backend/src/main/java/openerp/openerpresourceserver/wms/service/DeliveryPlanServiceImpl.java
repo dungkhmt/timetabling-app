@@ -1,10 +1,8 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
-import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
-import openerp.openerpresourceserver.wms.constant.enumrator.DriverRole;
-import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
-import openerp.openerpresourceserver.wms.constant.enumrator.VehicleStatus;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
+import openerp.openerpresourceserver.wms.constant.enumrator.*;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.*;
@@ -21,6 +19,8 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.*;
 
 @Service
 @RequiredArgsConstructor
@@ -60,9 +60,10 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
         BigDecimal totalWeight = BigDecimal.ZERO;
         var delveryPlanOrderSeq = 1;
         for (var deliveryBill: deliveryBills) {
-            deliveryBill.setStatusId(DeliveryBillStatus.IN_PROGRESS.name());
+//            deliveryBill.setStatusId(DeliveryBillStatus.IN_PROGRESS.name());
+            deliveryBill.setDeliveryStatusId(DeliveryBillTripStatus.IN_PLAN.name());
             var deliveryPlanOrder = DeliveryPlanOrder.builder()
-                    .id(CommonUtil.getUUID())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_PLAN_ORDER_ID_PREFIX))
                     .deliveryPlanId(deliveryPlan.getId())
                     .deliveryBillId(deliveryBill.getId())
                     .deliveryPlanOrderSeqId(delveryPlanOrderSeq++)
@@ -73,9 +74,10 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
 
         var deliveryPlanShipperSeq = 1;
         for (var shipper: shippers) {
-            shipper.setStatusId(ShipperStatus.ASSIGNED.name());
+//            shipper.setStatusId(ShipperStatus.ASSIGNED.name());
+            shipper.setDeliveryStatusId(ShipperTripStatus.IN_PLAN.name());
             var deliveryPlanShipper = DeliveryPlanShipper.builder()
-                    .id(CommonUtil.getUUID())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_PLAN_SHIPPER_ID_PREFIX))
                     .deliveryPlanId(deliveryPlan.getId())
                     .shipperId(shipper.getUserLoginId())
                     .deliveryPlanShipperSeqId(deliveryPlanShipperSeq++)
@@ -86,9 +88,10 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
 
         var deliveryPlanVehicleSeq = 1;
         for(var vehicle: vehicles) {
-            vehicle.setStatusId(VehicleStatus.ASSIGNED.name());
+//            vehicle.setStatusId(VehicleStatus.ASSIGNED.name());
+            vehicle.setDeliveryStatusId(VehicleTripStatus.IN_PLAN.name());
             var deliveryPlanVehicle = DeliveryPlanVehicle.builder()
-                    .id(CommonUtil.getUUID())
+                    .id(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_PLAN_VEHICLE_ID_PREFIX))
                     .deliveryPlanId(deliveryPlan.getId())
                     .vehicleId(vehicle.getId())
                     .deliveryPlanVehicleSeqId(deliveryPlanVehicleSeq++)

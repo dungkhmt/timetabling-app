@@ -1,9 +1,10 @@
 package openerp.openerpresourceserver.wms.constant.enumrator;
 
-public enum DeliveryRouteStatus {
-    ASSIGNED,
-    UNASSIGNED,
+public enum DeliveryBillTripStatus {
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED,
+    FAILED,
+    UNASSIGNED,
+    ASSIGNED,
+    IN_PLAN,
 }

@@ -48,4 +48,6 @@ public class DeliveryBill extends BaseEntity {
     private String note;
 
     private String statusId;
+
+    private String deliveryStatusId;
 }

@@ -26,7 +26,8 @@ const VehiclesTab = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filters, setFilters] = useState({
     keyword: "",
-    statusId: "AVAILABLE"
+    statusId: "AVAILABLE",
+    deliveryStatusId : 'UNASSIGNED' 
   });
   const [error, setError] = useState("");
   const [totalCapacity, setTotalCapacity] = useState(0);
@@ -117,12 +118,12 @@ const VehiclesTab = () => {
   // Check if we have enough vehicles and capacity
   const checkVehicleRequirements = () => {
     if (deliveryPlan.vehicleIds.length < deliveryPlan.shipperIds.length) {
-      setError(`Not enough vehicles selected. You need at least ${deliveryPlan.shipperIds.length} vehicles for ${deliveryPlan.shipperIds.length} shippers.`);
+      setError(`Chưa đủ xe vận chuyển. Bạn cần ít nhất ${deliveryPlan.shipperIds.length} xe cho ${deliveryPlan.shipperIds.length} nhân viên giao hàng.`);
       return;
     }
     
     if (totalCapacity < parseFloat(deliveryPlan.totalWeight || 0)) {
-      setError(`Insufficient vehicle capacity. Total capacity (${totalCapacity}) is less than total delivery weight (${deliveryPlan.totalWeight}).`);
+      setError(`Tải trọng xe không đủ. Tổng tải trọng (${totalCapacity}) nhỏ hơn tổng trọng lượng hàng cần giao (${deliveryPlan.totalWeight}).`);
       return;
     }
     
@@ -139,7 +140,7 @@ const VehiclesTab = () => {
   return (
     <Box p={2}>
       <Typography variant="h6" gutterBottom>
-        Select Vehicles
+        Chọn phương tiện vận chuyển
       </Typography>
       
       {error && (
@@ -150,28 +151,29 @@ const VehiclesTab = () => {
       
       <Box display="flex" mb={2}>
         <TextField
-          label="Search vehicles"
+          label="Tìm kiếm phương tiện"
           variant="outlined"
           size="small"
           value={filters.keyword}
           onChange={handleFilterChange}
           fullWidth
           sx={{ mr: 2 }}
+          placeholder="Nhập tên xe, biển số..."
         />
         <Button 
           variant="contained" 
           color="primary"
           onClick={fetchVehicles}
         >
-          Search
+          Tìm kiếm
         </Button>
       </Box>
       
       <Box mb={2}>
         <Typography variant="subtitle2">
-          Selected Vehicles: {deliveryPlan.vehicleIds.length} | 
-          Total Capacity: {totalCapacity} | 
-          Required for Delivery: {deliveryPlan.totalWeight || '0'}
+          Xe đã chọn: {deliveryPlan.vehicleIds.length} | 
+          Tổng tải trọng: {totalCapacity} kg | 
+          Yêu cầu giao hàng: {deliveryPlan.totalWeight || '0'} kg
         </Typography>
       </Box>
       
@@ -181,11 +183,11 @@ const VehiclesTab = () => {
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox"></TableCell>
-                <TableCell>Vehicle Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Capacity</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Dimensions (L×W×H)</TableCell>
+                <TableCell>Tên xe</TableCell>
+                <TableCell>Loại xe</TableCell>
+                <TableCell>Tải trọng (kg)</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell>Kích thước (D×R×C)</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -207,6 +209,7 @@ const VehiclesTab = () => {
                       tabIndex={-1}
                       key={vehicle.id}
                       selected={isItemSelected}
+                      sx={{ cursor: 'pointer' }}
                     >
                       <TableCell padding="checkbox">
                         <Checkbox
@@ -214,12 +217,39 @@ const VehiclesTab = () => {
                           checked={isItemSelected}
                         />
                       </TableCell>
-                      <TableCell>{vehicle.vehicleName}</TableCell>
-                      <TableCell>{vehicle.vehicleTypeId}</TableCell>
-                      <TableCell>{vehicle.capacity}</TableCell>
-                      <TableCell>{vehicle.statusId}</TableCell>
                       <TableCell>
-                        {vehicle.length}×{vehicle.width}×{vehicle.height}
+                        <Typography variant="body2" fontWeight="medium">
+                          {vehicle.vehicleName || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {vehicle.vehicleTypeId || '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="primary">
+                          {vehicle.capacity ? `${vehicle.capacity} kg` : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography 
+                          variant="body2" 
+                          color={vehicle.statusId === 'AVAILABLE' ? 'success.main' : 'text.secondary'}
+                        >
+                          {vehicle.statusId === 'AVAILABLE' ? 'Sẵn sàng' : 
+                           vehicle.statusId === 'IN_USE' ? 'Đang sử dụng' :
+                           vehicle.statusId === 'MAINTENANCE' ? 'Bảo trì' : 
+                           vehicle.statusId || 'Không xác định'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {vehicle.length && vehicle.width && vehicle.height 
+                            ? `${vehicle.length}×${vehicle.width}×${vehicle.height}m`
+                            : '-'
+                          }
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   );
@@ -228,7 +258,9 @@ const VehiclesTab = () => {
               {!loading && entities.vehicles.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    No vehicles found
+                    <Typography variant="body2" color="text.secondary">
+                      Không tìm thấy phương tiện nào
+                    </Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -243,6 +275,10 @@ const VehiclesTab = () => {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Số hàng mỗi trang:"
+          labelDisplayedRows={({ from, to, count }) => 
+            `${from}–${to} trong tổng số ${count !== -1 ? count : `hơn ${to}`}`
+          }
         />
       </Paper>
     </Box>

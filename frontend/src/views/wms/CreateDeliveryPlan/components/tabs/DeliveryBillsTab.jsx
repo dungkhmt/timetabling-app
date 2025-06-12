@@ -24,6 +24,7 @@ import { useDeliveryPlanForm } from "../../context/DeliveryPlanFormContext";
 import { useWms2Data } from "services/useWms2Data";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { toast } from "react-toastify";
 
 // Status color mappings
 const DELIVERY_BILL_STATUSES = {
@@ -46,11 +47,17 @@ const DeliveryBillsTab = () => {
   });
 
   const fetchDeliveryBills = async () => {
+    if (!deliveryPlan.facilityId) {
+      toast.warning("Vui lòng chọn kho hàng trước khi tìm kiếm phiếu giao hàng.");
+      return;
+    }
     setLoading(true);
     try {
       const filters = {
         keyword: search,
-        status: "CREATED" // Only show created delivery bills that haven't been assigned yet
+        statusId: "CREATED",
+        deliveryStatusId: "UNASSIGNED",
+        facilityId: deliveryPlan.facilityId
       };
       
       const response = await getDeliveryBills(pagination.page, pagination.size, filters);

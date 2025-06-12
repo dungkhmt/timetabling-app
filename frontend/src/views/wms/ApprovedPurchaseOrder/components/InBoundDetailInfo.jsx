@@ -40,9 +40,9 @@ const StatusChip = memo(({ status }) => {
       color = "info";
       label = "Khởi tạo";
       break;
-    case "SHIPPED":
+    case "IMPORTED":
       color = "success";
-      label = "Đã xuất kho";
+      label = "Đã nhập kho";
       break;
     case "CANCELLED":
       color = "error";

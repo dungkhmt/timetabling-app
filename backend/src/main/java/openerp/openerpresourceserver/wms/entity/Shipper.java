@@ -20,6 +20,8 @@ public class Shipper {
 
     private String statusId;
 
+    private String deliveryStatusId;
+
     private BigDecimal lastLatitude;
 
     private BigDecimal lastLongitude;

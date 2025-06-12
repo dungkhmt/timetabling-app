@@ -33,5 +33,7 @@ public class Vehicle {
 
     private String statusId;
 
+    private String deliveryStatusId;
+
     private String description;
 }

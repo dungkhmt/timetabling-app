@@ -12,4 +12,5 @@ import lombok.Setter;
 public class VehicleGetListFilter {
     private String keyword;
     private String statusId;
+    private String deliveryStatusId;
 }

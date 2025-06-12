@@ -49,7 +49,8 @@ const ShippersTab = () => {
     try {
       const filters = {
         keyword: search,
-        statusId: ["ACTIVE"] // Only show available shippers
+        statusId: 'ACTIVE',
+        deliveryStatusId : 'UNASSIGNED' 
       };
       
       const response = await getShippers(pagination.page, pagination.size, filters);

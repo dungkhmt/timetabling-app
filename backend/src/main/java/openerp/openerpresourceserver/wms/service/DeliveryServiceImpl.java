@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.wms.service;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillTripStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryBill;
@@ -63,6 +64,7 @@ public class DeliveryServiceImpl implements DeliveryBillService {
         deliveryBill.setExpectedDeliveryDate(req.getExpectedDeliveryDate() != null ? req.getExpectedDeliveryDate() : shipment.getExpectedDeliveryDate());
         deliveryBill.setPriority(req.getPriority() != null ? req.getPriority() : 1);
         deliveryBill.setStatusId(DeliveryBillStatus.CREATED.name());
+        deliveryBill.setDeliveryStatusId(DeliveryBillTripStatus.UNASSIGNED.name());
 
         var productIds = products.stream()
                 .map(CreateDeliveryBillProduct::getProductId)

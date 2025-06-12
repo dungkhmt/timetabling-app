@@ -2,10 +2,8 @@ package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
-import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryPlanStatus;
-import openerp.openerpresourceserver.wms.constant.enumrator.ShipperStatus;
-import openerp.openerpresourceserver.wms.constant.enumrator.VehicleStatus;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
+import openerp.openerpresourceserver.wms.constant.enumrator.*;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.DeliveryRouteGetListRes;
@@ -30,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.DELIVERY_ROUTE_ID_PREFIX;
+import static openerp.openerpresourceserver.wms.constant.Constants.DELIVERY_ROUTE_ITEM_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -189,14 +190,16 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                     .orElseThrow(() -> new RuntimeException("Shipper not found: " + shipperId));
 
             // Update shipper status
-            shipper.setStatusId(ShipperStatus.IN_TRIP.name());
+//            shipper.setStatusId(ShipperStatus.IN_TRIP.name());
+            shipper.setDeliveryStatusId(ShipperTripStatus.ASSIGNED.name());
             shipperRepo.save(shipper);
 
             // Create a new delivery route for this shipper
             DeliveryRoute deliveryRoute = new DeliveryRoute();
-            deliveryRoute.setId(CommonUtil.getUUID());
+//            deliveryRoute.setId(CommonUtil.getUUID());
+            deliveryRoute.setId(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_ROUTE_ID_PREFIX));
             deliveryRoute.setDeliveryPlan(deliveryPlan);
-            deliveryRoute.setStatusId("ASSIGNED");
+            deliveryRoute.setStatusId(DeliveryRouteStatus.ASSIGNED.name());
             deliveryRoute.setAssignToShipper(shipper);
 
             // Assign a vehicle if available
@@ -215,13 +218,16 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
             openerp.openerpresourceserver.wms.entity.Vehicle vehicleEntity = vehicleMap.get(vehicles.get(vehicleId).getVehicleId());
             if (vehicleEntity != null) {
                 deliveryRoute.setAssignToVehicle(vehicleEntity);
-                vehicleEntity.setStatusId(VehicleStatus.IN_USE.name());
+//                vehicleEntity.setStatusId(VehicleStatus.IN_USE.name());
+                vehicleEntity.setDeliveryStatusId(VehicleTripStatus.ASSIGNED.name());
                 vehicleRepo.save(vehicleEntity);
             } else {
                 log.warn("No vehicle found for vehicle ID: {}", vehicleId);
             }
 
             deliveryRouteRepo.save(deliveryRoute);
+
+            // un
 
             // Create delivery route items for each node in sequence
             int seq = 1;
@@ -247,17 +253,18 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
 
                 // Create route item
                 DeliveryRouteItem routeItem = new DeliveryRouteItem();
-                routeItem.setId(CommonUtil.getUUID());
+                routeItem.setId(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_ROUTE_ITEM_ID_PREFIX));
                 routeItem.setDeliveryRoute(deliveryRoute);
                 routeItem.setDeliveryRouteSeqId(seq);
                 routeItem.setSequenceId(seq);
                 routeItem.setDeliveryBill(deliveryBill);
-                routeItem.setStatusId("ASSIGNED");
+                routeItem.setStatusId(DeliveryRouteItemStatus.ASSIGNED.name());
 
                 routeItems.add(routeItem);
 
                 // Update delivery bill status
-                deliveryBill.setStatusId(DeliveryBillStatus.ASSIGNED.name());
+//                deliveryBill.setStatusId(DeliveryBillStatus.ASSIGNED.name());
+                deliveryBill.setDeliveryStatusId(DeliveryBillTripStatus.ASSIGNED.name());
                 deliveryBillRepo.save(deliveryBill);
 
                 // Mark as assigned
@@ -286,7 +293,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                 .filter(id -> !assignedBills.containsKey(id))
                 .toList())) {
             // Mark unassigned bills
-            bill.setStatusId(DeliveryBillStatus.UNASSIGNED.name());
+            bill.setStatusId(DeliveryBillTripStatus.UNASSIGNED.name());
             deliveryBillRepo.save(bill);
         }
 

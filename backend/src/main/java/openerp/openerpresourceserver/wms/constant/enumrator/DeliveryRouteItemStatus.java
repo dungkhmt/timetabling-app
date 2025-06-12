@@ -1,6 +1,6 @@
 package openerp.openerpresourceserver.wms.constant.enumrator;
 
-public enum DeliveryRouteStatus {
+public enum DeliveryRouteItemStatus {
     ASSIGNED,
     UNASSIGNED,
     IN_PROGRESS,

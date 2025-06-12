@@ -93,17 +93,22 @@ const CreateSaleOrder = () => {
   };
 
   // Update item quantity
-  const updateItemQuantity = (productId, change) => {
+// ...existing code...
+const updateItemQuantity = (productId, change, directSet = false) => {
     const updatedItems = order.orderItems.map(item => {
-      if (item.productId === productId) {
-        const newQuantity = Math.max(1, item.quantity + change);
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
+        if (item.productId === productId) {
+            const newQuantity = directSet 
+                ? Math.max(1, change) // Direct set quantity
+                : Math.max(1, item.quantity + change); // Increment/decrement
+            return { ...item, quantity: newQuantity };
+        }
+        return item;
     }).filter(item => item.quantity > 0);
     
     setOrder(prev => ({ ...prev, orderItems: updatedItems }));
-  };
+};
+
+// ...existing code...
 
   // Update item discount - always store as specific amount
   const updateItemDiscount = (productId, discountAmount) => {
