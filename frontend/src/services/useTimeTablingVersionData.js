@@ -10,8 +10,7 @@ export const useTimeTablingVersionData = (initialSemester = null) => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  
-  // Add a dependency to re-fetch when filters change
+    // Add a dependency to re-fetch when filters change
   const fetchVersions = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -33,10 +32,16 @@ export const useTimeTablingVersionData = (initialSemester = null) => {
     }
   }, [selectedSemester, searchName]);
 
-  // Fetch versions when dependencies change
+  // Fetch versions when dependencies change, but only if at least one filter is set
   useEffect(() => {
-    fetchVersions();
-  }, [fetchVersions]);
+    // Only fetch if there's a semester selected or search name provided
+    if (selectedSemester?.semester || searchName) {
+      fetchVersions();
+    } else {
+      // Clear versions if no filters are set
+      setVersions([]);
+    }
+  }, [fetchVersions, selectedSemester, searchName]);
 
   const createVersion = useCallback(async (versionData) => {
     if (!versionData.name || !versionData.status || !versionData.semester || !versionData.userId) {

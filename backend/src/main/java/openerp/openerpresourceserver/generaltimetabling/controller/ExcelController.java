@@ -32,36 +32,6 @@ public class ExcelController {
 
     private ExcelService fileService;
 
-    // @GetMapping(value = "/download-template")
-    // public ResponseEntity<Resource> getFile() {
-    // String filename = "schedules_template.xlsx";
-    // InputStreamResource file = new InputStreamResource(fileService.load());
-    // return ResponseEntity.ok()
-    // .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-    // .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
-    // .body(file);
-    // }
-
-    // @PostMapping(value = "/upload")
-    // public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("file")
-    // MultipartFile file) {
-    // String message = "";
-    // if (ExcelHelper.hasExcelFormat(file)) {
-    // try {
-    // fileService.save(file);
-    // message = "Uploaded the file successfully: " + file.getOriginalFilename();
-    // return ResponseEntity.status(HttpStatus.OK).body(new
-    // ResponseMessage(message));
-    // } catch (Exception e) {
-    // message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-    // return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new
-    // ResponseMessage(message));
-    // }
-    // }
-    // message = "Please upload an excel file!";
-    // return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new
-    // ResponseMessage(message));
-    // }
 
     @PostMapping(value = "/upload-general")
     public ResponseEntity uploadFileGeneralCLass(@RequestParam("file") MultipartFile file,

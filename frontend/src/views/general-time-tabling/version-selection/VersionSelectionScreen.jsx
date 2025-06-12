@@ -311,14 +311,12 @@ const VersionSelectionScreen = ({
             </Button>
           </Box>
           
-          {/* Filter Section - more responsive */}
           <Grid container spacing={{ xs: 1, sm: 2 }} alignItems="center">
-            <Grid item xs={12} sm={6} md={4} lg={3}>
+            <Grid item xs={12} sm={6} md={4} lg={3}>              
               <GeneralSemesterAutoComplete
                 selectedSemester={selectedSemester}
                 setSelectedSemester={setSelectedSemester}
                 sx={{ width: "100%" }}
-                disabled
                 label="Lọc theo học kỳ"
                 size="small"
               />
@@ -411,11 +409,10 @@ const VersionSelectionScreen = ({
               border: '1px dashed rgba(0,0,0,0.1)',
             }}
           >
-            <CalendarMonth sx={{ fontSize: 70, color: 'text.disabled', mb: 2, opacity: 0.4 }} />
-            <Typography variant="h6" color="text.secondary" align="center" sx={{ maxWidth: 600, px: 2 }}>
+            <CalendarMonth sx={{ fontSize: 70, color: 'text.disabled', mb: 2, opacity: 0.4 }} />            <Typography variant="h6" color="text.secondary" align="center" sx={{ maxWidth: 600, px: 2 }}>
               {selectedSemester || searchNameInput 
                 ? `Không tìm thấy phiên bản TKB nào ${selectedSemester ? 'cho kỳ học ' + selectedSemester.semester : ''} ${searchNameInput ? 'với từ khóa "' + searchNameInput + '"' : ''}.` 
-                : "Chọn học kỳ hoặc nhập từ khóa để tìm kiếm phiên bản TKB."}
+                : "Vui lòng chọn kỳ học để xem danh sách phiên bản TKB."}
             </Typography>
             <Button 
               variant="outlined" 
@@ -625,7 +622,6 @@ const VersionSelectionScreen = ({
         )}
       </Box>
 
-      {/* Menu for version actions */}
       <Menu
         anchorEl={menuAnchorEl}
         open={Boolean(menuAnchorEl)}

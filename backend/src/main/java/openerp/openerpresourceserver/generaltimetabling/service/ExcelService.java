@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -71,7 +72,6 @@ public class ExcelService {
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;   
 
     private Map<String, Object> prepareClassDataForExport(String semester, Long versionId, Integer numberSlotsPerSession) {
-        // Sử dụng giá trị mặc định là 6 nếu numberSlotsPerSession là null
         int slots = numberSlotsPerSession != null ? numberSlotsPerSession : 6;
         
         List<TimeTablingClass> classes = timeTablingClassRepo.findAllBySemester(semester)
@@ -84,17 +84,22 @@ public class ExcelService {
             return fieldValueA.compareTo(fieldValueB);
         });
 
-        //classes = Utils.sort(classes);
 
-        // Lấy tất cả class IDs
         List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
-        
-        // Lấy các segments cho các classes này theo versionId
         List<TimeTablingClassSegment> segments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
-        classes = Utils.sort(classes,segments);
-        // Tạo map từ class ID -> các segments liên quan
+        List<TimeTablingClassSegment> validSegments = segments.stream()
+                .filter(segment -> segment.getStartTime() != null && 
+                                 segment.getEndTime() != null && 
+                                 segment.getWeekday() != null)
+                .collect(Collectors.toList());
+        
+        log.info("Total segments: {}, Valid segments (not null startTime): {}", 
+                segments.size(), validSegments.size());
+        
+        classes = Utils.sort(classes, validSegments);
+        // Tạo map từ class ID -> các segments liên quan (chỉ segments hợp lệ)
         Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
-        for (TimeTablingClassSegment segment : segments) {
+        for (TimeTablingClassSegment segment : validSegments) {
 
             if (!mClassId2ClassSegments.containsKey(segment.getClassId())) {
                 mClassId2ClassSegments.put(segment.getClassId(), new ArrayList<>());

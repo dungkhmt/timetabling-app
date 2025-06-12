@@ -332,26 +332,63 @@ public class GeneralExcelHelper {
 
             /*Start write data*/
             for (String room : periodMap.keySet()) {
-                if(room != null && !room.isEmpty()) {
-                    Row roomRow = sheet.createRow(rowIndex);
+                if(room != null && !room.isEmpty()) {                    Row roomRow = sheet.createRow(rowIndex);
                     Cell roomNameCell = roomRow.createCell(0);
                     roomNameCell.setCellValue(room);
-                    roomNameCell.setCellStyle(headerStyle);
+                    roomNameCell.setCellStyle(headerStyle);                    // First, create all cells with default style
                     for (int cellIndex = 1; cellIndex <= totalColumns; cellIndex++) {
                         Cell c = roomRow.createCell(cellIndex);
                         c.setCellStyle(boldStyle);
-                        for (OccupationClassPeriod roomPeriod : periodMap.get(room)) {
-                            sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, (int) roomPeriod.getStartPeriodIndex(), (int) roomPeriod.getEndPeriodIndex()));
-                            if(cellIndex >=  roomPeriod.getStartPeriodIndex() && cellIndex <= roomPeriod.getEndPeriodIndex()) {
-                                // If cell value is not empty, append class code with comma
-                                if (c.getStringCellValue() != null && !c.getStringCellValue().isEmpty()) {
-                                    Set<String> classCodeSet = new HashSet<>(Arrays.stream(c.getStringCellValue().split(",")).toList());
-                                    classCodeSet.add(roomPeriod.getClassCode());
-                                    c.setCellValue(String.join(",", classCodeSet));
-                                    c.setCellStyle(errorStyle);
-                                } else {
-                                    c.setCellValue(roomPeriod.getClassCode());
-                                    c.setCellStyle(roomStyle);
+                    }
+                    
+                    // Then, process periods to fill cells (NO MERGE - allow text overflow)
+                    for (OccupationClassPeriod roomPeriod : periodMap.get(room)) {
+                        for (int cellIndex = (int) roomPeriod.getStartPeriodIndex(); cellIndex <= (int) roomPeriod.getEndPeriodIndex(); cellIndex++) {
+                            if (cellIndex >= 1 && cellIndex <= totalColumns) {
+                                Cell c = roomRow.getCell(cellIndex);
+                                if (c != null) {
+                                    // Only first cell gets the class code with overflow style, subsequent cells remain empty
+                                    if (cellIndex == (int) roomPeriod.getStartPeriodIndex()) {
+                                        // If cell value is not empty, append class code with comma (for conflicts)
+                                        if (c.getStringCellValue() != null && !c.getStringCellValue().isEmpty()) {
+                                            Set<String> classCodeSet = new HashSet<>(Arrays.stream(c.getStringCellValue().split(",")).toList());
+                                            classCodeSet.add(roomPeriod.getClassCode());
+                                            c.setCellValue(String.join(",", classCodeSet));
+                                              // Create overflow style for conflict
+                                            CellStyle overflowErrorStyle = workbook.createCellStyle();
+                                            overflowErrorStyle.cloneStyleFrom(errorStyle);
+                                            overflowErrorStyle.setShrinkToFit(false); // Don't shrink text
+                                            overflowErrorStyle.setWrapText(false);    // Don't wrap text
+                                            overflowErrorStyle.setAlignment(CellStyle.ALIGN_LEFT); // Align left to allow overflow
+                                            c.setCellStyle(overflowErrorStyle);
+                                        } else {
+                                            c.setCellValue(roomPeriod.getClassCode());
+                                              // Create overflow style for normal room
+                                            CellStyle overflowRoomStyle = workbook.createCellStyle();
+                                            overflowRoomStyle.cloneStyleFrom(roomStyle);
+                                            overflowRoomStyle.setShrinkToFit(false); // Don't shrink text
+                                            overflowRoomStyle.setWrapText(false);    // Don't wrap text
+                                            overflowRoomStyle.setAlignment(CellStyle.ALIGN_LEFT); // Align left to allow overflow
+                                            c.setCellStyle(overflowRoomStyle);
+                                        }                                    } else {
+                                        if (c.getStringCellValue() == null || c.getStringCellValue().isEmpty()) {
+                                            CellStyle hiddenBorderStyle = workbook.createCellStyle();
+                                            hiddenBorderStyle.cloneStyleFrom(roomStyle);
+                                            hiddenBorderStyle.setShrinkToFit(false);
+                                            hiddenBorderStyle.setWrapText(false);
+                                            
+                                            hiddenBorderStyle.setBorderLeft((short) 0);
+                                            
+                                            // If it's the last cell in the period, keep right border
+                                            if (cellIndex == (int) roomPeriod.getEndPeriodIndex()) {
+                                                hiddenBorderStyle.setBorderRight((short) 1);
+                                            } else {
+                                                hiddenBorderStyle.setBorderRight((short) 0);
+                                            }
+                                            
+                                            c.setCellStyle(hiddenBorderStyle);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -697,19 +734,16 @@ public class GeneralExcelHelper {
             headerStyle.setBorderBottom((short) 1);
             headerStyle.setBorderLeft((short) 1);
             headerStyle.setBorderRight((short) 1);
-            headerStyle.setBorderTop((short) 1); // Ensure top border is applied
+            headerStyle.setBorderTop((short) 1); 
 
-            /*Create default cell style with borders*/
             CellStyle defaultStyle = workbook.createCellStyle();
             defaultStyle.setBorderBottom((short) 1);
             defaultStyle.setBorderLeft((short) 1);
             defaultStyle.setBorderRight((short) 1);
-            defaultStyle.setBorderTop((short) 1);            /*Header*/
-            /*Handle create header info*/
+            defaultStyle.setBorderTop((short) 1);           
             
-            // Set column widths - make schedule columns half width
             for (int i = 0; i < HEADERS.length; i++) {
-                sheet.setColumnWidth(i, 256 * 12); // 12 characters width (standard width)
+                sheet.setColumnWidth(i, 256 * 12); 
             }
             
             Row weekIndexRow = sheet.createRow(rowIndex);
@@ -720,14 +754,13 @@ public class GeneralExcelHelper {
                 c.setCellValue(classInfoString);
                 c.setCellStyle(headerStyle);
             }
-            /*Handle create header schedule info */            Row periodIndexRow = sheet.createRow(rowIndex+1);
-            int totalColumns = 7 * numberSlotsPerSession; // 7 days (Mon-Sun) * slots per day
+            Row periodIndexRow = sheet.createRow(rowIndex+1);
+            int totalColumns = 7 * numberSlotsPerSession;
             for (int i = START_COL_TO_READ_CLASS_SCHEDULE; i < START_COL_TO_READ_CLASS_SCHEDULE+totalColumns; i += numberSlotsPerSession) {
                 CellRangeAddress region = new CellRangeAddress(rowIndex, rowIndex, i, i+numberSlotsPerSession-1);
                 sheet.addMergedRegion(region);
                 
-                // Explicitly set borders for the merged region - with all 4 required parameters
-                RegionUtil.setBorderTop((short) 1, region, sheet, workbook);     // 1 = THIN border
+                RegionUtil.setBorderTop((short) 1, region, sheet, workbook);   
                 RegionUtil.setBorderBottom((short) 1, region, sheet, workbook);
                 RegionUtil.setBorderLeft((short) 1, region, sheet, workbook);
                 RegionUtil.setBorderRight((short) 1, region, sheet, workbook);
@@ -817,42 +850,62 @@ public class GeneralExcelHelper {
                         default:
                             break;
                     }
-                }
-                  /*Write the class schedule using segments*/
+                }              
+
                 for (int j = START_COL_TO_READ_CLASS_SCHEDULE; j < START_COL_TO_READ_CLASS_SCHEDULE + totalColumns; j++) {
                     Cell c = classRow.createCell(j);
-                    c.setCellStyle(defaultStyle); // Add default style with borders
-                    
-                    // Get segments for current class from the map
-                    List<TimeTablingClassSegment> segments = mClassId2ClassSegments.getOrDefault(timeTablingClass.getId(), new ArrayList<>());
-                    for (TimeTablingClassSegment segment : segments) {
-                        if (segment.getRoom() != null && segment.getWeekday() != null && segment.getStartTime() != null && segment.getEndTime() != null) {
-                            // Điều chỉnh công thức để lùi 1 cột sang trái
-                            int dayIndex = segment.getWeekday();
-                            // Chuyển đổi chỉ số ngày: 8 -> 7 (chủ nhật)
-                            if (dayIndex == 8) dayIndex = 7;
-                            else if (dayIndex > 8) continue; // Bỏ qua nếu nằm ngoài phạm vi
-                            
-                            int startCol = (dayIndex-2)*numberSlotsPerSession + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
-                            int endCol = START_COL_TO_READ_CLASS_SCHEDULE + (dayIndex-2)*numberSlotsPerSession + segment.getEndTime() - 1;                            
-                            sheet.addMergedRegion(new CellRangeAddress(
-                                rowIndex, rowIndex, 
-                                startCol, 
-                                endCol
-                            ));
-                            
-                            if (j - START_COL_TO_READ_CLASS_SCHEDULE >= (dayIndex-2)*numberSlotsPerSession + segment.getStartTime() - 1 && 
-                                j - START_COL_TO_READ_CLASS_SCHEDULE <= (dayIndex-2)*numberSlotsPerSession + segment.getEndTime() - 1) {
-                                c.setCellValue(segment.getRoom());
-                                c.setCellStyle(roomStyle);                                CellStyle specificStyle = workbook.createCellStyle();
-                                specificStyle.cloneStyleFrom(roomStyle);
-                                specificStyle.setAlignment(CellStyle.ALIGN_CENTER);
-                                specificStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
-                                specificStyle.setBorderTop((short) 1); // Adding top border
-                                c.setCellStyle(specificStyle);
+                    c.setCellStyle(defaultStyle); 
+                }
+                List<TimeTablingClassSegment> segments = mClassId2ClassSegments.getOrDefault(timeTablingClass.getId(), new ArrayList<>());
+                for (TimeTablingClassSegment segment : segments) {
+                    if (segment.getRoom() != null && segment.getWeekday() != null && segment.getStartTime() != null && segment.getEndTime() != null) {
+                        int dayIndex = segment.getWeekday();
+                        if (dayIndex == 8) dayIndex = 7;
+                        else if (dayIndex > 8) continue; 
+                        
+                        int startCol = (dayIndex-2)*numberSlotsPerSession + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
+                        int endCol = START_COL_TO_READ_CLASS_SCHEDULE + (dayIndex-2)*numberSlotsPerSession + segment.getEndTime() - 1;                        for (int col = startCol; col <= endCol; col++) {
+                            Cell segmentCell = classRow.getCell(col);
+                            if (segmentCell != null) {
+                                // Only first cell gets the room name with text overflow
+                                if (col == startCol) {
+                                    segmentCell.setCellValue(segment.getRoom());
+                                    
+                                    CellStyle firstCellStyle = workbook.createCellStyle();
+                                    firstCellStyle.cloneStyleFrom(roomStyle);
+                                    firstCellStyle.setAlignment(CellStyle.ALIGN_LEFT); // Align left to allow overflow
+                                    firstCellStyle.setShrinkToFit(false);
+                                    firstCellStyle.setWrapText(false);
+                                    
+                                    if (startCol < endCol) {
+                                        firstCellStyle.setBorderRight((short) 0);
+                                    }
+                                    
+                                    segmentCell.setCellStyle(firstCellStyle);
+                                } else {
+                                    // Subsequent cells: hide internal borders to create seamless appearance
+                                    CellStyle hiddenBorderStyle = workbook.createCellStyle();
+                                    hiddenBorderStyle.cloneStyleFrom(roomStyle);
+                                    hiddenBorderStyle.setAlignment(CellStyle.ALIGN_CENTER);
+                                    hiddenBorderStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+                                    
+                                    // Hide left border to create seamless appearance
+                                    hiddenBorderStyle.setBorderLeft((short) 0);
+                                    
+                                    // If it's the last cell in the segment, keep right border
+                                    if (col == endCol) {
+                                        hiddenBorderStyle.setBorderRight((short) 1);
+                                    } else {
+                                        hiddenBorderStyle.setBorderRight((short) 0);
+                                    }
+                                    
+                                    // Keep top and bottom borders
+                                    hiddenBorderStyle.setBorderTop((short) 1);
+                                    hiddenBorderStyle.setBorderBottom((short) 1);
+                                    
+                                    segmentCell.setCellStyle(hiddenBorderStyle);
+                                }
                             }
-
-
                         }
                     }
                 }
