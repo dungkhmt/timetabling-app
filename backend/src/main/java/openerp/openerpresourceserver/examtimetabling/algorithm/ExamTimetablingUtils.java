@@ -162,7 +162,7 @@ public class ExamTimetablingUtils {
     /**
      * Check if a solution satisfies all hard constraints
      */
-    public static boolean validateSolution(TimetablingSolution solution, TimetablingData data) {
+    public static boolean validateSolution(ExamTimetableSolution solution, TimetablingData data) {
         log.info("Validating solution...");
         
         // 1. Check that all classes are assigned exactly one room and one time slot

@@ -1,6 +1,8 @@
 package openerp.openerpresourceserver.examtimetabling.algorithm.model;
 
 import openerp.openerpresourceserver.examtimetabling.entity.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
@@ -15,7 +17,9 @@ import jakarta.persistence.criteria.CriteriaBuilder.In;
  * Extends the basic TimetablingSolution with methods specific to the exam timetabling problem
  */
 @Slf4j
-public class ExamTimetableSolution extends TimetablingSolution {
+@Data
+@AllArgsConstructor
+public class ExamTimetableSolution {
      // Maps class ID to its assignment details
     private Map<UUID, AssignmentDetails> assignedClasses;
     
@@ -57,7 +61,6 @@ public class ExamTimetableSolution extends TimetablingSolution {
     /**
      * Calculate metrics for the current solution based on the preprocessed data
      */
-    @Override
     public void calculateMetrics(TimetablingData data) {
         // Calculate group spacing violations (1st priority)
         calculateGroupSpacingViolations(data);
@@ -322,7 +325,6 @@ public class ExamTimetableSolution extends TimetablingSolution {
     /**
      * Check if the solution is complete (all classes assigned)
      */
-    @Override
     public boolean isComplete() {
         // In a complete solution, all course IDs should have an assigned time slot
         for (String courseId : getCourseTimeSlotAssignments().keySet()) {
@@ -349,10 +351,24 @@ public class ExamTimetableSolution extends TimetablingSolution {
     /**
      * Override the add assignment method to update usage counts
      */
-    @Override
     public void addAssignment(UUID classId, UUID timeSlotId, String roomId, 
                               String courseId, LocalDate date) {
-        super.addAssignment(classId, timeSlotId, roomId, courseId, date);
+        AssignmentDetails details = new AssignmentDetails();
+        details.setTimeSlotId(timeSlotId);
+        details.setRoomId(roomId);
+        details.setDate(date);
+        
+        assignedClasses.put(classId, details);
+        courseTimeSlotAssignments.put(courseId, timeSlotId);
+        
+        // Update time slot assignments
+        timeSlotClassAssignments
+            .computeIfAbsent(timeSlotId, k -> new ArrayList<>())
+            .add(classId);
+        
+        // Update usage counts
+        roomUsageCounts.put(roomId, roomUsageCounts.getOrDefault(roomId, 0) + 1);
+        timeSlotUsageCounts.put(timeSlotId, timeSlotUsageCounts.getOrDefault(timeSlotId, 0) + 1);
         
         // Update course time slot assignments
         getCourseTimeSlotAssignments().put(courseId, timeSlotId);
