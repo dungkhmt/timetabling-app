@@ -607,13 +607,69 @@ class GroupLTChildrenBTSchedulerSummerSemesterVersion3 extends GroupSchedulerSum
         return true;
     }
 }
-
+class ClassSolver{
+    SummerSemesterSolverVersion3 baseSolver;
+    ModelResponseTimeTablingClass cls;
+    int[] days;
+    int room;
+    List<ClassSegment> CS;
+    List<int[]> domains;
+    int[] x_slot;
+    int[] solutionSlot = null;
+    boolean found = false;
+    public ClassSolver(ModelResponseTimeTablingClass cls, int[] days, int room, SummerSemesterSolverVersion3 baseSolver){
+        this.baseSolver = baseSolver;
+        this.cls = cls; this.days = days;
+        this.room = room;
+        CS = baseSolver.mClassId2ClassSegments.get(cls.getId());
+        domains = new ArrayList<>();
+        for(ClassSegment cs: CS){
+            int[] d = new int[2];// consider 2 options: tiet dau va tiet cuoi
+            d[0] = 1;
+            d[1] = Constant.slotPerCrew - cs.getDuration() + 1;
+            domains.add(d);
+        }
+        x_slot = new int[CS.size()];
+    }
+    private void solution(){
+        boolean ok = true;
+        for(int i = 0; i < CS.size(); i++){
+            if(!baseSolver.roomSolver.checkValidSlotAndRoom(CS.get(i),x_slot[i],room)){
+                ok = false; break;
+            }
+        }
+        if(ok){
+            solutionSlot = new int[CS.size()];
+            for(int i = 0; i < CS.size(); i++) solutionSlot[i] = x_slot[i];
+            found = true;
+        }
+    }
+    private void tryClassSegment(int i){
+        if(found) return;
+        for(int s: domains.get(i)){
+            x_slot[i] = s;
+            if(i == CS.size()-1){
+                solution();
+            }else{
+                tryClassSegment(i+1);
+            }
+        }
+    }
+    public void solve(){
+        found = false; solutionSlot = null;
+        tryClassSegment(0);
+    }
+}
+@Log4j2
 class ClassClusterScheduleTimeSlotRoomSolver{
     SummerSemesterSolverVersion3 baseSolver = null;
     List<Long> classIds;
+    int session;
     List<ModelResponseTimeTablingClass> classes;
-    public ClassClusterScheduleTimeSlotRoomSolver(List<Long> classIds, SummerSemesterSolverVersion3 baseSolver){
+    Set<Long> unScheduledClassIds;
+    public ClassClusterScheduleTimeSlotRoomSolver(List<Long> classIds, int session, SummerSemesterSolverVersion3 baseSolver){
         this.classIds = classIds; this.baseSolver = baseSolver;
+        this.session = session;
     }
     public boolean solve(){
         ModelResponseTimeTablingClass[] a = new ModelResponseTimeTablingClass[classIds.size()];
@@ -638,8 +694,39 @@ class ClassClusterScheduleTimeSlotRoomSolver{
                 for(int r: cs.getDomainRooms()) candRooms.add(r);
             }
         }
+        int[] sortedRooms = baseSolver.sortCapacityRoom(candRooms,true);
+
+        unScheduledClassIds = new HashSet<>();
         for(ModelResponseTimeTablingClass cls: a){
-            
+            List<ClassSegment> CS = baseSolver.mClassId2ClassSegments.get(cls.getId());
+            int selectedRoom = -1;
+            int[] selectedDays = null;
+            int[] selectedSlots = null;
+            for(int r: sortedRooms){
+                for(int[] days: baseSolver.optionDays.get(CS.size())){
+                    ClassSolver classSolver = new ClassSolver(cls,days,r,baseSolver);
+                    classSolver.solve();
+                    if(classSolver.found){
+                        selectedRoom = r; selectedDays = days; selectedSlots = classSolver.solutionSlot;
+                    }
+                    if(selectedRoom != -1){
+                        break;
+                    }
+                }
+                if(selectedRoom != -1){
+                    break;
+                }
+            }
+            if(selectedRoom != -1) {// found solution slot-room for cls
+                for (int i = 0; i < CS.size(); i++) {
+                    ClassSegment cs = CS.get(i);
+                    int sl = new DaySessionSlot(selectedDays[i],session,selectedSlots[i]).hash();
+                    //baseSolver.assignTimeSlotRoom(cs,sl,selectedRoom);
+                    baseSolver.roomSolver.assignTimeSlotRoom(cs,sl,selectedRoom);
+                }
+            }else{
+                unScheduledClassIds.add(cls.getId());
+            }
         }
         return true;
     }
@@ -667,6 +754,20 @@ class ClassBasedRoomAssignmentSolverVersion3{
         }
         return true;
     }
+    public boolean checkValidSlotAndRoom(ClassSegment cs, int sl, int r){
+        //if(baseSolver.solutionSlot.get(cs.getId())==null) return false;
+        //int sl = baseSolver.solutionSlot.get(cs.getId());
+        if(sl >= 0){
+            for(int d = 0; d < cs.getDuration(); d++){
+                if(roomSlotOccupation[r][sl+d] > 0) return false;
+            }
+        }
+        return true;
+    }
+    //public boolean checkValidRoom(ModelResponseTimeTablingClass cls, int r){
+
+    //}
+
     public int selectRoom4MatchedClassSegment(ClassSegment cs, ClassSegment mcs, List<Integer> sortedRooms){
         int sel_room = -1; int maxOcc = -1;
         for(int r: sortedRooms){
@@ -992,6 +1093,31 @@ public class SummerSemesterSolverVersion3 implements Solver {
         mRoom2AssignedClassSegments = new HashMap<>();
         for(int r = 0; r < I.getRoomCapacity().length; r++) mRoom2AssignedClassSegments.put(r,new ArrayList<>());
     }
+
+    public int[] sortCapacityRoom(Set<Integer> rooms, boolean desc){
+        int[] res = new int[rooms.size()];
+        int idx = -1;
+        for(int r: rooms){ idx++; res[idx] = r; }
+        for(int i = 0; i < res.length; i++){
+            for(int j = i+1; j < res.length; j++){
+                boolean swap = false;
+
+                if(desc){// decreasing order
+                    if(I.getRoomCapacity()[res[i]] < I.getRoomCapacity()[res[j]]){
+                        swap = true;
+                    }
+                }else{
+                    if(I.getRoomCapacity()[res[i]] > I.getRoomCapacity()[res[j]]){
+                        swap = true;
+                    }
+                }
+                if(swap){
+                    int tmp = res[i]; res[i] = res[j]; res[j] = tmp;
+                }
+            }
+        }
+        return res;
+    }
     public void printRoomsUsed(){
         Set<Classroom> R = new HashSet<>();
         for(int id: solutionRoom.keySet()){
@@ -1038,7 +1164,7 @@ public class SummerSemesterSolverVersion3 implements Solver {
         //log.info("assignTimeSlotRoom[" + cs.getId() + "], classId " + cs.getClassId() + " course " + cs.getCourseCode() + " assigned to room used index = " + room + " name = " + W.mIndex2Room.get(room).getClassroom() + " capacity " + W.mIndex2Room.get(room).getQuantityMax());
         for(int s = 0; s <= cs.getDuration()-1; s++){
             int sl = timeSlot + s;
-
+            //roomSolver.roomSlotOccupation[sl][room] = 1;
             I.getRoomOccupations()[room].add(sl);
             os = os + sl + ",";
             //log.info("assignTimeSlotRoom[" + cs.getId() + "], time-slot = " + timeSlot + ", room = " + room
