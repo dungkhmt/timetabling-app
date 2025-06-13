@@ -20,7 +20,9 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +64,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Autowired
     private ClassroomRepo classroomRepo;
+
+    @Autowired
+    private TimeTablingVersionRepo timeTablingVersionRepo;
 
     @Transactional
     private void createClassSegment(TimeTablingClass gc, List<Integer> seqSlots, Long versionId) {
@@ -553,6 +558,68 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                         .foreignLecturer(c.getForeignLecturer())
                         .build()
                 ).toList();
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I) {
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
+        if(ver == null) return null;
+        String semester = ver.getSemester();
+        List<ModelResponseTimeTablingClass> L = getTimeTablingClassDtos(semester,I.getGroupId(),I.getVersionId());
+        log.info("advancedFilter, minQty = " + I.getFilterMinQty() + " maxQty = " +
+                I.getFilterMaxQty() + " courseCodes = " + I.getFilterCourseCodes() +
+                " Class Types = " + I.getFilterClassTypes() + " version = " +
+                I.getVersionId() + " L.sz = " + L.size());
+        String[] courseCodes = null;
+        if(I.getFilterCourseCodes()!=null && !I.getFilterCourseCodes().equals(""))
+            courseCodes = I.getFilterCourseCodes().split(";");
+        String[] classTypes = null;
+        if(I.getFilterClassTypes()!=null && !I.getFilterClassTypes().equals(""))
+            classTypes = I.getFilterClassTypes().split(";");
+
+        List<ModelResponseTimeTablingClass> res = new ArrayList<>();
+        int minQty = 0;
+        try{
+            minQty = Integer.valueOf(I.getFilterMinQty());
+        }catch (Exception e){ e.printStackTrace();}
+        int maxQty = 100000000;
+        try{
+            maxQty = Integer.valueOf(I.getFilterMaxQty());
+        }catch (Exception e){ e.printStackTrace();}
+
+        for(ModelResponseTimeTablingClass cls: L){
+            boolean ok = true;
+            if(cls.getQuantityMax() < minQty || cls.getQuantityMax() > maxQty) ok = false;
+            if(!ok) continue;
+            if(courseCodes != null){
+                ok = false;
+                log.info("advancedFilter, consider cls course " + cls.getModuleCode());
+                for(String c: courseCodes){
+                    log.info("advancedFilter, consider cls course " + cls.getModuleCode() + " c.trim = "+ c.trim());
+                    if(cls.getModuleCode().contains(c.trim())){
+                        ok = true; break;
+                    }
+                }
+            }
+            if(!ok) continue;
+            if(classTypes!=null){
+                ok = false;
+                for(String ct: classTypes){
+                    log.info("advancedFilter, consider cls course " + cls.getModuleCode() + " class type trim = " + ct.trim());
+                    if(cls.getClassType().contains(ct.trim())){
+                        ok = true; break;
+                    }
+                }
+            }
+            if(!ok) continue;
+             if(ok){
+                res.add(cls);
+                log.info("advancedFilter, qty = " + cls.getQuantityMax() + " minQty = " +
+                        minQty + " maxQty = " + maxQty + " add " + cls.str() + " res.size = " + res.size());
+            }
+        }
+        return res;
+
     }
 
     @Override

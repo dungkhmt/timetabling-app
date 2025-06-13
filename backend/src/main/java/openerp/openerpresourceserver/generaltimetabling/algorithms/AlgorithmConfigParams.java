@@ -12,4 +12,6 @@ public class AlgorithmConfigParams {
     public String USED_ROOM_PRIORITY = "Y";
 
     public double roomCapRate = 1.05;//1.1;//1.15;
+
+    public int thresholdLargeClass = 150; // qty at least 150 students
 }

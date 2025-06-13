@@ -19,6 +19,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
@@ -205,6 +206,11 @@ public class TimeTablingClassController {
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_2);
         res.add(Constants.ONE_CLASS_PER_COURSE_GREEDY_3);
 
+        return ResponseEntity.ok().body(res);
+    }
+    @PostMapping("/advanced-filter")
+    public ResponseEntity<?> advancedFilter(Principal principal, @RequestBody ModelInputAdvancedFilter I){
+        List<ModelResponseTimeTablingClass> res = timeTablingClassService.advancedFilter(I);
         return ResponseEntity.ok().body(res);
     }
     @PostMapping("/auto-schedule-timeslot-room")

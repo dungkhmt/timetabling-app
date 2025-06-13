@@ -82,7 +82,8 @@ public class MultiClusterSolver implements Solver {
                     I.getDomains(),
                     I.getRooms(),
                     I.getRoomOccupations(),
-                    C
+                    C,
+                    I.getParams()
             );
             MapDataScheduleTimeSlotRoomWrapper W = new MapDataScheduleTimeSlotRoomWrapper(IC,D.mClassSegment2Class,D.mClassSegment2RoomReservation,D.mIndex2Room,null);
             if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1))

@@ -15,6 +15,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.Class
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentRoomReservationSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolverVersion2;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.summersemester.SummerSemesterSolverVersion3;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidClassStudentQuantityException;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
@@ -866,7 +867,7 @@ public class V2ClassScheduler {
             //log.info("mapData collect class-segment[" + i + "]: " + classSegments[i]);
         }
         //log.info("mapData, classSegments.length = " + classSegments.length + " listClassSegments.sz = " + listClassSegments.size());
-        MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments);
+        MapDataScheduleTimeSlotRoom data = new MapDataScheduleTimeSlotRoom(roomCapacity,maxTeacherOfCourse,conflict,D,roomPriority,roomOccupation,listClassSegments,algoParams);
 
         MapDataScheduleTimeSlotRoomWrapper DW = new MapDataScheduleTimeSlotRoomWrapper(data,mClassSegment2Class,mClassSegment2RoomReservation,mIndex2Room,classes);
 
@@ -1049,7 +1050,8 @@ public class V2ClassScheduler {
         Solver solver = null;
         if(algorithm.equals(Constants.SUMMER_SEMESTER)){
             //solver = new SummerSemesterSolver(D);
-            solver = new SummerSemesterSolverVersion2(D);
+            //solver = new SummerSemesterSolverVersion2(D);
+            solver = new SummerSemesterSolverVersion3(D);
         }else {
             MultiClusterSolver msolver = new MultiClusterSolver(D);
             msolver.oneClusterAlgorithm = algorithm;

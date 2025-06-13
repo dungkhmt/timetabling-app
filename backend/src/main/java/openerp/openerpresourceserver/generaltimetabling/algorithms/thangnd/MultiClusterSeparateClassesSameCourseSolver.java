@@ -70,7 +70,8 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
                     I.getDomains(),
                     I.getRooms(),
                     I.getRoomOccupations(),
-                    C
+                    C,
+                    I.getParams()
             );
             oneClusterSolver = new OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver(IC);
 

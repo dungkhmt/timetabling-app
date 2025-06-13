@@ -73,7 +73,8 @@ public class FullClusters implements Solver {
                     I.getDomains(),
                     I.getRooms(),
                     I.getRoomOccupations(),
-                    cluster
+                    cluster,
+                    I.getParams()
             );
 
             ACOTimetableSolver acoSolver = new ACOTimetableSolver(ICluster);

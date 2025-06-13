@@ -11,6 +11,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public interface TimeTablingClassService {
     List<TimeTablingClassSegment> createClassSegmentForSummerSemester(CreateClassSegmentRequest I);
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId);
+    public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
 
     List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds, Long versionId);
 

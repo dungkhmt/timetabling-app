@@ -25,6 +25,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
@@ -596,7 +597,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Transactional
     @Override
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule, Long versionId) {
-        synchronizeCourses();
+        //synchronizeCourses();
         log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
         TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
@@ -616,6 +617,13 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
         log.info("autoScheduleTimeSlotRoom, nb general classes = " + foundClasses.size());
         List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(semester);
+
+        List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
+        for(ModelResponseTimeTablingClass cls : foundClasses){
+            if(cls.getQuantityMax() >= 150) selectedClassesOfSemester.add(cls);
+        }
+        foundClasses = selectedClassesOfSemester;
+
         List<Long> ids = allClassesOfSemester.stream().map(gc -> gc.getId()).toList();
         //List<GeneralClass> autoScheduleClasses = V2ClassScheduler.autoScheduleTimeSlot(foundClasses, timeLimit);
 
@@ -654,6 +662,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
         }
         return foundClasses;
     }
+
+
 
     @Override
     public List<GeneralClass> autoSchedule(String semester, int timeLimit) {

@@ -42,9 +42,17 @@ const GeneralScheduleScreen = () => {
   const [newVersionName, setNewVersionName] = useState("");
   const [newVersionStatus, setNewVersionStatus] = useState("DRAFT");
   const[isDeletingBySemester, setIsDeletingBySemester] = useState(false);
-  const[isCreateBySemester, setIsCreateBySemester] = useState(false);  const[openSearchRoom, setOpenSearchRoom] = useState(false);
+  const[isCreateBySemester, setIsCreateBySemester] = useState(false);  
+  const[openSearchRoom, setOpenSearchRoom] = useState(false);
   const[searchRoomCapacity, setSearchRoomCapacity] = useState(90);
   const[searchRoomData, setSearchRoomData] = useState([]);
+
+  const[openAdvancedFilter, setOpenAdvancedFilter] = useState(false);
+  const[filterMinQty, setFilterMinQty] = useState(0);
+  const[filterMaxQty, setFilterMaxQty] = useState(0);
+  const[filterCourseCodes, setFilterCourseCodes] = useState("");
+  const[filterClassTypes, setFilterClassTypes] = useState("");
+  
   
   // New approach: single form + time slot list
   const[currentTimeSlot, setCurrentTimeSlot] = useState({
@@ -354,6 +362,49 @@ const GeneralScheduleScreen = () => {
     setSearchRoomData([]);
     setOpenSearchRoom(true);
   };
+  const handleClickAdvancedFilter = () => {
+      setOpenAdvancedFilter(true);
+  }
+  
+  const handleChangeFilterMaxQty = (e) => {
+    setFilterMaxQty(e.target.value);
+  }
+  const handleChangeFilterMinQty = (e) => {
+    setFilterMinQty(e.target.value);
+  }
+  const handleChangeCourseCodes = (e) => {
+    setFilterCourseCodes(e.target.value);
+  }
+  const handleChangeClassTypes = (e) => {
+    setFilterClassTypes(e.target.value);
+  }
+  
+  const performAdvancedFilter = () => {
+    //alert('advanced filter minQty = ' + filterMinQty + ' filterMaxQty = ' + filterMaxQty);
+    let body = {
+      filterMinQty: filterMinQty,
+      filterMaxQty: filterMaxQty,
+      filterCourseCodes: filterCourseCodes,
+      filterClassTypes: filterClassTypes,
+      versionId: selectedVersion.id
+    };
+
+    request(
+      "post",
+      "/general-classes/advanced-filter",
+      (res) => {
+        console.log('Advanced Filter: ', res.data);
+        //setSearchRoomData(res.data);
+        toast.success("Advanced Filter ");
+      },
+      {
+        onError: (e) => {
+          toast.error("Có lỗi khi advanced filter");
+        }
+      },
+      body
+    );
+  }
 
   const performSearchRoom = () => {
     const generatedTimeSlots = generateTimeSlotString();
@@ -690,6 +741,21 @@ const GeneralScheduleScreen = () => {
                     </div>
                   ) : null}
   
+  <Button
+                  startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
+                  sx={{ 
+                    minWidth: '120px',
+                    textTransform: 'none',
+                    fontSize: '14px'
+                  }}
+                  disabled={isCreateBySemester || !states.selectedSemester || states.loading}
+                  onClick={handleClickAdvancedFilter}
+                  variant="contained"
+                  color="secondary"
+                >
+                  Advanced Filter
+                </Button>
+
                 <Button
                   startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
                   sx={{ 
@@ -702,6 +768,7 @@ const GeneralScheduleScreen = () => {
                   variant="contained"
                   color="secondary"
                 >Tìm kiếm phòng</Button>
+
                 <Button
                   startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
                   sx={{ 
@@ -938,6 +1005,101 @@ const GeneralScheduleScreen = () => {
           </Button>
         </DialogActions>
       </Dialog>      
+      <Dialog
+        open={openAdvancedFilter}
+        onClose={() => setOpenAdvancedFilter(false)}
+      >
+        <DialogTitle>Advanced Filter</DialogTitle>
+        <DialogContent>
+          <TextField
+              label="SL Min"
+              value={filterMinQty}
+              onChange={handleChangeFilterMinQty}
+              variant="outlined"
+              type="number"
+              size="small"
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  height: '44px'
+                }
+              }}
+              InputProps={{
+                inputProps: { min: 1 }
+              }}
+            />
+            <TextField
+              label="SL Min"
+              value={filterMaxQty}
+              onChange={handleChangeFilterMaxQty}
+              variant="outlined"
+              type="number"
+              size="small"
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  height: '44px'
+                }
+              }}
+              InputProps={{
+                inputProps: { min: 1 }
+              }}
+            />
+          <TextField
+              label="Course Codes"
+              value={filterCourseCodes}
+              onChange={handleChangeCourseCodes}
+              variant="outlined"
+              //type="number"
+              size="small"
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  height: '44px'
+                }
+              }}
+              //InputProps={{
+              //  inputProps: { min: 1 }
+              //}}
+            />
+            <TextField
+              label="Class Types"
+              value={filterClassTypes}
+              onChange={handleChangeClassTypes}
+              variant="outlined"
+              //type="number"
+              size="small"
+              sx={{ 
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  height: '44px'
+                }
+              }}
+              //InputProps={{
+              //  inputProps: { min: 1 }
+              //}}
+            />
+        </DialogContent>
+        <DialogActions sx={{ padding: "16px", gap: "8px" }}>
+          <Button
+            onClick={() => setOpenAdvancedFilter(false)}
+            variant="outlined"
+            sx={{ minWidth: "80px", padding: "6px 16px" }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={performAdvancedFilter}
+            color="error"
+            variant="contained"
+            autoFocus
+            sx={{ minWidth: "80px", padding: "6px 16px" }}
+          >
+            Filter
+          </Button>
+        </DialogActions>
+      </Dialog>      
+      
       <Dialog
         open={openSearchRoom}
         onClose={() => setOpenSearchRoom(false)}

@@ -608,6 +608,42 @@ class GroupLTChildrenBTSchedulerSummerSemesterVersion3 extends GroupSchedulerSum
     }
 }
 
+class ClassClusterScheduleTimeSlotRoomSolver{
+    SummerSemesterSolverVersion3 baseSolver = null;
+    List<Long> classIds;
+    List<ModelResponseTimeTablingClass> classes;
+    public ClassClusterScheduleTimeSlotRoomSolver(List<Long> classIds, SummerSemesterSolverVersion3 baseSolver){
+        this.classIds = classIds; this.baseSolver = baseSolver;
+    }
+    public boolean solve(){
+        ModelResponseTimeTablingClass[] a = new ModelResponseTimeTablingClass[classIds.size()];
+        for(int i = 0; i < classIds.size(); i++){
+            Long id = classIds.get(i);
+            ModelResponseTimeTablingClass cls = baseSolver.mClassId2Class.get(id);
+            a[i] = cls;
+        }
+        // sort
+        for(int i = 0; i < a.length; i++)
+        {
+            for(int j = i+1 ; j < a.length; j++){
+                if(a[i].getQuantityMax() < a[j].getQuantityMax()){
+                    ModelResponseTimeTablingClass t = a[i]; a[i] = a[j]; a[j] = t;
+                }
+            }
+        }
+        Set<Integer> candRooms = new HashSet<>();
+        for(Long id: classIds){
+            List<ClassSegment> CS = baseSolver.mClassId2ClassSegments.get(id);
+            for(ClassSegment cs: CS){
+                for(int r: cs.getDomainRooms()) candRooms.add(r);
+            }
+        }
+        for(ModelResponseTimeTablingClass cls: a){
+            
+        }
+        return true;
+    }
+}
 @Log4j2
 class ClassBasedRoomAssignmentSolverVersion3{
     SummerSemesterSolverVersion3 baseSolver;
@@ -844,7 +880,10 @@ class ClassBasedRoomAssignmentSolverVersion3{
                 log.info("refineRooms, gap = " + gap + " BREAK"); break;
             }
             int selRoom = findBestFitRoom(cs);
-
+            if(selRoom < 0){
+                log.info("refineRooms, findBestFitRoom return -1 -> BREAK");
+                break;
+            }
             int newGap = baseSolver.I.getRoomCapacity()[selRoom] - cs.nbStudents;
             log.info("refineRooms, found new room with newGap = " + newGap);
             if(newGap > 30){
@@ -1228,6 +1267,27 @@ public class SummerSemesterSolverVersion3 implements Solver {
         }
         return true;
     }
+    private boolean scheduleLargeClass(List<ClassSegment> L, int session, boolean assignRoom, int threshold){
+        List<ClassSegment> largeClassSegments = new ArrayList<>();
+        for(ClassSegment cs: L){
+            Long classId = cs.getClassId();
+            ModelResponseTimeTablingClass cls = mClassId2Class.get(classId);
+            if(cls.getQuantityMax() >= threshold){
+                largeClassSegments.add(cs);
+            }
+        }
+        for(ClassSegment cs: largeClassSegments){
+            L.remove(cs);
+        }
+        log.info("scheduleLargeClass, start solve large classes sz = " + largeClassSegments.size());
+        boolean ok = scheduleGroup(largeClassSegments,session,assignRoom);
+        log.info("scheduleLargeClass, finish solve large, remain classes sz = " + largeClassSegments.size());
+        for(ClassSegment cs: largeClassSegments){
+            //L.remove(cs);
+            L.add(cs);
+        }
+        return true;
+    }
     private boolean scheduleGroup(List<ClassSegment> L, int session, boolean assignRoom) {
         GroupSchedulerSummerSemesterVersion3 GSSS = new GroupSchedulerSummerSemesterVersion3(this,L,session);
         boolean ok = GSSS.solve();
@@ -1426,6 +1486,8 @@ public class SummerSemesterSolverVersion3 implements Solver {
             MI[session] = new ArrayList<>();
             SSH[session] = new ArrayList<>();
         }
+
+
         for(int session = 0; session <= 1; session++) {
             Set<Long> ids = morningClassIds;
             if(session == 1) ids = afternoonClassIds;
@@ -1456,6 +1518,21 @@ public class SummerSemesterSolverVersion3 implements Solver {
                     "H = " + CH[session].size() + " ME = " + ME[session].size() + " ETEE = " + ETEE[session].size()
                     + " EM = " + EM[session].size() + " ED = " + ED[session].size() + " MI = " + MI[session].size() + " SSH = " + SSH[session].size() +
                     " -> SUM = " + (CH[session].size() + ME[session].size() + ETEE[session].size() + EM[session].size() + ED[session].size() + MI[session].size() + SSH[session].size()));
+
+            log.info("solve large classes CH size = " + CH[session].size());
+            scheduleLargeClass(CH[session],session,false,I.getParams().thresholdLargeClass);
+            log.info("solve large classes ME size = " + ME[session].size());
+            scheduleLargeClass(ME[session],session,false,I.getParams().thresholdLargeClass);
+            log.info("solve large classes ETEE size = " + ETEE[session].size());
+            scheduleLargeClass(ETEE[session],session,false,I.getParams().thresholdLargeClass);
+            log.info("solve large classes EM size = " + EM[session].size());
+            scheduleLargeClass(EM[session],session,false,I.getParams().thresholdLargeClass);
+            log.info("solve large classes ED size = " + ED[session].size());
+            scheduleLargeClass(ED[session],session,false,I.getParams().thresholdLargeClass);
+            log.info("solve large classes MI size = " + MI[session].size());
+            scheduleLargeClass(MI[session],session,false,I.getParams().thresholdLargeClass);
+            log.info("solve large classes SSH size = " + SSH[session].size());
+            scheduleLargeClass(SSH[session],session,false,I.getParams().thresholdLargeClass);
 
 
             log.info("solve group CH size = " + CH[session].size());
@@ -2050,5 +2127,10 @@ public class SummerSemesterSolverVersion3 implements Solver {
     @Override
     public void printSolution() {
 
+    }
+
+    public static void main(String[] args){
+        String c = " ABC  ";
+        System.out.println(c.trim());
     }
 }

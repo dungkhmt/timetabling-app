@@ -65,7 +65,8 @@ public class CourseBasedMultiClusterGreedySolver implements Solver {
                     I.getDomains(),
                     I.getRooms(),
                     I.getRoomOccupations(),
-                    C
+                    C,
+                    I.getParams()
             );
 
             CourseBasedConnectedClusterGreedySolver solver = new CourseBasedConnectedClusterGreedySolver(IC);

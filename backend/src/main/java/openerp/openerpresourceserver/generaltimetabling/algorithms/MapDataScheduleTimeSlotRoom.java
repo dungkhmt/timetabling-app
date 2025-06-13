@@ -39,5 +39,6 @@ public class MapDataScheduleTimeSlotRoom {
     //ClassSegment[] classSegments;
     List<ClassSegment> classSegments;
 
+    AlgorithmConfigParams params;
 }
 
