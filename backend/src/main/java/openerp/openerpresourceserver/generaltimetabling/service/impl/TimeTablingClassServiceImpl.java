@@ -585,11 +585,17 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         int maxQty = 100000000;
         try{
             maxQty = Integer.valueOf(I.getFilterMaxQty());
-        }catch (Exception e){ e.printStackTrace();}
-
-        for(ModelResponseTimeTablingClass cls: L){
+        }catch (Exception e){ e.printStackTrace();}        for(ModelResponseTimeTablingClass cls: L){
             boolean ok = true;
-            if(cls.getQuantityMax() < minQty || cls.getQuantityMax() > maxQty) ok = false;
+            // Check quantityMax null safety
+            Integer classQuantityMax = cls.getQuantityMax();
+            if(classQuantityMax == null) {
+                // Skip classes with null quantityMax, or treat as 0
+                log.info("advancedFilter, skipping class " + cls.getClassCode() + " with null quantityMax");
+                continue;
+            }
+            
+            if(classQuantityMax < minQty || classQuantityMax > maxQty) ok = false;
             if(!ok) continue;
             if(courseCodes != null){
                 ok = false;
@@ -611,10 +617,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     }
                 }
             }
-            if(!ok) continue;
-             if(ok){
+            if(!ok) continue;             if(ok){
                 res.add(cls);
-                log.info("advancedFilter, qty = " + cls.getQuantityMax() + " minQty = " +
+                log.info("advancedFilter, qty = " + classQuantityMax + " minQty = " +
                         minQty + " maxQty = " + maxQty + " add " + cls.str() + " res.size = " + res.size());
             }
         }

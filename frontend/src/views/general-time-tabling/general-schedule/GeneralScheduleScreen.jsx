@@ -42,25 +42,26 @@ const GeneralScheduleScreen = () => {
   const [newVersionName, setNewVersionName] = useState("");
   const [newVersionStatus, setNewVersionStatus] = useState("DRAFT");
   const[isDeletingBySemester, setIsDeletingBySemester] = useState(false);
-  const[isCreateBySemester, setIsCreateBySemester] = useState(false);  
-  const[openSearchRoom, setOpenSearchRoom] = useState(false);
+  const[isCreateBySemester, setIsCreateBySemester] = useState(false);    const[openSearchRoom, setOpenSearchRoom] = useState(false);
   const[searchRoomCapacity, setSearchRoomCapacity] = useState(90);
   const[searchRoomData, setSearchRoomData] = useState([]);
+  const[roomNameFilter, setRoomNameFilter] = useState("");
+  const[filteredRoomData, setFilteredRoomData] = useState([]);
 
   const[openAdvancedFilter, setOpenAdvancedFilter] = useState(false);
   const[filterMinQty, setFilterMinQty] = useState(0);
-  const[filterMaxQty, setFilterMaxQty] = useState(0);
-  const[filterCourseCodes, setFilterCourseCodes] = useState("");
+  const[filterMaxQty, setFilterMaxQty] = useState(0);  const[filterCourseCodes, setFilterCourseCodes] = useState("");
   const[filterClassTypes, setFilterClassTypes] = useState("");
+  const[isFilterApplied, setIsFilterApplied] = useState(false);
+  const[originalClasses, setOriginalClasses] = useState([]);
   
   
-  // New approach: single form + time slot list
   const[currentTimeSlot, setCurrentTimeSlot] = useState({
     session: '',
     day: '',
     startPeriod: '',
     duration: '',
-    logic: 'OR' // Default logic
+    logic: 'OR' 
   });
   const[timeSlotList, setTimeSlotList] = useState([]);
 
@@ -118,17 +119,28 @@ const GeneralScheduleScreen = () => {
 
   const handleBackToVersionSelection = () => {
     setShowVersionSelection(true);
-  };
-
-  useEffect(() => {
+  };  useEffect(() => {
     const filterClassesByCluster = async () => {
       if (selectedCluster) {
         setters.setSelectedGroup(null);
         
+        // Clear advanced filter when cluster is selected
+        if (isFilterApplied) {
+          setIsFilterApplied(false);
+          setFilterMinQty(0);
+          setFilterMaxQty(0);
+          setFilterCourseCodes("");
+          setFilterClassTypes("");
+          setOriginalClasses([]); // Clear the backup since we're switching to cluster mode
+        }
+        
         const clusterClasses = await handlers.getClassesByCluster(selectedCluster.id, selectedVersion?.id);
         setFilteredClasses(clusterClasses);
       } else {
-        setFilteredClasses(states.classes);
+        // If no cluster is selected and no filter is applied, clear filteredClasses
+        if (!isFilterApplied) {
+          setFilteredClasses([]);
+        }
       }
     };
     
@@ -159,17 +171,29 @@ const GeneralScheduleScreen = () => {
   };
 
   const isSchedulingInProgress =
-    states.isAutoSaveLoading || states.isTimeScheduleLoading || states.loading;
-
-  const unscheduledClasses = useMemo(() => {
+    states.isAutoSaveLoading || states.isTimeScheduleLoading || states.loading;  const unscheduledClasses = useMemo(() => {
+    if (isFilterApplied) {
+      return filteredClasses.filter((cls) => cls.room === null);
+    }
     if (selectedCluster) {
       return filteredClasses.filter((cls) => cls.room === null);
     }
     if (!states.classes || states.classes.length === 0) return [];
     return states.classes.filter((cls) => cls.room === null);
-  }, [states.classes, filteredClasses, selectedCluster]);
-
-  const displayClasses = selectedCluster ? filteredClasses : states.classes;
+  }, [states.classes, filteredClasses, selectedCluster, isFilterApplied]);
+  
+  const displayClasses = useMemo(() => {
+    const result = isFilterApplied ? filteredClasses : (selectedCluster ? filteredClasses : states.classes);
+    console.log('displayClasses updated:', {
+      isFilterApplied,
+      filteredClassesLength: filteredClasses?.length || 0,
+      selectedCluster: selectedCluster?.name || null,
+      statesClassesLength: states.classes?.length || 0,
+      resultLength: result?.length || 0
+    });
+    return result;
+  
+  }, [isFilterApplied, filteredClasses, selectedCluster, states.classes]);
   
   function handleCreateSegment() {
     if (!states.selectedSemester || !states.selectedSemester.semester) {
@@ -240,8 +264,10 @@ const GeneralScheduleScreen = () => {
         }
       },
       body
-    );  }
-  const handleChangeSearchRoomCapacity = (event) => {
+    );  
+  }
+  
+    const handleChangeSearchRoomCapacity = (event) => {
     setSearchRoomCapacity(event.target.value);
   };
   
@@ -349,7 +375,8 @@ const GeneralScheduleScreen = () => {
     }
     
     return null;
-  };  const handleClickSearchRoom = () => {
+  };  
+    const handleClickSearchRoom = () => {
     // Reset form when opening dialog
     setCurrentTimeSlot({
       session: '',
@@ -360,27 +387,54 @@ const GeneralScheduleScreen = () => {
     });
     setTimeSlotList([]);
     setSearchRoomData([]);
+    setRoomNameFilter("");
+    setFilteredRoomData([]);
     setOpenSearchRoom(true);
-  };
-  const handleClickAdvancedFilter = () => {
+  };  const handleClickAdvancedFilter = () => {
       setOpenAdvancedFilter(true);
   }
+  
+  // Handler for room name filter
+  const handleRoomNameFilterChange = (event) => {
+    setRoomNameFilter(event.target.value);
+  };
+  
+  // Filter room data based on room name/ID
+  useEffect(() => {
+    if (!searchRoomData || searchRoomData.length === 0) {
+      setFilteredRoomData([]);
+      return;
+    }
+    
+    if (!roomNameFilter.trim()) {
+      setFilteredRoomData(searchRoomData);
+      return;
+    }
+    
+    const filtered = searchRoomData.filter(room => 
+      room.id && room.id.toLowerCase().includes(roomNameFilter.toLowerCase().trim())
+    );
+    setFilteredRoomData(filtered);
+  }, [roomNameFilter, searchRoomData]);
   
   const handleChangeFilterMaxQty = (e) => {
     setFilterMaxQty(e.target.value);
   }
   const handleChangeFilterMinQty = (e) => {
     setFilterMinQty(e.target.value);
-  }
+  }  
   const handleChangeCourseCodes = (e) => {
     setFilterCourseCodes(e.target.value);
-  }
+  };
   const handleChangeClassTypes = (e) => {
     setFilterClassTypes(e.target.value);
-  }
+  };
   
   const performAdvancedFilter = () => {
-    //alert('advanced filter minQty = ' + filterMinQty + ' filterMaxQty = ' + filterMaxQty);
+    if (!isFilterApplied && states.classes?.length > 0) {
+      setOriginalClasses([...states.classes]);
+    }
+
     let body = {
       filterMinQty: filterMinQty,
       filterMaxQty: filterMaxQty,
@@ -393,17 +447,44 @@ const GeneralScheduleScreen = () => {
       "post",
       "/general-classes/advanced-filter",
       (res) => {
-        console.log('Advanced Filter: ', res.data);
-        //setSearchRoomData(res.data);
-        toast.success("Advanced Filter ");
+        console.log('Advanced Filter Result: ', res.data);
+        if (res.data && Array.isArray(res.data)) {
+          // Store the filtered results in filteredClasses instead of overwriting states.classes
+          setFilteredClasses(res.data);
+          setIsFilterApplied(true);
+          setSelectedCluster(null); // Clear cluster selection when using advanced filter
+          
+          // Close the dialog
+          setOpenAdvancedFilter(false);
+          setters.setSelectedRows([]);
+          
+          toast.success(`Đã lọc thành công! Tìm thấy ${res.data.length} lớp học phù hợp.`);
+        } else {
+          toast.warning("Không tìm thấy lớp học nào phù hợp với điều kiện lọc!");
+        }
       },
       {
         onError: (e) => {
-          toast.error("Có lỗi khi advanced filter");
+          console.error("Advanced Filter Error:", e);
+          toast.error("Có lỗi khi thực hiện bộ lọc nâng cao: " + (e.response?.data?.message || e.message));
         }
       },
       body
     );
+  }
+  const resetAdvancedFilter = () => {
+    if (originalClasses.length > 0) {
+      // Restore original classes instead of setting them in states.classes
+      setFilteredClasses([...originalClasses]);
+      setIsFilterApplied(false);
+      setFilterMinQty(0);
+      setFilterMaxQty(0);
+      setFilterCourseCodes("");
+      setFilterClassTypes("");
+      setters.setSelectedRows([]);
+      setOriginalClasses([]); // Clear the backup
+      toast.success("Đã reset bộ lọc và hiển thị tất cả lớp học!");
+    }
   }
 
   const performSearchRoom = () => {
@@ -419,13 +500,13 @@ const GeneralScheduleScreen = () => {
       timeSlots: generatedTimeSlots,
       versionId: selectedVersion.id
     };
-    
-    request(
+      request(
       "post",
       "/general-classes/search-rooms",
       (res) => {
         console.log('Search Room: ', res.data);
         setSearchRoomData(res.data);
+        setFilteredRoomData(res.data); // Initialize filtered data with all results
         toast.success("Tìm phòng thành công");
       },
       {
@@ -454,9 +535,8 @@ const GeneralScheduleScreen = () => {
         newVersionStatus={newVersionStatus}
         setNewVersionStatus={setNewVersionStatus}
         isCreating={isCreating}
-        createVersion={createVersion} // Truyền createVersion từ useTimeTablingVersionData
+        createVersion={createVersion} 
         onCreateSuccess={(createdVersion) => {
-          // Khi tạo version thành công, refresh danh sách
           fetchVersions();
         }}
       />
@@ -732,16 +812,19 @@ const GeneralScheduleScreen = () => {
                     }}
                   />
                 )}
-                <div className={`flex md:flex-row flex-col ${viewTab !== 3 && viewTab !== 4 ? 'justify-end' : 'justify-end w-full'} gap-2`}>
-                  {states.selectedRows.length > 0 ? (
+                <div className={`flex md:flex-row flex-col ${viewTab !== 3 && viewTab !== 4 ? 'justify-end' : 'justify-end w-full'} gap-2`}>                  {states.selectedRows.length > 0 ? (
                     <div className="flex-grow flex items-center px-3 bg-blue-50 rounded">
                       <span className="text-blue-700">
                         {states.selectedRows.length} lớp được chọn
                       </span>
                     </div>
-                  ) : null}
-  
-  <Button
+                  ) : isFilterApplied ? (
+                    <div className="flex-grow flex items-center px-3 bg-orange-50 rounded">
+                      <span className="text-orange-700">
+                        🔍 Bộ lọc đang áp dụng ({displayClasses?.length || 0} lớp)
+                      </span>
+                    </div>
+                  ) : null}<Button
                   startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
                   sx={{ 
                     minWidth: '120px',
@@ -753,8 +836,23 @@ const GeneralScheduleScreen = () => {
                   variant="contained"
                   color="secondary"
                 >
-                  Advanced Filter
+                  Tìm kiếm nâng cao
                 </Button>
+
+                {isFilterApplied && (
+                  <Button
+                    sx={{ 
+                      minWidth: '120px',
+                      textTransform: 'none',
+                      fontSize: '14px'
+                    }}
+                    onClick={resetAdvancedFilter}
+                    variant="outlined"
+                    color="warning"
+                  >
+                    🔄 Reset Filter
+                  </Button>
+                )}
 
                 <Button
                   startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
@@ -1004,101 +1102,172 @@ const GeneralScheduleScreen = () => {
             Xóa
           </Button>
         </DialogActions>
-      </Dialog>      
+      </Dialog>        
       <Dialog
         open={openAdvancedFilter}
         onClose={() => setOpenAdvancedFilter(false)}
+        maxWidth="md"
+        fullWidth
       >
-        <DialogTitle>Advanced Filter</DialogTitle>
-        <DialogContent>
-          <TextField
-              label="SL Min"
-              value={filterMinQty}
-              onChange={handleChangeFilterMinQty}
-              variant="outlined"
-              type="number"
-              size="small"
-              sx={{ 
-                minWidth: 200,
-                '& .MuiOutlinedInput-root': {
-                  height: '44px'
-                }
-              }}
-              InputProps={{
-                inputProps: { min: 1 }
-              }}
-            />
-            <TextField
-              label="SL Min"
-              value={filterMaxQty}
-              onChange={handleChangeFilterMaxQty}
-              variant="outlined"
-              type="number"
-              size="small"
-              sx={{ 
-                minWidth: 200,
-                '& .MuiOutlinedInput-root': {
-                  height: '44px'
-                }
-              }}
-              InputProps={{
-                inputProps: { min: 1 }
-              }}
-            />
-          <TextField
-              label="Course Codes"
-              value={filterCourseCodes}
-              onChange={handleChangeCourseCodes}
-              variant="outlined"
-              //type="number"
-              size="small"
-              sx={{ 
-                minWidth: 200,
-                '& .MuiOutlinedInput-root': {
-                  height: '44px'
-                }
-              }}
-              //InputProps={{
-              //  inputProps: { min: 1 }
-              //}}
-            />
-            <TextField
-              label="Class Types"
-              value={filterClassTypes}
-              onChange={handleChangeClassTypes}
-              variant="outlined"
-              //type="number"
-              size="small"
-              sx={{ 
-                minWidth: 200,
-                '& .MuiOutlinedInput-root': {
-                  height: '44px'
-                }
-              }}
-              //InputProps={{
-              //  inputProps: { min: 1 }
-              //}}
-            />
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid #e0e0e0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          fontWeight: 600,
+          pb: 2
+        }}>
+          🔍 Bộ lọc nâng cao
+        </DialogTitle>
+        
+        <DialogContent sx={{ p: 3 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
+              📊 Lọc theo số lượng sinh viên
+            </Typography>
+            
+            <Paper variant="outlined" sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa' }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <TextField
+                  label="Số lượng tối thiểu"
+                  value={filterMinQty}
+                  onChange={handleChangeFilterMinQty}
+                  variant="outlined"
+                  type="number"
+                  size="small"
+                  sx={{ 
+                    minWidth: 200,
+                    '& .MuiOutlinedInput-root': {
+                      height: '44px'
+                    }
+                  }}
+                  InputProps={{
+                    inputProps: { min: 0 },
+                    startAdornment: <span style={{ marginRight: '8px', color: '#666' }}>≥</span>
+                  }}
+                />
+                <TextField
+                  label="Số lượng tối đa"
+                  value={filterMaxQty}
+                  onChange={handleChangeFilterMaxQty}
+                  variant="outlined"
+                  type="number"
+                  size="small"
+                  sx={{ 
+                    minWidth: 200,
+                    '& .MuiOutlinedInput-root': {
+                      height: '44px'
+                    }
+                  }}
+                  InputProps={{
+                    inputProps: { min: 0 },
+                    startAdornment: <span style={{ marginRight: '8px', color: '#666' }}>≤</span>
+                  }}
+                />
+              </Box>
+              
+              {(filterMinQty > 0 || filterMaxQty > 0) && (
+                <Box sx={{ mt: 1, p: 1, backgroundColor: '#e3f2fd', borderRadius: 1 }}>
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#1976d2' }}>
+                    💡 {filterMinQty > 0 && filterMaxQty > 0 
+                      ? `Hiển thị lớp có từ ${filterMinQty} đến ${filterMaxQty} sinh viên`
+                      : filterMinQty > 0 
+                        ? `Hiển thị lớp có ít nhất ${filterMinQty} sinh viên`
+                        : `Hiển thị lớp có tối đa ${filterMaxQty} sinh viên`
+                    }
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          </Box>
+
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
+              📚 Lọc theo mã và loại lớp
+            </Typography>
+            
+            <Paper variant="outlined" sx={{ p: 2, backgroundColor: '#f8f9fa' }}>
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                <TextField
+                  label="Mã khóa học (Course Codes)"
+                  value={filterCourseCodes}
+                  onChange={handleChangeCourseCodes}
+                  variant="outlined"
+                  size="small"
+                  placeholder="VD: IT3080, IT4409"
+                  sx={{ 
+                    flex: 1,
+                    minWidth: 250,
+                    '& .MuiOutlinedInput-root': {
+                      height: '44px'
+                    }
+                  }}
+                  helperText="Nhập nhiều mã cách nhau bằng dấu ;"
+                />
+                <TextField
+                  label="Loại lớp (Class Types)"
+                  value={filterClassTypes}
+                  onChange={handleChangeClassTypes}
+                  variant="outlined"
+                  size="small"
+                  placeholder="VD: LT, BT, TH"
+                  sx={{ 
+                    flex: 1,
+                    minWidth: 250,
+                    '& .MuiOutlinedInput-root': {
+                      height: '44px'
+                    }
+                  }}
+                  helperText="Nhập nhiều loại cách nhau bằng dấu ;"
+                />
+              </Box>
+              
+              {(filterCourseCodes || filterClassTypes) && (
+                <Box sx={{ mt: 1, p: 1, backgroundColor: '#e8f5e8', borderRadius: 1 }}>
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#2e7d32' }}>
+                    ✅ Bộ lọc đang áp dụng: 
+                    {filterCourseCodes && ` Mã khóa học: "${filterCourseCodes}"`}
+                    {filterCourseCodes && filterClassTypes && ' • '}
+                    {filterClassTypes && ` Loại lớp: "${filterClassTypes}"`}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ padding: "16px", gap: "8px" }}>
+        
+        <DialogActions sx={{ 
+          padding: "16px", 
+          gap: "8px", 
+          borderTop: '1px solid #e0e0e0',
+          backgroundColor: '#fafafa'
+        }}>
           <Button
             onClick={() => setOpenAdvancedFilter(false)}
             variant="outlined"
-            sx={{ minWidth: "80px", padding: "6px 16px" }}
+            sx={{ 
+              minWidth: "100px", 
+              padding: "8px 16px",
+              textTransform: 'none'
+            }}
           >
-            Hủy
+            Hủy bỏ
           </Button>
           <Button
             onClick={performAdvancedFilter}
-            color="error"
+            color="primary"
             variant="contained"
             autoFocus
-            sx={{ minWidth: "80px", padding: "6px 16px" }}
+            sx={{ 
+              minWidth: "120px", 
+              padding: "8px 16px",
+              textTransform: 'none'
+            }}
           >
-            Filter
+            🔍 Áp dụng bộ lọc
           </Button>
         </DialogActions>
-      </Dialog>      
+      </Dialog>
       
       <Dialog
         open={openSearchRoom}
@@ -1325,8 +1494,28 @@ const GeneralScheduleScreen = () => {
                     ❌ {validateCurrentTimeSlot()}
                   </Typography>
                 </Box>
-              )}</Paper>
-          </Box>
+              )}</Paper>          </Box>
+
+          {/* Room Name Filter */}
+          {searchRoomData.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                label="Lọc theo tên phòng"
+                value={roomNameFilter}
+                onChange={handleRoomNameFilterChange}
+                variant="outlined"
+                size="small"
+                placeholder="VD: TC-101, D3-301..."
+                sx={{ 
+                  minWidth: 300,
+                  '& .MuiOutlinedInput-root': {
+                    height: '40px'
+                  }
+                }}
+                helperText={`Hiển thị ${filteredRoomData.length}/${searchRoomData.length} phòng`}
+              />
+            </Box>
+          )}
 
           {/* Results Table */}
           <Box sx={{ 
@@ -1344,10 +1533,9 @@ const GeneralScheduleScreen = () => {
               zIndex: 10,
               borderBottom: '2px solid #e0e0e0'
             }
-          }}>
-            <StandardTable
+          }}>            <StandardTable
               columns={searchRoomColumns}
-              data={searchRoomData}
+              data={filteredRoomData}
               hideCommandBar
               options={{
                 selection: false,
