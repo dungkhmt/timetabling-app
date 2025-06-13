@@ -281,7 +281,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
         var deliveryRouteSpec = new DeliveryRouteSpecification(filters);
         var deliveryRoutes = deliveryRouteRepo.findAll(deliveryRouteSpec, pageReq);
 
-        var deliveryRouteList = deliveryRoutes.getContent().<DeliveryRouteGetListRes>stream()
+        var deliveryRouteList = deliveryRoutes.getContent().stream()
                 .map(deliveryRoute -> {
                     var deliveryRouteGetListRes = genaralMapper.convertToDto(deliveryRoute, DeliveryRouteGetListRes.class);
                     if(Objects.nonNull(deliveryRoute.getAssignToVehicle())) {
@@ -297,7 +297,7 @@ public class DeliveryRouteServiceImpl implements DeliveryRouteService {
                     deliveryRouteGetListRes.setDeliveryPlanId(deliveryRoute.getDeliveryPlan().getId());
                     deliveryRouteGetListRes.setDeliveryPlanName(deliveryRoute.getDeliveryPlan().getDeliveryPlanName());
                     return deliveryRouteGetListRes;
-                }).<DeliveryRouteGetListRes>toList();
+                }).toList();
 
         var pagination = Pagination.<DeliveryRouteGetListRes>builder()
                 .page(page)

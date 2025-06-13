@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.wms.util.CommonUtil;
 import openerp.openerpresourceserver.wms.vrp.Node;
 import openerp.openerpresourceserver.wms.vrp.VRPRoute;
 
@@ -59,5 +60,15 @@ public class CVRPSolution {
                 totalCost += fixedCost + costPerKm * route.getDistance() / 1000.0;
             }
         }
+    }
+
+    public void logMetrics(String solverName) {
+        System.out.println("CVRPSolution Metrics:");
+        System.out.println("Solver: " + solverName);
+        System.out.println("Total Distance: " + totalDistance + " km");
+        System.out.println("Total Duration: " + CommonUtil.convertSecondsToHours(totalDuration) + " hours");
+        System.out.println("Solver Time: " + (solverTime) + " seconds");
+//        System.out.println("Total Cost: " + totalCost);
+//        System.out.println("Solver Iterations: " + solverIterations);
     }
 }

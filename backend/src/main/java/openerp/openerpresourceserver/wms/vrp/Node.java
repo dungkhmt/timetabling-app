@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class Node {
     private int id;
     private String name;
+    private String deliveryAddressId;
+    private String deliveryAddressFullAddress;
     private double latitude;
     private double longitude;
     private double demand;

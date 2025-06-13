@@ -84,7 +84,7 @@ public class GraphHopperDistanceCalculator implements DistanceCalculator {
                 log.error("Error calculating route: {}", response.getErrors());
                 return fallbackCalculator.calculateDistance(from, to);
             } else {
-                double distance = response.getBest().getDistance();
+                double distance = response.getBest().getDistance() / 1000.0; // Convert from meters to kilometers
                 double travelTime = response.getBest().getTime() / 1000.0; // ms to seconds
 
                 List<GeoPoint> path = new ArrayList<>();

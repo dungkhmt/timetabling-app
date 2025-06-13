@@ -75,7 +75,7 @@ public class CVRPCWSSolver implements CVRPSolver {
         solution.setSolverTime((System.currentTimeMillis() - startTime) / 1000.0);
         solution.setSolverIterations(savingsList.size());
         solution.calculateMetrics(input);
-
+        solution.logMetrics("Clarke-Wright Savings");
         return solution;
     }
 

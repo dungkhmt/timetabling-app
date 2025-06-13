@@ -56,8 +56,12 @@ public class RouteOptimizer {
         Node depot = new Node(
                 0,
                 facility.getName(),
+                facilityAddress.getId(),
+                facilityAddress.getFullAddress(),
                 facilityAddress.getLatitude(),
-                facilityAddress.getLongitude()
+                facilityAddress.getLongitude(),
+                0,
+                0
         );
         nodes.add(depot);
         
@@ -82,6 +86,8 @@ public class RouteOptimizer {
             // Skip bills with missing coordinates
             var longitude = customerToAddress.get(customer.getId()).getLongitude();
             var latitude = customerToAddress.get(customer.getId()).getLatitude();
+            var deliveryAddressId = customerToAddress.get(customer.getId()).getId();
+            var deliveryFullAddress = customerToAddress.get(customer.getId()).getFullAddress();
 
             if (longitude == null || latitude == null) {
                 continue;
@@ -90,9 +96,12 @@ public class RouteOptimizer {
             Node node = new Node(
                 nodeId,
                 customer.getName(),
+                deliveryAddressId,
+                deliveryFullAddress,
                 latitude,
                 longitude,
-                bill.getTotalWeight() != null ? bill.getTotalWeight().doubleValue() : 1.0
+                bill.getTotalWeight() != null ? bill.getTotalWeight().doubleValue() : 1.0,
+                    0
             );
             
             nodes.add(node);

@@ -4,7 +4,7 @@ import {
   Box,
   Button,
   Checkbox,
-  CircularProgress,
+  CircularProgress, IconButton,
   Paper,
   Table,
   TableBody,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import {useWms2Data} from "../../../../../services/useWms2Data";
 import { useDeliveryPlanForm } from '../../context/DeliveryPlanFormContext';
+import {Refresh} from "@mui/icons-material";
 
 const VehiclesTab = () => {
   const { deliveryPlan, setDeliveryPlan, entities, setEntities } = useDeliveryPlanForm();
@@ -130,6 +131,16 @@ const VehiclesTab = () => {
     setError("");
   };
 
+  const handleRefresh = () => {
+    // Reset filters and reload vehicles
+    setFilters({
+        keyword: "",
+        statusId: "AVAILABLE",
+        deliveryStatusId: 'UNASSIGNED'
+    });
+    setPage(0);
+  };
+
   // Run the check when dependencies change
   useEffect(() => {
     if (deliveryPlan.shipperIds && deliveryPlan.shipperIds.length > 0 && deliveryPlan.totalWeight) {
@@ -149,24 +160,19 @@ const VehiclesTab = () => {
         </Alert>
       )}
       
-      <Box display="flex" mb={2}>
+      <Box display="flex" mb={2} justifyContent="space-between" alignItems="center">
         <TextField
           label="Tìm kiếm phương tiện"
           variant="outlined"
           size="small"
           value={filters.keyword}
           onChange={handleFilterChange}
-          fullWidth
-          sx={{ mr: 2 }}
+          sx={{ mr: 2 , width: '70%'}}
           placeholder="Nhập tên xe, biển số..."
         />
-        <Button 
-          variant="contained" 
-          color="primary"
-          onClick={fetchVehicles}
-        >
-          Tìm kiếm
-        </Button>
+        <IconButton onClick={handleRefresh} color="primary">
+          <Refresh />
+        </IconButton>
       </Box>
       
       <Box mb={2}>

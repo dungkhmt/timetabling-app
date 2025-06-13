@@ -15,16 +15,16 @@ public class CVRPSolverFactory {
     
     public CVRPSolverFactory() {
         // Register available solvers
-        solvers.put("greedy", new CVRPGreedySolver());
-        solvers.put("cws", new CVRPCWSSolver());
-        solvers.put("clarke-wright", new CVRPCWSSolver()); // Alias
+        solvers.put("GREEDY", new CVRPGreedySolver());
+        solvers.put("CWS", new CVRPCWSSolver());
+        solvers.put("CLARKE-WRIGHT", new CVRPCWSSolver()); // Alias
     }
     
     public CVRPSolver getSolver(String solverName) {
-        CVRPSolver solver = solvers.get(solverName.toLowerCase());
+        CVRPSolver solver = solvers.get(solverName.toUpperCase());
         if (solver == null) {
             // Default to greedy if solver not found
-            return solvers.get("greedy");
+            return solvers.get("GREEDY");
         }
         return solver;
     }

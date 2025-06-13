@@ -56,4 +56,13 @@ public class CommonUtil {
         }
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
     }
+
+    //the function to convert the second to the format hours such as 9,06 hours
+    public static String convertSecondsToHours(double seconds) {
+        if (seconds < 0) {
+            return "0.00";
+        }
+        double hours = seconds / 3600.0;
+        return String.format("%.2f", hours);
+    }
 }

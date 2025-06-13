@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillTripStatus;
+import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryBill;
@@ -95,6 +96,8 @@ public class DeliveryServiceImpl implements DeliveryBillService {
         deliveryBill.setTotalWeight(totalWeight);
         deliveryBill.setTotalQuantity(totalQuantity);
         deliveryBill.setCreatedByUser(userLogin);
+        shipment.setStatusId(ShipmentStatus.FULLY_TO_BE_DELIVERED.name());
+        shipmentRepo.save(shipment);
         deliveryBillRepo.save(deliveryBill);
         deliveryBillItemRepo.saveAll(deliveryBillItems);
         return ApiResponse.<Void>builder()

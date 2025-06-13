@@ -129,7 +129,7 @@ public class CVRPGreedySolver implements CVRPSolver {
         solution.setSolverTime((System.currentTimeMillis() - startTime) / 1000.0);
         solution.setSolverIterations(1);
         solution.calculateMetrics(input);
-        
+        solution.logMetrics("Greedy Best Insertion");
         return solution;
     }
 

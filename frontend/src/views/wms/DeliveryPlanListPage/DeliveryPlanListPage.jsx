@@ -11,11 +11,13 @@ import {withAuthorization} from "../common/components/withAuthorization";
 // Delivery plan status definitions to be shared across components
 export const DELIVERY_PLAN_STATUSES = {
   "DRAFT": { label: "Nháp", color: "default" },
+  "CREATED": { label: "Mới tạo", color: "primary" },
   "PENDING": { label: "Chờ duyệt", color: "info" },
   "APPROVED": { label: "Đã duyệt", color: "success" },
   "IN_PROGRESS": { label: "Đang thực hiện", color: "warning" },
   "COMPLETED": { label: "Hoàn thành", color: "success" },
-  "CANCELLED": { label: "Đã hủy", color: "error" }
+  "CANCELLED": { label: "Đã hủy", color: "error" },
+  "READY_FOR_DELIVERY": { label: "Sẵn sàng", color: "info" },
 };
 
 const DeliveryPlanListPage = () => {

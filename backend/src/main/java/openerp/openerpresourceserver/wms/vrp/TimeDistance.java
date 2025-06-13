@@ -1,10 +1,6 @@
 package openerp.openerpresourceserver.wms.vrp;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +57,6 @@ public class TimeDistance {
         
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         
-        return R * c * 1000; // Convert to meters
+        return R * c; // distance in kilometers
     }
 }

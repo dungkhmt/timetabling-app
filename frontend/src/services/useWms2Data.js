@@ -1,7 +1,8 @@
 import { useMutation } from "react-query";
 import { toast } from "react-toastify";
 import { wms2Service } from "repositories/wms2Repository";
-import { useHistory } from "react-router-dom"; // React Router v5
+import { useHistory } from "react-router-dom";
+import {GREEDY} from "../views/wms/common/constants/constants"; // React Router v5
 export const useWms2Data = () => {
   const history = useHistory(); // Use useHistory from React Router v5
   // Sử dụng useMutation cho việc tạo đơn hàng (đã đúng)
@@ -420,7 +421,7 @@ const getOutBoundsForDeliveryBill = async (page, limit, facilityId) => {
     }
   };
 
-  const autoAssignDeliveryRoutes = async (deliveryPlanId, solverName = 'cws') => {
+  const autoAssignDeliveryRoutes = async (deliveryPlanId, solverName = GREEDY) => {
     try {
       const response = await wms2Service.autoAssignDeliveryRoutes(
          deliveryPlanId,

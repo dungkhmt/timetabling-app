@@ -87,7 +87,7 @@ const CreateDeliveryBill = () => {
       .then(response => {
         if (response && (response.code === 200 || response.code === 201)) {
           toast.success("Tạo phiếu giao hàng thành công");
-          navigate(`/wms/logistics/deliverybill`);
+          // navigate(`/wms/logistics/deliverybill`);
         } else {
           toast.error("Lỗi khi tạo phiếu giao hàng: " + (response?.message || "Lỗi không xác định"));
         }

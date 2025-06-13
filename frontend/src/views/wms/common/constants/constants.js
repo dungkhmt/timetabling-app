@@ -263,3 +263,6 @@ export const SHIPPER_STATUSES = [
   { id: "ACTIVE", name: "Hoạt động" },
   { id: "INACTIVE", name: "Không hoạt động" }
 ];
+
+export const GREEDY = "GREEDY";
+export const CWS = "CWS";

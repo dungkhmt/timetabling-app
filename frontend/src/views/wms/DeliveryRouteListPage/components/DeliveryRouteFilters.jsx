@@ -78,6 +78,14 @@ const DeliveryRouteFilters = ({
         <Grid item xs={12} sm={6} md={hideStatusFilter ? 4 : 2}>
           <Box display="flex" flexDirection="row" gap={1} height="100%">
             <Button
+              variant="outlined"
+              onClick={onResetFilters}
+              startIcon={<RestartAltIcon />}
+              fullWidth
+            >
+              Đặt lại
+            </Button>
+                 <Button
               variant="contained"
               color="primary"
               onClick={onApplyFilters}
@@ -85,14 +93,6 @@ const DeliveryRouteFilters = ({
               fullWidth
             >
               Tìm kiếm
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={onResetFilters}
-              startIcon={<RestartAltIcon />}
-              fullWidth
-            >
-              Đặt lại
             </Button>
           </Box>
         </Grid>

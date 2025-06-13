@@ -18,6 +18,7 @@ import openerp.openerpresourceserver.wms.repository.*;
 import openerp.openerpresourceserver.wms.repository.specification.ShipmentSpecification;
 import openerp.openerpresourceserver.wms.util.CommonUtil;
 import openerp.openerpresourceserver.wms.vrp.TimeDistance;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -50,7 +51,6 @@ public class ShipmentServiceImpl implements ShipmentService {
         OrderHeader orderHeader = orderHeaderRepo.findById(req.getOrderId())
                 .orElseThrow(() -> new DataNotFoundException("Order not found with id: " + req.getOrderId()));
 
-        var orderItems = orderHeader.getOrderItems();
         var productReqs = req.getProducts();
 
         var productIds = productReqs.stream().map(CreateOutBoundProductReq::getProductId).toList();
@@ -388,7 +388,9 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Override
     public ApiResponse<Pagination<ShipmentForDeliveryRes>> getShipmentForDelivery(int page, int limit, String facilityId) {
         var pageRequest = CommonUtil.getPageRequest(page, limit);
-        var shipments = shipmentRepo.findByStatusId(ShipmentStatus.EXPORTED.name(), pageRequest);
+        var shipments = shipmentRepo.findByShipmentTypeIdAndStatusId(
+                ShipmentType.OUTBOUND.name()
+                ,ShipmentStatus.EXPORTED.name(), pageRequest, Sort.by(Sort.Direction.DESC, "createdStamp"));
 
         // init shipmentIds
         List<String> shipmentIds = shipments.getContent().stream()

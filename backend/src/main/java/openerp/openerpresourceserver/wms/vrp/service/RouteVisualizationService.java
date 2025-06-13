@@ -87,7 +87,7 @@ public class RouteVisualizationService {
                     DeliveryPointDTO point = new DeliveryPointDTO(
                         bill.getId(),
                         bill.getToCustomer().getName(),
-                        bill.getToCustomer().getCurrentAddressId(),
+                        node.getDeliveryAddressFullAddress(),
                         node.getLatitude(),
                         node.getLongitude(),
                         node.getDemand(),

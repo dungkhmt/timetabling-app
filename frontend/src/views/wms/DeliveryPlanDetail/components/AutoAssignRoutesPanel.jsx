@@ -19,7 +19,12 @@ import {
   AccordionDetails,
   Chip,
   Tab,
-  Tabs, Stack
+  Tabs,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   ExpandMore,
@@ -29,9 +34,11 @@ import {
   Person,
   LocalShipping,
   Map,
-  DirectionsCar, RoomOutlined
+  DirectionsCar,
+  RoomOutlined
 } from '@mui/icons-material';
 import RouteMapComponent from './RouteMapComponent';
+import {CWS, GREEDY} from "../../common/constants/constants";
 
 // Tab panel component
 function TabPanel(props) {
@@ -64,6 +71,7 @@ const AutoAssignRoutesPanel = ({
 }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+  const [selectedSolver, setSelectedSolver] = useState(GREEDY);
   
   // Check if plan already has routes
   const hasExistingRoutes = existingRoutes && existingRoutes.length > 0;
@@ -72,6 +80,21 @@ const AutoAssignRoutesPanel = ({
   // Routes to display (either from optimization result or existing routes)
   const routesToDisplay = optimizationResult?.shipperRoutes || existingRoutes || [];
   
+  const solverOptions = [
+    {
+      value: GREEDY,
+      label: 'Thuật toán Tham lam (Greedy)',
+      description: 'Nhanh, phù hợp với số lượng điểm giao hàng nhỏ',
+      color: 'primary'
+    },
+    {
+      value: CWS,
+      label: 'Clarke-Wright Savings (CWS)',
+      description: 'Tối ưu hơn, phù hợp với số lượng điểm giao hàng lớn',
+      color: 'success'
+    }
+  ];
+  
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -79,7 +102,7 @@ const AutoAssignRoutesPanel = ({
   const handleRouteChange = (index) => {
     setSelectedRouteIndex(index);
   };
-  
+
   return (
     <Box>
       {hasExistingRoutes && (
@@ -99,19 +122,57 @@ const AutoAssignRoutesPanel = ({
             Hệ thống sẽ tự động tính toán và phân công tuyến đường tối ưu cho các shipper dựa trên các vận đơn trong kế hoạch giao hàng này.
             Quá trình sẽ phân tích địa điểm giao hàng, trọng lượng và các yếu tố khác để tạo ra tuyến đường hiệu quả nhất.
           </Typography>
-          
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
+
+                <Box sx={{ mb: 1, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  {/* default select greedy solution */}
+          <FormControl fullWidth variant="outlined" size="small">
+            <InputLabel>Chọn thuật toán tối ưu</InputLabel>
+            <Select
+              value={selectedSolver}
+              onChange={(e) => setSelectedSolver(e.target.value)}
+              label="Chọn thuật toán tối ưu"
               disabled={optimizing}
-              onClick={onAutoAssign}
-              startIcon={optimizing ? <CircularProgress size={20} color="inherit" /> : <RouteOutlined />}
             >
-              {optimizing ? 'Đang tối ưu hóa...' : 'Tối ưu hóa tuyến đường'}
-            </Button>
-          </Box>
+              {solverOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Typography variant="body1">{option.label}</Typography>
+                      <Chip 
+                        label={option.value.toUpperCase()} 
+                        size="small" 
+                        color={option.color}
+                        variant="outlined"
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {option.description}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onAutoAssign(selectedSolver)}
+            disabled={optimizing}
+            startIcon={optimizing ? <CircularProgress size={20} /> : <RouteOutlined />}
+            sx={{
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+              textOverflow: 'ellipsis',
+              p: 1,
+              fontSize: '1.3rem',
+            }}
+          >
+            <Typography variant="button" wordWrap="break-word">
+              {optimizing ? 'Đang tối ưu hóa...' : `Tự động tạo chuyến với ${solverOptions.find(s => s.value === selectedSolver)?.label}`}
+            </Typography>
+          </Button>
+        </Box>
         </CardContent>
       </Card>
       
@@ -139,7 +200,7 @@ const AutoAssignRoutesPanel = ({
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h5" textAlign="center">
-                      {(optimizationResult.totalDistance / 1000).toFixed(2)} km
+                      {optimizationResult.totalDistance.toFixed(2)} km
                     </Typography>
                     <Typography variant="body2" color="textSecondary" textAlign="center">
                       Tổng quãng đường
@@ -184,7 +245,7 @@ const AutoAssignRoutesPanel = ({
                         <Typography>{route.shipperName || `Shipper #${index + 1}`}</Typography>
                       </Box>
                       <Typography variant="body2">
-                        {route.deliveryPoints?.length || 0} điểm • {(route.totalDistance / 1000).toFixed(2)} km
+                        {route.deliveryPoints?.length || 0} điểm • {route.totalDistance.toFixed(2)} km
                       </Typography>
                     </Box>
                   </AccordionSummary>
@@ -271,7 +332,7 @@ const AutoAssignRoutesPanel = ({
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                         <DirectionsCar color="primary" sx={{ mr: 1 }} />
                         <Typography variant="body2" color="textSecondary">
-                          Tổng quãng đường: {(routesToDisplay[selectedRouteIndex]?.totalDistance / 1000).toFixed(2)} km
+                          Tổng quãng đường: {(routesToDisplay[selectedRouteIndex]?.totalDistance).toFixed(2)} km
                           {routesToDisplay[selectedRouteIndex]?.totalLoad && (
                             <> • Tổng khối lượng: {routesToDisplay[selectedRouteIndex].totalLoad.toFixed(2)} kg</>
                           )}

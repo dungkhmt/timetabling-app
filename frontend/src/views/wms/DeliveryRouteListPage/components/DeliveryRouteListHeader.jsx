@@ -34,19 +34,9 @@ const DeliveryRouteListHeader = ({
           >
             Làm mới
           </Button>
-          
-          <Button
-            variant={showFilters ? "contained" : "outlined"}
-            color="primary"
-            startIcon={<FilterAltIcon />}
-            onClick={onToggleFilters}
-          >
-            Bộ lọc
-          </Button>
-
           <Button
             variant="contained"
-            color="success"
+            color="primary"
             startIcon={<AddIcon />}
             onClick={e => navigate("/wms/logistics/deliveryroute/create")}
           >

@@ -26,6 +26,7 @@ import ShippersPanel from "./components/ShippersPanel";
 import RoutesPanel from "./components/RoutesPanel";
 import AutoAssignRoutesPanel from "./components/AutoAssignRoutesPanel";
 import VehiclesPanel from "./components/VehiclesPanel";
+import {GREEDY} from "../common/constants/constants";
 // Tab panel component
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -56,6 +57,8 @@ const StatusChip = ({ status }) => {
     switch (status) {
       case "CREATED":
         return { label: "Đã tạo", color: "primary" };
+      case 'READY_FOR_DELIVERY':
+        return { label: "Sẵn sàng giao hàng", color: "info" };
       case "IN_PROGRESS":
         return { label: "Đang xử lý", color: "warning" };
       case "ASSIGNED":
@@ -115,12 +118,12 @@ const DeliveryPlanDetail = () => {
     setActiveTab(newValue);
   };
 
-  const handleAutoAssignRoutes = async () => {
+  const handleAutoAssignRoutes = async (solverName = GREEDY) => {
     setOptimizing(true);
     setOptimizationResult(null);
 
     try {
-      const response = await autoAssignDeliveryRoutes(id);
+      const response = await autoAssignDeliveryRoutes(id, solverName);
 
       if (response && response.code === 200) {
         setOptimizationResult(response.data);
