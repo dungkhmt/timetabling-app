@@ -42,7 +42,8 @@ const GeneralScheduleScreen = () => {
   const [newVersionName, setNewVersionName] = useState("");
   const [newVersionStatus, setNewVersionStatus] = useState("DRAFT");
   const[isDeletingBySemester, setIsDeletingBySemester] = useState(false);
-  const[isCreateBySemester, setIsCreateBySemester] = useState(false);    const[openSearchRoom, setOpenSearchRoom] = useState(false);
+  const[isCreateBySemester, setIsCreateBySemester] = useState(false);  
+  const[openSearchRoom, setOpenSearchRoom] = useState(false);
   const[searchRoomCapacity, setSearchRoomCapacity] = useState(90);
   const[searchRoomData, setSearchRoomData] = useState([]);
   const[roomNameFilter, setRoomNameFilter] = useState("");
@@ -50,7 +51,8 @@ const GeneralScheduleScreen = () => {
 
   const[openAdvancedFilter, setOpenAdvancedFilter] = useState(false);
   const[filterMinQty, setFilterMinQty] = useState(0);
-  const[filterMaxQty, setFilterMaxQty] = useState(0);  const[filterCourseCodes, setFilterCourseCodes] = useState("");
+  const[filterMaxQty, setFilterMaxQty] = useState(0);
+  const[filterCourseCodes, setFilterCourseCodes] = useState("");
   const[filterClassTypes, setFilterClassTypes] = useState("");
   const[isFilterApplied, setIsFilterApplied] = useState(false);
   const[originalClasses, setOriginalClasses] = useState([]);
@@ -119,31 +121,29 @@ const GeneralScheduleScreen = () => {
 
   const handleBackToVersionSelection = () => {
     setShowVersionSelection(true);
-  };  useEffect(() => {
+  };
+  useEffect(() => {
     const filterClassesByCluster = async () => {
       if (selectedCluster) {
         setters.setSelectedGroup(null);
         
-        // Clear advanced filter when cluster is selected
         if (isFilterApplied) {
           setIsFilterApplied(false);
           setFilterMinQty(0);
           setFilterMaxQty(0);
           setFilterCourseCodes("");
           setFilterClassTypes("");
-          setOriginalClasses([]); // Clear the backup since we're switching to cluster mode
+          setOriginalClasses([]); 
         }
         
         const clusterClasses = await handlers.getClassesByCluster(selectedCluster.id, selectedVersion?.id);
         setFilteredClasses(clusterClasses);
       } else {
-        // If no cluster is selected and no filter is applied, clear filteredClasses
         if (!isFilterApplied) {
           setFilteredClasses([]);
         }
       }
     };
-    
     filterClassesByCluster();
   }, [selectedCluster, states.classes]);
 
@@ -265,9 +265,8 @@ const GeneralScheduleScreen = () => {
       },
       body
     );  
-  }
-  
-    const handleChangeSearchRoomCapacity = (event) => {
+}
+  const handleChangeSearchRoomCapacity = (event) => {
     setSearchRoomCapacity(event.target.value);
   };
   
@@ -394,12 +393,10 @@ const GeneralScheduleScreen = () => {
       setOpenAdvancedFilter(true);
   }
   
-  // Handler for room name filter
   const handleRoomNameFilterChange = (event) => {
     setRoomNameFilter(event.target.value);
   };
   
-  // Filter room data based on room name/ID
   useEffect(() => {
     if (!searchRoomData || searchRoomData.length === 0) {
       setFilteredRoomData([]);
@@ -422,7 +419,7 @@ const GeneralScheduleScreen = () => {
   }
   const handleChangeFilterMinQty = (e) => {
     setFilterMinQty(e.target.value);
-  }  
+}  
   const handleChangeCourseCodes = (e) => {
     setFilterCourseCodes(e.target.value);
   };
@@ -449,12 +446,10 @@ const GeneralScheduleScreen = () => {
       (res) => {
         console.log('Advanced Filter Result: ', res.data);
         if (res.data && Array.isArray(res.data)) {
-          // Store the filtered results in filteredClasses instead of overwriting states.classes
           setFilteredClasses(res.data);
           setIsFilterApplied(true);
-          setSelectedCluster(null); // Clear cluster selection when using advanced filter
+          setSelectedCluster(null); 
           
-          // Close the dialog
           setOpenAdvancedFilter(false);
           setters.setSelectedRows([]);
           
@@ -474,7 +469,6 @@ const GeneralScheduleScreen = () => {
   }
   const resetAdvancedFilter = () => {
     if (originalClasses.length > 0) {
-      // Restore original classes instead of setting them in states.classes
       setFilteredClasses([...originalClasses]);
       setIsFilterApplied(false);
       setFilterMinQty(0);
@@ -482,7 +476,7 @@ const GeneralScheduleScreen = () => {
       setFilterCourseCodes("");
       setFilterClassTypes("");
       setters.setSelectedRows([]);
-      setOriginalClasses([]); // Clear the backup
+      setOriginalClasses([]); 
       toast.success("Đã reset bộ lọc và hiển thị tất cả lớp học!");
     }
   }
@@ -506,7 +500,7 @@ const GeneralScheduleScreen = () => {
       (res) => {
         console.log('Search Room: ', res.data);
         setSearchRoomData(res.data);
-        setFilteredRoomData(res.data); // Initialize filtered data with all results
+        setFilteredRoomData(res.data); 
         toast.success("Tìm phòng thành công");
       },
       {
@@ -517,7 +511,6 @@ const GeneralScheduleScreen = () => {
       body
     );
   };
-  // Version selection UI
   if (showVersionSelection) {
     return (
       <VersionSelectionScreen
@@ -812,19 +805,15 @@ const GeneralScheduleScreen = () => {
                     }}
                   />
                 )}
-                <div className={`flex md:flex-row flex-col ${viewTab !== 3 && viewTab !== 4 ? 'justify-end' : 'justify-end w-full'} gap-2`}>                  {states.selectedRows.length > 0 ? (
+                <div className={`flex md:flex-row flex-col ${viewTab !== 3 && viewTab !== 4 ? 'justify-end' : 'justify-end w-full'} gap-2`}>                 
+                {states.selectedRows.length > 0 ? (
                     <div className="flex-grow flex items-center px-3 bg-blue-50 rounded">
                       <span className="text-blue-700">
                         {states.selectedRows.length} lớp được chọn
                       </span>
                     </div>
-                  ) : isFilterApplied ? (
-                    <div className="flex-grow flex items-center px-3 bg-orange-50 rounded">
-                      <span className="text-orange-700">
-                        🔍 Bộ lọc đang áp dụng ({displayClasses?.length || 0} lớp)
-                      </span>
-                    </div>
-                  ) : null}<Button
+                  ) : null}
+                <Button
                   startIcon={isCreateBySemester ? <FacebookCircularProgress size={20} /> : null}
                   sx={{ 
                     minWidth: '120px',
