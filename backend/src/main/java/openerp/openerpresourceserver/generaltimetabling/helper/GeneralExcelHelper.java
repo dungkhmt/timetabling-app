@@ -674,20 +674,51 @@ public class GeneralExcelHelper {
                             int sessionOffset = isMorning ? 0 : numberSlotsPerSession;
                             int startCol = (dayIndex-2)*slotsPerDay + sessionOffset + segment.getStartTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
                             int endCol = (dayIndex-2)*slotsPerDay + sessionOffset + segment.getEndTime() - 1 + START_COL_TO_READ_CLASS_SCHEDULE;
-                            
-                            sheet.addMergedRegion(new CellRangeAddress(
-                                rowIndex, rowIndex, 
-                                startCol, 
-                                endCol
-                            ));
-                            
-                            if (j >= startCol && j <= endCol) {
-                                // Hiển thị phòng học
-                                c.setCellValue(segment.getRoom());
-                                
-                                // Sử dụng style tương ứng với kíp
-                                CellStyle cellStyle = isMorning ? morningStyle : afternoonStyle;
-                                c.setCellStyle(cellStyle);
+                              // Apply non-merge logic: first cell gets room name, others get hidden borders
+                            for (int col = startCol; col <= endCol; col++) {
+                                Cell segmentCell = classRow.getCell(col);
+                                if (segmentCell != null) {
+                                    // Only first cell gets the room name with text overflow
+                                    if (col == startCol) {
+                                        segmentCell.setCellValue(segment.getRoom());
+                                        
+                                        CellStyle firstCellStyle = workbook.createCellStyle();
+                                        CellStyle baseStyle = isMorning ? morningStyle : afternoonStyle;
+                                        firstCellStyle.cloneStyleFrom(baseStyle);
+                                        firstCellStyle.setAlignment(CellStyle.ALIGN_LEFT); // Align left to allow overflow
+                                        firstCellStyle.setShrinkToFit(false);
+                                        firstCellStyle.setWrapText(false);
+                                        
+                                        if (startCol < endCol) {
+                                            firstCellStyle.setBorderRight((short) 0);
+                                        }
+                                        
+                                        segmentCell.setCellStyle(firstCellStyle);
+                                    } else {
+                                        // Subsequent cells: hide internal borders to create seamless appearance
+                                        CellStyle hiddenBorderStyle = workbook.createCellStyle();
+                                        CellStyle baseStyle = isMorning ? morningStyle : afternoonStyle;
+                                        hiddenBorderStyle.cloneStyleFrom(baseStyle);
+                                        hiddenBorderStyle.setAlignment(CellStyle.ALIGN_CENTER);
+                                        hiddenBorderStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+                                        
+                                        // Hide left border to create seamless appearance
+                                        hiddenBorderStyle.setBorderLeft((short) 0);
+                                        
+                                        // If it's the last cell in the segment, keep right border
+                                        if (col == endCol) {
+                                            hiddenBorderStyle.setBorderRight((short) 1);
+                                        } else {
+                                            hiddenBorderStyle.setBorderRight((short) 0);
+                                        }
+                                        
+                                        // Keep top and bottom borders
+                                        hiddenBorderStyle.setBorderTop((short) 1);
+                                        hiddenBorderStyle.setBorderBottom((short) 1);
+                                        
+                                        segmentCell.setCellStyle(hiddenBorderStyle);
+                                    }
+                                }
                             }
                         }
                     }
