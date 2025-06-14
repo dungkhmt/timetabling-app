@@ -93,7 +93,7 @@ const ProductFilters = ({ filters, onFilterChange, onMultipleFilterChange, onApp
 
       {expanded && (
         <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={7}>
             <TextField
               fullWidth
               label="Tìm kiếm theo tên/mã sản phẩm"
@@ -104,7 +104,7 @@ const ProductFilters = ({ filters, onFilterChange, onMultipleFilterChange, onApp
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel id="category-select-label">Danh mục</InputLabel>
               <Select
@@ -139,7 +139,7 @@ const ProductFilters = ({ filters, onFilterChange, onMultipleFilterChange, onApp
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel id="status-select-label">Trạng thái</InputLabel>
               <Select
@@ -175,10 +175,11 @@ const ProductFilters = ({ filters, onFilterChange, onMultipleFilterChange, onApp
             </FormControl>
           </Grid>
 
-            <Grid item xs={12} md={2} textAlign={"right"}>
+            <Grid item xs={12} md={1}>
           <Button
               variant="contained"
               color="primary"
+              fullWidth
               onClick={onApplyFilters}
               startIcon={<SearchIcon />}
           >

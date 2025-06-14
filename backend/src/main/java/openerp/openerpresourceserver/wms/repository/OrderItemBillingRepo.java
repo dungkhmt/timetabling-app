@@ -12,7 +12,7 @@ import java.util.List;
 
 @Repository
 public interface OrderItemBillingRepo extends JpaRepository<OrderItemBilling, String>, JpaSpecificationExecutor<OrderItemBilling> {
-    @Query("SELECT oib.createdStamp, oib.quantity, p.id, p.name " +
+    @Query("SELECT oib.createdStamp, oib.quantity, p.id, p.name, oib.orderItemBillingTypeId " +
             "FROM OrderItemBilling oib " +
             "JOIN oib.product p " +
             "WHERE oib.createdStamp BETWEEN :startDate AND :endDate " +
@@ -23,7 +23,7 @@ public interface OrderItemBillingRepo extends JpaRepository<OrderItemBilling, St
     );
 
 
-    @Query("SELECT oib.createdStamp, oib.quantity, p.id, p.name " +
+    @Query("SELECT oib.createdStamp, oib.quantity, p.id, p.name, oib.orderItemBillingTypeId " +
             "FROM OrderItemBilling oib " +
             "JOIN oib.product p " +
             "WHERE oib.facility.id = :facilityId " +
@@ -36,7 +36,7 @@ public interface OrderItemBillingRepo extends JpaRepository<OrderItemBilling, St
     );
 
 
-    @Query("SELECT f.id, f.name, oib.quantity " +
+    @Query("SELECT f.id, f.name, oib.quantity, oib.orderItemBillingTypeId " +
             "FROM OrderItemBilling oib " +
             "JOIN oib.facility f " +
             "WHERE oib.createdStamp BETWEEN :startDate AND :endDate")

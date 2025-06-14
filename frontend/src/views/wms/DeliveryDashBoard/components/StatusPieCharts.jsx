@@ -14,6 +14,7 @@ const StatusPieCharts = ({ billStatusCounts, planStatusCounts, routeStatusCounts
     switch(status) {
       case 'CREATED': return '#42a5f5';
       case 'IN_PROGRESS': return '#ff9800';
+      case 'READY_FOR_DELIVERY': return '#ffc107';
       case 'COMPLETED': return '#4caf50';
       case 'CANCELLED': return '#f44336';
       case 'ASSIGNED': return '#9c27b0';
@@ -38,6 +39,7 @@ const StatusPieCharts = ({ billStatusCounts, planStatusCounts, routeStatusCounts
   const getStatusName = (status) => {
     switch(status) {
       case 'CREATED': return 'Tạo mới';
+      case 'READY_FOR_DELIVERY' : return 'Sẵn sàng giao hàng';
       case 'IN_PROGRESS': return 'Đang giao';
       case 'COMPLETED': return 'Hoàn thành';
       case 'CANCELLED': return 'Đã hủy';

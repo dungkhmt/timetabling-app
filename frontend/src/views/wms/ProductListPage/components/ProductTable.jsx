@@ -29,9 +29,9 @@ const ProductTable = ({
   const getStatusChip = (statusId) => {
     switch (statusId) {
       case "ACTIVE":
-        return <Chip label="Hoạt động" color="success" size="small" />;
+        return <Chip label="Mở bán" color="success" size="small" />;
       case "INACTIVE":
-        return <Chip label="Không hoạt động" color="error" size="small" />;
+        return <Chip label="Ngừng bán" color="error" size="small" />;
       default:
         return <Chip label={statusId || "N/A"} size="small" />;
     }

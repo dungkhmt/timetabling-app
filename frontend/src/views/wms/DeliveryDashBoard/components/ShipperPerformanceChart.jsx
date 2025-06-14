@@ -23,7 +23,7 @@ const ShipperPerformanceChart = ({ shippers }) => {
       }
     },
     legend: {
-      data: ['Hoàn thành', 'Đang giao', 'Được giao'],
+      data: ['Hoàn thành', 'Đang giao', 'Được giao phó'],
       top: 30
     },
     grid: {
@@ -71,7 +71,7 @@ const ShipperPerformanceChart = ({ shippers }) => {
         }
       },
       {
-        name: 'Được giao',
+        name: 'Được giao phó',
         type: 'bar',
         emphasis: {
           focus: 'series'

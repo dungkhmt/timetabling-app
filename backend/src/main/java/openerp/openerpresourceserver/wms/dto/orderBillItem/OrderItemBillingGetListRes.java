@@ -13,6 +13,7 @@ public class OrderItemBillingGetListRes {
     private String id;
     private String productId;
     private String productName;
+    private String orderItemBillingTypeId;
     private String orderItemId;
     private Integer quantity;
     private String unit;

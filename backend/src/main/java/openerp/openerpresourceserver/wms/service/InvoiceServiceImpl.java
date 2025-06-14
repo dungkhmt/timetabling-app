@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.InventoryStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.InvoiceType;
+import openerp.openerpresourceserver.wms.constant.enumrator.OrderItemBillingType;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.entity.InventoryItem;
@@ -118,7 +119,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .inventoryItemDetail(inventoryItemDetail)
                     .facility(inventoryItemDetail.getFacility())
                     .product(inventoryItemDetail.getProduct())
-                    .quantity(inventoryItemDetail.getQuantity() * -1)
+                    .quantity(inventoryItemDetail.getQuantity())
+                    .orderItemBillingTypeId(OrderItemBillingType.SALES_BILLING.name())
                     .unit(inventoryItemDetail.getProduct().getUnit())
                     .amount(inventoryItemDetail.getProduct().getWholeSalePrice().multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())))
                     .build();
@@ -201,6 +203,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .facility(inventoryItemDetail.getFacility())
                     .product(inventoryItemDetail.getProduct())
                     .quantity(inventoryItemDetail.getQuantity())
+                    .orderItemBillingTypeId(OrderItemBillingType.PURCHASE_BILLING.name())
                     .unit(inventoryItemDetail.getProduct().getUnit())
                     .amount(inventoryItemDetail.getProduct().getWholeSalePrice().multiply(BigDecimal.valueOf(inventoryItemDetail.getQuantity())))
                     .build();

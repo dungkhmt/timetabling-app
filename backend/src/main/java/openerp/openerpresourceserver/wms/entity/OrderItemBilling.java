@@ -17,6 +17,8 @@ public class OrderItemBilling extends BaseEntity {
     @Id
     private String id;
 
+    private String orderItemBillingTypeId;
+
     @ManyToOne
     @JoinColumn(name = "order_item_id")
     private OrderItem orderItem;

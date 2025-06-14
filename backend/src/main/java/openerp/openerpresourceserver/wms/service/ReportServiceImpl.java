@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.constant.enumrator.OrderItemBillingType;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.report.*;
@@ -167,6 +168,7 @@ public class ReportServiceImpl implements ReportService {
             int quantity = ((Number) row[1]).intValue();
             String productId = (String) row[2];
             String productName = (String) row[3];
+            String orderBillingTypeId = (String) row[4];
 
             // Store product name for later use
             productNames.put(productId, productName);
@@ -175,19 +177,18 @@ public class ReportServiceImpl implements ReportService {
             DailyMovementDto daily = dailyMap.getOrDefault(date,
                     new DailyMovementDto(date.format(DateTimeFormatter.ISO_LOCAL_DATE), 0, 0));
 
-            if (quantity > 0) { // Import
+            if (orderBillingTypeId.equals(OrderItemBillingType.PURCHASE_BILLING.name())) { // Import
                 daily.setImportQuantity(daily.getImportQuantity() + quantity);
                 totalImport += quantity;
 
                 // Update product import count
                 productImports.put(productId, productImports.getOrDefault(productId, 0) + quantity);
-            } else if (quantity < 0) { // Export
-                int absQuantity = Math.abs(quantity);
-                daily.setExportQuantity(daily.getExportQuantity() + absQuantity);
-                totalExport += absQuantity;
+            } else { // Export
+                daily.setExportQuantity(daily.getExportQuantity() + quantity);
+                totalExport += quantity;
 
                 // Update product export count
-                productExports.put(productId, productExports.getOrDefault(productId, 0) + absQuantity);
+                productExports.put(productId, productExports.getOrDefault(productId, 0) + quantity);
             }
 
             dailyMap.put(date, daily);
@@ -235,15 +236,16 @@ public class ReportServiceImpl implements ReportService {
             String facilityId = (String) row[0];
             String facilityName = (String) row[1];
             int quantity = ((Number) row[2]).intValue();
+            String orderBillingTypeId = (String) row[3];
 
             // Get or create facility record
             FacilityMovementDto dto = facilityMap.getOrDefault(facilityId,
                     new FacilityMovementDto(facilityId, facilityName, 0, 0));
 
-            if (quantity > 0) { // Import
+            if (orderBillingTypeId.equals(OrderItemBillingType.PURCHASE_BILLING.name())) { // Import
                 dto.setImportQuantity(dto.getImportQuantity() + quantity);
-            } else if (quantity < 0) { // Export
-                dto.setExportQuantity(dto.getExportQuantity() + Math.abs(quantity));
+            } else { // Export
+                dto.setExportQuantity(dto.getExportQuantity() + quantity);
             }
 
             facilityMap.put(facilityId, dto);

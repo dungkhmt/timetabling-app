@@ -37,6 +37,18 @@ const FacilityHistoryTable = ({
     }
   };
 
+  // this function to convert the orderItemBillingTypeId to a readable string
+  const getBillingTypeName = (typeId) => {
+    switch (typeId) {
+      case 'SALES_BILLING':
+        return "Xuất"
+      case 'PURCHASE_BILLING':
+        return "Nhập";
+      default:
+        return "N-A";
+    }
+  }
+
   return (
     <Paper elevation={1}>
       <TableContainer>
@@ -45,6 +57,7 @@ const FacilityHistoryTable = ({
             <TableRow>
               <TableCell>STT</TableCell>
               <TableCell>Mã ghi nhận</TableCell>
+              <TableCell>Hành vi</TableCell>
               <TableCell>Mã sản phẩm</TableCell>
               <TableCell>Tên sản phẩm</TableCell>
               <TableCell>Số lượng</TableCell>
@@ -79,6 +92,7 @@ const FacilityHistoryTable = ({
                 <TableRow key={item.id} hover sx={{ cursor: "pointer" }} onClick={() => navigate(`/wms/inventory/facility-history/details/${item.id}`)}>
                   <TableCell>{pagination.page * pagination.size + index + 1}</TableCell>
                   <TableCell>{item.id}</TableCell>
+                    <TableCell>{getBillingTypeName(item.orderItemBillingTypeId)}</TableCell>
                   <TableCell>{item.productId}</TableCell>
                   <TableCell>{item.productName}</TableCell>
                   <TableCell>{item.quantity}</TableCell>

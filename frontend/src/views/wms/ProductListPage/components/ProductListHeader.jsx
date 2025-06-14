@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import {ImportExport} from "@mui/icons-material";
 
 const ProductListHeader = ({ onCreateProduct, onResetFilters }) => {
   const theme = useTheme();
@@ -32,6 +33,13 @@ const ProductListHeader = ({ onCreateProduct, onResetFilters }) => {
           onClick={onResetFilters}
         >
           Làm mới
+        </Button>
+        <Button
+            variant="outlined"
+            startIcon={<ImportExport />}
+            size="medium"
+        >
+            Xuất file
         </Button>
         <Button
           variant="contained"

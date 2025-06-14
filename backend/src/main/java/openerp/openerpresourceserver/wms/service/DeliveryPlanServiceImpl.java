@@ -20,6 +20,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.micrometer.common.util.StringUtils.isBlank;
 import static openerp.openerpresourceserver.wms.constant.Constants.*;
 
 @Service
@@ -53,8 +54,8 @@ public class DeliveryPlanServiceImpl implements DeliveryPlanService {
 
         var deliveryPlan = generalMapper.convertToEntity(req, DeliveryPlan.class);
 
-        if(deliveryPlan.getId() == null) {
-            deliveryPlan.setId(CommonUtil.getUUID());
+        if(isBlank(deliveryPlan.getId())) {
+            deliveryPlan.setId(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_PLAN_ID_PREFIX));
         }
 
         BigDecimal totalWeight = BigDecimal.ZERO;
