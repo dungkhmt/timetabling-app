@@ -67,6 +67,39 @@ const GeneralScheduleScreen = () => {
   });
   const[timeSlotList, setTimeSlotList] = useState([]);
 
+  const processClassData = (data) => {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+  
+    let generalClasses = [];
+    data.forEach((classObj) => {
+      if (classObj.timeSlots) {
+        classObj.timeSlots.forEach((timeSlot, index) => {
+          if (timeSlot.duration !== null) {
+            const cloneObj = JSON.parse(
+              JSON.stringify({
+                ...classObj,
+                ...timeSlot,
+                classCode: classObj.classCode,
+                roomReservationId: timeSlot.id,
+                id: classObj.id + `-${index + 1}`,
+                crew: classObj.crew,
+                duration: timeSlot.duration,
+                isChild: true,
+                parentId: classObj.id,
+              })
+            );
+            delete cloneObj.timeSlots;
+            generalClasses.push(cloneObj);
+          }
+        });
+      }
+    });
+  
+    return generalClasses;
+  };
+
   const searchRoomColumns = [
     {
       title: "ID",
@@ -438,22 +471,22 @@ const GeneralScheduleScreen = () => {
       filterCourseCodes: filterCourseCodes,
       filterClassTypes: filterClassTypes,
       versionId: selectedVersion.id
-    };
-
+    };      
     request(
       "post",
       "/general-classes/advanced-filter",
       (res) => {
         console.log('Advanced Filter Result: ', res.data);
         if (res.data && Array.isArray(res.data)) {
-          setFilteredClasses(res.data);
+          const processedData = processClassData(res.data);
+          setFilteredClasses(processedData);
           setIsFilterApplied(true);
           setSelectedCluster(null); 
           
           setOpenAdvancedFilter(false);
           setters.setSelectedRows([]);
           
-          toast.success(`Đã lọc thành công! Tìm thấy ${res.data.length} lớp học phù hợp.`);
+          toast.success(`Đã lọc thành công! Tìm thấy ${processedData.length} lớp học phù hợp.`);
         } else {
           toast.warning("Không tìm thấy lớp học nào phù hợp với điều kiện lọc!");
         }
