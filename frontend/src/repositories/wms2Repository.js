@@ -86,6 +86,9 @@ export const wms2Service = {
   getLowStockForecast : () => {
     return request("get", `/forecast/daily-low-stock`);
   },
+  getWeeklyLowStockForecast: () => {
+    return request("get", `/forecast/weekly-low-stock`);
+  },
   createDeliveryBill: (data) => {
     return request("post", "/delivery-bill/create", null, null, data);
   },

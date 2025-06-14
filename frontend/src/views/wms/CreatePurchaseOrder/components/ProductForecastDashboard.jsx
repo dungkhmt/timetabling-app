@@ -22,7 +22,8 @@ import {
   Warning,
   TrendingUp,
   Inventory,
-  Assessment
+  Assessment,
+  DateRange
 } from '@mui/icons-material';
 import ReactECharts from 'echarts-for-react';
 import { useWms2Data } from 'services/useWms2Data';
@@ -52,20 +53,20 @@ const ProductForecastDashboard = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
-  const { getForecastData } = useWms2Data();
+  const { getWeeklyLowStockForecast } = useWms2Data();
 
   const loadForecastData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await getForecastData();
+      const response = await getWeeklyLowStockForecast();
       if (response?.code === 200 && response?.data) {
         setForecastData(response.data);
       } else {
         throw new Error('Invalid response format');
       }
     } catch (err) {
-      setError('Không thể tải dữ liệu dự báo: ' + (err.message || 'Lỗi không xác định'));
+      setError('Không thể tải dữ liệu dự báo theo tuần: ' + (err.message || 'Lỗi không xác định'));
     } finally {
       setLoading(false);
     }
@@ -84,17 +85,20 @@ const ProductForecastDashboard = () => {
     item.productId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate summary statistics
+  // Calculate summary statistics for weekly data
   const totalProducts = forecastData.length;
   const totalPredictedDemand = forecastData.reduce((sum, item) => sum + (item.totalPredictedQuantity || 0), 0);
   const criticalStockItems = forecastData.filter(item => 
-    (item.currentStock || 0) < ((item.averageDailyOutbound || 0) * 7)
+    (item.weeksUntilStockout || 0) <= 4 && (item.weeksUntilStockout || 0) > 0
   ).length;
+  const avgConfidence = forecastData.length > 0 
+    ? (forecastData.reduce((sum, item) => sum + (item.confidenceLevel || 75), 0) / forecastData.length).toFixed(0)
+    : 75;
 
-  // Biểu đồ tổng quan
+  // Biểu đồ tổng quan theo tuần
   const overviewChartOption = {
     title: {
-      text: 'Tổng quan dự báo nhu cầu',
+      text: 'Tổng quan dự báo nhu cầu theo tuần',
       left: 'center'
     },
     tooltip: {
@@ -107,14 +111,15 @@ const ProductForecastDashboard = () => {
         const item = filteredData[dataIndex];
         return `
           <div style="font-weight: bold;">${item?.productName}</div>
-          <div>Dự báo: ${params[0].value} ${item?.unit}</div>
+          <div>Dự báo 4 tuần: ${params[0].value} ${item?.unit}</div>
           <div>Tồn kho: ${item?.currentStock || 0} ${item?.unit}</div>
-          <div>TB/ngày: ${item?.averageDailyOutbound || 0} ${item?.unit}</div>
+          <div>TB/tuần: ${item?.averageWeeklyQuantity || 0} ${item?.unit}</div>
+          <div>Tuần hết hàng: ${item?.weeksUntilStockout || 0}</div>
         `;
       }
     },
     legend: {
-      data: ['Dự báo 7 ngày', 'Tồn kho hiện tại'],
+      data: ['Dự báo 4 tuần', 'Tồn kho hiện tại'],
       top: 30
     },
     grid: {
@@ -140,7 +145,7 @@ const ProductForecastDashboard = () => {
     },
     series: [
       {
-        name: 'Dự báo 7 ngày',
+        name: 'Dự báo 4 tuần',
         type: 'bar',
         data: filteredData.map(item => item.totalPredictedQuantity || 0),
         itemStyle: {
@@ -158,15 +163,40 @@ const ProductForecastDashboard = () => {
     ]
   };
 
-  // Biểu đồ xu hướng tồn kho
+  // Biểu đồ phân tích tình trạng tồn kho theo tuần
+  const stockAnalysisData = [
+    {
+      value: forecastData.filter(item => (item.weeksUntilStockout || 0) <= 2 && (item.weeksUntilStockout || 0) > 0).length,
+      name: 'Cần nhập gấp (≤2 tuần)',
+      itemStyle: { color: '#f44336' }
+    },
+    {
+      value: forecastData.filter(item => 
+        (item.weeksUntilStockout || 0) > 2 && (item.weeksUntilStockout || 0) <= 4
+      ).length,
+      name: 'Cần theo dõi (3-4 tuần)',
+      itemStyle: { color: '#ff9800' }
+    },
+    {
+      value: forecastData.filter(item => (item.weeksUntilStockout || 0) > 4).length,
+      name: 'Đủ tồn kho (>4 tuần)',
+      itemStyle: { color: '#4caf50' }
+    },
+    {
+      value: forecastData.filter(item => !(item.weeksUntilStockout > 0)).length,
+      name: 'Không xác định',
+      itemStyle: { color: '#9e9e9e' }
+    }
+  ];
+
   const stockTrendOption = {
     title: {
-      text: 'Phân tích tình trạng tồn kho',
+      text: 'Phân tích tình trạng tồn kho theo tuần',
       left: 'center'
     },
     tooltip: {
       trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
+      formatter: '{a} <br/>{b}: {c} sản phẩm ({d}%)'
     },
     legend: {
       orient: 'vertical',
@@ -179,18 +209,7 @@ const ProductForecastDashboard = () => {
         type: 'pie',
         radius: '50%',
         center: ['50%', '50%'],
-        data: [
-          {
-            value: criticalStockItems,
-            name: 'Cần nhập thêm',
-            itemStyle: { color: '#f44336' }
-          },
-          {
-            value: totalProducts - criticalStockItems,
-            name: 'Đủ tồn kho',
-            itemStyle: { color: '#4caf50' }
-          }
-        ],
+        data: stockAnalysisData,
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
@@ -207,11 +226,11 @@ const ProductForecastDashboard = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
-            <Insights sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Dự báo hàng tồn kho
+            <DateRange sx={{ mr: 1, verticalAlign: 'middle' }} />
+            Dự báo hàng tồn kho theo tuần
           </Typography>
           <Typography variant="body1" color="textSecondary">
-            Phân tích và dự báo nhu cầu xuất kho dựa trên mô hình ARIMA
+            Phân tích và dự báo nhu cầu xuất kho theo tuần dựa trên mô hình ARIMA
           </Typography>
         </Box>
         <Button
@@ -250,7 +269,7 @@ const ProductForecastDashboard = () => {
                 <Box>
                   <Typography variant="h5">{totalPredictedDemand}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Dự báo 7 ngày tới
+                    Dự báo 4 tuần tới
                   </Typography>
                 </Box>
               </Box>
@@ -266,7 +285,7 @@ const ProductForecastDashboard = () => {
                 <Box>
                   <Typography variant="h5">{criticalStockItems}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Sản phẩm cần nhập thêm
+                    Cần nhập trong 4 tuần
                   </Typography>
                 </Box>
               </Box>
@@ -280,9 +299,9 @@ const ProductForecastDashboard = () => {
               <Box display="flex" alignItems="center">
                 <Assessment color="info" sx={{ mr: 2, fontSize: 40 }} />
                 <Box>
-                  <Typography variant="h5">95%</Typography>
+                  <Typography variant="h5">{avgConfidence}%</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Độ tin cậy mô hình
+                    Độ tin cậy TB
                   </Typography>
                 </Box>
               </Box>
@@ -352,7 +371,7 @@ const ProductForecastDashboard = () => {
           <Tab 
             label={
               <Box display="flex" alignItems="center">
-                Cần nhập thêm
+                Cần nhập trong 4 tuần
                 {criticalStockItems > 0 && (
                   <Chip 
                     label={criticalStockItems} 
@@ -392,7 +411,7 @@ const ProductForecastDashboard = () => {
         ) : (
           <Grid container spacing={3}>
             {filteredData
-              .filter(item => (item.currentStock || 0) < ((item.averageDailyOutbound || 0) * 7))
+              .filter(item => (item.weeksUntilStockout || 0) <= 4 && (item.weeksUntilStockout || 0) > 0)
               .map((product) => (
                 <Grid item xs={12} key={product.productId}>
                   <ProductForecastChart forecastData={product} />
@@ -405,7 +424,7 @@ const ProductForecastDashboard = () => {
       {!loading && filteredData.length === 0 && (
         <Box textAlign="center" py={4}>
           <Typography variant="h6" color="textSecondary">
-            Không tìm thấy dữ liệu dự báo
+            Không tìm thấy dữ liệu dự báo theo tuần
           </Typography>
           <Typography variant="body2" color="textSecondary" mt={1}>
             Hãy thử làm mới dữ liệu hoặc kiểm tra kết nối

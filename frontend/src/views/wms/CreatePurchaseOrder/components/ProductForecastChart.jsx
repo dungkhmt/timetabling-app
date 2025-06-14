@@ -1,33 +1,35 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, Typography, Box, Chip, Grid, Divider } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { TrendingUp, Inventory, ShowChart } from '@mui/icons-material';
+import { TrendingUp, Inventory, ShowChart, DateRange } from '@mui/icons-material';
 
 const ProductForecastChart = ({ forecastData }) => {
   const chartOption = useMemo(() => {
-    if (!forecastData || !forecastData.historicalData || !forecastData.forecastData) {
+    if (!forecastData || !forecastData.historicalWeeklyData || !forecastData.weeklyForecastData) {
       return {};
     }
 
-    // Chuẩn bị dữ liệu
-    const historicalEntries = Object.entries(forecastData.historicalData).sort(([a], [b]) => new Date(a) - new Date(b));
-    const forecastEntries = Object.entries(forecastData.forecastData).sort(([a], [b]) => new Date(a) - new Date(b));
+    // Chuẩn bị dữ liệu tuần
+    const historicalEntries = Object.entries(forecastData.historicalWeeklyData)
+      .sort(([a], [b]) => a.localeCompare(b));
+    const forecastEntries = Object.entries(forecastData.weeklyForecastData)
+      .sort(([a], [b]) => a.localeCompare(b));
     
-    // Tạo mảng dates và data
-    const allDates = [
-      ...historicalEntries.map(([date]) => date),
-      ...forecastEntries.map(([date]) => date)
+    // Tạo mảng weeks và data
+    const allWeeks = [
+      ...historicalEntries.map(([week]) => week),
+      ...forecastEntries.map(([week]) => week)
     ];
     
     const historicalValues = historicalEntries.map(([, value]) => value);
-    const forecastValues = forecastEntries.map(([, value]) => value); // Đổi tên biến từ forecastData thành forecastValues
+    const forecastValues = forecastEntries.map(([, value]) => value);
     
     // Tìm điểm phân cách giữa lịch sử và dự báo
     const todayIndex = historicalEntries.length - 1;
 
     return {
       title: {
-        text: `Biểu đồ dự báo: ${forecastData.productName}`,
+        text: `Dự báo theo tuần: ${forecastData.productName}`,
         left: 'center',
         textStyle: {
           fontSize: 16,
@@ -64,11 +66,10 @@ const ProductForecastChart = ({ forecastData }) => {
       },
       xAxis: {
         type: 'category',
-        data: allDates,
+        data: allWeeks,
         axisLabel: {
           formatter: function (value) {
-            const date = new Date(value);
-            return `${date.getDate()}/${date.getMonth() + 1}`;
+            return value.replace('-W', '\nT');
           },
           rotate: 45
         }
@@ -86,17 +87,17 @@ const ProductForecastChart = ({ forecastData }) => {
           type: 'line',
           data: [
             ...historicalValues,
-            ...new Array(forecastValues.length).fill(null) // Sử dụng forecastValues thay vì forecastData
+            ...new Array(forecastValues.length).fill(null)
           ],
           lineStyle: {
             color: '#2196f3',
-            width: 2
+            width: 3
           },
           itemStyle: {
             color: '#2196f3'
           },
           symbol: 'circle',
-          symbolSize: 6,
+          symbolSize: 8,
           connectNulls: false
         },
         {
@@ -104,26 +105,26 @@ const ProductForecastChart = ({ forecastData }) => {
           type: 'line',
           data: [
             ...new Array(historicalValues.length).fill(null),
-            ...forecastValues // Sử dụng forecastValues thay vì forecastData
+            ...forecastValues
           ],
           lineStyle: {
             color: '#ff9800',
-            width: 2,
+            width: 3,
             type: 'dashed'
           },
           itemStyle: {
             color: '#ff9800'
           },
-          symbol: 'circle',
-          symbolSize: 6,
+          symbol: 'diamond',
+          symbolSize: 8,
           connectNulls: false
         }
       ],
       markLine: {
         data: [
           {
-            name: 'Hôm nay',
-            xAxis: todayIndex < allDates.length ? allDates[todayIndex] : allDates[allDates.length - 1],
+            name: 'Tuần hiện tại',
+            xAxis: todayIndex < allWeeks.length ? allWeeks[todayIndex] : allWeeks[allWeeks.length - 1],
             lineStyle: {
               color: '#666',
               type: 'dashed',
@@ -132,7 +133,7 @@ const ProductForecastChart = ({ forecastData }) => {
             label: {
               show: true,
               position: 'end',
-              formatter: 'Hôm nay'
+              formatter: 'Tuần hiện tại'
             }
           }
         ]
@@ -144,22 +145,30 @@ const ProductForecastChart = ({ forecastData }) => {
     return (
       <Card>
         <CardContent>
-          <Typography color="textSecondary">Không có dữ liệu dự báo</Typography>
+          <Typography color="textSecondary">Không có dữ liệu dự báo theo tuần</Typography>
         </CardContent>
       </Card>
     );
   }
 
+  const trendColor = forecastData.trend >= 0 ? 'success' : 'error';
+
   return (
     <Card sx={{ mb: 3 }}>
       <CardContent>
         <Box display="flex" alignItems="center" mb={2}>
-          <ShowChart color="primary" sx={{ mr: 1 }} />
+          <DateRange color="primary" sx={{ mr: 1 }} />
           <Typography variant="h6" component="h3" sx={{ flexGrow: 1 }}>
             {forecastData.productName}
           </Typography>
           <Chip 
-            label={forecastData.modelInfo || 'ARIMA'} 
+            label={`${forecastData.trend > 0 ? '+' : ''}${forecastData.trend?.toFixed(1)}%`}
+            color={trendColor}
+            size="small"
+            sx={{ mr: 1 }}
+          />
+          <Chip 
+            label={forecastData.modelInfo || 'ARIMA (Weekly)'}
             variant="outlined" 
             size="small" 
             color="primary"
@@ -186,7 +195,7 @@ const ProductForecastChart = ({ forecastData }) => {
               </Typography>
               <Typography variant="caption" color="textSecondary">
                 <TrendingUp fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                Dự báo 7 ngày
+                Dự báo 4 tuần
               </Typography>
             </Box>
           </Grid>
@@ -194,21 +203,21 @@ const ProductForecastChart = ({ forecastData }) => {
           <Grid item xs={6} sm={3}>
             <Box textAlign="center">
               <Typography variant="h6">
-                {forecastData.averageDailyOutbound || 0}
+                {forecastData.averageWeeklyQuantity || 0}
               </Typography>
               <Typography variant="caption" color="textSecondary">
-                Trung bình/ngày
+                Trung bình/tuần
               </Typography>
             </Box>
           </Grid>
           
           <Grid item xs={6} sm={3}>
             <Box textAlign="center">
-              <Typography variant="h6">
-                {forecastData.maxDailyOutbound || 0}
+              <Typography variant="h6" color={forecastData.weeksUntilStockout <= 4 ? 'error' : 'inherit'}>
+                {forecastData.weeksUntilStockout || 0}
               </Typography>
               <Typography variant="caption" color="textSecondary">
-                Cao nhất/ngày
+                Tuần nữa hết hàng
               </Typography>
             </Box>
           </Grid>
@@ -226,19 +235,19 @@ const ProductForecastChart = ({ forecastData }) => {
 
         <Box mt={2}>
           <Typography variant="body2" color="textSecondary">
-            <strong>Mô hình:</strong> {forecastData.modelInfo || 'Auto ARIMA'} • 
-            <strong> Độ tin cậy:</strong> {((forecastData.confidenceLevel || 0.95) * 100).toFixed(0)}% • 
+            <strong>Mô hình:</strong> {forecastData.modelInfo || 'ARIMA (Weekly)'} •
+            <strong> Độ tin cậy:</strong> {(forecastData.confidenceLevel || 75).toFixed(0)}% • 
             <strong> Đơn vị:</strong> {forecastData.unit || 'N/A'}
-            {forecastData.mse && (
-              <>
-                {' • '}
-                <strong> MSE:</strong> {forecastData.mse.toFixed(2)}
-              </>
-            )}
             {forecastData.rmse && (
               <>
                 {' • '}
                 <strong> RMSE:</strong> {forecastData.rmse.toFixed(2)}
+              </>
+            )}
+            {forecastData.trend && (
+              <>
+                {' • '}
+                <strong> Xu hướng:</strong> {forecastData.trend > 0 ? '↗' : '↘'} {Math.abs(forecastData.trend).toFixed(1)}%
               </>
             )}
           </Typography>

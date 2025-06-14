@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentType;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.forecast.DailyProductForecastDTO;
+import openerp.openerpresourceserver.wms.dto.forecast.WeeklyProductForecastDTO;
 import openerp.openerpresourceserver.wms.entity.InventoryItem;
 import openerp.openerpresourceserver.wms.entity.Product;
 import openerp.openerpresourceserver.wms.repository.*;
@@ -39,6 +40,10 @@ public class ForeCastServiceImpl implements ForecastService {
     private static final int LOW_STOCK_THRESHOLD = 20000; // Threshold for low stock products
     private static final int REDIS_EXPIRATION_DAYS = 7 * 24 * 60 * 60; // Cache expiration in days
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static final int HISTORICAL_WEEKS = 24; // Last 24 weeks of historical data
+    private static final int FORECAST_WEEKS = 4; // Forecast for the next 4 weeks
+    private static final int MIN_WEEKS_FOR_FORECAST = 12; // Minimum weeks required for forecasting
 
     @Scheduled(cron = "0 0 1 * * ?")
     public void scheduledDailyForecast() {
@@ -186,5 +191,269 @@ public class ForeCastServiceImpl implements ForecastService {
             log.error("Error forecasting with ARIMA for product {}: {}", product.getId(), e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Execute weekly forecast job automatically every Monday at 2:00 AM
+     */
+    @Scheduled(cron = "0 0 2 * * MON")
+    public void scheduledWeeklyForecast() {
+        log.info("Starting scheduled weekly forecast job at {}", LocalDateTime.now());
+        try {
+            forecastWeeklyLowStockProducts();
+            log.info("Completed scheduled weekly forecast job at {}", LocalDateTime.now());
+        } catch (Exception e) {
+            log.error("Error during scheduled weekly forecast: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public ApiResponse<List<WeeklyProductForecastDTO>> forecastWeeklyLowStockProducts() {
+        String redisKey = "WEEKLY_LOW_STOCK_FORECAST:" + getWeekIdentifier(LocalDate.now());
+        List<WeeklyProductForecastDTO> cachedForecast = null;
+        
+        try {
+            cachedForecast = (List<WeeklyProductForecastDTO>) redisService.get(redisKey);
+        } catch (Exception e) {
+            log.error("Error retrieving weekly forecast from Redis: {}", e.getMessage());
+            cachedForecast = null;
+        }
+        
+        if (cachedForecast != null && !cachedForecast.isEmpty()) {
+            return ApiResponse.<List<WeeklyProductForecastDTO>>builder()
+                    .code(200)
+                    .message("Weekly low stock forecast retrieved from cache")
+                    .data(cachedForecast)
+                    .build();
+        }
+
+        // Get low stock products
+        List<InventoryItem> lowStockItems = inventoryItemRepo.findByQuantityLessThan(LOW_STOCK_THRESHOLD);
+        if (lowStockItems.isEmpty()) {
+            return ApiResponse.<List<WeeklyProductForecastDTO>>builder()
+                    .code(200)
+                    .message("No low stock products found for weekly forecasting")
+                    .data(Collections.emptyList())
+                    .build();
+        }
+
+        Set<String> lowStockProductIds = lowStockItems.stream()
+                .map(item -> item.getProduct().getId())
+                .collect(Collectors.toSet());
+
+        List<Product> lowStockProducts = productRepo.findAllById(lowStockProductIds);
+        List<WeeklyProductForecastDTO> forecasts = new ArrayList<>();
+
+        for (Product product : lowStockProducts) {
+            WeeklyProductForecastDTO forecast = forecastProductWeeklyWithArima(product);
+            if (forecast != null) {
+                // Add current inventory information
+//                InventoryItem inventoryItem = lowStockItems.stream()
+//                        .filter(item -> item.getProduct().getId().equals(product.getId()))
+//                        .findFirst()
+//                        .orElse(null);
+                int currentStock = inventoryItemRepo.sumByProductId(product.getId());
+
+                    forecast.setCurrentStock(currentStock);
+                    // Calculate estimated weeks before stock-out
+                    if (forecast.getAverageWeeklyQuantity() > 0) {
+                        int weeksUntilStockout = (int) Math.floor((double) currentStock / forecast.getAverageWeeklyQuantity());
+                        forecast.setWeeksUntilStockout(weeksUntilStockout);
+                    }
+
+                forecasts.add(forecast);
+            }
+        }
+
+        // Sort by weeks until stock-out (ascending)
+        forecasts.sort(Comparator.comparing(WeeklyProductForecastDTO::getWeeksUntilStockout, 
+                                           Comparator.nullsLast(Comparator.naturalOrder())));
+
+        // Cache the result
+        redisService.save(redisKey, forecasts, REDIS_EXPIRATION_DAYS);
+        
+        return ApiResponse.<List<WeeklyProductForecastDTO>>builder()
+                .code(200)
+                .message("Weekly low stock forecast generated successfully")
+                .data(forecasts)
+                .build();
+    }
+
+    private WeeklyProductForecastDTO forecastProductWeeklyWithArima(Product product) {
+        LocalDate today = LocalDate.now();
+        LocalDate historicalStartDate = today.minusWeeks(HISTORICAL_WEEKS);
+        
+        // Get weekly quantities for this product
+        List<Object[]> weeklyData = inventoryItemDetailRepo.getWeeklyQuantitiesByProductAndShipmentType(
+                product.getId(),
+                ShipmentType.OUTBOUND.name(),
+                historicalStartDate.atStartOfDay(),
+                today.atTime(23, 59, 59));
+        
+        // Check if we have enough data points
+        if (weeklyData.size() < MIN_WEEKS_FOR_FORECAST) {
+            log.info("Not enough weekly data for product {}: {} weeks, need at least {}",
+                    product.getId(), weeklyData.size(), MIN_WEEKS_FOR_FORECAST);
+            return null;
+        }
+        
+        // Convert to time series data for ARIMA
+        Map<String, Integer> formattedWeeklyData = new LinkedHashMap<>();
+        Map<String, Integer> rawWeeklyData = new HashMap<>();
+        
+        for (Object[] dataPoint : weeklyData) {
+            Integer year = ((Number) dataPoint[0]).intValue();
+            Integer week = ((Number) dataPoint[1]).intValue();
+            Long quantity = ((Number) dataPoint[2]).longValue();
+            
+            String weekIdentifier = String.format("%d-W%02d", year, week);
+            formattedWeeklyData.put(weekIdentifier, quantity.intValue());
+            rawWeeklyData.put(weekIdentifier, quantity.intValue());
+        }
+        
+        // Fill in any missing weeks with zeros
+        LocalDate currentWeekStart = historicalStartDate;
+        while (!currentWeekStart.isAfter(today)) {
+            String weekId = getWeekIdentifier(currentWeekStart);
+            if (!formattedWeeklyData.containsKey(weekId)) {
+                formattedWeeklyData.put(weekId, 0);
+                rawWeeklyData.put(weekId, 0);
+            }
+            currentWeekStart = currentWeekStart.plusWeeks(1);
+        }
+        
+        // Sort by week identifier
+        formattedWeeklyData = formattedWeeklyData.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+        
+        // Convert to array for ARIMA
+        double[] timeSeriesData = formattedWeeklyData.values().stream()
+                .mapToDouble(Integer::doubleValue)
+                .toArray();
+        
+        try {
+            // Use ARIMA for weekly forecasting
+            ForecastResult forecastResult = Arima.auto_forecast_arima(timeSeriesData, FORECAST_WEEKS);
+            
+            // Get the forecasted values
+            double[] forecast = forecastResult.getForecast();
+            double[] upperBounds = forecastResult.getForecastUpperConf();
+            double[] lowerBounds = forecastResult.getForecastLowerConf();
+            
+            // Convert predictions to integers and build weekly forecast map
+            Map<String, Integer> weeklyForecast = new LinkedHashMap<>();
+            int totalPredictedQuantity = 0;
+            
+            for (int i = 0; i < forecast.length; i++) {
+                int predictedQuantity = (int) Math.round(Math.max(0, forecast[i]));
+                totalPredictedQuantity += predictedQuantity;
+                
+                LocalDate forecastWeekStart = today.plusWeeks(i + 1);
+                String weekIdentifier = getWeekIdentifier(forecastWeekStart);
+                weeklyForecast.put(weekIdentifier, predictedQuantity);
+            }
+            
+            // Calculate the average weekly prediction
+            double avgWeeklyPrediction = totalPredictedQuantity / (double) FORECAST_WEEKS;
+            
+            // Calculate trend percentage
+            double recentAvg = 0;
+            int weeksToAverage = Math.min(4, timeSeriesData.length);
+            for (int i = timeSeriesData.length - weeksToAverage; i < timeSeriesData.length; i++) {
+                recentAvg += timeSeriesData[i];
+            }
+            recentAvg /= weeksToAverage;
+            
+            double trendValue = 0;
+            if (recentAvg > 0) {
+                trendValue = ((avgWeeklyPrediction / recentAvg) - 1) * 100;
+            }
+            
+            // Calculate statistics
+            List<Integer> historicalValues = new ArrayList<>(formattedWeeklyData.values());
+            int averageWeekly = (int) historicalValues.stream().mapToInt(Integer::intValue).average().orElse(0);
+            int maxWeekly = historicalValues.stream().mapToInt(Integer::intValue).max().orElse(0);
+            int minWeekly = historicalValues.stream().mapToInt(Integer::intValue).min().orElse(0);
+            
+            // Calculate predicted value
+//            BigDecimal predictedValue = product.getWholeSalePrice()
+//                    .multiply(BigDecimal.valueOf(totalPredictedQuantity));
+            
+            // Calculate upper and lower bounds
+            int upperBoundTotal = 0;
+            int lowerBoundTotal = 0;
+            for (int i = 0; i < upperBounds.length; i++) {
+                upperBoundTotal += (int) Math.round(Math.max(0, upperBounds[i]));
+                lowerBoundTotal += (int) Math.round(Math.max(0, lowerBounds[i]));
+            }
+            
+            return WeeklyProductForecastDTO.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .forecastDate(today)
+                    .totalPredictedQuantity(totalPredictedQuantity)
+                    .averageWeeklyQuantity((int) Math.round(avgWeeklyPrediction))
+                    .price(product.getWholeSalePrice())
+//                    .predictedValue(predictedValue)
+                    .unit(product.getUnit())
+                    .tax(product.getVatRate())
+                    .historicalWeeklyData(formattedWeeklyData)
+                    .weeklyForecastData(weeklyForecast)
+                    .confidenceLevel(calculateConfidenceLevel(forecast, upperBounds, lowerBounds))
+                    .modelInfo("ARIMA (Weekly)")
+                    .rmse(forecastResult.getRMSE())
+                    .trend(BigDecimal.valueOf(trendValue).setScale(2, BigDecimal.ROUND_HALF_UP))
+                    .averageWeeklyOutbound(averageWeekly)
+                    .maxWeeklyOutbound(maxWeekly)
+                    .minWeeklyOutbound(minWeekly)
+                    .upperBoundTotal(upperBoundTotal)
+                    .lowerBoundTotal(lowerBoundTotal)
+                    .build();
+            
+        } catch (Exception e) {
+            log.error("Error forecasting weekly with ARIMA for product {}: {}", product.getId(), e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Generate week identifier in format "YYYY-WXX"
+     */
+    private String getWeekIdentifier(LocalDate date) {
+        int year = date.getYear();
+        int weekOfYear = date.get(java.time.temporal.WeekFields.ISO.weekOfYear());
+        return String.format("%d-W%02d", year, weekOfYear);
+    }
+
+    private Double calculateConfidenceLevel(double[] forecast, double[] upperBounds, double[] lowerBounds) {
+        if (forecast.length == 0 || upperBounds.length == 0 || lowerBounds.length == 0) {
+            return 75.0; // Default confidence for weekly data
+        }
+        
+        double totalRelativePrecision = 0;
+        int validWeeks = 0;
+        
+        for (int i = 0; i < forecast.length; i++) {
+            if (forecast[i] > 0) {
+                double range = upperBounds[i] - lowerBounds[i];
+                double relativePrecision = range / forecast[i];
+                totalRelativePrecision += relativePrecision;
+                validWeeks++;
+            }
+        }
+        
+        double avgRelativePrecision = validWeeks > 0 ? totalRelativePrecision / validWeeks : 1.0;
+        
+        // Transform to confidence value (60-95% for weekly data)
+        double confidence = 95.0 - (avgRelativePrecision * 25.0);
+        confidence = Math.max(Math.min(confidence, 95.0), 60.0);
+        
+        return confidence;
     }
 }
