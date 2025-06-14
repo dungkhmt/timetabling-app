@@ -32,7 +32,7 @@ const TimeTable = ({
   loading,
   selectedRows,
   onSelectedRowsChange,
-  numberSlotsToDisplay, // Ensure this prop is destructured
+  numberSlotsToDisplay, 
 }) => {
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
