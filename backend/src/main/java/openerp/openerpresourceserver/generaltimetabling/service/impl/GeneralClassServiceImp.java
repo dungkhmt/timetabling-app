@@ -616,11 +616,11 @@ public class GeneralClassServiceImp implements GeneralClassService {
         List<ModelResponseTimeTablingClass> foundClasses = timeTablingClassService.getTimeTablingClassDtos(classIds,versionId);
 
         log.info("autoScheduleTimeSlotRoom, nb general classes = " + foundClasses.size());
-        List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(semester);
-
-        List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
+        List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(semester);        List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
         for(ModelResponseTimeTablingClass cls : foundClasses){
-            if(cls.getQuantityMax() >= 150) selectedClassesOfSemester.add(cls);
+            if(cls != null && cls.getQuantityMax() != null && cls.getQuantityMax() >= 150) {
+                selectedClassesOfSemester.add(cls);
+            }
         }
         foundClasses = selectedClassesOfSemester;
 

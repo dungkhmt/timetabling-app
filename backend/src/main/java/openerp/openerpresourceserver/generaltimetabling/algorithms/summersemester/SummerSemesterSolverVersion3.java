@@ -973,32 +973,34 @@ class ClassBasedRoomAssignmentSolverVersion3{
         int cnt = 0;
         for(int i = 1; i <= 1000; i++){
             ClassSegment cs = findMaxGapRoomClassSegment();
-            int sl = baseSolver.solutionSlot.get(cs.getId());
-            int r = baseSolver.solutionRoom.get(cs.getId());
-            int gap = baseSolver.I.getRoomCapacity()[r] - cs.nbStudents;
-            log.info("refineRooms, discover max-gap class " + cs.str() + " gap = " + gap);
-            if(gap <= 30){
-                log.info("refineRooms, gap = " + gap + " BREAK"); break;
-            }
-            int selRoom = findBestFitRoom(cs);
-            if(selRoom < 0){
-                log.info("refineRooms, findBestFitRoom return -1 -> BREAK");
-                break;
-            }
-            int newGap = baseSolver.I.getRoomCapacity()[selRoom] - cs.nbStudents;
-            log.info("refineRooms, found new room with newGap = " + newGap);
-            if(newGap > 30){
-                log.info("refineRooms, new gap = " + newGap + " BREAK"); break;
-            }
-            log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap);
-            unAssignRoom(cs,r);
-            log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap + " UnAssign OK");
+            if(cs != null) {
+                int sl = baseSolver.solutionSlot.get(cs.getId());
+                int r = baseSolver.solutionRoom.get(cs.getId());
+                int gap = baseSolver.I.getRoomCapacity()[r] - cs.nbStudents;
+                log.info("refineRooms, discover max-gap class " + cs.str() + " gap = " + gap);
+                if(gap <= 30){
+                    log.info("refineRooms, gap = " + gap + " BREAK"); break;
+                }
+                int selRoom = findBestFitRoom(cs);
+                if(selRoom < 0){
+                    log.info("refineRooms, findBestFitRoom return -1 -> BREAK");
+                    break;
+                }
+                int newGap = baseSolver.I.getRoomCapacity()[selRoom] - cs.nbStudents;
+                log.info("refineRooms, found new room with newGap = " + newGap);
+                if(newGap > 30){
+                    log.info("refineRooms, new gap = " + newGap + " BREAK"); break;
+                }
+                log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap);
+                unAssignRoom(cs,r);
+                log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap + " UnAssign OK");
 
-            assignRoom(cs,selRoom);
+                assignRoom(cs,selRoom);
 
-            log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap + " ReAssign OK");
+                log.info("refineRooms, iter " + i + " FOUND replacement for class segment " + cs.str() + " room " + baseSolver.W.mIndex2Room.get(selRoom).getClassroom() + " new Gap = " + newGap + " ReAssign OK");
 
-            cnt++;
+                cnt++;
+            }
         }
         return cnt;
     }
