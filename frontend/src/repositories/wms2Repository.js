@@ -180,4 +180,11 @@ export const wms2Service = {
   autoAssignShipment: (orderId) => {
   return request("get", `/shipment/auto-assign-outbound/${orderId}`);
 },
+getInvoiceByShipmentId: (shipmentId) => {
+  return request("get", `/invoice/shipment/${shipmentId}`);
+},
+
+getInvoiceById: (invoiceId) => {
+  return request("get", `/invoice/${invoiceId}`);
+},
 };

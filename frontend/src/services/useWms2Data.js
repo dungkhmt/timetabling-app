@@ -687,6 +687,28 @@ const getWeeklyLowStockForecast = async () => {
   }
 };
 
+const getInvoiceByShipmentId = async (shipmentId) => {
+  try {
+    const response = await wms2Service.getInvoiceByShipmentId(shipmentId);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getInvoiceByShipmentId:", error);
+    toast.error("Không thể tải hóa đơn");
+    throw error;
+  }
+};
+
+const getInvoiceById = async (invoiceId) => {
+  try {
+    const response = await wms2Service.getInvoiceById(invoiceId);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getInvoiceById:", error);
+    toast.error("Không thể tải hóa đơn");
+    throw error;
+  }
+};
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -749,5 +771,7 @@ const getWeeklyLowStockForecast = async () => {
     getMoreInventoryItemsForOutbound,
     autoAssignShipment,
     getWeeklyLowStockForecast,
+    getInvoiceByShipmentId,
+    getInvoiceById,
   };
 };

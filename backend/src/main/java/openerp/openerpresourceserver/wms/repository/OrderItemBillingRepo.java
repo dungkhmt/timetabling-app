@@ -44,4 +44,13 @@ public interface OrderItemBillingRepo extends JpaRepository<OrderItemBilling, St
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    @Query("SELECT oib FROM OrderItemBilling oib " +
+           "JOIN oib.inventoryItemDetail iid " +
+           "WHERE iid.shipment.id = :shipmentId")
+    List<OrderItemBilling> findByShipmentId(@Param("shipmentId") String shipmentId);
+
+    @Query("SELECT oib FROM OrderItemBilling oib " +
+           "WHERE oib.invoiceItem.invoice.id = :invoiceId")
+    List<OrderItemBilling> findByInvoiceId(@Param("invoiceId") String invoiceId);
 }

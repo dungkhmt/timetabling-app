@@ -6,21 +6,24 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import PrintIcon from "@mui/icons-material/Print";
 import { useShipment } from "../../common/context/ShipmentContext";
+import InvoicePrint from "../../common/components/InvoicePrint";
+import { useWms2Data } from "services/useWms2Data";
 
-const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
-  const { loading, exportOutBoundShipmentApi } = useShipment();
+const OutBoundDetailActions = ({ shipmentId, status, onActionComplete, shipmentData }) => {
+  const { loading } = useShipment();
+  const { exportOutBoundShipment } = useWms2Data();
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
 
   // Kiểm tra trạng thái để hiển thị các nút phù hợp
   const isCreated = status === "CREATED";
-  const isShipped = status === "SHIPPED";
   const isCancelled = status === "CANCELLED";
+  const canPrintInvoice = !isCancelled; // Có thể in khi chưa bị hủy
 
   // Xử lý xác nhận hành động
   const handleConfirmAction = async () => {
     try {
       if (confirmDialog.type === "ship") {
-        await exportOutBoundShipmentApi(shipmentId);
+        await exportOutBoundShipment(shipmentId);
       } 
       setConfirmDialog({ open: false, type: null });
       if (onActionComplete) onActionComplete();
@@ -75,7 +78,7 @@ const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
           </>
         )}
         
-        {/* Nút in phiếu xuất có thể sử dụng bất kể trạng thái */}
+        {/* Nút in phiếu giao */}
         <Button 
           variant="contained" 
           color="secondary" 
@@ -85,13 +88,13 @@ const OutBoundDetailActions = ({ shipmentId, status, onActionComplete }) => {
           Phiếu giao
         </Button>
         
-        <Button 
-          variant="outlined" 
-          startIcon={<PrintIcon />}
-          disabled={loading || isCancelled}
-        >
-          In phiếu xuất
-        </Button>
+        {/* Component InvoicePrint - Thay thế nút bằng component trực tiếp */}
+        {canPrintInvoice && (
+          <InvoicePrint 
+            shipmentId={shipmentId}
+            disabled={loading}
+          />
+        )}
       </Box>
 
       {/* Dialog xác nhận */}

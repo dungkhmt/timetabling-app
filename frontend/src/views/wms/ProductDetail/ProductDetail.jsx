@@ -72,9 +72,9 @@ const ProductDetail = () => {
   const getStatusChip = (statusId) => {
     switch (statusId) {
       case 'ACTIVE':
-        return <Chip label="Hoạt động" color="success" />;
+        return <Chip label="Mở bán" color="success" />;
       case 'INACTIVE':
-        return <Chip label="Không hoạt động" color="error" />;
+        return <Chip label="Ngừng bán" color="error" />;
       default:
         return <Chip label={statusId || 'N/A'} />;
     }
@@ -345,6 +345,25 @@ const ProductDetail = () => {
                           color={theme.palette.info.main}
                       >
                         {formatCurrency(product.wholeSalePrice)}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                    <TableRow>
+                    <TableCell
+                        component="th"
+                        sx={{
+                          borderLeft: `3px solid ${theme.palette.primary.light}`,
+                          backgroundColor: theme.palette.background.default
+                        }}
+                    >
+                      <Typography fontWeight="medium">Thuế VAT</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                          fontWeight="medium"
+                          color={theme.palette.info.main}
+                      >
+                        {`${product.vatRate}%`}
                       </Typography>
                     </TableCell>
                   </TableRow>
