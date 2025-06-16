@@ -620,7 +620,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
         List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
         for(ModelResponseTimeTablingClass cls : foundClasses){
-            if(cls.getQuantityMax() >= 150) selectedClassesOfSemester.add(cls);
+            //if(cls.getQuantityMax() >= 150)
+                selectedClassesOfSemester.add(cls);
         }
         foundClasses = selectedClassesOfSemester;
 

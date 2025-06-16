@@ -25,6 +25,16 @@ class MatchScore{
     }
 }
 
+class MatchClass{
+    MatchScore matchScore;
+    Long classId;
+
+    public MatchClass(MatchScore matchScore, Long classId) {
+        this.matchScore = matchScore;
+        this.classId = classId;
+    }
+}
+
 @Log4j2
 class CourseSchedulerSummerSemester{
     SummerSemesterSolverVersion2 baseSolver;
@@ -1504,13 +1514,13 @@ public class SummerSemesterSolverVersion2 implements Solver {
         }
         //ClassBasedRoomAssignmentSolver roomAssignmentSolver = new ClassBasedRoomAssignmentSolver(this);
         //roomAssignmentSolver.solve();
-        roomSolver.solve();
+        //roomSolver.solve();
 
-        improve();
+        //improve();
 
-        int cnt = roomSolver.refineRooms();
-        log.info("solve, after refineRoom, nbImprovements is cnt " + cnt);
-        roomSolver.printGapRooms();
+        //int cnt = roomSolver.refineRooms();
+        //log.info("solve, after refineRoom, nbImprovements is cnt " + cnt);
+        //roomSolver.printGapRooms();
 
         Set<ClassSegment> CS=new HashSet<>();
         for(int s = 0; s <= 1; s++){
