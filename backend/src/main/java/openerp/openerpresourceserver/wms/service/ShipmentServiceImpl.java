@@ -45,6 +45,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final FacilityRepo facilityRepo;
     private final OrderItemRepo orderItemRepo;
     private final AddressRepo addressRepo;
+    private final DeliveryBillService deliveryBillService;
 
     @Override
     public ApiResponse<Void> createOutboundSaleOrder(CreateOutBoundReq req, String name) {
@@ -374,14 +375,13 @@ public class ShipmentServiceImpl implements ShipmentService {
                 inventoryItemDetailDOs.add(inventoryItemDetail);
             }
 
-            // Only save shipment if there are items to ship
             if (!inventoryItemDetailDOs.isEmpty()) {
                 shipmentRepo.save(shipment);
                 inventoryItemDetailRepo.saveAll(inventoryItemDetailDOs);
+                deliveryBillService.simulateDeliveryBill(shipment, userLogin);
             }
         } catch (Exception e) {
-            // Log error but continue processing
-            e.printStackTrace();
+            log.error("Error in simulateOuboundShipment: {}", e.getMessage());
         }
     }
 

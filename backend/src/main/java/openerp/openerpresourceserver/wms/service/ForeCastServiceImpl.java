@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,7 +42,7 @@ public class ForeCastServiceImpl implements ForecastService {
     private static final int REDIS_EXPIRATION_DAYS = 7 * 24 * 60 * 60; // Cache expiration in days
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    private static final int HISTORICAL_WEEKS = 24; // Last 24 weeks of historical data
+    private static final int HISTORICAL_WEEKS = 104; // Last 24 weeks of historical data
     private static final int FORECAST_WEEKS = 4; // Forecast for the next 4 weeks
     private static final int MIN_WEEKS_FOR_FORECAST = 12; // Minimum weeks required for forecasting
 
@@ -280,7 +281,7 @@ public class ForeCastServiceImpl implements ForecastService {
     }
 
     private WeeklyProductForecastDTO forecastProductWeeklyWithArima(Product product) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now().with(DayOfWeek.MONDAY).minusDays(1); // Start from last Monday
         LocalDate historicalStartDate = today.minusWeeks(HISTORICAL_WEEKS);
         
         // Get weekly quantities for this product
@@ -392,6 +393,12 @@ public class ForeCastServiceImpl implements ForecastService {
                 upperBoundTotal += (int) Math.round(Math.max(0, upperBounds[i]));
                 lowerBoundTotal += (int) Math.round(Math.max(0, lowerBounds[i]));
             }
+
+            //get 24 weeks of latest data
+            var historicalData24Weeks = formattedWeeklyData.entrySet().stream()
+                    .filter(entry -> entry.getKey().compareTo(getWeekIdentifier(today.minusWeeks(24))) >= 0)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             
             return WeeklyProductForecastDTO.builder()
                     .productId(product.getId())
@@ -403,7 +410,7 @@ public class ForeCastServiceImpl implements ForecastService {
 //                    .predictedValue(predictedValue)
                     .unit(product.getUnit())
                     .tax(product.getVatRate())
-                    .historicalWeeklyData(formattedWeeklyData)
+                    .historicalWeeklyData(historicalData24Weeks)
                     .weeklyForecastData(weeklyForecast)
                     .confidenceLevel(calculateConfidenceLevel(forecast, upperBounds, lowerBounds))
                     .modelInfo("ARIMA (Weekly)")

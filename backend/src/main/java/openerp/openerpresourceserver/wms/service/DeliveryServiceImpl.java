@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillStatus;
 import openerp.openerpresourceserver.wms.constant.enumrator.DeliveryBillTripStatus;
@@ -11,9 +12,7 @@ import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryBill;
 import openerp.openerpresourceserver.wms.dto.delivery.CreateDeliveryBillProduct;
 import openerp.openerpresourceserver.wms.dto.delivery.DeliveryListPageRes;
 import openerp.openerpresourceserver.wms.dto.filter.DeliveryBillGetListFilter;
-import openerp.openerpresourceserver.wms.entity.DeliveryBill;
-import openerp.openerpresourceserver.wms.entity.DeliveryBillItem;
-import openerp.openerpresourceserver.wms.entity.Product;
+import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
@@ -23,9 +22,11 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ import static openerp.openerpresourceserver.wms.constant.Constants.DELIVERY_BILL
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DeliveryServiceImpl implements DeliveryBillService {
     private final DeliveryBillRepo deliveryBillRepo;
     private final DeliveryBillItemRepo deliveryBillItemRepo;
@@ -130,5 +132,97 @@ public class DeliveryServiceImpl implements DeliveryBillService {
                         .data(deliveryBillList)
                         .build())
                 .build();
+    }
+
+    @Override
+    public void simulateDeliveryBill(Shipment shipment, UserLogin userLogin) {
+        try {
+            // Chỉ tạo delivery bill cho shipment đã exported
+            if (!ShipmentStatus.EXPORTED.name().equals(shipment.getStatusId())) {
+                return;
+            }
+
+            // Random 80% chance tạo delivery bill
+            if (ThreadLocalRandom.current().nextDouble() > 0.8) {
+                return;
+            }
+
+            // Lấy inventory item details
+            List<InventoryItemDetail> inventoryItemDetails = inventoryItemDetailRepo.findByShipmentId(shipment.getId());
+            if (inventoryItemDetails.isEmpty()) {
+                return;
+            }
+
+            Facility facility = inventoryItemDetails.get(0).getFacility();
+
+            // Tạo delivery bill
+            DeliveryBill deliveryBill = DeliveryBill.builder()
+                    .id(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_BILL_ID_PREFIX))
+                    .deliveryBillName("Phiếu giao hàng từ " + shipment.getShipmentName())
+                    .shipment(shipment)
+                    .toCustomer(shipment.getToCustomer())
+                    .facility(facility)
+                    .expectedDeliveryDate(shipment.getExpectedDeliveryDate() != null ?
+                            shipment.getExpectedDeliveryDate() : LocalDate.now().plusDays(1))
+                    .priority(ThreadLocalRandom.current().nextInt(1, 4))
+                    .statusId(DeliveryBillStatus.CREATED.name())
+                    .deliveryStatusId(DeliveryBillTripStatus.UNASSIGNED.name())
+                    .createdByUser(userLogin)
+                    .note("Phiếu giao hàng simulation")
+                    .build();
+
+            deliveryBill.setCreatedStamp(shipment.getCreatedStamp().plusHours(
+                    ThreadLocalRandom.current().nextInt(1, 6)));
+
+            // Tạo delivery bill items
+            List<DeliveryBillItem> deliveryBillItems = new ArrayList<>();
+            BigDecimal totalWeight = BigDecimal.ZERO;
+            int totalQuantity = 0;
+            int seq = 1;
+
+            for (InventoryItemDetail detail : inventoryItemDetails) {
+                double deliveryRatio = 0.7 + ThreadLocalRandom.current().nextDouble(0.3); // 70%-100%
+                int deliveryQuantity = Math.max(1, (int) (detail.getQuantity() * deliveryRatio));
+
+                DeliveryBillItem deliveryBillItem = DeliveryBillItem.builder()
+                        .id(SnowFlakeIdGenerator.getInstance().nextId(DELIVERY_BILL_ITEM_ID_PREFIX))
+                        .deliveryBill(deliveryBill)
+                        .product(detail.getProduct())
+                        .quantity(deliveryQuantity)
+                        .price(detail.getPrice())
+                        .weight(detail.getProduct().getWeight())
+                        .unit(detail.getUnit())
+                        .deliveryBillItemSeqId(seq++)
+                        .build();
+
+                deliveryBillItem.setCreatedStamp(deliveryBill.getCreatedStamp());
+                deliveryBillItems.add(deliveryBillItem);
+
+                totalQuantity += deliveryQuantity;
+                if (deliveryBillItem.getWeight() != null) {
+                    totalWeight = totalWeight.add(
+                            deliveryBillItem.getWeight().multiply(BigDecimal.valueOf(deliveryQuantity))
+                    );
+                }
+            }
+
+            deliveryBill.setTotalWeight(totalWeight);
+            deliveryBill.setTotalQuantity(totalQuantity);
+
+            // Cập nhật status shipment
+            shipment.setStatusId(ShipmentStatus.FULLY_TO_BE_DELIVERED.name());
+
+            // Lưu database
+            shipmentRepo.save(shipment);
+            deliveryBillRepo.save(deliveryBill);
+            deliveryBillItemRepo.saveAll(deliveryBillItems);
+
+            log.debug("Simulated delivery bill {} for shipment {}",
+                    deliveryBill.getId(), shipment.getId());
+
+        } catch (Exception e) {
+            log.error("Error simulating delivery bill for shipment {}: {}",
+                    shipment.getId(), e.getMessage());
+        }
     }
 }

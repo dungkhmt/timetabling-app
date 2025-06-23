@@ -103,7 +103,7 @@ public final class Arima {
             // Define seasonal periods to test - use empty array if no significant seasonality
             int[] possibleSeasons;
             if (isSeasonal) {
-                possibleSeasons = new int[]{m, 1, 2, 4, 8, 12, 16, 24, 32, 36, 48}; // Common seasonal periods
+                possibleSeasons = new int[]{m}; // Common seasonal periods
             } else {
                 possibleSeasons = new int[]{}; // Force non-seasonal model
             }
