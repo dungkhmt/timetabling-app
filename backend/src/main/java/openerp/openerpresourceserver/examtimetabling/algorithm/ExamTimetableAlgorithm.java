@@ -90,8 +90,8 @@ public class ExamTimetableAlgorithm {
             }
             
             // Update prohibited slots from this iteration's assignments
-            updateProhibitedSlots(prohibitedSlots, iterationSolution, filteredData.getAvailableTimeSlots());
-            
+            data.setProhibitedSlots(updateProhibitedSlots(prohibitedSlots, iterationSolution, filteredData.getAvailableTimeSlots()));
+
             System.out.println("Newly assigned classes in this iteration: " + newlyAssignedClasses);
             
         } while (newlyAssignedClasses > 0 && assignedClassIds.size() < totalClasses && retryCount < maxRetries);
@@ -105,7 +105,7 @@ public class ExamTimetableAlgorithm {
     /**
      * Update prohibited slots based on new assignments
      */
-    private void updateProhibitedSlots(Set<TimeSlotRoomPair> prohibitedSlots, 
+    private Set<TimeSlotRoomPair> updateProhibitedSlots(Set<TimeSlotRoomPair> prohibitedSlots, 
                                     ExamTimetableSolution solution,
                                     List<TimeSlot> availableTimeSlots) {
         // For each assigned class, mark its room-timeslot pair as prohibited
@@ -132,6 +132,7 @@ public class ExamTimetableAlgorithm {
                 prohibitedSlots.add(pair);
             }
         }
+        return prohibitedSlots;
     }
 
     /**
@@ -430,8 +431,8 @@ public class ExamTimetableAlgorithm {
                         .collect(Collectors.toList());
                     
                     selectedDate = firstThreeDates.get(random.nextInt(firstThreeDates.size()));
-                    System.out.printf("Course %s (1st in group %d): Selected early date %s%n", 
-                        courseId, courseGroup, selectedDate);
+                    // System.out.printf("Course %s (1st in group %d): Selected early date %s%n", 
+                    //     courseId, courseGroup, selectedDate);
                     
                 } else if (coursePositionInGroup == 2) {
                     // Second course: choose from last 3 dates
@@ -440,8 +441,8 @@ public class ExamTimetableAlgorithm {
                         .collect(Collectors.toList());
                     
                     selectedDate = lastThreeDates.get(random.nextInt(lastThreeDates.size()));
-                    System.out.printf("Course %s (2nd in group %d): Selected late date %s%n", 
-                        courseId, courseGroup, selectedDate);
+                    // System.out.printf("Course %s (2nd in group %d): Selected late date %s%n", 
+                    //     courseId, courseGroup, selectedDate);
                     
                 } else {
                     // Third course and beyond: find optimal gap
@@ -462,8 +463,8 @@ public class ExamTimetableAlgorithm {
                             .map(Map.Entry::getKey)
                             .orElse(allAvailableDates.get(0));
                         
-                        System.out.printf("Course %s (group %d): All dates used, selected least used date %s%n", 
-                            courseId, courseGroup, selectedDate);
+                        // System.out.printf("Course %s (group %d): All dates used, selected least used date %s%n", 
+                        //     courseId, courseGroup, selectedDate);
                             
                     } else {
                         // Find the largest gap between consecutive used dates
@@ -493,7 +494,7 @@ public class ExamTimetableAlgorithm {
                                     }
                                 }
                                 
-                                if (!hasAvailableDateBetween) {
+                                if (hasAvailableDateBetween) {
                                     long gapDays = ChronoUnit.DAYS.between(dateA, dateB);
                                     if (gapDays > maxGapDays) {
                                         maxGapDays = gapDays;
@@ -535,6 +536,7 @@ public class ExamTimetableAlgorithm {
                                     .collect(Collectors.toList());
                             }
                             
+                            
                             // Count existing classes for each candidate date across ALL time slots
                             Map<LocalDate, Long> dateClassCount = new HashMap<>();
                             
@@ -556,9 +558,9 @@ public class ExamTimetableAlgorithm {
                                 .map(Map.Entry::getKey)
                                 .orElse(candidateDates.get(0));
                             
-                            System.out.printf("Course %s (group %d): Found gap between %s and %s, candidate dates %s, selected date %s with %d existing classes%n", 
-                                courseId, courseGroup, finalGapStartDate, finalGapEndDate, 
-                                candidateDates, selectedDate, dateClassCount.get(selectedDate));
+                            // System.out.printf("Course %s (group %d): Found gap between %s and %s, candidate dates %s, selected date %s with %d existing classes%n", 
+                            //     courseId, courseGroup, finalGapStartDate, finalGapEndDate, 
+                            //     candidateDates, selectedDate, dateClassCount.get(selectedDate));
                            
                         } else {
                             // No significant gap found, choose any unused date
@@ -567,8 +569,8 @@ public class ExamTimetableAlgorithm {
                                 .findFirst()
                                 .orElse(allAvailableDates.get(0));
                             
-                            System.out.printf("Course %s (group %d): No significant gap, selected unused date %s%n", 
-                                courseId, courseGroup, selectedDate);
+                            // System.out.printf("Course %s (group %d): No significant gap, selected unused date %s%n", 
+                            //     courseId, courseGroup, selectedDate);
                         }
                     }
                 }
@@ -607,7 +609,7 @@ public class ExamTimetableAlgorithm {
                 timeSlotToCourses.computeIfAbsent(assignedTimeSlot, k -> new HashSet<>()).add(courseId);
                 assignedCourses++;
                 
-                System.out.printf("Course %s assigned to date %s%n", courseId, finalSelectedDate);
+                // System.out.printf("Course %s assigned to date %s%n", courseId, finalSelectedDate);
             } else {
                 System.out.printf("Could not find suitable time slot for course %s on selected date %s%n", courseId, finalSelectedDate);
             }
@@ -948,6 +950,11 @@ public class ExamTimetableAlgorithm {
 
         while (iterations < MAX_ITERATIONS && temperature > minTemperature) {
             iterations++;
+            // Print progress every 100 iterations
+            if (iterations % 100 == 0) {
+                System.out.println("Iteration: " + iterations + ", Current Score: " + currentScore + ", Best Score: " + bestScore);
+            }
+
             
             // Apply batch moves occasionally (10% chance)
             ExamTimetableSolution neighborSolution;
@@ -959,8 +966,9 @@ public class ExamTimetableAlgorithm {
             }
             
             neighborSolution.calculateMetrics(data);
-            
+
             double neighborScore = neighborSolution.getQualityScore();
+            // System.out.println(String.format("Neighbor score: %.4f", neighborScore));
             double delta = neighborScore - currentScore;
             
             boolean accepted = false;
@@ -1101,6 +1109,7 @@ public class ExamTimetableAlgorithm {
      * Move 1: Fix same-day violations in groups
      */
     private boolean sameDayViolationFix(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        System.out.println("Starting same-day violation fix...");
         // Find group with most same-day violations
         Map<Integer, List<LocalDate>> groupExamDates = analyzeGroupExamDates(solution, data);
         
@@ -1177,6 +1186,7 @@ public class ExamTimetableAlgorithm {
      * Move 2: Fix consecutive day violations
      */
     private boolean consecutiveDayViolationFix(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        System.out.println("Starting consecutive day violation fix...");
         Map<Integer, List<LocalDate>> groupExamDates = analyzeGroupExamDates(solution, data);
         
         for (Map.Entry<Integer, List<LocalDate>> entry : groupExamDates.entrySet()) {
@@ -1198,6 +1208,7 @@ public class ExamTimetableAlgorithm {
                         // Find a slot at least 2 days away
                         List<TimeSlot> validSlots = data.getAvailableTimeSlots().stream()
                             .filter(ts -> Math.abs(ChronoUnit.DAYS.between(ts.getDate(), date1)) >= 2)
+                            .filter(ts -> !dates.contains(ts.getDate())) // Ensure not already used
                             .filter(ts -> isValidMoveTarget(courseToMove, ts, solution, data))
                             .collect(Collectors.toList());
                         
@@ -1217,6 +1228,7 @@ public class ExamTimetableAlgorithm {
      * Move 3: Gap optimization within groups
      */
     private boolean gapOptimization(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        System.out.println("Starting gap optimization...");
         Map<Integer, List<LocalDate>> groupExamDates = analyzeGroupExamDates(solution, data);
         
         for (Map.Entry<Integer, List<LocalDate>> entry : groupExamDates.entrySet()) {
@@ -1233,20 +1245,22 @@ public class ExamTimetableAlgorithm {
                 List<String> coursesOnDate = getCoursesOnDate(date, groupId, solution, data);
                 
                 for (String course : coursesOnDate) {
+                     List<TimeSlot> validSlots = data.getAvailableTimeSlots().stream()
+                        .filter(ts -> !dates.contains(ts.getDate())) // Ensure not already used
+                        .filter(ts -> isValidMoveTarget(course, ts, solution, data))
+                        .collect(Collectors.toList());
                     // Try different target dates
-                    for (TimeSlot targetSlot : data.getAvailableTimeSlots()) {
-                        if (isValidMoveTarget(course, targetSlot, solution, data)) {
-                            // Calculate new distribution score
-                            List<LocalDate> newDates = new ArrayList<>(dates);
-                            newDates.remove(date);
-                            newDates.add(targetSlot.getDate());
-                            newDates = newDates.stream().distinct().sorted().collect(Collectors.toList());
-                            
-                            double newScore = calculateDistributionScore(newDates);
-                            
-                            if (newScore > currentScore) {
-                                return moveCourseToTimeSlot(course, targetSlot, solution, data);
-                            }
+                    for (TimeSlot targetSlot : validSlots) {
+                        // Calculate new distribution score
+                        List<LocalDate> newDates = new ArrayList<>(dates);
+                        newDates.remove(date);
+                        newDates.add(targetSlot.getDate());
+                        newDates = newDates.stream().distinct().sorted().collect(Collectors.toList());
+                        
+                        double newScore = calculateDistributionScore(newDates);
+                        
+                        if (newScore > currentScore) {
+                            return moveCourseToTimeSlot(course, targetSlot, solution, data);
                         }
                     }
                 }
@@ -1260,6 +1274,7 @@ public class ExamTimetableAlgorithm {
      * Move 4: Day-level balancing
      */
     private boolean dayLevelBalancing(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        System.out.println("Starting day-level balancing...");
         // Find day with most classes and day with least classes
         Map<LocalDate, Integer> classesPerDay = new HashMap<>();
         
@@ -1317,6 +1332,7 @@ public class ExamTimetableAlgorithm {
      * Move 5: Session-level balancing within days
      */
     private boolean sessionLevelBalancing(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        System.out.println("Starting session-level balancing...");
         // Group by date and session
         Map<LocalDate, Map<UUID, List<String>>> dateSessionCourses = new HashMap<>();
         
@@ -1374,6 +1390,7 @@ public class ExamTimetableAlgorithm {
      * Move 6: Room reallocation for better balance and building consistency
      */
     private boolean roomReallocation(ExamTimetableSolution solution, TimetablingData data, Random random) {
+        System.out.println("Starting room reallocation...");
         // Find time slot with multiple classes
         List<UUID> timeSlots = solution.getTimeSlotClassAssignments().entrySet().stream()
             .filter(entry -> entry.getValue().size() > 1)

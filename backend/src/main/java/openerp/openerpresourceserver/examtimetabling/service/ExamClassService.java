@@ -291,8 +291,8 @@ public class ExamClassService {
             Row headerRow = sheet.createRow(0);
             String[] headers = {
                 "Mã lớp QT", "Mã lớp LT", "Mã học phần", "Tên học phần", "Ghi chú",
-                "studyGroupID", "Nhóm", "sessionid", "SL", "Đợt mở",
-                "ManagerID", "Mã_QL", "TeachUnitID", "Tên trường/khoa", "Mã lớp thi"
+                "studyGroupID", "SL", "Đợt mở",
+               "Mã_QL",  "Tên trường/khoa", "Mã lớp thi"
             };
 
             for (int i = 0; i < headers.length; i++) {
@@ -306,20 +306,16 @@ public class ExamClassService {
                 Row row = sheet.createRow(rowNum++);
                 
                 row.createCell(0).setCellValue(examClass.getClassId());           // Mã lớp QT
-                row.createCell(1).setCellValue("");                               // Mã lớp LT  
+                row.createCell(1).setCellValue(examClass.getClassId());          // Mã lớp LT  
                 row.createCell(2).setCellValue(examClass.getCourseId());         // Mã học phần
                 row.createCell(3).setCellValue(examClass.getCourseName());       // Tên học phần
                 row.createCell(4).setCellValue(examClass.getDescription());      // Ghi chú
                 row.createCell(5).setCellValue(examClass.getGroupId());          // studyGroupID
-                row.createCell(6).setCellValue("");                              // Nhóm
-                row.createCell(7).setCellValue("");                              // sessionid
-                row.createCell(8).setCellValue(examClass.getNumberOfStudents()); // SL
-                row.createCell(9).setCellValue(examClass.getPeriod());           // Đợt mở
-                row.createCell(10).setCellValue("");                             // ManagerID
-                row.createCell(11).setCellValue(examClass.getManagementCode());  // Mã_QL
-                row.createCell(12).setCellValue("");                             // TeachUnitID
-                row.createCell(13).setCellValue(examClass.getSchool());          // Tên trường/khoa
-                row.createCell(14).setCellValue(examClass.getExamClassId());     // Mã lớp thi
+                row.createCell(6).setCellValue(examClass.getNumberOfStudents()); // SL
+                row.createCell(7).setCellValue(examClass.getPeriod());           // Đợt mở
+                row.createCell(8).setCellValue(examClass.getManagementCode());  // Mã_QL
+                row.createCell(9).setCellValue(examClass.getSchool());          // Tên trường/khoa
+                row.createCell(10).setCellValue(examClass.getExamClassId());     // Mã lớp thi
             }
 
             // Autosize columns

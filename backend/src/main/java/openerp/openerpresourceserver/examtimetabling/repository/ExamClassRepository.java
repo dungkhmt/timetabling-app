@@ -24,6 +24,7 @@ public interface ExamClassRepository extends JpaRepository<ExamClass, UUID> {
     @Query("SELECT e.examClassId FROM ExamClass e WHERE e.examClassId IN :ids")
     List<String> findExamClassIdsByExamClassIdIn(Set<String> ids);
 
+    @Query("SELECT e FROM ExamClass e WHERE e.examPlanId = :examPlanId ORDER BY e.examClassGroupId ASC, e.courseId ASC, e.classId ASC, id ASC")
     List<ExamClass> findByExamPlanId(UUID examPlanId);
 
     @Query("SELECT e.examClassId FROM ExamClass e WHERE e.examPlanId = :examPlanId")
