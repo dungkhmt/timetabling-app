@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -165,6 +166,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 var newInventoryItem = generalMapper.convertToEntity(inventoryItemDetail, InventoryItem.class);
                 newInventoryItem.setId(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_ID_PREFIX));
                 newInventoryItem.setStatusId(InventoryStatus.VALID.name());
+                newInventoryItem.setReceivedDate(LocalDate.now());
                 inventoryItemRepo.save(newInventoryItem);
             } else {
                 inventoryItem.setQuantity(inventoryItem.getQuantity() + inventoryItemDetail.getQuantity());

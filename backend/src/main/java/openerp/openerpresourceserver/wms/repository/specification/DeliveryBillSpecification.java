@@ -32,7 +32,10 @@ public class DeliveryBillSpecification implements Specification<DeliveryBill> {
 
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("id"), keyword + "%");
+            Predicate deliveryNameLike = criteriaBuilder.like(root.get("deliveryBillName"), "%" + keyword + "%");
+            Predicate customerNameLike = criteriaBuilder.like(root.join("toCustomer").get("name"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, deliveryNameLike, customerNameLike));
         }
 
         if (facilityId != null && !facilityId.isEmpty()) {

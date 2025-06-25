@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.wms.service;
 
 import lombok.RequiredArgsConstructor;
+import openerp.openerpresourceserver.wms.algorithm.SnowFlakeIdGenerator;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.filter.ProductGetListFilter;
@@ -18,6 +19,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+
+import static openerp.openerpresourceserver.wms.constant.Constants.PRODUCT_ID_PREFIX;
 
 @Service
 @RequiredArgsConstructor
@@ -69,7 +72,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if(Objects.isNull(req.getId())) {
-            newProduct.setId(CommonUtil.getUUID());
+            newProduct.setId(SnowFlakeIdGenerator.getInstance().nextId(PRODUCT_ID_PREFIX));
         }
 
         productRepo.save(newProduct);

@@ -6,7 +6,7 @@ public class Constants {
     public static final String DEFAULT_ADMIN_USER_NAME = "wms_director";
 
     // prefixs for entity id
-    public static final String PRDUCT_ID_PREFIX = "PRD";
+    public static final String PRODUCT_ID_PREFIX = "PRD";
     public static final String FACILITY_ID_PREFIX = "FAC";
     public static final String SUPPLIER_ID_PREFIX = "SUP";
     public static final String ADDRESS_ID_PREFIX = "ADR";

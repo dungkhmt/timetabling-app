@@ -1,4 +1,4 @@
-import { request } from "api";
+import {request} from "api";
 
 export const wms2Service = {
   
@@ -81,7 +81,7 @@ export const wms2Service = {
         return request("get", `shipment/inbound/${shipmentId}`);
     },
   exportInBoundShipment: (shipmentId) => {
-    return request("put", `/invoice/export-inbound/${shipmentId}` , null, null, null);
+    return request("put", `/invoice/import-inbound/${shipmentId}` , null, null, null);
   },
   getLowStockForecast : () => {
     return request("get", `/forecast/daily-low-stock`);

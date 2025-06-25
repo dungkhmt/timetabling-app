@@ -1,7 +1,7 @@
-import { useMutation } from "react-query";
-import { toast } from "react-toastify";
-import { wms2Service } from "repositories/wms2Repository";
-import { useHistory } from "react-router-dom";
+import {useMutation} from "react-query";
+import {toast} from "react-toastify";
+import {wms2Service} from "repositories/wms2Repository";
+import {useHistory} from "react-router-dom";
 import {GREEDY} from "../views/wms/common/constants/constants"; // React Router v5
 export const useWms2Data = () => {
   const history = useHistory(); // Use useHistory from React Router v5
@@ -10,7 +10,9 @@ export const useWms2Data = () => {
     onSuccess: (res) => {
       const { data } = res;
       console.log("Res :", res);
-      if (data && data.code === 201) toast.success("Tạo đơn hàng thành công!");
+      if (data && data.code === 201) {toast.success("Tạo đơn hàng thành công!");
+      history.push("/wms/sales/orders");
+      }
       else
         toast.error("Có lỗi xảy ra khi tạo đơn hàng : " + data.message ?? "");
     },

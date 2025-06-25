@@ -27,8 +27,11 @@ public class ProductSpecification implements Specification<Product> {
 
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("id"), "%" + keyword + "%");
+            Predicate nameLike = criteriaBuilder.like(root.get("name"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, nameLike));
         }
+
 
         if (statusIds != null && !statusIds.isEmpty()) {
             predicates.add(root.get("statusId").in(statusIds));

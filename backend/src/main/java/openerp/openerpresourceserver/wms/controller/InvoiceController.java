@@ -18,7 +18,7 @@ public class InvoiceController {
         return invoiceService.exportOutBound(shipmentId, principal.getName());
     }
 
-    @PutMapping("/export-inbound/{shipmentId}")
+    @PutMapping("/import-inbound/{shipmentId}")
     public ApiResponse<Void> importInBound(@PathVariable String shipmentId, Principal principal) {
         return invoiceService.importInBound(shipmentId, principal.getName());
     }

@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import {
-  Box,
-  Button,
-  Checkbox,
-  Chip,
-  FormControl,
-  Grid,
-  InputLabel,
-  ListItemText,
-  MenuItem,
-  OutlinedInput,
-  Paper,
-  Select,
-  TextField,
-  useMediaQuery,
-  useTheme
+    Box,
+    Button,
+    Checkbox,
+    Chip,
+    FormControl,
+    Grid,
+    InputLabel,
+    ListItemText,
+    MenuItem,
+    OutlinedInput,
+    Paper,
+    Select,
+    TextField,
+    useMediaQuery,
+    useTheme
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import { useWms2Data } from "../../../../services/useWms2Data";
+import {useWms2Data} from "../../../../services/useWms2Data";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -93,7 +93,7 @@ const ProductFilters = ({ filters, onFilterChange, onMultipleFilterChange, onApp
 
       {expanded && (
         <Grid container spacing={2}>
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Tìm kiếm theo tên/mã sản phẩm"
@@ -175,7 +175,7 @@ const ProductFilters = ({ filters, onFilterChange, onMultipleFilterChange, onApp
             </FormControl>
           </Grid>
 
-            <Grid item xs={12} md={1}>
+            <Grid item xs={12} md={2}>
           <Button
               variant="contained"
               color="primary"
