@@ -94,11 +94,11 @@ public final class Arima {
             boolean isSeasonal = AutoArimaSelector.isSeasonalitySignificant(data, m);
             
             // Default parameter ranges
-            int maxP = 7;
-            int maxQ = 7;
-            int maxSP = 5;
-            int maxSD = 2;
-            int maxSQ = 5;
+            int maxP = 6;
+            int maxQ = 6;
+            int maxSP = 2;
+            int maxSD = 1;
+            int maxSQ = 2;
             
             // Define seasonal periods to test - use empty array if no significant seasonality
             int[] possibleSeasons;
@@ -106,6 +106,9 @@ public final class Arima {
                 possibleSeasons = new int[]{m}; // Common seasonal periods
             } else {
                 possibleSeasons = new int[]{}; // Force non-seasonal model
+                maxSP = 0; // No seasonal AR terms
+                maxSD = 0; // No seasonal differencing
+                maxSQ = 0; // No seasonal MA terms
             }
             
             // Find best parameters

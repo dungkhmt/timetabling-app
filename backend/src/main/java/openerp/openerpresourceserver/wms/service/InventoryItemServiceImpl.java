@@ -5,10 +5,12 @@ import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
 import openerp.openerpresourceserver.wms.dto.inventoryItem.FacilityForOrderRes;
 import openerp.openerpresourceserver.wms.dto.inventoryItem.InventoryItemForOrderRes;
+import openerp.openerpresourceserver.wms.dto.inventoryItem.InventoryProductRes;
 import openerp.openerpresourceserver.wms.entity.Facility;
 import openerp.openerpresourceserver.wms.entity.InventoryItem;
 import openerp.openerpresourceserver.wms.entity.OrderHeader;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
+import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.FacilityRepo;
 import openerp.openerpresourceserver.wms.repository.InventoryItemRepo;
 import openerp.openerpresourceserver.wms.repository.OrderHeaderRepo;
@@ -29,6 +31,7 @@ public class InventoryItemServiceImpl implements InventoryItemService{
     private final ProductRepo productRepo;
     private final OrderHeaderRepo orderHeaderRepo;
     private final FacilityRepo facilityRepo;
+    private final GeneralMapper generalMapper;
 
     @Override
     public ApiResponse<Pagination<InventoryItemForOrderRes>> getInventoryItemsForOutBound(int page, int limit, String orderId) {
@@ -174,6 +177,39 @@ public class InventoryItemServiceImpl implements InventoryItemService{
                 .build();
     }
 
+    @Override
+    public ApiResponse<Pagination<InventoryProductRes>> getInventoryItemByProductId(int page, int limit, String productId) {
+        var pageRequest = PageRequest.of(page, limit);
+        Page<InventoryItem> inventoryItems = inventoryItemRepo.findByProductId(productId, pageRequest);
+        if(inventoryItems.getContent().isEmpty()) {
+            throw new DataNotFoundException("No inventory items found for product with id: " + productId);
+        }
+
+        List<InventoryProductRes> inventoryProductRes = inventoryItems.getContent().stream().map(
+                item -> {
+                    var res = generalMapper.convertToDto(item, InventoryProductRes.class);
+                    res.setProductId(item.getProduct().getId());
+                    res.setProductName(item.getProduct().getName());
+                    res.setFacilityId(item.getFacility().getId());
+                    res.setFacilityName(item.getFacility().getName());
+                    return res;
+                }
+        ).toList();
+
+        Pagination<InventoryProductRes> pagination = Pagination.<InventoryProductRes>builder()
+                .page(page)
+                .size(limit)
+                .totalPages(inventoryItems.getTotalPages())
+                .totalElements(inventoryItems.getTotalElements())
+                .data(inventoryProductRes)
+                .build();
+
+        return ApiResponse.<Pagination<InventoryProductRes>>builder()
+                .code(200)
+                .message("Get inventory items by product id success")
+                .data(pagination)
+                .build();
+    }
 
 
 }

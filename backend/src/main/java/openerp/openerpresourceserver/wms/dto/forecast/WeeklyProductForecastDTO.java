@@ -32,6 +32,8 @@ public class WeeklyProductForecastDTO {
     
     // Forecast data for the next 4 weeks
     private Map<String, Integer> weeklyForecastData; // "2024-W13" -> predicted quantity
+    private Map<String, Integer> weeklyUpperBounds;  // "2024-W13" -> upper bound
+    private Map<String, Integer> weeklyLowerBounds;  // "2024-W13" -> lower bound
     
     // ARIMA model parameters and statistics
     private Double confidenceLevel;

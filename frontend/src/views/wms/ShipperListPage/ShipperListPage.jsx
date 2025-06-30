@@ -22,7 +22,7 @@ const ShipperListPage = () => {
   
   const [filters, setFilters] = useState({
     keyword: "",
-    statusId: []
+    statusId: ""
   });
   
   const [showFilters, setShowFilters] = useState(true);

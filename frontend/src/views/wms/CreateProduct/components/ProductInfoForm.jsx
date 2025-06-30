@@ -200,7 +200,7 @@ const ProductInfoForm = () => {
                 value={product.weight}
                 onChange={handleInputChange}
                 InputProps={{ inputProps: { min: 0, step: 0.01 } }}
-                placeholder="VD: 0.5"
+                placeholder="VD: 0.5kg"
               />
             </Grid>
           </Grid>
@@ -222,7 +222,7 @@ const ProductInfoForm = () => {
                 value={product.height}
                 onChange={handleInputChange}
                 InputProps={{ inputProps: { min: 0, step: 0.01 } }}
-                placeholder="VD: 10"
+                placeholder="VD: 0.5m"
               />
             </Grid>
           </Grid>

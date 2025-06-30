@@ -522,6 +522,9 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .toList();
 
         List<InventoryItem> inventoryItems = inventoryItemRepo.findByProductIdIn(productIds);
+        if(inventoryItems.isEmpty()) {
+            throw new DataNotFoundException("No inventory items found for products in the order");
+        }
 
         List<String> facilityIds = inventoryItems.stream()
                 .map(inventoryItem -> inventoryItem.getFacility().getId())

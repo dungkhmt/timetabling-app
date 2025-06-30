@@ -50,13 +50,15 @@ public final class AutoArimaSelector {
 
         // Setup parameter space bounds
         Map<String, int[]> paramBounds = new HashMap<>();
+        boolean useSeasonal = seasonalPeriods.length > 0;
         paramBounds.put("p", new int[]{1, maxP});
         paramBounds.put("d", new int[]{maxD});
         paramBounds.put("q", new int[]{1, maxQ});
-        paramBounds.put("P", new int[]{0, maxSP});
-        paramBounds.put("D", new int[]{0, maxSD});
-        paramBounds.put("Q", new int[]{0, maxSQ});
-
+        if(useSeasonal) {
+            paramBounds.put("P", new int[]{1, maxSP});
+            paramBounds.put("D", new int[]{maxSD});
+            paramBounds.put("Q", new int[]{1, maxSQ});
+        }
         // Observed points (parameters -> AIC)
         List<Map<String, Integer>> observedPoints = new ArrayList<>();
         List<Double> observedValues = new ArrayList<>();
@@ -132,10 +134,11 @@ public final class AutoArimaSelector {
             point.put("m", m);
 
             // Generate seasonal parameters
-            for (String param : new String[]{"P", "D", "Q"}) {
+            for (String param : new String[]{"P", "Q"}) {
                 int[] bounds = paramBounds.get(param);
                 point.put(param, random.nextInt(bounds[0], bounds[1] + 1));
             }
+            point.put("D", paramBounds.get("D")[0]);
 
             // Ensure at least one seasonal component is non-zero
             if (point.get("P") == 0 && point.get("D") == 0 && point.get("Q") == 0) {
@@ -239,12 +242,12 @@ public final class AutoArimaSelector {
      */
     private static Map<String, int[]> createBoundsMap(List<Map<String, Integer>> candidates, int maxD) {
         Map<String, int[]> bounds = new HashMap<>();
-        bounds.put("p", new int[]{0, 3});
+        bounds.put("p", new int[]{1, 12});
         bounds.put("d", new int[]{maxD});
-        bounds.put("q", new int[]{0, 3});
-        bounds.put("P", new int[]{0, 2});
-        bounds.put("D", new int[]{0, 1});
-        bounds.put("Q", new int[]{0, 2});
+        bounds.put("q", new int[]{1, 12});
+        bounds.put("P", new int[]{1, 2});
+        bounds.put("D", new int[]{1});
+        bounds.put("Q", new int[]{1, 2});
         return bounds;
     }
 

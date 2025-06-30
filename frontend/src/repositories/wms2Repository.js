@@ -187,4 +187,7 @@ getInvoiceByShipmentId: (shipmentId) => {
 getInvoiceById: (invoiceId) => {
   return request("get", `/invoice/${invoiceId}`);
 },
+  getInventoryItemByProductId(page, limit, productId) {
+    return request("get", `/inventory-item/product/${productId}?page=${page}&limit=${limit}`);
+  }
 };

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 
 import static openerp.openerpresourceserver.wms.constant.Constants.PRODUCT_ID_PREFIX;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Service
 @RequiredArgsConstructor
@@ -71,7 +72,7 @@ public class ProductServiceImpl implements ProductService {
             newProduct.setCategory(productCategory);
         }
 
-        if(Objects.isNull(req.getId())) {
+        if(isBlank(req.getId())) {
             newProduct.setId(SnowFlakeIdGenerator.getInstance().nextId(PRODUCT_ID_PREFIX));
         }
 

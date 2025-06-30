@@ -227,7 +227,7 @@ const ProductSearch = ({ orderTypeId = ORDER_TYPE_ID.SALES_ORDER }) => {
         discount: 0,
         // Add tax field for purchase orders (as percentage)
         ...(isPurchaseOrder && {
-          tax: product.vatRate // Default VAT rate as percentage, user can modify
+          tax: product.vatRate ?? 0 // Default VAT rate as percentage, user can modify
         }),
         note: ""
       };

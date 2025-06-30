@@ -711,6 +711,17 @@ const getInvoiceById = async (invoiceId) => {
   }
 };
 
+const getInventoryItemByProductId = async (page, limit, productId) => {
+    try {
+        const response = await wms2Service.getInventoryItemByProductId(page, limit, productId);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching inventory items by product ID:", error);
+        toast.error("Không thể tải thông tin kho hàng theo sản phẩm");
+        return { data: {} };
+  }
+};
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -775,5 +786,6 @@ const getInvoiceById = async (invoiceId) => {
     getWeeklyLowStockForecast,
     getInvoiceByShipmentId,
     getInvoiceById,
+    getInventoryItemByProductId
   };
 };

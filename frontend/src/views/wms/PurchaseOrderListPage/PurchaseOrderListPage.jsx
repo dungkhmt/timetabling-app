@@ -84,6 +84,8 @@ const PurchaseOrderListPageBase = () => {
           trend: item.trend || 0,
           historicalWeeklyData: item.historicalWeeklyData || {}, // Dữ liệu lịch sử theo tuần
           weeklyForecastData: item.weeklyForecastData || {}, // Dữ liệu dự báo 4 tuần
+          weeklyUpperBounds : item.weeklyUpperBounds || {}, // Upper bounds theo tuần
+          weeklyLowerBounds : item.weeklyLowerBounds || {}, // Lower bounds theo tuần
           modelInfo: item.modelInfo || 'ARIMA (Weekly)',
           confidenceLevel: item.confidenceLevel || 75,
           rmse: item.rmse,

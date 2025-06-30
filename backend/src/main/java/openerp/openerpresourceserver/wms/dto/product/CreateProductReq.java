@@ -19,7 +19,7 @@ public class CreateProductReq {
     @NotBlank
     private String name;
 
-    @NotBlank
+    @NotNull
     private Double weight;
 
     private Double height;
@@ -37,4 +37,6 @@ public class CreateProductReq {
     private String productCategoryId;
 
     private String statusId;
+
+    private BigDecimal vatRate = BigDecimal.ZERO;
 }

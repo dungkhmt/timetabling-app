@@ -30,6 +30,7 @@ const ProductTableRow = memo(({ product }) => {
     <TableRow>
       <TableCell>{product.productId}</TableCell>
       <TableCell>{product.productName}</TableCell>
+        <TableCell>{product.facilityName}</TableCell>
       <TableCell align="center">{product.unit || "Chiếc"}</TableCell>
       <TableCell align="center">
         {product.requestedQuantity || ''}
@@ -87,6 +88,7 @@ const OutBoundDetailProducts = ({ products }) => {
             <TableRow>
               <TableCell>Mã sản phẩm</TableCell>
               <TableCell>Tên sản phẩm</TableCell>
+                <TableCell>Kho</TableCell>
               <TableCell align="center">Đơn vị</TableCell>
               <TableCell align="center">SL yêu cầu</TableCell>
               <TableCell align="center">SL thực xuất</TableCell>

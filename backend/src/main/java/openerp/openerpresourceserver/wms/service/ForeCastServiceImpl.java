@@ -258,7 +258,7 @@ public class ForeCastServiceImpl implements ForecastService {
                     forecast.setCurrentStock(currentStock);
                     // Calculate estimated weeks before stock-out
                     if (forecast.getAverageWeeklyQuantity() > 0) {
-                        int weeksUntilStockout = (int) Math.floor((double) currentStock / forecast.getAverageWeeklyQuantity());
+                        int weeksUntilStockout = (int) Math.ceil((double) currentStock / forecast.getAverageWeeklyQuantity());
                         forecast.setWeeksUntilStockout(weeksUntilStockout);
                     }
 
@@ -349,17 +349,24 @@ public class ForeCastServiceImpl implements ForecastService {
             
             // Convert predictions to integers and build weekly forecast map
             Map<String, Integer> weeklyForecast = new LinkedHashMap<>();
+            Map<String, Integer> weeklyUpperBounds = new LinkedHashMap<>();
+            Map<String, Integer> weeklyLowerBounds = new LinkedHashMap<>();
             int totalPredictedQuantity = 0;
-            
+
             for (int i = 0; i < forecast.length; i++) {
                 int predictedQuantity = (int) Math.round(Math.max(0, forecast[i]));
+                int upper = (int) Math.round(Math.max(0, upperBounds[i]));
+                int lower = (int) Math.round(Math.max(0, lowerBounds[i]));
                 totalPredictedQuantity += predictedQuantity;
-                
+
                 LocalDate forecastWeekStart = today.plusWeeks(i + 1);
                 String weekIdentifier = getWeekIdentifier(forecastWeekStart);
+
                 weeklyForecast.put(weekIdentifier, predictedQuantity);
+                weeklyUpperBounds.put(weekIdentifier, upper);
+                weeklyLowerBounds.put(weekIdentifier, lower);
             }
-            
+
             // Calculate the average weekly prediction
             double avgWeeklyPrediction = totalPredictedQuantity / (double) FORECAST_WEEKS;
             
@@ -412,6 +419,8 @@ public class ForeCastServiceImpl implements ForecastService {
                     .tax(product.getVatRate())
                     .historicalWeeklyData(historicalData24Weeks)
                     .weeklyForecastData(weeklyForecast)
+                    .weeklyUpperBounds(weeklyUpperBounds)
+                    .weeklyLowerBounds(weeklyLowerBounds)
                     .confidenceLevel(calculateConfidenceLevel(forecast, upperBounds, lowerBounds))
                     .modelInfo("ARIMA (Weekly)")
                     .rmse(forecastResult.getRMSE())
