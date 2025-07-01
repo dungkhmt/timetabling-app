@@ -86,19 +86,11 @@ public class ExamClassService {
     public ExamClass createExamClass(ExamClass examClass) {
         ExamClass savedClass = examClassRepository.save(examClass);
         
-        String bulkInsertSql = 
-            "INSERT INTO exam_timetable_assignment " +
-            "(id, exam_timetable_id, exam_timtabling_class_id) " +
-            "SELECT uuid_generate_v4(), id, :examClassId " +
-            "FROM exam_timetable " + 
-            "WHERE exam_plan_id = :examPlanId";
-        
-        Query query = entityManager.createNativeQuery(bulkInsertSql);
-        query.setParameter("examClassId", savedClass.getId());
-        query.setParameter("examPlanId", examClass.getExamPlanId());
-        query.setParameter("now", LocalDateTime.now());
-        
-        query.executeUpdate();
+        List<UUID> timetableIds = getTimetableIdsForExamPlan(examClass.getExamPlanId());
+        if (!timetableIds.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            createAssignmentsForTimetable(timetableIds.get(0), List.of(savedClass.getId()), now);
+        }
         
         return savedClass;
     }
@@ -137,7 +129,7 @@ public class ExamClassService {
                 excelExamClassIds.add(examClassId);
                 
                 UUID id = UUID.randomUUID();
-                newClassIds.add(id); // Store the ID for later use
+                newClassIds.add(id);
                 
                 String classId = getStringValue(row.getCell(0));
                 String courseId = getStringValue(row.getCell(2));

@@ -13,7 +13,7 @@ import jakarta.persistence.criteria.CriteriaBuilder.In;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of the exam timetabling algorithm using graph coloring and local search
+ * Implementation of the exam timetabling algorithm
  */
 @Slf4j
 public class ExamTimetableAlgorithm {
@@ -67,7 +67,6 @@ public class ExamTimetableAlgorithm {
         int maxRetries = 10;
         int retryCount = 0;
         
-        // Track prohibited slots (will be updated after each iteration)
         Set<TimeSlotRoomPair> prohibitedSlots = new HashSet<>(data.getProhibitedSlots());
         
         do {
@@ -96,7 +95,6 @@ public class ExamTimetableAlgorithm {
             
         } while (newlyAssignedClasses > 0 && assignedClassIds.size() < totalClasses && retryCount < maxRetries);
         
-        // Calculate metrics for the final solution
         solution.calculateMetrics(data);
         
         return solution;
@@ -112,7 +110,6 @@ public class ExamTimetableAlgorithm {
         for (Map.Entry<UUID, AssignmentDetails> entry : solution.getAssignedClasses().entrySet()) {
             AssignmentDetails details = entry.getValue();
             
-            // Find the corresponding time slot to get session ID
             TimeSlot timeSlot = null;
             for (TimeSlot ts : availableTimeSlots) {
                 if (ts.getId().equals(details.getTimeSlotId())) {
@@ -122,13 +119,11 @@ public class ExamTimetableAlgorithm {
             }
             
             if (timeSlot != null) {
-                // Create a new prohibited pair
                 TimeSlotRoomPair pair = new TimeSlotRoomPair();
                 pair.setRoomId(details.getRoomId());
                 pair.setSessionId(timeSlot.getSessionId());
                 pair.setDate(details.getDate());
                 
-                // Add to prohibited slots
                 prohibitedSlots.add(pair);
             }
         }
@@ -150,7 +145,6 @@ public class ExamTimetableAlgorithm {
         filteredData.setEarlyTimeSlots(originalData.getEarlyTimeSlots());
         filteredData.setExistingAssignments(originalData.getExistingAssignments());
         
-        // Use the updated prohibited slots instead of the original ones
         filteredData.setProhibitedSlots(updatedProhibitedSlots);
         
         // Filter classes to only include unassigned ones
@@ -261,7 +255,7 @@ public class ExamTimetableAlgorithm {
     }
     
     /**
-     * Create initial assignment using graph coloring approach
+     * Create initial assignment
      */
     private ExamTimetableSolution createInitialAssignment(TimetablingData data) {
         ExamTimetableSolution solution = new ExamTimetableSolution();
@@ -342,7 +336,6 @@ public class ExamTimetableAlgorithm {
         Map<String, UUID> courseToTimeSlot = new HashMap<>();
         Map<UUID, Set<String>> timeSlotToCourses = new HashMap<>();
 
-        // Build course conflict graph (from both group conflicts and explicit conflicts)
         Map<String, Set<String>> courseConflictGraph = buildCourseConflictGraph(data);
 
         // Track group information
@@ -686,7 +679,7 @@ public class ExamTimetableAlgorithm {
     
     /**
      * Build a graph of course conflicts based on courses in the same group
-     * and explicit conflicts from ConflictExamTimetablingClass
+     * and conflicts from ConflictExamTimetablingClass
      */
     private Map<String, Set<String>> buildCourseConflictGraph(TimetablingData data) {
         Map<String, Set<String>> courseConflictGraph = new HashMap<>();
@@ -697,7 +690,6 @@ public class ExamTimetableAlgorithm {
         }
         
         // 1. Add conflicts from same group (different course IDs)
-        // Group courses by group ID using the sub-course structure
         Map<Integer, Set<String>> coursesByGroup = new HashMap<>();
         
         // Build mapping of which sub-courses are in which groups
@@ -720,13 +712,11 @@ public class ExamTimetableAlgorithm {
         
         // For each group, add conflicts between all courses in that group
         for (Set<String> coursesInGroup : coursesByGroup.values()) {
-            // If there's only one course in the group, no conflicts to add
             if (coursesInGroup.size() <= 1) continue;
             
             // For each pair of different courses in the group, add conflict
             for (String courseId1 : coursesInGroup) {
                 for (String courseId2 : coursesInGroup) {
-                    // Don't add conflict with self
                     if (!courseId1.equals(courseId2)) {
                         courseConflictGraph.get(courseId1).add(courseId2);
                     }
@@ -735,7 +725,6 @@ public class ExamTimetableAlgorithm {
         }
         
         // 2. Add conflicts from ConflictExamTimetablingClass table
-        // Build a map of class ID to sub-course ID for quick lookup
         Map<UUID, String> classIdToSubCourseId = new HashMap<>();
         for (Map.Entry<String, List<ExamClass>> courseEntry : data.getClassesByCourseId().entrySet()) {
             String subCourseId = courseEntry.getKey();
@@ -750,7 +739,7 @@ public class ExamTimetableAlgorithm {
             Set<UUID> conflictingClassIds = entry.getValue();
             
             String subCourseId1 = classIdToSubCourseId.get(classId1);
-            if (subCourseId1 == null) continue; // Skip if we can't find sub-course ID
+            if (subCourseId1 == null) continue;
             
             for (UUID classId2 : conflictingClassIds) {
                 String subCourseId2 = classIdToSubCourseId.get(classId2);
@@ -822,7 +811,7 @@ public class ExamTimetableAlgorithm {
             
             // Assign rooms to classes
             for (ExamClass examClass : sortedClasses) {
-                int requiredCapacity = examClass.getNumberOfStudents() * 15 / 10; // Room needs 2n seats
+                int requiredCapacity = examClass.getNumberOfStudents() * 15 / 10; // Room needs 1.5n seats
                 
                 String courseGroupKey = courseId + "_" + (examClass.getExamClassGroupId() != null ? examClass.getExamClassGroupId() : "");
                 
@@ -859,7 +848,6 @@ public class ExamTimetableAlgorithm {
                 // Find an available room
                 ExamRoom assignedRoom = null;
                 for (ExamRoom room : suitableRooms) {
-                    // Create key for room-time slot pair
                     TimeSlotRoomPair pair = new TimeSlotRoomPair();
                     pair.setRoomId(room.getId());
                     pair.setSessionId(timeSlot.getSessionId());
@@ -894,7 +882,6 @@ public class ExamTimetableAlgorithm {
                     courseId,
                     timeSlot.getDate());
                 
-                // Set session ID in assignment details
                 AssignmentDetails details = solution.getAssignedClasses().get(examClass.getId());
                 details.setSessionId(timeSlot.getSessionId());
                 
@@ -1244,23 +1231,30 @@ public class ExamTimetableAlgorithm {
             for (LocalDate date : dates) {
                 List<String> coursesOnDate = getCoursesOnDate(date, groupId, solution, data);
                 
-                for (String course : coursesOnDate) {
-                     List<TimeSlot> validSlots = data.getAvailableTimeSlots().stream()
+                List<TimeSlot> validSlots = coursesOnDate.stream()
+                    .flatMap(course -> data.getAvailableTimeSlots().stream()
                         .filter(ts -> !dates.contains(ts.getDate())) // Ensure not already used
                         .filter(ts -> isValidMoveTarget(course, ts, solution, data))
-                        .collect(Collectors.toList());
-                    // Try different target dates
-                    for (TimeSlot targetSlot : validSlots) {
-                        // Calculate new distribution score
-                        List<LocalDate> newDates = new ArrayList<>(dates);
-                        newDates.remove(date);
-                        newDates.add(targetSlot.getDate());
-                        newDates = newDates.stream().distinct().sorted().collect(Collectors.toList());
-                        
-                        double newScore = calculateDistributionScore(newDates);
-                        
-                        if (newScore > currentScore) {
-                            return moveCourseToTimeSlot(course, targetSlot, solution, data);
+                    )
+                    .collect(Collectors.toList());
+                // Try different target dates
+                for (TimeSlot targetSlot : validSlots) {
+                    // Calculate new distribution score
+                    List<LocalDate> newDates = new ArrayList<>(dates);
+                    newDates.remove(date);
+                    newDates.add(targetSlot.getDate());
+                    newDates = newDates.stream().distinct().sorted().collect(Collectors.toList());
+                    
+                    double newScore = calculateDistributionScore(newDates);
+                    
+                    if (newScore > currentScore) {
+                        boolean allCoursesValid = coursesOnDate.stream()
+                            .allMatch(course -> isValidMoveTarget(course, targetSlot, solution, data));
+                        if (allCoursesValid) {
+                            for (String course : coursesOnDate) {
+                                moveCourseToTimeSlot(course, targetSlot, solution, data);
+                            }
+                            return true;
                         }
                     }
                 }

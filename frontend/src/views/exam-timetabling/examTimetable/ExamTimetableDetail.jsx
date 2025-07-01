@@ -533,11 +533,11 @@ const TimetableDetailPage = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <School sx={{ color: 'primary.main', mr: 1 }} />
                     <Typography variant="h6" fontWeight={600} color="primary.main">
-                      {timetable.completedAssignments}/{examTimetableAssignments.length || 100}
+                      {examTimetableAssignments.length || 0}
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    Lớp đã xếp
+                    Tổng số lớp
                   </Typography>
                 </Box>
               </Box>
