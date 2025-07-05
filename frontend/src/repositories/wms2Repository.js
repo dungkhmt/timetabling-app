@@ -189,5 +189,11 @@ getInvoiceById: (invoiceId) => {
 },
   getInventoryItemByProductId(page, limit, productId) {
     return request("get", `/inventory-item/product/${productId}?page=${page}&limit=${limit}`);
-  }
+  },
+  getProductPrice (productId) {
+    return request("get", `/product-price/${productId}`);
+  },
+    createProductPrice: (data) => {
+        return request("post", "/product-price", null, null, data);
+    },
 };

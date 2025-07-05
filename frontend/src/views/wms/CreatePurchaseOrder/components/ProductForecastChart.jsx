@@ -146,7 +146,7 @@ const ProductForecastChart = ({ forecastData }) => {
 
             // Chỉ hiển thị các series chính và khoảng tin cậy
             if (value !== null && value !== undefined &&
-                ['Lịch sử xuất kho', 'Dự báo', 'Giới hạn trên', 'Giới hạn dưới'].includes(seriesName)) {
+                ['Lịch sử xuất kho', 'Dự báo', 'Khoảng tin cậy trên', 'Khoảng tin cậy dưới'].includes(seriesName)) {
               result += `<div style="color: ${param.color};">
                 ${seriesName}: ${value} ${unit}
               </div>`;
@@ -157,7 +157,7 @@ const ProductForecastChart = ({ forecastData }) => {
       },
       legend: {
         data: upperBoundValues.length > 0 ?
-            ['Lịch sử xuất kho', 'Dự báo', 'Giới hạn trên', 'Giới hạn dưới'] :
+            ['Lịch sử xuất kho', 'Dự báo', 'Khoảng tin cậy trên', 'Khoảng tin cậy dưới'] :
             ['Lịch sử xuất kho', 'Dự báo'],
         top: 30
       },

@@ -29,4 +29,8 @@ public class Constants {
     public static final String ORDER_ITEM_BILLING_ID_PREFIX = "ORDB";
     public static final String DELIVERY_PLAN_ORDER_ID_PREFIX = "DPOR";
     public static final String DELIVERY_PLAN_SHIPPER_ID_PREFIX = "DPSH";
+    public static final String PRODUCT_PRICE_ID_PREFIX = "PRDP";
+
+    // Redis keys
+    public static final String PRODUCT_PRICE_CACHE_REDIS_KEY = "product:price-cache";
 }

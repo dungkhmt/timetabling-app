@@ -722,6 +722,27 @@ const getInventoryItemByProductId = async (page, limit, productId) => {
   }
 };
 
+const getProductPrice = async (productId) => {
+    try {
+        const response = await wms2Service.getProductPrice(productId);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching product price:", error);
+        toast.error("Không thể tải giá sản phẩm");
+        return { data: {} };
+    }
+}
+
+const createProductPrice = async (data) => {
+    try {
+        const response = await wms2Service.createProductPrice(data);
+        return response.data;
+    } catch (error) {
+        console.error("Error creating product price:", error);
+        toast.error("Không thể tạo giá sản phẩm");
+        return { data: {} };
+    }
+};
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -786,6 +807,8 @@ const getInventoryItemByProductId = async (page, limit, productId) => {
     getWeeklyLowStockForecast,
     getInvoiceByShipmentId,
     getInvoiceById,
-    getInventoryItemByProductId
+    getInventoryItemByProductId,
+    getProductPrice,
+    createProductPrice
   };
 };

@@ -17,7 +17,7 @@ public class RedisService {
     private final ObjectMapper objectMapper;
     public void save(String key, Object value) {
         try {
-            redisTemplate.opsForValue().set(key, value, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(key, value);
         } catch (Exception e) {
             e.printStackTrace();
         }
