@@ -16,6 +16,7 @@ export default function CreateNewCourse({ open, handleClose, selectedCourse }) {
   const [course, setCourse] = useState({
     id: "",
     courseName: "",
+    volumn:"",
     slotsPriority: "",
     maxTeacherInCharge: 1
   });
@@ -27,6 +28,8 @@ export default function CreateNewCourse({ open, handleClose, selectedCourse }) {
       setCourse({
         id: selectedCourse.id || "",
         courseName: selectedCourse.courseName || "",
+        volumn: selectedCourse.volumn || "",
+        
         slotsPriority: selectedCourse.slotsPriority || "",
         maxTeacherInCharge: selectedCourse.maxTeacherInCharge || 1
       });
@@ -36,6 +39,7 @@ export default function CreateNewCourse({ open, handleClose, selectedCourse }) {
       setCourse({
         id: "",
         courseName: "",
+        volumn:"",
         slotsPriority: "",
         maxTeacherInCharge: 1
       });
@@ -158,6 +162,17 @@ export default function CreateNewCourse({ open, handleClose, selectedCourse }) {
             error={!!errors.courseName}
             helperText={errors.courseName}
           />
+          <TextField
+            label="Khối lượng"
+            name="volumn"
+            value={course.volumn}
+            onChange={handleChange}
+            variant="outlined"
+            fullWidth
+            error={!!errors.volumn}
+            helperText={errors.volumn}
+          />
+          
           <TextField
             label="Độ ưu tiên ca học (vd: 3,9,2,8,1,7)"
             name="slotsPriority"

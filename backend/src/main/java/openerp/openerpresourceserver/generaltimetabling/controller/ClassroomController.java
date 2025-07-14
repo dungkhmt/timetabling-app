@@ -118,11 +118,16 @@ public class ClassroomController {
 
     @PostMapping("/")
     public ResponseEntity<List<Classroom>> requestGetClassroomByBuildings(@RequestBody(required = false) GetClassRoomByBuildingsRequest request) {
+        //return getAllClassroom();
+        List<Classroom> classroomList = service.findAllActiveRooms();
+        return ResponseEntity.ok().body(classroomList);
+        /*
         if (request == null || (request.getGroupName() == null && request.getMaxAmount() == null)) {
             return getAllClassroom();
         }
 
         return ResponseEntity.ok(service.getMaxQuantityClassRoomByBuildings(request.getGroupName(), request.getMaxAmount()));
+        */
     }
 
 

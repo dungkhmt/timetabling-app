@@ -148,4 +148,10 @@ public class ClassroomServiceImpl implements ClassroomService {
 
         return classroomRepo.findByGroupNameAndOptionalMaxQuantity(groupName, maxAmount);
     }
+
+    @Override
+    public List<Classroom> findAllActiveRooms() {
+        List<Classroom> classrooms = classroomRepo.findAllByStatus("ACTIVE");
+        return classrooms;
+    }
 }

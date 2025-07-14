@@ -5,15 +5,13 @@ import openerp.openerpresourceserver.generaltimetabling.Utils;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.FilterClassOpenedDto;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassOpened;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Schedule;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -73,7 +71,7 @@ public class ExcelService {
 
     private Map<String, Object> prepareClassDataForExport(String semester, Long versionId, Integer numberSlotsPerSession) {
         int slots = numberSlotsPerSession != null ? numberSlotsPerSession : 6;
-        
+
         List<TimeTablingClass> classes = timeTablingClassRepo.findAllBySemester(semester)
                 .stream()
                 .filter(c -> c.getClassCode() != null && !c.getClassCode().isEmpty())
@@ -83,9 +81,25 @@ public class ExcelService {
             Comparable fieldValueB = b.getClassCode();
             return fieldValueA.compareTo(fieldValueB);
         });
+        //List<Long> classIds = new ArrayList<>();
+        //for(TimeTablingClass cls: classes) classIds.add(cls.getId());
 
 
         List<Long> classIds = classes.stream().map(c -> c.getId()).toList();
+
+        List<Group> groups = groupRepo.findAll();
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
+        Map<Long, List<String>> mClassId2GroupNames = new HashMap<>();
+        for(Long id: classIds) mClassId2GroupNames.put(id, new ArrayList<>());
+        for(ClassGroup cg: classGroups){
+            Long classId = cg.getClassId();
+            Long gId = cg.getGroupId();
+            String groupName = mId2Group.get(gId).getGroupName();
+            mClassId2GroupNames.get(classId).add(groupName);
+        }
+
         List<TimeTablingClassSegment> segments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
         List<TimeTablingClassSegment> validSegments = segments.stream()
                 .filter(segment -> segment.getStartTime() != null && 
@@ -113,7 +127,7 @@ public class ExcelService {
         result.put("classes", classes);
         result.put("segments", mClassId2ClassSegments);
         result.put("slots", slots);
-        
+        result.put("classGroup",mClassId2GroupNames);
         return result;
     }
     
@@ -124,7 +138,8 @@ public class ExcelService {
         Map<String, Object> data = prepareClassDataForExport(semester, versionId, numberSlotsPerSession);
         return GeneralExcelHelper.convertGeneralClassToExcel(
             (List<TimeTablingClass>) data.get("classes"), 
-            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"), 
+            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"),
+                (Map<Long, List<String>>) data.get("classGroup"),
             (Integer) data.get("slots")
         );
     }
@@ -136,7 +151,8 @@ public class ExcelService {
         Map<String, Object> data = prepareClassDataForExport(semester, versionId, numberSlotsPerSession);
         return GeneralExcelHelper.convertGeneralClassToExcelWithAllSession(
             (List<TimeTablingClass>) data.get("classes"), 
-            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"), 
+            (Map<Long, List<TimeTablingClassSegment>>) data.get("segments"),
+                (Map<Long, List<String>>) data.get("classGroup"),
             (Integer) data.get("slots")
         );
     }

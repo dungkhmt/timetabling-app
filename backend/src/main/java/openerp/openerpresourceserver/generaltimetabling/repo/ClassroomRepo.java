@@ -16,7 +16,7 @@ public interface ClassroomRepo extends JpaRepository<Classroom, String> {
     @Query(value = "SELECT DISTINCT name FROM public.timetabling_building", nativeQuery = true)
     List<String> getBuilding();
 
-    @Query(value = "SELECT classroom_id, classroom, description, quantity_max, building_id FROM public.timetabling_classroom",
+    @Query(value = "SELECT classroom_id, classroom, description, quantity_max, building_id, status FROM public.timetabling_classroom",
             nativeQuery = true)
     List<Classroom> findAllWithBuilding();
 

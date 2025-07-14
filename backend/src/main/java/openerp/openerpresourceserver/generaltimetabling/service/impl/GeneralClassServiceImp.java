@@ -503,11 +503,13 @@ public class GeneralClassServiceImp implements GeneralClassService {
         List<TimeTablingClass> CLS = timeTablingClassRepo.findAll();
         Set<String> courseCodes = new HashSet<>();
         Map<String, String> mCourseCode2Name = new HashMap<>();
+        Map<String, String> mCourseCode2Volumn = new HashMap<>();
         //for(GeneralClass gc: cls){
         for(TimeTablingClass gc: CLS){
             String courseCode = gc.getModuleCode();
             courseCodes.add(courseCode);
             mCourseCode2Name.put(courseCode,gc.getModuleName());
+            mCourseCode2Volumn.put(courseCode,gc.getMass());
         }
         for(String courseCode: courseCodes){
             TimeTablingCourse course = timeTablingCourseRepo.findById(courseCode).orElse(null);
@@ -517,8 +519,12 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 course.setId(courseCode);
                 course.setName(courseName);
                 course.setMaxTeacherInCharge(50);
+                course.setVolumn(mCourseCode2Volumn.get(courseCode));
                 timeTablingCourseRepo.save(course);
                 log.info("synchronizeCourses save " + courseCode + "," + courseName);
+            }else{
+                course.setVolumn(mCourseCode2Volumn.get(courseCode));
+                course = timeTablingCourseRepo.save(course);
             }
         }
     }

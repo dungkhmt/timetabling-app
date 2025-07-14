@@ -12,6 +12,10 @@ import lombok.NoArgsConstructor;
 public class CourseDto {
     private String id;
     private String courseName;
+    private String volumn;
+    private Integer maxNbStudentsLT;
+    private Integer maxNbStudentsBT;
+    private Integer maxNbStudentsLTBT;
     private String slotsPriority;
     private Integer maxTeacherInCharge;
 }

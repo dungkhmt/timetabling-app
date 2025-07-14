@@ -23,7 +23,10 @@ public class Course {
 
     @Column(name = "name")
     private String courseName;
-    
+
+    @Column(name="volumn")
+    private String volumn;
+
     @Column(name = "slots_priority")
     private String slotsPriority;
 
