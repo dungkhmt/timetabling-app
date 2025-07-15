@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface PlanGeneralClassRepo extends JpaRepository<PlanGeneralClass, Long> {
     List<PlanGeneralClass> findAllBySemester(String semester);
+    List<PlanGeneralClass> findAllByBatchId(Long batchId);
 
     void deleteAllBySemester(String semester);
 

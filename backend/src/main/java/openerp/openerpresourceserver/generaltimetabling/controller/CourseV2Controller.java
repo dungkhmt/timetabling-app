@@ -5,15 +5,20 @@ import jakarta.validation.Valid;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.exception.CourseNotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.exception.CourseUsedException;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateTimeTablingBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.CourseDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Course;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingBatchRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+import java.util.Date;
 import java.util.List;
 @Log4j2
 @RestController

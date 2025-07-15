@@ -61,7 +61,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<Course> getCourse() {
-        synchronizeCourses();
+        //synchronizeCourses();
         if(courseRepo.findAll() == null) throw new CourseUsedException("k có lop");
         return courseRepo.findAll();
     }

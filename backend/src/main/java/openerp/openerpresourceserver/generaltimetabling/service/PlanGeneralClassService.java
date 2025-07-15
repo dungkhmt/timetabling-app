@@ -20,6 +20,9 @@ public interface PlanGeneralClassService {
 
     List<PlanGeneralClass> getAllPlanClasses(String semester);
 
+    List<PlanGeneralClass> getOpenedClassPlans(Long batchId);
+
+
     List<TimeTablingClass> getClassOfPlan(Long planClassId);
 
     TimeTablingClass updateTimeTablingClass(TimeTablingClass generalClass);

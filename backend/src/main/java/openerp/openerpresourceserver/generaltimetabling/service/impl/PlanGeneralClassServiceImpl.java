@@ -196,6 +196,11 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
     }
 
     @Override
+    public List<PlanGeneralClass> getOpenedClassPlans(Long batchId) {
+        return planGeneralClassRepo.findAllByBatchId(batchId);
+    }
+
+    @Override
     @Transactional
     public List<TimeTablingClass> getClassOfPlan(Long planClassId){
         List<TimeTablingClass> timeTablingClasses = timeTablingClassRepo.findAllByRefClassId(planClassId);

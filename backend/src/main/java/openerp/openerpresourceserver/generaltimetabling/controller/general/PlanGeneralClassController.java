@@ -78,7 +78,11 @@ public class PlanGeneralClassController {
     public ResponseEntity<List<PlanGeneralClass>> requestGetPlanClasses(@RequestParam("semester") String semester) {
         return ResponseEntity.ok(planClassService.getAllPlanClasses(semester));
     }
-
+    @GetMapping("/get-opened-class-plans")
+    public ResponseEntity<?> getOpenClassPlans(@RequestParam("batch") Long batchId){
+        List<PlanGeneralClass> res = planClassService.getOpenedClassPlans(batchId);
+        return ResponseEntity.ok().body(res);
+    }
 
     @GetMapping("/view-class")
     public ResponseEntity requestViewPlanClass(@RequestParam("planClassId") Long planClassId){
