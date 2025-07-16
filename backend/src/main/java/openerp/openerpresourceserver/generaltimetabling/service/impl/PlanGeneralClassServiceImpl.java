@@ -12,10 +12,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClass
 import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.BulkMakeGeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenDto;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.PlanGeneralClassService;
@@ -50,7 +47,9 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
     @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
     @Autowired
-    private GroupRepo groupRepo;    
+    private GroupRepo groupRepo;
+    @Autowired
+    private TimeTablingBatchRepo timeTablingBatchRepo;
     
     @Override
     @Transactional
@@ -473,5 +472,29 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         }
 
         return savedClass;
+    }
+
+    @Override
+    public PlanGeneralClass createClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass) {
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(planClass.getBatchId()).orElse(null);
+        if(batch == null){
+            throw new InvalidFieldException("cannot find batch id = " + planClass.getBatchId());
+        }
+        Group group = groupRepo.findById(planClass.getGroupId()).orElse(null);
+        if(group == null){
+            throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
+        }
+
+        PlanGeneralClass aPlan = new PlanGeneralClass();
+        aPlan.setGroupId(planClass.getGroupId());
+        aPlan.setModuleCode(planClass.getModuleCode());
+        aPlan.setClassType(planClass.getClassType());
+        aPlan.setSemester(batch.getSemester());
+        aPlan.setNumberOfClasses(planClass.getNumberOfClasses());
+        aPlan.setCreatedByUserId(userId);
+
+
+        aPlan = planGeneralClassRepo.save(aPlan);
+        return aPlan;
     }
 }

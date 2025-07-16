@@ -38,4 +38,7 @@ public interface PlanGeneralClassService {
     PlanGeneralClass deleteClassById(Long planClassId);
 
     PlanGeneralClass createSingleClass(CreateSingleClassOpenDto planClass);
+
+    PlanGeneralClass createClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass);
+
 }

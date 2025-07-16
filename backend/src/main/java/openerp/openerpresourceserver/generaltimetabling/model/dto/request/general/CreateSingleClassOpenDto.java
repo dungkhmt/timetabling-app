@@ -29,6 +29,7 @@ public class CreateSingleClassOpenDto {
         private String crew;
         private String weekType;
         private Long groupId;
+        private Long batchId;
         private int duration;
         private Date createdStamp;
         private String promotion;

@@ -135,4 +135,24 @@ public class PlanGeneralClassController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @PostMapping("/create-class-openning-plan")
+    public ResponseEntity<PlanGeneralClass> createClassOpenningPlan(Principal principal, @RequestBody CreateSingleClassOpenDto planClass) {
+        log.info("Received request to create single class: {}", planClass);
+        try {
+            if (planClass.getCreatedStamp() == null) {
+                planClass.setCreatedStamp(new Date());
+            }
+            PlanGeneralClass createdClass = planClassService.createClassOpenningPlan(principal.getName(),planClass);
+            log.info("Successfully created class: {}", createdClass);
+            return ResponseEntity.ok(createdClass); // Ensure the saved entity is returned
+        } catch (InvalidFieldException e) {
+            log.error("InvalidFieldException: {}", e.getErrorMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while creating single class: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
 }

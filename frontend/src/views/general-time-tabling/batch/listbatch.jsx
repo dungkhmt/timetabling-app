@@ -4,7 +4,7 @@ import {request} from "api";
 import React, {useEffect, useState} from "react";
 import {Button, Dialog, DialogContent, DialogTitle, Paper, TextField,Autocomplete} from "@mui/material";
 
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import {Link} from "react-router-dom";
 //import { useNavigate } from 'react-router-dom';
 import { useHistory } from 'react-router-dom';
@@ -154,9 +154,28 @@ export default function ListBatch(){
                     ADD
                 </Button>
                 <DataGrid
+                    initialState={{
+                        sorting: {
+                            sortModel: [{ field: 'id', sort: 'asc' }],
+                        },
+                        filter: {
+                            filterModel: {
+                            items: [],
+                            quickFilterValues: [""],
+                        },
+                    },
+                    }}
+                    slots={{ toolbar: GridToolbar }}
+                    slotProps={{
+                         toolbar: {
+                             printOptions: { disableToolbarButton: true },
+                             csvOptions: { disableToolbarButton: true },
+                             showQuickFilter: true,
+                            },
+                     }}
                     rows={listBatch}
                     columns={columns}
-                    initialState={{ pagination: { paginationModel } }}
+                    //initialState={{ pagination: { paginationModel } }}
                     pageSizeOptions={[5, 10]}
                     checkboxSelection
                     sx={{ border: 0 }}
