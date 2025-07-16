@@ -26,4 +26,6 @@ public class CreateTimeTablingClassDto {
     private String crew;
     private String weekType;
     private int duration;
+    private Long batchId;
+    private String createdByUserId;
 }

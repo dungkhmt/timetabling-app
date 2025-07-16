@@ -77,6 +77,8 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         cls.setMass(request.getMass());
         cls.setGroupName(groupName);
         cls.setCrew(request.getCrew());
+        cls.setBatchId(request.getBatchId());
+        cls.setCreatedByUserId(request.getCreatedByUserId());
         //newClass.setQuantityMax(request.getQuantityMax());
         if(request.getLectureExerciseMaxQuantity()!=null)
             cls.setQuantityMax(request.getLectureExerciseMaxQuantity());
@@ -485,6 +487,14 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
             throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
         }
 
+        TimeTablingCourse course = timeTablingCourseRepo.findById(planClass.getModuleCode()).orElse(null);
+        if(course == null){// course code does not exist -> create new
+            course = new TimeTablingCourse();
+            course.setId(planClass.getModuleCode());
+            course.setName(planClass.getModuleName());
+            course= timeTablingCourseRepo.save(course);
+        }
+
         PlanGeneralClass aPlan = new PlanGeneralClass();
         aPlan.setGroupId(planClass.getGroupId());
         aPlan.setModuleCode(planClass.getModuleCode());
@@ -492,9 +502,61 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         aPlan.setSemester(batch.getSemester());
         aPlan.setNumberOfClasses(planClass.getNumberOfClasses());
         aPlan.setCreatedByUserId(userId);
+        aPlan.setBatchId(planClass.getBatchId());
+        if(planClass.getClassType().equals("LT+BT")){
+            aPlan.setLectureExerciseMaxQuantity(planClass.getQuantityMax());
+        }else if(planClass.getClassType().equals("LT")){
+            aPlan.setLectureMaxQuantity(planClass.getQuantityMax());
+        }else if(planClass.getClassType().equals("BT")){
+            aPlan.setExerciseMaxQuantity(planClass.getQuantityMax());
+        }
+        aPlan.setPromotion(planClass.getPromotion());
+        aPlan.setCrew(planClass.getCrew());
+        aPlan.setWeekType(planClass.getWeekType());
 
 
         aPlan = planGeneralClassRepo.save(aPlan);
+
+        // creat classes
+        for (int i = 1; i <= planClass.getNumberOfClasses(); i++) {
+            CreateTimeTablingClassDto req = new CreateTimeTablingClassDto();
+            req.setId(aPlan.getId());
+            req.setNbClasses(planClass.getNumberOfClasses());
+            req.setClassType(planClass.getClassType());
+            if(course.getMaxStudentLT()!=null && course.getMaxStudentLT() > 0){
+                req.setClassType("LT");
+            }
+            req.setDuration(planClass.getDuration());
+            req.setCrew(planClass.getCrew());
+            req.setMass(planClass.getMass());
+            req.setLearningWeeks(planClass.getLearningWeeks());
+            req.setModuleCode(planClass.getModuleCode());
+            req.setSemester(planClass.getSemester());
+            req.setModuleName(course.getName());
+            req.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+            req.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+            req.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+            req.setProgramName(planClass.getProgramName());
+            req.setWeekType(planClass.getWeekType());
+            req.setBatchId(batch.getId());
+            req.setCreatedByUserId(userId);
+            makeClass(req, planClass.getGroupId());
+
+            // make sub-class (class BT of the current class LT
+            if(course.getMaxStudentBT()!=null && course.getMaxStudentLT()!=null &&
+                    course.getMaxStudentLT() > 0 && course.getMaxStudentBT() > 0){
+                int nbSubClass = course.getMaxStudentLT()/course.getMaxStudentBT();
+                for(int k = 1; k <= nbSubClass; k++){
+                    // not finish yet
+                    //ModelInputCreateSubClass I = new ModelInputCreateSubClass();
+                    //I.setClassType("BT");
+                    //I.setDuration();
+                    //makeSubClassNew(I);
+                }
+            }
+        }
+
+
         return aPlan;
     }
 }

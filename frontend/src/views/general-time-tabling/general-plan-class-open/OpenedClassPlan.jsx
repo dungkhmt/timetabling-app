@@ -101,11 +101,36 @@ export default function OpenedClassPlan(){
             numberOfClasses: nbClasses,
             quantityMax: nbStudents,
             learningWeeks: learningWeeks,
-            groupId: program,
+            groupId: selectedProgram.id,
             duration: duration,
             promotion: promotion,
-            crew: crew
+            crew: crew,
+            quantityMax: nbStudents,
+            weekType: weekType
         };
+
+        setLoading(true);
+        request(
+              "post",
+              "/plan-general-classes/create-class-openning-plan",
+              (res) => {
+                console.log("Success response:", res.data);
+                setLoading(false);
+                if ( res.data) {
+                  //onSuccess(res.data);
+                }
+                toast.success("Tạo ke hoach lớp mới thành công!");
+                //handleClose();
+              },
+              null
+              ,
+              payLoad
+            ).catch((err) => {
+              // This will catch any other errors that might occur
+              console.error("Unexpected error:", err);
+              setLoading(false);
+              toast.error(err.response.data);
+            });
 
     }
 

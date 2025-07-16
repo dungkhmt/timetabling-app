@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.generaltimetabling.service.impl;
 
+import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.exception.GroupNotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.exception.GroupUsedException;
 import openerp.openerpresourceserver.generaltimetabling.mapper.GroupMapper;
@@ -16,8 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
-
+@Log4j2
 @Service
 public class GroupServiceImpl implements GroupService {
 
@@ -75,7 +77,25 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<Group> getAllGroup(){
-        return groupRepo.findAll();
+
+        List<Group> res = groupRepo.findAll();
+        //List<Group> res = groupRepo.findAllByStatus("ACTIVE");
+
+        /*
+        HashSet<String> groupNames = new HashSet<>();
+        for(Group g: res){
+            String groupName = g.getGroupName();
+            String[] s = groupName.split("-");
+            groupNames.add(s[0].trim());
+        }
+        for(String n: groupNames){
+            log.info("split group name " + n);
+            Group group = new Group();
+            group.setGroupName(n);
+            groupRepo.save(group);
+        }
+        */
+        return res;
     }
 
     @Override

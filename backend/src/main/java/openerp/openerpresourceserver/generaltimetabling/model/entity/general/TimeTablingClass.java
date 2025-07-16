@@ -47,6 +47,8 @@ public class TimeTablingClass {
     private String studyClass;
     private String foreignLecturer;
     private Integer duration;
+    private Long batchId;
+    private String createdByUserId;
     @Override
     public int hashCode() {
         return Objects.hash(moduleName, moduleCode, classCode);
