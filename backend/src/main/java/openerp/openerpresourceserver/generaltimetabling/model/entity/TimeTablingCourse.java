@@ -55,5 +55,7 @@ public class TimeTablingCourse {
     @Column(name="duration_bt")
     private Integer durationBt;
 
+    @Column(name="separate_lt_bt")
+    private String separateLTBT; // Y means that LT and BT classes must be separated
 
 }

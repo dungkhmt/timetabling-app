@@ -30,6 +30,8 @@ export default function OpenedClassPlan(){
     const [duration, setDuration] = useState(0);
     const [weekType, setWeekType] = useState("0");
     const [crew, setCrew] = useState("");
+    const [separateLTBT, setSeparateLTBT] = useState("N");
+
     const columns = [
         {
             title: "ID",
@@ -106,7 +108,8 @@ export default function OpenedClassPlan(){
             promotion: promotion,
             crew: crew,
             quantityMax: nbStudents,
-            weekType: weekType
+            weekType: weekType,
+            separateLTBT: separateLTBT
         };
 
         setLoading(true);
@@ -144,7 +147,9 @@ export default function OpenedClassPlan(){
             console.log("Success response:", res.data);
             setLoading(false);
             if (res.data) {
-              setCourse(res.data);              
+              setCourse(res.data);           
+              setSeparateLTBT(res.data.separateLTBT);
+                
             }
             //toast.success("get Course Detail thành công!");
             
@@ -401,6 +406,19 @@ export default function OpenedClassPlan(){
                                     >
                                         <MenuItem value="S">Sáng</MenuItem>
                                         <MenuItem value="C">Chiều</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                <FormControl fullWidth>
+                                    <InputLabel>Tách LT - BT</InputLabel>
+                                    <Select
+                                        name="separateLTBT"
+                                        value={separateLTBT}
+                                        onChange={(e) => {setCrew(e.target.value)}}
+                                        label="Tách LT - BT"
+                                    
+                                    >
+                                        <MenuItem value="Y">Y</MenuItem>
+                                        <MenuItem value="N">N</MenuItem>
                                     </Select>
                                 </FormControl>
                                 <Button onClick={() =>{

@@ -33,6 +33,8 @@ public class CreateSingleClassOpenDto {
         private int duration;
         private Date createdStamp;
         private String promotion;
+        private String separateLTBT;
+        private String generateClass; // Y means that automatically generate classes
         public void setLearningWeeks(String learningWeeks) {
             if (learningWeeks != null) {
                 List<String> weekStringList = List.of(learningWeeks.split(","));
