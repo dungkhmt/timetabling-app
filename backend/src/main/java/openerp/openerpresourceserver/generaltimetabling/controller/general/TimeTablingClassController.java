@@ -88,6 +88,12 @@ public class TimeTablingClassController {
         return timeTablingClassService.getTimeTablingClassDtos(semester, groupId, versionId);
     }
 
+    @GetMapping("/get-all-classes-of-batch")
+    public ResponseEntity<?> getAllClassesOfBatch(Principal principal, @RequestParam("batchId") Long batchId){
+        List<ModelResponseTimeTablingClass> res = timeTablingClassService.getTimeTablingClassOfBatch(principal.getName(), batchId);
+        return ResponseEntity.ok().body(res);
+    }
+
     @GetMapping("/get-by-parent-class")
     public List<ModelResponseTimeTablingClass> getSubClasses(@RequestParam("parentClassId") Long parentClassId){
         return timeTablingClassService.getSubClass(parentClassId);

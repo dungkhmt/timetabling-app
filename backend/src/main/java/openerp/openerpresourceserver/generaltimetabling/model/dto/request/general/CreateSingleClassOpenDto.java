@@ -30,11 +30,15 @@ public class CreateSingleClassOpenDto {
         private String weekType;
         private Long groupId;
         private Long batchId;
-        private int duration;
+        private Integer duration;
+        private Integer durationLTBT;
+        private Integer durationLT;
+        private Integer durationBT;
         private Date createdStamp;
         private String promotion;
         private String separateLTBT;
-        private String generateClass; // Y means that automatically generate classes
+        private String generateClasses; // Y means that automatically generate classes
+
         public void setLearningWeeks(String learningWeeks) {
             if (learningWeeks != null) {
                 List<String> weekStringList = List.of(learningWeeks.split(","));
@@ -47,26 +51,26 @@ public class CreateSingleClassOpenDto {
         }
 
         public void setLectureMaxQuantity(Integer lectureMaxQuantity) {
-            if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
-                throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
-            } else {
+            //if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
+            //    throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
+            //} else {
                 this.lectureMaxQuantity = lectureMaxQuantity;
-            }
+            //}
         }
 
         public void setExerciseMaxQuantity(Integer exerciseMaxQuantity) {
-            if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
-                throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
-            } else {
+            //if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
+            //    throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
+            //} else {
                 this.exerciseMaxQuantity = exerciseMaxQuantity;
-            }
+            //}
         }
 
         public void setLectureExerciseMaxQuantity(Integer lectureExerciseMaxQuantity) {
-            if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
-                throw new InvalidFieldException("Số lượng tối đa của LT và BT cần phải trống!");
-            } else {
+            //if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
+            //    throw new InvalidFieldException("Số lượng tối đa của LT và BT cần phải trống!");
+            //} else {
                 this.lectureExerciseMaxQuantity = lectureExerciseMaxQuantity;
-            }
+            //}
         }
 }

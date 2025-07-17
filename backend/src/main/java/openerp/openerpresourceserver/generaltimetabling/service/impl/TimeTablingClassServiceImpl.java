@@ -561,6 +561,39 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId) {
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllByBatchId(batchId);
+
+
+        return CLS.stream() // use sorted list
+                .map(c -> ModelResponseTimeTablingClass.builder()
+                        .id(c.getId())
+                        .quantity(c.getQuantity())
+                        .quantityMax(c.getQuantityMax())
+                        .moduleCode(c.getModuleCode())
+                        .moduleName(c.getModuleName())
+                        .classType(c.getClassType())
+                        .classCode(c.getClassCode())
+                        .semester(c.getSemester())
+                        .studyClass(c.getStudyClass())
+                        .mass(c.getMass())
+                        .state(c.getState())
+                        .crew(c.getCrew())
+                        .openBatch(c.getOpenBatch())
+                        .course(c.getCourse())
+                        .refClassId(c.getRefClassId())
+                        .parentClassId(c.getParentClassId())
+                        .duration(c.getDuration())
+                        .groupName(c.getGroupName())
+                        .listGroupName(null)
+                        .timeSlots(null)
+                        .learningWeeks(c.getLearningWeeks())
+                        .foreignLecturer(c.getForeignLecturer())
+                        .build()
+                ).toList();
+    }
+
+    @Override
     public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I) {
         TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
         if(ver == null) return null;

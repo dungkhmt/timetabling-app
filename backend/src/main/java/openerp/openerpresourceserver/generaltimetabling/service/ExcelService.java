@@ -522,7 +522,7 @@ public class ExcelService {
                     for(int i = 1;i <= p.getNumberOfClasses();i++) {
                         CreateTimeTablingClassDto req = new CreateTimeTablingClassDto();
                         req.setId(p.getId());
-                        req.setNbClasses(p.getNumberOfClasses());
+                        //req.setNbClasses(p.getNumberOfClasses());
                         req.setClassType(p.getClassType());
                         req.setDuration(p.getDuration());
                         req.setCrew(p.getCrew());

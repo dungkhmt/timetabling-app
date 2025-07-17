@@ -16,7 +16,8 @@ public class CreateTimeTablingClassDto {
     private Integer lectureExerciseMaxQuantity;
     private Integer lectureMaxQuantity;
     private String classType;
-    private int nbClasses;
+    //private int nbClasses;
+    private Long parentClassId;// in case the new created class is a BT class, parentClassId is the LT class
     private String mass;
     private String programName;
     private String moduleCode;

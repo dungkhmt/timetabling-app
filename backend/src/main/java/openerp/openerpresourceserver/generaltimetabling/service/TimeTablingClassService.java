@@ -25,6 +25,7 @@ public interface TimeTablingClassService {
     List<TimeTablingClassSegment> createClassSegmentForSummerSemester(CreateClassSegmentRequest I);
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId);
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId);
     public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
 
     List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds, Long versionId);
