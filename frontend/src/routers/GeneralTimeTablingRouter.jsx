@@ -5,7 +5,6 @@ import GeneralPlanClassOpenScreen from "views/general-time-tabling/general-plan-
 import OpenedClassPlan from "views/general-time-tabling/general-plan-class-open/OpenedClassPlan";
 import GeneralScheduleScreen from "views/general-time-tabling/general-schedule/GeneralScheduleScreen";
 import GeneralScheduleSummerScreen from "views/general-time-tabling/general-schedule/GeneralScheduleSummerScreen";
-
 import GeneralUploadScreen from "views/general-time-tabling/general-upload/GeneralUploadScreen";
 import RoomOccupationScreen from "views/general-time-tabling/room-occupation/RoomOccupationScreen";
 

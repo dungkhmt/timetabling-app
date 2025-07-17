@@ -1,8 +1,9 @@
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import { toast } from "react-toastify";
 import React, {useEffect, useState} from "react";
-import {Button, Dialog, DialogContent, DialogTitle, Paper, TextField,Autocomplete,CircularProgress,
-    FormControl, MenuItem,InputLabel,Select 
+import {
+    Button, Dialog, DialogContent, DialogTitle, Paper, TextField, Autocomplete, CircularProgress,
+    FormControl, MenuItem, InputLabel, Select, DialogActions, Box
 
 } from "@mui/material";
 
@@ -105,7 +106,6 @@ export default function OpenedClassPlan(){
             duration: duration,
             promotion: promotion,
             crew: crew,
-            quantityMax: nbStudents,
             weekType: weekType
         };
 
@@ -267,7 +267,7 @@ export default function OpenedClassPlan(){
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
-                                            label="NHóm"
+                                            label="Nhóm"
                                             required
                                             error={ !!errors.groupName}
                                             helperText={errors.groupName}
@@ -280,6 +280,7 @@ export default function OpenedClassPlan(){
                                                    </>
                                                 ),
                                             }}
+                                            sx={{ mt: 1, width: '100%' }}
                                                         
                                         />
                                      )}
@@ -311,7 +312,9 @@ export default function OpenedClassPlan(){
                                                     </>
                                                 ),
                                             }}
-                                                   
+                                            sx={{ mt: 2, mb: 2, width: '100%' }}
+
+
                                         />
                                     )}
                                 />
@@ -342,76 +345,148 @@ export default function OpenedClassPlan(){
                                     placeholder="Ví dụ: 2-9,11-18"
                                     error={!!errors.learningWeeks}
                                     helperText={errors.learningWeeks}
+                                    sx={{ mt: 2, mb: 1.5, width: '100%' }}
+
+
                                 />
-                                <TextField
-                                    label="Số lượng lớp"
-                                    name="nbClasses"
-                                    value={nbClasses}
-                                    onChange={(e) => {setNbClasses(e.target.value)}}
-                                    fullWidth
-                                    required
-                                    placeholder=""
-                                    error={!!errors.nbClasses}
-                                    helperText={errors.nbClasses}
-                                />
-                                <TextField
-                                    label="Số lượng sinh viên"
-                                    name="nbStudents"
-                                    value={nbStudents}
-                                    onChange={(e) => {setNbStudents(e.target.value)}}
-                                    fullWidth
-                                    required
-                                    placeholder=""
-                                    error={!!errors.nbStudents}
-                                    helperText={errors.nbStudents}
-                                />
-                                <TextField
-                                    label="Khóa"
-                                    name="Promotion"
-                                    value={promotion}
-                                    onChange={(e) => {setPromotion(e.target.value)}}
-                                    fullWidth
-                                    required
-                                    placeholder=""
-                                    error={!!errors.promotion}
-                                    helperText={errors.promotion}
-                                />
-                                <FormControl fullWidth>
-                                    <InputLabel>Kiểu tuần</InputLabel>
-                                    <Select
-                                        name="weekType"
-                                        value={weekType}
-                                        onChange={(e) => {setWeekType(e.target.value)}}
-                                        label="Kiểu tuần"
-                                    
-                                    >
-                                        <MenuItem value="0">AB</MenuItem>
-                                        <MenuItem value="1">A</MenuItem>
-                                        <MenuItem value="2">B</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <FormControl fullWidth>
-                                    <InputLabel>Kíp</InputLabel>
-                                    <Select
-                                        name="crew"
-                                        value={crew}
-                                        onChange={(e) => {setCrew(e.target.value)}}
-                                        label="Kíp"
-                                    
-                                    >
-                                        <MenuItem value="S">Sáng</MenuItem>
-                                        <MenuItem value="C">Chiều</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <Button onClick={() =>{
-                                    setOpenAddClassPlanDialog(false);
+
+                                <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                                    <TextField
+                                        label="Số lượng lớp"
+                                        name="nbClasses"
+                                        value={nbClasses}
+                                        onChange={(e) => {setNbClasses(e.target.value)}}
+                                        type="number"
+                                        size="small"
+                                        sx={{
+                                            minWidth: 285,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '44px'
+                                            }
+                                        }}
+                                        required
+                                        error={!!errors.nbClasses}
+                                        helperText={errors.nbClasses}
+                                    />
+                                    <TextField
+                                        label="Số lượng sinh viên"
+                                        name="nbStudents"
+                                        value={nbStudents}
+                                        onChange={(e) => {setNbStudents(e.target.value)}}
+                                        type="number"
+                                        size="small"
+                                        required
+                                        error={!!errors.nbStudents}
+                                        helperText={errors.nbStudents}
+                                        sx={{
+                                            minWidth: 250,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '44px'
+                                            }
+                                        }}
+                                    />
+                                </Box>
+
+                                <Box sx={{
+                                    display: 'flex',
+                                    gap: 2,          // Khoảng cách giữa các item (16px)
+                                    alignItems: 'flex-start', // Căn chỉnh các item theo chiều dọc
+                                    mt: 2,           // Margin top
+                                    mb: 1            // Margin bottom
                                 }}>
+                                    {/* TextField Khóa */}
+                                    <TextField
+                                        label="Khóa"
+                                        name="Promotion"
+                                        value={promotion}
+                                        onChange={(e) => setPromotion(e.target.value)}
+                                        required
+                                        error={!!errors.promotion}
+                                        helperText={errors.promotion}
+                                        sx={{
+                                            minWidth: 50,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '44px'
+                                            }
+                                        }}
+                                    />
+
+                                    {/* FormControl Kiểu tuần */}
+                                    <FormControl
+                                        sx={{ minWidth: 100,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '44px'
+                                            }
+                                    }}
+                                    >
+                                        <InputLabel>Kiểu tuần</InputLabel>
+                                        <Select
+                                            name="weekType"
+                                            value={weekType}
+                                            onChange={(e) => setWeekType(e.target.value)}
+                                            label="Kiểu tuần"
+                                        >
+                                            <MenuItem value="0">AB</MenuItem>
+                                            <MenuItem value="1">A</MenuItem>
+                                            <MenuItem value="2">B</MenuItem>
+                                        </Select>
+                                    </FormControl>
+
+                                    {/* FormControl Kíp */}
+                                    <FormControl
+                                        sx={{ minWidth: 250,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '44px'
+                                            }
+                                    }}
+                                    >
+                                        <InputLabel>Kíp</InputLabel>
+                                        <Select
+                                            name="crew"
+                                            value={crew}
+                                            onChange={(e) => setCrew(e.target.value)}
+                                            label="Kíp"
+                                        >
+                                            <MenuItem value="S">Sáng</MenuItem>
+                                            <MenuItem value="C">Chiều</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+
+                            </DialogContent>
+                            <DialogActions sx={{
+                                padding: "16px",
+                                gap: "8px",
+                                borderTop: '1px solid #e0e0e0',
+                                backgroundColor: '#fafafa'
+                            }}>
+                                <Button
+                                    onClick={() =>{
+                                        setOpenAddClassPlanDialog(false);
+                                    }}
+                                    variant="outlined"
+                                    sx={{
+                                        minWidth: "100px",
+                                        padding: "8px 16px",
+                                        textTransform: 'none'
+                                    }}
+                                >
                                     Cancel
                                 </Button>
-                                <Button onClick={handleSave}>
+                                <Button
+                                    onClick={handleSave}
+                                    color="primary"
+                                    variant="contained"
+                                    autoFocus
+                                    sx={{
+                                        minWidth: "120px",
+                                        padding: "8px 16px",
+                                        textTransform: 'none'
+                                    }}
+                                >
                                     Save
                                 </Button>
-                            </DialogContent>
+                            </DialogActions>
                         </Dialog>
         </>
     );
