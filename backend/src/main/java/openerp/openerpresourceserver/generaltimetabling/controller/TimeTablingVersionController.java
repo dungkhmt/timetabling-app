@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -25,20 +26,22 @@ public class TimeTablingVersionController {
     private TimeTablingClassService timeTablingClassService;    
     
     @PostMapping("/create")
-    public ResponseEntity<TimeTablingTimeTableVersion> createVersion(@RequestBody TimeTableVersionRequest request) {
+    public ResponseEntity<TimeTablingTimeTableVersion> createVersion(Principal principal, @RequestBody TimeTableVersionRequest request) {
         log.info("Received request to create new timetabling version: {}", request);
         
         if (request.getName() == null || request.getStatus() == null || request.getSemester() == null || request.getUserId() == null) {
             log.error("Missing required fields in request");
             return ResponseEntity.badRequest().build();
         }
-        
+        Long batchId = Long.parseLong(request.getBatchId());
         TimeTablingTimeTableVersion createdVersion = timeTablingVersionService.createVersion(
             request.getName(), 
             request.getStatus(), 
             request.getSemester(), 
-            request.getUserId(),
-            request.getNumberSlotsPerSession()
+            //request.getUserId(),
+                principal.getName(),
+                request.getNumberSlotsPerSession(),
+                batchId
         );
         
         return ResponseEntity.status(HttpStatus.CREATED).body(createdVersion);
@@ -56,7 +59,12 @@ public class TimeTablingVersionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
+    @GetMapping("/get-version-of-batch")
+    public ResponseEntity<?> getVersionsOfBatch(Principal principal,
+                                                @RequestParam(required = false) Long batchId){
+        List<TimeTablingTimeTableVersion> res = timeTablingVersionService.getAllVersionsByBatchId(batchId);
+        return ResponseEntity.ok().body(res);
+    }
     @GetMapping("/")
     public ResponseEntity<List<TimeTablingTimeTableVersion>> getVersions(
             @RequestParam(required = false) String semester,

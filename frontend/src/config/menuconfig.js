@@ -45,7 +45,7 @@ import { wms_logistics_admin } from "./menuconfig/wms_logistics_admin";
 import { courseTimeTabling } from "./menuconfig/courseTimeTabling";
 import { generalTimeTabling } from "./menuconfig/generalTimeTabling";
 import { ExamTimeTabling } from "./menuconfig/examTimeTabling";
-
+import { teacherClassAssignment } from "./menuconfig/teacherclassassignment";
 import { computerLabTimeTabling } from "./menuconfig/computerLabTimeTabling";
 import { taRecruitment } from "./menuconfig/taRecruitment";
 import { Schedule } from "@mui/icons-material/";
@@ -63,6 +63,7 @@ MENUS.push(scheduleInformation);
 //MENUS.push(courseTimeTabling);
 MENUS.push(generalTimeTabling);
 MENUS.push(ExamTimeTabling);
+MENUS.push(teacherClassAssignment);
 MENUS.push(wms_purchase);
 MENUS.push(wms_sales);
 MENUS.push(wms_logistics);

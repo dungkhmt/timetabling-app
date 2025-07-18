@@ -12,5 +12,7 @@ public interface TimeTablingVersionRepo extends JpaRepository<TimeTablingTimeTab
     List<TimeTablingTimeTableVersion> findByNameContaining(String name);
     List<TimeTablingTimeTableVersion> findAll();
     List<TimeTablingTimeTableVersion> findAllBySemester(String semester);
+    List<TimeTablingTimeTableVersion> findAllByBatchId(Long batchId);
+
 
 }

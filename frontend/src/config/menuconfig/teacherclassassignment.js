@@ -1,0 +1,21 @@
+export const teacherClassAssignment = {
+  id: "MENU_TEACHER_CLASS_ASSIGNMENT",
+  icon: "AnalyticsIcon",
+  text: "Phân công giảng dạy",
+  child: [
+    {
+      id: "MENU_TEACHER_CLASS_ASSIGNMENT.BATCH",
+      path: "/teacher-class-assignment/list-batch",
+      isPublic: true,
+      text: "Phân công",
+      child: [],
+    },
+    {
+      id: "MENU_TEACHER_CLASS_ASSIGNMENT.DASHBOARD",
+      path: "/teacher-class-assignment/dashboard",
+      isPublic: true,
+      text: "Dash board",
+      child: [],
+    },
+   ],
+};

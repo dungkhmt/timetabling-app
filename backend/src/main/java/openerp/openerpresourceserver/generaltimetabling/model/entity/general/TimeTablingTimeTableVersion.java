@@ -37,7 +37,8 @@ public class TimeTablingTimeTableVersion {
     @Column(name = "number_slots_per_session")
     private Integer numberSlotsPerSession;
 
-
+    @Column(name="batch_id")
+    private Long batchId;
 
     @PrePersist
     protected void onCreate() {

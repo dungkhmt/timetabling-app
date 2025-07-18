@@ -6,12 +6,13 @@ import {
     FormControl, MenuItem, InputLabel, Select, DialogActions, Box
 
 } from "@mui/material";
-
+import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { request } from "api";
 import ListOpenedClass from "./ListOpenedClass";
 
 export default function OpenedClassPlan(){
+    const [selectedSemester, setSelectedSemester] = useState(null);
     const {batchId} = useParams();
     const [classPlans, setClassPlans] = useState([]);
     const [classes, setClasses] = useState([]);
@@ -271,6 +272,7 @@ export default function OpenedClassPlan(){
     return(
         <>
             Opend Class Plan {batchId}
+            
             <Paper sx={{ height: 400, width: '100%' }}>
                  
                             <Button

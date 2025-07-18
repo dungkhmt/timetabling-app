@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -30,7 +31,7 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
 
     @Override
     @Transactional
-    public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot) {
+    public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot, Long batchId) {
         log.info("Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}", 
                 name, status, semester, userId);
         
@@ -40,6 +41,8 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
         version.setSemester(semester);
         version.setCreatedByUserId(userId);
         version.setNumberSlotsPerSession(numOfSlot);
+        version.setBatchId(batchId);
+        version.setCreatedStamp(new Date());
         // ID sẽ được tự động tạo bởi cơ sở dữ liệu
         
         version = timeTablingVersionRepo.save(version);
@@ -62,6 +65,12 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     public List<TimeTablingTimeTableVersion> getAllVersionsByName(String name) {
         log.info("Fetching all timetabling versions with name containing: {}", name);
         return timeTablingVersionRepo.findByNameContaining(name);
+    }
+
+    @Override
+    public List<TimeTablingTimeTableVersion> getAllVersionsByBatchId(Long batchId) {
+        List<TimeTablingTimeTableVersion> res = timeTablingVersionRepo.findAllByBatchId(batchId);
+        return res;
     }
 
     @Override
