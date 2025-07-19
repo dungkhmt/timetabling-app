@@ -2,6 +2,7 @@
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import {request} from "api";
 
+
 import React, {useEffect, useState} from "react";
 import { 
   Paper, 
@@ -63,6 +64,7 @@ export default function VersionMakeTimetable(){
     const [numberSlotsPerSession, setNumberSlotsPerSession] = useState(6);
     const [isCreating, setIsCreating] = useState(false);
 
+    const history = useHistory();
 
     const columns = [
         {
@@ -79,7 +81,9 @@ export default function VersionMakeTimetable(){
         },
     ];    
 
-    function handleRowClick(){
+    function handleRowClick(params){
+        const versionId = params.row.id;
+        history.push(`/general-time-tabling/make-timetable/${versionId}`); // Navigate to the user details page
 
     }
     function getVersions(){

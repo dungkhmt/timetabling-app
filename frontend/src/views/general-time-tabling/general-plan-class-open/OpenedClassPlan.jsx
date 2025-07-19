@@ -219,7 +219,7 @@ export default function OpenedClassPlan(){
     
     function getAllClassesOfBatch(){
               request("get", 
-                          "/general-classes/get-all-classes-of-batch?batchId="+batchId,
+                          "/general-classes/get-all-classes-of-batch?batchId="+batchId, 
                           (res) => {
                               setClasses(res.data);
                           }

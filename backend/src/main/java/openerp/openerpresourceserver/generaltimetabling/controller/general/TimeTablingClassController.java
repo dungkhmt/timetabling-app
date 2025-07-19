@@ -21,8 +21,11 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Roo
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
@@ -79,6 +82,12 @@ public class TimeTablingClassController {
         return ResponseEntity.status(410).body("Mã lớp hoặc mã lớp tạm thời, mã lớp cha không phải là 1 số!");
     }
 
+    @GetMapping("/get-class-segments-of-version")
+    public ResponseEntity<?> getClasssegmentsOfVersion(Principal principal, @RequestParam("versionId") Long versionId){
+        log.info("getClasssegmentsOfVersion, versionId = " + versionId);
+        List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersion(principal.getName(), versionId);
+        return ResponseEntity.ok().body(res);
+    }
     @GetMapping("/")
     public List<ModelResponseTimeTablingClass> requestGetClasses(
             @RequestParam("semester") String semester,
@@ -113,6 +122,11 @@ public class TimeTablingClassController {
         return ResponseEntity.ok().body(updatedGeneralClass);
     }
 
+    @PostMapping("/manual-assign-timetable-class-segment")
+    public ResponseEntity<?> manualAssignTimeTable2ClassSegment(Principal principal, @RequestBody ModelInputManualAssignTimeTable I){
+        ModelResponseManualAssignTimeTable res = timeTablingClassService.manualAssignTimetable2Classsegment(principal.getName(), I);
+        return ResponseEntity.ok().body(res);
+    }
     @PostMapping("/update-class-schedule-v2")
     public ResponseEntity<List<GeneralClass>> requestUpdateClassScheduleV2(@RequestParam("semester")String semester, @RequestBody UpdateClassScheduleRequest request ) {
         boolean ok = timeTablingClassService.updateTimeTableClassSegment(semester, request.getSaveRequests());

@@ -32,7 +32,7 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     @Override
     @Transactional
     public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot, Long batchId) {
-        log.info("Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}", 
+        log.info("createVersion, Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}",
                 name, status, semester, userId);
         
         TimeTablingTimeTableVersion version = new TimeTablingTimeTableVersion();
@@ -48,9 +48,12 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
         version = timeTablingVersionRepo.save(version);
 
         // create class-segments of classes of the semester
-        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllBySemester(semester);
+        //List<TimeTablingClass> CLS = timeTablingClassRepo.findAllBySemester(semester);
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllByBatchId(batchId);
+        log.info("createVersion, classes of batch " + batchId + " -> CLS.sz = " + CLS.size());
         for(TimeTablingClass cls: CLS){
             TimeTablingClassSegment cs = timeTablingClassService.createClassSegment(cls.getId(),cls.getCrew(),cls.getDuration(),version.getId());
+            log.info("createVersion, created class-segment " + cs.getId());
         }
         return version;
     }

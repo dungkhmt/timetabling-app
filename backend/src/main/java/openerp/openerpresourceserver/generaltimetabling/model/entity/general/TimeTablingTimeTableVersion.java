@@ -14,6 +14,8 @@ import java.util.Date;
 @Entity
 @Table(name = "timetabling_timetable_version")
 public class TimeTablingTimeTableVersion {
+    public static final String STATUS_DRAFT = "DRAFT";
+    public static final String STATUS_PUBLISHED = "PUBLISHED";
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "timetabling_timetable_version_seq_gen")
     @SequenceGenerator(name = "timetabling_timetable_version_seq_gen", sequenceName = "timetabling_timetable_version_SEQ", allocationSize = 1)

@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface TimeTablingBatchRepo extends JpaRepository<TimeTablingBatch, Long> {
     public List<TimeTablingBatch> findAllByCreatedByUserIdAndSemester(String createdByUserId, String semester);
+    public List<TimeTablingBatch> findAllBySemester(String semester);
 
     @Query(value = "SELECT nextval('timetabling_batch_seq')", nativeQuery = true)
     Long getNextIdValue();

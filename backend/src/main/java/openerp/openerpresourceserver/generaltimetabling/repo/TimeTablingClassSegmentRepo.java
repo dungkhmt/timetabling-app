@@ -12,6 +12,8 @@ public interface TimeTablingClassSegmentRepo extends JpaRepository<TimeTablingCl
     List<TimeTablingClassSegment> findAllByClassId(Long classId);
 
     List<TimeTablingClassSegment> findAllByVersionId(Long versionId);
+    List<TimeTablingClassSegment> findAllByVersionIdIn(List<Long> versionIds);
+
 
     List<TimeTablingClassSegment> findAllByVersionIdAndClassIdIn(Long versionId, List<Long> classIds);
 

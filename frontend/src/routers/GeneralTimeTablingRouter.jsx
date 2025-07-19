@@ -7,6 +7,7 @@ import OpenedClassPlan from "views/general-time-tabling/general-plan-class-open/
 import GeneralScheduleScreen from "views/general-time-tabling/general-schedule/GeneralScheduleScreen";
 import GeneralScheduleSummerScreen from "views/general-time-tabling/general-schedule/GeneralScheduleSummerScreen";
 import ListBatchForMakeTimeTabling from "views/general-time-tabling/general-schedule/ListBatchForMakeTimeTabling";
+import MakeTimetable from "views/general-time-tabling/general-schedule/MakeTimetable";
 import GeneralUploadScreen from "views/general-time-tabling/general-upload/GeneralUploadScreen";
 import RoomOccupationScreen from "views/general-time-tabling/room-occupation/RoomOccupationScreen";
 import VersionMakeTimetable from "views/general-time-tabling/version-selection/VersionMakeTimetable";
@@ -34,6 +35,13 @@ export default function GeneralTimeTablingRouter() {
           exact
           path={`${path}/version-make-timetable/:batchId`}
         ></Route>
+        <Route
+          //component={GeneralPlanClassOpenScreenV2}
+          component={MakeTimetable}
+          exact
+          path={`${path}/make-timetable/:versionId`}
+        ></Route>
+        
         <Route
           //component={GeneralPlanClassOpenScreenV2}
           component={ListBatchForMakeTimeTabling}
