@@ -29,8 +29,10 @@ public interface TimeTablingClassService {
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId);
 
-    public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId)
-;
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId);
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+
+
     public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId);
     public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
 

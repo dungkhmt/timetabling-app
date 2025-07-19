@@ -573,6 +573,21 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         List<Long> listClassIds = new ArrayList<>();
         for(Long id: classIds) listClassIds.add(id);
         List<TimeTablingClass> classes = timeTablingClassRepo.findAllByIdIn(listClassIds);
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(listClassIds);
+        Set<Long> groupIds = new HashSet<>();
+        for(ClassGroup cg: classGroups) groupIds.add(cg.getGroupId());
+        List<Long> listGroupIds = new ArrayList<>();
+        for(Long gId: groupIds) listGroupIds.add(gId);
+        List<Group> groups = groupRepo.findAllByIdIn(listGroupIds);
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        Map<Long, List<Group>> mClassId2Groups = new HashMap<>();
+        for(ClassGroup cg: classGroups){
+            Long classId = cg.getClassId();
+            Long groupId = cg.getGroupId(); Group g = mId2Group.get(groupId);
+            if(mClassId2Groups.get(classId)==null) mClassId2Groups.put(classId, new ArrayList<>());
+            mClassId2Groups.get(classId).add(g);
+        }
         Map<Long, TimeTablingClass> mId2Class = new HashMap<>();
         for(TimeTablingClass cls: classes) mId2Class.put(cls.getId(),cls);
         Set<Long> refClassIds = new HashSet<>();
@@ -602,8 +617,41 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             mrcs.setStartTime(cs.getStartTime());
             mrcs.setEndTime(cs.getEndTime());
             mrcs.setRoomCode(cs.getRoom());
+            mrcs.setGroups(mClassId2Groups.get(cs.getClassId()));
 
             res.add(mrcs);
+        }
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        List<ModelResponseClassSegment> L = getClasssegmentsOfVersion(userId, versionId);
+        List<ModelResponseClassSegment> res = new ArrayList<>();
+        for(ModelResponseClassSegment cs: L){
+            boolean ok = true;
+            if(searchClassCode != null && !searchClassCode.equals("")&& !searchClassCode.equals("null")){
+                if(!cs.getClassCode().contains(searchClassCode)) ok = false;
+            }
+            if(searchCourseCode != null && !searchCourseCode.equals("")&& !searchCourseCode.equals("null")){
+                if(!cs.getCourseCode().contains(searchCourseCode)) ok = false;
+                log.info("getClasssegmentsOfVersionFiltered, consider courseCode " + cs.getCourseCode() + " ok = " + ok);
+            }
+            if(searchCourseName != null && !searchCourseName.equals("")&& !searchCourseName.equals("null")){
+                if(!cs.getCourseName().contains(searchCourseName)) ok = false;
+            }
+            if(searchGroupName != null && !searchGroupName.equals("")&& !searchGroupName.equals("null")){
+                boolean okok = false;
+                if(cs.getGroups() != null){
+                    for(Group g: cs.getGroups()){
+                        if(g.getGroupName().contains(searchGroupName)){
+                            okok = true; break;
+                        }
+                    }
+                }
+                if(!okok) ok = false;
+            }
+            if(ok) res.add(cs);
         }
         return res;
     }

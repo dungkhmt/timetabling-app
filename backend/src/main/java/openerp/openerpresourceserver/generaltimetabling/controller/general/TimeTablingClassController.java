@@ -83,9 +83,17 @@ public class TimeTablingClassController {
     }
 
     @GetMapping("/get-class-segments-of-version")
-    public ResponseEntity<?> getClasssegmentsOfVersion(Principal principal, @RequestParam("versionId") Long versionId){
-        log.info("getClasssegmentsOfVersion, versionId = " + versionId);
-        List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersion(principal.getName(), versionId);
+    public ResponseEntity<?> getClasssegmentsOfVersion(Principal principal,
+                @RequestParam("versionId") Long versionId,
+                @RequestParam("searchCourseCode") String searchCourseCode,
+                                                       @RequestParam("searchCourseName") String searchCourseName,
+                                                       @RequestParam("searchClassCode") String searchClassCode,
+                                                       @RequestParam("searchGroupName") String searchGroupName
+                ){
+        log.info("getClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+        + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
         return ResponseEntity.ok().body(res);
     }
     @GetMapping("/")

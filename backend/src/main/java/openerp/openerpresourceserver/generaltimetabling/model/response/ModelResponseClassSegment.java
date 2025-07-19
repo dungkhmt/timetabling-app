@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,5 +30,5 @@ public class ModelResponseClassSegment {
     private Integer startTime;
     private Integer endTime;
     private String roomCode;
-
+    private List<Group> groups;
 }
