@@ -1060,7 +1060,7 @@ const handleCancelMove = () => {
       <TablePagination
         className="border-y-[1px] border-solid border-gray-300"
         component="div"
-        count={filteredClassDetails.length}
+        count={classes.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

@@ -53,7 +53,7 @@ export default function MakeTimetable(){
 
     }
     function handleFilter(){
-        getClasses();
+        //getClasses();
         setOpenSearchDialog(false);
     }
     function handleClose(){
@@ -78,6 +78,12 @@ export default function MakeTimetable(){
             );
         }
     
+        function schedule(){
+            var s = '';
+            //for(i = 0; i < selectedRows.length; i++) s = s + selectedRows[i] + '\n';
+            selectedRows.map((i) => s = s + i + '\n');
+            alert(s);
+        }
     useEffect(() => {
         getClasses();
         getCourses();
@@ -96,6 +102,12 @@ export default function MakeTimetable(){
                 onClick = {() =>{ getClasses() }}
             >
                 FILTER
+            </Button>
+
+            <Button
+                onClick = {() =>{ schedule() }}
+            >
+                Schedule
             </Button>
             
             <TimeTableNew 
@@ -262,7 +274,7 @@ export default function MakeTimetable(){
                                         setSearchCourseCode("");
                                         setSearchCourseName("");
                                         setSearchGroupName("");
-                                        getClasses();
+                                        //getClasses();
                                         setOpenSearchDialog(false);
                                     }}
                                     variant="outlined"

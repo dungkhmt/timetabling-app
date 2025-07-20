@@ -607,7 +607,15 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             mrcs.setCourseName("");
             mrcs.setClassType(cls.getClassType());
             mrcs.setMaxNbStudents(cls.getQuantityMax());
-            mrcs.setGroupNames("");
+            String groupNames = "";
+            if(mClassId2Groups.get(cs.getClassId())!=null){
+                for(int i = 0; i < mClassId2Groups.get(cs.getClassId()).size(); i++) {
+                    Group g = mClassId2Groups.get(cs.getClassId()).get(i);
+                    groupNames = groupNames + g.getGroupName();
+                    if(i < mClassId2Groups.get(cs.getClassId()).size()-1) groupNames = groupNames + ",";
+                }
+            }
+            mrcs.setGroupNames(groupNames);
             mrcs.setDuration(cs.getDuration());
             mrcs.setLearningWeeks(cls.getLearningWeeks());
             if(pcls != null) mrcs.setPromotion(pcls.getPromotion());

@@ -10,6 +10,7 @@ import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAut
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { request } from "api";
 import ListOpenedClass from "./ListOpenedClass";
+import RoomsOfBatch from "../batch/RoomsOfBatch";
 
 export default function OpenedClassPlan(){
     const [selectedSemester, setSelectedSemester] = useState(null);
@@ -672,6 +673,11 @@ export default function OpenedClassPlan(){
                         >
 
                         </ListOpenedClass>
+
+                        <RoomsOfBatch
+                            batchId={batchId}
+                        >
+                        </RoomsOfBatch>
         </>
     );
 }
