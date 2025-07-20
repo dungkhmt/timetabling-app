@@ -1303,13 +1303,20 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             log.info("manualAssignTimetable2Classsegment, cannot find classSegment, return");
             res.setStatus(ModelResponseManualAssignTimeTable.STATUS_NOT_FOUND); return res;
         }
+        if(classSegment.getDuration() + I.getStartTime() - 1  > ver.getNumberSlotsPerSession()){
+            res.setStatus(ModelResponseManualAssignTimeTable.STATUS_OUT_OF_RANGE);
+            int endTime = I.getStartTime() + classSegment.getDuration() - 1;
+            res.setMessage("startTime = " + I.getStartTime() + " duration = " + classSegment.getDuration() +
+                    " -> endTime = " + endTime + " : out-of-range slot (" + ver.getNumberSlotsPerSession() + ")");
+            return res;
+        }
         List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(ver.getSemester());
         if(batches == null){
             log.info("manualAssignTimetable2Classsegment, batches NULL???");
             res.setStatus(ModelResponseManualAssignTimeTable.STATUS_NOT_FOUND);
             return res;
         }
-        log.info("manualAssignTimetable2Classsegment, batches.sz = " + batches.size());
+        log.info("manualAssignTimetable2Classsegment, ver.semester = " + ver.getSemester() + " -> batches.sz = " + batches.size());
         List<Long> batchIds = batches.stream().map(b -> b.getId()).toList();
         List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo
                 .findAllByStatusAndBatchIdIn(TimeTablingTimeTableVersion.STATUS_PUBLISHED,batchIds);
@@ -1340,6 +1347,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 if(cs.getRoom().equals(I.getRoomCode())){
                     String classCode = "NULL";
                     if(mId2Class.get(cs.getClassId())!=null) classCode = mId2Class.get(cs.getClassId()).getClassCode();
+
 
                     String msg = "Conflict room " + cs.getRoom() + " scheduled for class " + classCode + " classSegmentId = " + cs.getId() + " in version " + cs.getVersionId();
                     log.info("manualAssignTimetable2Classsegment, DETECT Conflict room, msg = " + msg);

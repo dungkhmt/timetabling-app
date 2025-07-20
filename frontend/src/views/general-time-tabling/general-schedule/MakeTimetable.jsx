@@ -26,6 +26,8 @@ export default function MakeTimetable(){
     const [searchCourseName, setSearchCourseName] = useState("");
     const [searchGroupName, setSearchGroupName] = useState("");
     const [openSearchDialog, setOpenSearchDialog] = useState(false);
+    const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
+    const [scheduleTimeLimit, setScheduleTimeLimit] = useState(5);
 
     const [courses, setCourses] = useState([]);
     const [programs, setPrograms] = useState([]);
@@ -79,10 +81,15 @@ export default function MakeTimetable(){
         }
     
         function schedule(){
-            var s = '';
+            //var s = '';
             //for(i = 0; i < selectedRows.length; i++) s = s + selectedRows[i] + '\n';
-            selectedRows.map((i) => s = s + i + '\n');
-            alert(s);
+            //selectedRows.map((i) => s = s + i + '\n');
+            //alert(s);
+            setOpenScheduleDialog(true);
+        }
+
+        function handleScheduleDialogClose(){
+            setOpenScheduleDialog(false);
         }
     useEffect(() => {
         getClasses();
@@ -125,8 +132,8 @@ export default function MakeTimetable(){
             />
 
             <Dialog
-                            open={openSearchDialog}
-                            onClose={handleClose}
+                open={openSearchDialog}
+                onClose={handleClose}
                         
             >
             <DialogTitle>FILTER</DialogTitle>
@@ -300,7 +307,53 @@ export default function MakeTimetable(){
                                     Filter
                                 </Button>
                             </DialogActions>
-                        </Dialog>
+            </Dialog>
+
+
+            <Dialog
+                open={openScheduleDialog}
+                onClose={handleScheduleDialogClose}
+                        
+            >
+            <DialogTitle>Schedule settings</DialogTitle>
+
+                <DialogContent>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                        <TextField
+                            label="Time Limit "
+                            name="scheduleTimeLimit"
+                            value={scheduleTimeLimit}
+                            onChange={(e) => {setScheduleTimeLimit(e.target.value)}}
+                            size="small"
+                            sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                            required
+                            error={!!errors.scheduleTimeLimit}
+                            helperText={errors.scheduleTimeLimit}
+                        />
+                    </Box> 
+
+                </DialogContent>
+                <DialogActions sx={{
+                        padding: "16px",
+                        gap: "8px",
+                        borderTop: '1px solid #e0e0e0',
+                        backgroundColor: '#fafafa'
+                    }}>
+                    <Button
+                        onClick={() =>{
+                            setOpenScheduleDialog(false);
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        RUN
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
         </>
     );

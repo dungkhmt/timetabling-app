@@ -2,9 +2,11 @@ package openerp.openerpresourceserver.generaltimetabling.service.impl;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingBatchRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingClassRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingVersionRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
@@ -27,18 +29,23 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     private TimeTablingClassService timeTablingClassService;
 
     @Autowired
-    TimeTablingClassRepo timeTablingClassRepo;
+    private TimeTablingClassRepo timeTablingClassRepo;
+
+    @Autowired
+    private TimeTablingBatchRepo timeTablingBatchRepo;
 
     @Override
     @Transactional
     public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot, Long batchId) {
         log.info("createVersion, Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}",
                 name, status, semester, userId);
-        
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(batchId).orElse(null);
+        if(batch == null) return null;
+
         TimeTablingTimeTableVersion version = new TimeTablingTimeTableVersion();
         version.setName(name);
         version.setStatus(status);
-        version.setSemester(semester);
+        version.setSemester(batch.getSemester());
         version.setCreatedByUserId(userId);
         version.setNumberSlotsPerSession(numOfSlot);
         version.setBatchId(batchId);
