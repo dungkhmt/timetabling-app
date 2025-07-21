@@ -19,11 +19,7 @@ export default function RoomsOfBatch({batchId}){
             <Button>
                 ADD
             </Button>
-            <DataGrid
-                
-            >
-
-            </DataGrid>
+            
         </>
     );
 };

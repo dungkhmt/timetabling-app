@@ -1101,7 +1101,10 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public int computeClassCluster(ModelInputComputeClassCluster I) {
-        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        //List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(I.getBatchId()).orElse(null);
+        if(batch==null) return 0;
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllByBatchId(I.getBatchId());
         List<Long> classIds = new ArrayList<>();
         for(TimeTablingClass c: cls) classIds.add(c.getId());
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
@@ -1118,7 +1121,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         List<List<TimeTablingClass>> clusters = solver.computeConnectedComponents(cls,classGroups);
         log.info("computeClassCluster, number of clusters = " + clusters.size());
 
-        List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        //List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        List<Cluster> oldClusters = clusterRepo.findAllByBatchId(I.getBatchId());
+
         log.info("computeClassCluster, oldClusters.sz = " + oldClusters.size());
         for(Cluster c: oldClusters){
             List<ClusterClass> clusterClasses = clusterClassRepo.findAllByClusterId(c.getId());
@@ -1151,7 +1156,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             Cluster newCluster = new Cluster();
             newCluster.setId(nextId);
             newCluster.setName(clusterName);
-            newCluster.setSemester(I.getSemester());
+            newCluster.setSemester(batch.getSemester());
+            newCluster.setBatchId(I.getBatchId());
             newCluster = clusterRepo.save(newCluster);
             log.info("computeClassCluster, saved cluster " + newCluster.getId() + " name = " + newCluster.getName());
 

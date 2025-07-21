@@ -12,6 +12,8 @@ import { request } from "api";
 
 export default function ListOpenedClass({batchId, listClasses}){
     const [classes, setClasses] = useState([]);
+    const [clusters, setClusters] = useState([]);
+    const [selectedCluster, setSelectedCluster] = useState(null);
     const columns = [
         {
             title: "Code",
@@ -43,6 +45,14 @@ export default function ListOpenedClass({batchId, listClasses}){
 
     }
 
+    function getClustersOfBatch(){
+        request("get", 
+                    "/general-classes/get-clusters-by-batch?batchId="+batchId,
+                    (res) => {
+                        setClusters(res.data);
+                    }
+                );
+    }
     function getAllClassesOfBatch(){
         request("get", 
                     "/general-classes/get-all-classes-of-batch?batchId="+batchId,
@@ -52,13 +62,74 @@ export default function ListOpenedClass({batchId, listClasses}){
                 );
     }
 
+    function performClustering(){
+        let body = {
+            semester:"",
+            batchId: batchId
+        };
+        request(
+            "post",
+            "/general-classes/compute-class-cluster",
+            (res) => {
+                console.log('compute cluster returned ',res.data);
+                // Clear selection after operation completes
+                //setSelectedIds([]);
+                //setSelectedRows([]);
+                getClustersOfBatch();
+            },
+            {
+                onError: (e) => {
+                    //setSelectedIds([]);
+                    //setSelectedRows([]);
+                }
+            },
+            body
+        );
+    }
+    function getClassesOfCluster(clusterId){
+        request("get", 
+                    "/general-classes/get-by-cluster/"+clusterId,
+                    (res) => {
+                        setClasses(res.data);
+                    }
+                );
+    }
+    function handleChangeCluster(newValue){
+        if(newValue){
+            getClassesOfCluster(newValue.id);
+            setSelectedCluster(newValue);
+        }else{
+            getAllClassesOfBatch();
+            setSelectedCluster(null);
+        }
+    }
     useEffect(() => {
                 getAllClassesOfBatch();
-                
+                getClustersOfBatch();
             }, []);
     return (
         <>
             Danh sách lớp {batchId}
+            <Button
+                onClick = {() => {performClustering()}}
+            >
+                Phân cụm
+            </Button>
+            <Autocomplete
+                //disablePortal
+                options={clusters}
+                getOptionLabel={(option) => `${option.id} - ${option.name}`}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                //loading={isLoadingCourses}
+                value={selectedCluster}
+                onChange={(_, newValue) => {
+                    handleChangeCluster(newValue);
+                    //setSelectedCluster(newValue);
+                }}
+                sx={{ width: 300 }}
+                renderInput={(params) => <TextField {...params} label="Cluster" />}
+            />
+
             <DataGrid
                 initialState={{
                     sorting: {

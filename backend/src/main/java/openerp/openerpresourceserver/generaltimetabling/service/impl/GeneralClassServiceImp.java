@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.generaltimetabling.service.impl;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.Utils;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.ClassSegmentPartitionConfigForSummerSemester;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.V2ClassScheduler;
@@ -26,6 +27,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
@@ -602,39 +604,50 @@ public class GeneralClassServiceImp implements GeneralClassService {
     */
     @Transactional
     @Override
-    public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule, Long versionId) {
+    public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(ModelInputAutoScheduleTimeSlotRoom I) {
         //synchronizeCourses();
-        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + maxDaySchedule + " classIds to be scheduled = " + classIds.size());
+        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + I.getMaxDaySchedule() + " classIds to be scheduled = " + I.getIds().size());
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
-        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
         if(ver!=null){
             //Constant.slotPerCrew = ver.getNumberSlotsPerSession();
         }
         String PARAM_ROOM_PRIORITY = "Y";
         for(TimeTablingConfigParams p: params){
             if(p.getId().equals(TimeTablingConfigParams.MAX_DAY_SCHEDULED)){
-                p.setValue(maxDaySchedule + "");
+                p.setValue(I.getMaxDaySchedule() + "");
             }else if(p.getId().equals(TimeTablingConfigParams.USED_ROOM_PRIORITY)){
                 PARAM_ROOM_PRIORITY = p.getValue();
             }
         }
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByIdIn(I.getIds());
+        HashSet<Long> classIdsSet = new HashSet<>();
+        for(TimeTablingClassSegment cs: classSegments) classIdsSet.add(cs.getClassId());
+        List<Long> classIds = new ArrayList<>();
+        for(Long id: classIdsSet) classIds.add(id);
 
-        List<ModelResponseTimeTablingClass> foundClasses = timeTablingClassService.getTimeTablingClassDtos(classIds,versionId);
+        List<ModelResponseTimeTablingClass> classes = timeTablingClassService
+                .getTimeTablingClassDtos(classIds,I.getVersionId());
 
-        log.info("autoScheduleTimeSlotRoom, nb general classes = " + foundClasses.size());
-        List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(semester);        List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
-        for(ModelResponseTimeTablingClass cls : foundClasses){
+
+
+        //List<ModelResponseTimeTablingClass> foundClasses = timeTablingClassService.getTimeTablingClassDtos(I.getIds(),I.getVersionId());
+
+        log.info("autoScheduleTimeSlotRoom, classSegments.sz = " + classSegments.size() + " classIds.sz = " + classIds.size() + " -> nb general classes = " + classes.size());
+        List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(I.getSemester());
+        List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
+        for(ModelResponseTimeTablingClass cls : classes){
             if(cls != null && cls.getQuantityMax() != null && cls.getQuantityMax() >= 150) {
                 selectedClassesOfSemester.add(cls);
             }
         }
-        foundClasses = selectedClassesOfSemester;
+        //classes = selectedClassesOfSemester;
 
-        List<Long> ids = allClassesOfSemester.stream().map(gc -> gc.getId()).toList();
+        List<Long> allClassIds = allClassesOfSemester.stream().map(gc -> gc.getId()).toList();
         //List<GeneralClass> autoScheduleClasses = V2ClassScheduler.autoScheduleTimeSlot(foundClasses, timeLimit);
 
         //List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByClassIdIn(ids);
-        List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByVersionIdAndClassIdIn(versionId,ids);
+        List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByVersionIdAndClassIdIn(I.getVersionId(),allClassIds);
 
         //List<RoomReservation> roomReservationsOfSemester = roomReservationRepo.findAllByGeneralClassIn(allClassesOfSemester);
 
@@ -653,22 +666,38 @@ public class GeneralClassServiceImp implements GeneralClassService {
         V2ClassScheduler optimizer = new V2ClassScheduler(params, ver);
         //List<Classroom> rooms = classroomRepo.findAll();
         List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");
-
+        List<Integer> days = Utils.fromString(I.getDays(),",");
+        List<Integer> slots = Utils.fromString(I.getSlots(),",");
 
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         List<Group> groups = groupRepo.findAll();
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
         //List<GeneralClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoom(foundClasses,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
-        List<ModelResponseTimeTablingClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoomNew(foundClasses,allClassesOfSemester,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
+        List<ModelResponseTimeTablingClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoomNew(classes,allClassesOfSemester,rooms,days,slots,mId2RoomReservations,courses, groups,classGroups,I.getTimeLimit(),I.getAlgorithm(),params);
 
         for(ModelResponseTimeTablingClass c: autoScheduleClasses){
             for(TimeTablingClassSegment cs: c.getTimeSlots()){
                 timeTablingClassSegmentRepo.save(cs);
             }
         }
-        return foundClasses;
+        return classes;
     }
 
+    @Override
+    public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom4ClassSegments(ModelInputAutoScheduleTimeSlotRoom I) {
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdIn(I.getIds());
+        HashSet<Long> classIdsSet = new HashSet<>();
+        for(TimeTablingClassSegment cs: classSegments) classIdsSet.add(cs.getClassId());
+        List<Long> classIds = new ArrayList<>();
+        for(Long id: classIdsSet) classIds.add(id);
+        List<ModelResponseTimeTablingClass> classes = timeTablingClassService
+                .getTimeTablingClassDtos(classIds,I.getVersionId());
+        List<Integer> days = Utils.fromString(I.getDays(),",");
+        List<Integer> slots = Utils.fromString(I.getSlots(),",");
+
+
+        return null;
+    }
 
 
     @Override

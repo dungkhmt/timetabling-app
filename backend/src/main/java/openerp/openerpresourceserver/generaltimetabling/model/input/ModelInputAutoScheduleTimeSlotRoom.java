@@ -12,11 +12,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ModelInputAutoScheduleTimeSlotRoom {
-    List<Long> classIds;
+    List<Long> ids;
     private String semester;
     private int timeLimit;
     private String algorithm;
     private int maxDaySchedule;
+    private String days;// sequence os days, 2, 3, 4... (separated by a comma)
+    private String slots;// sequence of slots 1, 2, 3, ... (separated by a comma)
     private Long versionId;
 }
 

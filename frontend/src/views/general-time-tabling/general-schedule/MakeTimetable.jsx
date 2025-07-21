@@ -12,6 +12,7 @@ import {
 export default function MakeTimetable(){
     const {versionId} = useParams();
     const [classes, setClasses] = useState([]);
+    const [allClasses, setAllClasses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [errors, setErrors] = useState({});
@@ -27,10 +28,16 @@ export default function MakeTimetable(){
     const [searchGroupName, setSearchGroupName] = useState("");
     const [openSearchDialog, setOpenSearchDialog] = useState(false);
     const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
-    const [scheduleTimeLimit, setScheduleTimeLimit] = useState(5);
-
+    const [openClearScheduleDialog,setOpenClearScheduleDialog] = useState(false);
+    
     const [courses, setCourses] = useState([]);
     const [programs, setPrograms] = useState([]);
+
+    const [scheduleTimeLimit, setScheduleTimeLimit] = useState(5);
+    const [algorithm, setAlgorithm] = useState("");
+    const [algorithms, setAlgorithms] = useState([]);
+    const [days, setDays] = useState('2,3,4,5,6');
+    const [slots, setSlots] = useState('1,2,3,4,5,6');
 
     function getClasses(){
         setLoading(true);
@@ -42,6 +49,26 @@ export default function MakeTimetable(){
                             (res)=>{
                                 console.log(res);
                                 setClasses(res.data || []);
+                                setLoading(false);
+                            },
+                            (error)=>{
+                                console.error(error);
+                                setError(error);
+                            },
+                        );
+
+    }
+    function getAllClasses(){
+        // all search keywords are null
+        setLoading(true);
+        request(
+                            "get",
+                            "/general-classes/get-class-segments-of-version?versionId=" + versionId
+                            + "&searchCourseCode=" + "&searchCourseName="
+                            + "&searchClassCode=" + "&searchGroupName=",
+                            (res)=>{
+                                console.log(res);
+                                setAllClasses(res.data || []);
                                 setLoading(false);
                             },
                             (error)=>{
@@ -70,7 +97,14 @@ export default function MakeTimetable(){
                 }
             );
         }
-    
+        function getAlgorithms(){
+            request("get", 
+                "/general-classes/get-list-algorithm-names",
+                (res) => {
+                    setAlgorithms(res.data);
+                }
+            );
+        }
         function getPrograms(){
             request("get", 
                 "/group/get-all-group",
@@ -85,16 +119,81 @@ export default function MakeTimetable(){
             //for(i = 0; i < selectedRows.length; i++) s = s + selectedRows[i] + '\n';
             //selectedRows.map((i) => s = s + i + '\n');
             //alert(s);
+            /*
+            let payLoad = {
+                classIds: selectedRows,
+                timeLimit: scheduleTimeLimit,
+                algorithm: algorithm,
+                versionId: versionId,
+                days: days,
+                slots: slots
+            };
+            request(
+                "post",
+                "/general-classes/auto-schedule-timeslot-room",
+                (res) => {
+                    setOpenScheduleDialog(false);
+                },
+                null,
+                payLoad
+            );
+            */
             setOpenScheduleDialog(true);
         }
 
+        function performSchedule(){
+            let payLoad = {
+                ids: selectedRows,
+                timeLimit: scheduleTimeLimit,
+                algorithm: algorithm,
+                versionId: Number(versionId),
+                days: days,
+                slots: slots
+            };
+            request(
+                "post",
+                "/general-classes/auto-schedule-timeslot-room",
+                (res) => {
+                    getClasses();
+                    setOpenScheduleDialog(false);
+                },
+                null,
+                payLoad
+            );
+        }
+        function performClearSchedule(){
+            let payLoad = {
+                ids: selectedRows
+            };
+
+            request(
+                       "post",
+                       `/general-classes/reset-schedule?semester=`,
+                       (res) => {
+                          if(res.data == 'ok'){
+                            getClasses();
+                            getAllClasses();
+                          }else{
+                          //  alert(res.data.message);
+                          }
+                       },
+                       null,
+                       payLoad,
+                       {},
+                       null,
+                       null
+                );
+            setOpenClearScheduleDialog(false);
+        }
         function handleScheduleDialogClose(){
             setOpenScheduleDialog(false);
         }
     useEffect(() => {
         getClasses();
+        getAllClasses();
         getCourses();
         getPrograms();
+        getAlgorithms();
     },[]);
 
     return(
@@ -116,6 +215,12 @@ export default function MakeTimetable(){
             >
                 Schedule
             </Button>
+
+            <Button
+                onClick = {() =>{ setOpenClearScheduleDialog(true); }}
+            >
+                Clear Schedule
+            </Button>
             
             <TimeTableNew 
                 selectedSemester={selectedSemester}
@@ -131,6 +236,20 @@ export default function MakeTimetable(){
                 numberSlotsToDisplay={numberSlotsToDisplay}
             />
 
+            <TimeTableNew 
+                selectedSemester={selectedSemester}
+                classes={allClasses}
+                getClasses = {getAllClasses}
+                versionId={versionId}
+                selectedGroup={selectedGroup}
+                onSaveSuccess={onSaveSuccess}
+                loading={loading}
+                selectedRows={selectedRows}
+                onSelectedRowsChange={setSelectedRows}
+                selectedVersion={selectedVersion}
+                numberSlotsToDisplay={numberSlotsToDisplay}
+            />
+            
             <Dialog
                 open={openSearchDialog}
                 onClose={handleClose}
@@ -330,6 +449,48 @@ export default function MakeTimetable(){
                             error={!!errors.scheduleTimeLimit}
                             helperText={errors.scheduleTimeLimit}
                         />
+                        <FormControl fullWidth>
+                            <InputLabel id="algo">Thuật toán</InputLabel>
+                            <Select
+                                labelId="algo"
+                                id="algo"
+                                value={algorithm}
+                                label="algoritm"
+                                onChange={(e) => {setAlgorithm(e.target.value)}}
+                            >
+                            {algorithms.map((algo) => (
+                                <MenuItem key={algo} value={algo}>
+                                    {algo}
+                                </MenuItem>
+                            ))}   
+                            
+                            </Select>
+                        </FormControl>
+                    </Box> 
+                    
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                        <TextField
+                            label="days"
+                            name="days"
+                            value={days}
+                            onChange={(e) => {setDays(e.target.value)}}
+                            size="small"
+                            sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                            required
+                            error={!!errors.days}
+                            helperText={errors.days}
+                        />
+                        <TextField
+                            label="slots"
+                            name="slots"
+                            value={slots}
+                            onChange={(e) => {setSlots(e.target.value)}}
+                            size="small"
+                            sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                            required
+                            error={!!errors.slots}
+                            helperText={errors.slots}
+                        />
                     </Box> 
 
                 </DialogContent>
@@ -341,7 +502,8 @@ export default function MakeTimetable(){
                     }}>
                     <Button
                         onClick={() =>{
-                            setOpenScheduleDialog(false);
+                            //setOpenScheduleDialog(false);
+                            performSchedule();
                         }}
                         variant="outlined"
                         sx={{
@@ -352,6 +514,53 @@ export default function MakeTimetable(){
                     >
                         RUN
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={openClearScheduleDialog}
+                
+                        
+            >
+            <DialogTitle>Clear Schedule </DialogTitle>
+
+                <DialogContent>
+                    
+
+                </DialogContent>
+                <DialogActions sx={{
+                        padding: "16px",
+                        gap: "8px",
+                        borderTop: '1px solid #e0e0e0',
+                        backgroundColor: '#fafafa'
+                    }}>
+                    <Button
+                        onClick={() =>{
+                            performClearSchedule();
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        YES
+                    </Button>
+                    <Button
+                        onClick={() =>{
+                            setOpenClearScheduleDialog(false);
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        NO
+                    </Button>
+                    
                 </DialogActions>
             </Dialog>
 

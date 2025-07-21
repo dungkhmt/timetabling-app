@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ClusterRepo extends JpaRepository<Cluster, Long> {
     List<Cluster> findAllBySemester(String semester);
+    List<Cluster> findAllByBatchId(Long batchId);
+
 }

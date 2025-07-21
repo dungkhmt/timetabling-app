@@ -243,8 +243,15 @@ public class TimeTablingClassController {
     }
     @PostMapping("/auto-schedule-timeslot-room")
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
-        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getSemester(),I.getClassIds(),I.getTimeLimit(),I.getAlgorithm(),I.getMaxDaySchedule(), I.getVersionId()));
+        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I));
+
     }
+
+    //@PostMapping("/auto-schedule-timeslot-room-4-class-segments")
+    //public ResponseEntity<?> autoScheduleTimeSlotRoom4ClassSegments(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
+    //    return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom4ClassSegments(I));
+    //}
+
     @PostMapping("/auto-schedule-time")
     public ResponseEntity<List<GeneralClass>> requestAutoScheduleTime(
             @RequestParam("semester") String semester,
@@ -306,6 +313,13 @@ public class TimeTablingClassController {
         log.info("computeClassCluster, semester = " + I.getSemester() + " result cnt = " + cnt);
         return ResponseEntity.ok().body(cnt);
     }
+    @PostMapping("/compute-class-cluster-of-batch")
+    public ResponseEntity<?> computeClassClusterOfBatch(Principal principal, @RequestBody ModelInputComputeClassCluster I){
+        log.info("computeClassCluster, semester = " + I.getSemester());
+        int cnt = timeTablingClassService.computeClassCluster(I);
+        log.info("computeClassCluster, semester = " + I.getSemester() + " batch = " + I.getBatchId() + " -> result cnt = " + cnt);
+        return ResponseEntity.ok().body(cnt);
+    }
 
     @GetMapping("/get-by-cluster/{clusterId}")
     public ResponseEntity<?> getGeneralClassesByCluster(
@@ -318,6 +332,11 @@ public class TimeTablingClassController {
     @GetMapping("/get-clusters-by-semester")
     public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("semester") String semester) {
         List<Cluster> clusters = clusterRepo.findAllBySemester(semester);
+        return ResponseEntity.ok(clusters);
+    }
+    @GetMapping("/get-clusters-by-batch")
+    public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("batchId") Long batchId) {
+        List<Cluster> clusters = clusterRepo.findAllByBatchId(batchId);
         return ResponseEntity.ok(clusters);
     }
 

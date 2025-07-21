@@ -380,7 +380,6 @@ export default function OpenedClassPlan(){
                                             }}
                                             sx={{ mt: 2, mb: 2, width: '100%' }}
 
-
                                         />
                                     )}
                                 />
@@ -671,13 +670,15 @@ export default function OpenedClassPlan(){
                             batchId = {batchId}
                             listClasses  = {classes}
                         >
-
                         </ListOpenedClass>
-
+                        
+                        {
+                        
                         <RoomsOfBatch
                             batchId={batchId}
                         >
                         </RoomsOfBatch>
+                        }
         </>
     );
 }

@@ -11,4 +11,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ModelInputComputeClassCluster {
     private String semester;
+    private Long batchId;
 }
