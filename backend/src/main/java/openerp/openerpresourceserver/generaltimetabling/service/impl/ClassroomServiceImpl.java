@@ -38,7 +38,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     @Override
     public List<Classroom> getClassroom() {
-        return classroomRepo.findByDescription(null);
+        return classroomRepo.findAllWithBuilding();
     }
     @Override
     public List<String> getBuilding() {

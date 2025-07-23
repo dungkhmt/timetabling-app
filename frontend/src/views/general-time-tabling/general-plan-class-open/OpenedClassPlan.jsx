@@ -114,7 +114,6 @@ export default function OpenedClassPlan(){
             moduleCode: courseCode,
             classType: classType,
             numberOfClasses: nbClasses,
-            quantityMax: nbStudents,
             learningWeeks: learningWeeks,
             groupId: selectedProgram.id,
             duration: duration,

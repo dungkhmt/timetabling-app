@@ -7,7 +7,9 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTabling
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.BatchRoom;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingBatchRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.BatchRoomService;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,54 +59,76 @@ public class TimeTablingBatchController {
     }
 
     @PostMapping("/add-rooms-to-batch")
-    public ResponseEntity<?> addBatchRoom(@RequestBody ModelInputAddRoomToBatchRequest m){
+    public ResponseEntity<?> addBatchRoom(@RequestBody ModelInputAddRoomToBatchRequest request) {
         try {
-            // Lấy danh sách phòng hiện có trong batch
-            List<BatchRoom> existingBatchRooms = batchRoomService.getBathRoomsByBatchId(m.getBatchId());
+            Long batchId = request.getBatchId();
+            List<String> incomingRoomIds = request.getRoomIds();
 
-            // Lấy danh sách ID phòng hiện có
-            Set<String> existingRoomIds = existingBatchRooms.stream()
-                    .map(BatchRoom::getRoomId)
+//            return null;
+
+            // Bước 1: Lấy danh sách ID các phòng đã có trong batch để kiểm tra trùng lặp
+            Set<String> existingRoomIds = batchRoomService.getBathRoomsByBatchId(batchId)
+                    .stream()
+                    .map(BatchRoom::getRoomId) // Giả sử BatchRoom có phương thức getRoomId() trả về String
                     .collect(Collectors.toSet());
 
-            // Lọc ra các phòng mới không trùng với phòng hiện có
-            List<Long> newRoomIds = m.getRoomIds().stream()
-                    .filter(roomId -> !existingRoomIds.contains(roomId))
+            // Bước 2: Kiểm tra xem có phòng nào trong danh sách gửi lên đã tồn tại hay không
+            List<String> duplicatedIds = incomingRoomIds.stream()
+                    .filter(existingRoomIds::contains) // Lọc ra những ID đã tồn tại
                     .collect(Collectors.toList());
 
-            // Nếu có phòng trùng, trả về thông báo lỗi
-            if (newRoomIds.size() < m.getRoomIds().size()) {
-                List<Long> duplicatedIds = m.getRoomIds().stream()
-                        .filter(existingRoomIds::contains)
-                        .collect(Collectors.toList());
-
+            // Bước 3: Nếu có bất kỳ phòng nào bị trùng, trả về lỗi
+            if (!duplicatedIds.isEmpty()) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
-                response.put("message", "Một số phòng đã tồn tại trong batch");
+                response.put("message", "Thêm thất bại. Một số phòng đã tồn tại trong batch.");
                 response.put("duplicatedRoomIds", duplicatedIds);
-                return ResponseEntity.badRequest().body(response);
+                // Sử dụng HttpStatus.CONFLICT (409) sẽ ngữ nghĩa hơn badRequest (400)
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
             }
 
-            // Thêm các phòng mới vào batch
-            for (Long roomId : newRoomIds) {
-                BatchRoom batchRoom = new BatchRoom();
-                batchRoom.setBatchId(m.getBatchId());
-                batchRoom.setRoomId(String.valueOf(roomId)); // Giả sử có setter này
-                batchRoomService.addBatchRoom(batchRoom);
+            // Bước 4: Nếu không có phòng nào trùng, tiến hành thêm tất cả vào batch
+            for (String roomId : incomingRoomIds) {
+                BatchRoom newBatchRoom = new BatchRoom();
+                newBatchRoom.setBatchId(batchId);
+                newBatchRoom.setRoomId(roomId); // SỬA LỖI: Gán trực tiếp String, không cần chuyển đổi
+                batchRoomService.addBatchRoom(newBatchRoom);
             }
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Thêm phòng vào batch thành công");
-            response.put("addedRoomIds", newRoomIds);
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
+            response.put("message", "Thêm " + incomingRoomIds.size() + " phòng vào batch thành công.");
+            response.put("addedRoomIds", incomingRoomIds);
+            return ResponseEntity.ok(response);
+
+        }
+        catch (Exception e) {
             log.error("Error adding rooms to batch: ", e);
-            return ResponseEntity.status(500).body("Có lỗi khi thêm phòng vào batch");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding rooms to batch");
         }
 
     }
 
+    @DeleteMapping("/remove-room-from-batch")
+    public ResponseEntity<?> removeRoomFromBatch(
+            @RequestParam Long batchId,
+            @RequestParam String roomId) {
 
+        try {
 
+//            Long batchIdlong = Long.parseLong(batchId);
+//            // Xóa bản ghi từ timetabling_batch_room
+            batchRoomService.deleteByBatchIdAndRoomId(batchId, roomId);
+//
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Xóa phòng khỏi batch thành công"
+            ));
+//            return null;
+        } catch (Exception e) {
+            log.error("Error removing room from batch: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error removing room from batch");
+        }
+    }
 }

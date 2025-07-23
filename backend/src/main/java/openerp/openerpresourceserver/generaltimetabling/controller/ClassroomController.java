@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.generaltimetabling.controller;
 
+
 import jakarta.validation.Valid;
 import openerp.openerpresourceserver.generaltimetabling.exception.ClassroomNotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.exception.ClassroomUsedException;
@@ -8,16 +9,15 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.GetClassRoomBy
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ClassroomDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassroomService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@Controller
 @RequestMapping("/classroom")
 public class ClassroomController {
 
@@ -42,21 +42,23 @@ public class ClassroomController {
         return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
-    @GetMapping("/get-all-building")
+    @GetMapping("/get-all")
     public ResponseEntity<List<Classroom>> getAllClassroom() {
-        try {
-            List<Classroom> classroomList = service.getClassroom();
-            if (classroomList.isEmpty()) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-            return new ResponseEntity<>(classroomList, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+//        try {
+//            List<Classroom> classroomList = service.getClassroom();
+//            if (classroomList.isEmpty()) {
+//                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//            }
+//            return new ResponseEntity<>(classroomList, HttpStatus.OK);
+//        } catch (Exception e) {
+//            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+        List<Classroom> listRoom = service.findAllActiveRooms();
+        return ResponseEntity.ok().body(listRoom);
     }
 
 
-    @GetMapping("/get-all")
+    @GetMapping("/get-all-building")
     public ResponseEntity<List<String>> getAllBuilding() {
         try {
             List<String> buildingList = service.getBuilding();
