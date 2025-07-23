@@ -74,19 +74,26 @@ export default function RoomsOfBatch({ batchId }) {
     const columns = [
         {
             field: 'id',
-            headerName: 'Mã phòng', // Tên cột hiển thị
-            width: 150
+            headerName: 'Mã phòng',
+            width: 150,
+            align: 'center',
+            headerAlign: 'center'
         },
         {
             field: 'quantityMax',
             headerName: 'Sức chứa',
-            type: 'number', // Giúp DataGrid sắp xếp và lọc đúng kiểu dữ liệu
+            type: 'number',
+            width: 150,
+            align: 'center',
+            headerAlign: 'center'
         },
         {
-            field: 'buildingName', // Đặt một tên field tùy ý, vì giá trị sẽ được lấy từ valueGetter
+            field: 'buildingName',
             headerName: 'Tòa nhà',
             width: 150,
-            // Sử dụng valueGetter để truy cập vào dữ liệu lồng nhau
+            align: 'center',
+            headerAlign: 'center',
+
             valueGetter: (params) => params.row.building?.name || 'Không xác định',
         }
     ];
@@ -164,13 +171,16 @@ export default function RoomsOfBatch({ batchId }) {
 
 
     return (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{
+            p: 2,
+
+        }}>
             <Typography variant="h6" gutterBottom>
                 Các phòng học của Batch {batchId}
             </Typography>
 
             <Button
-                variant="contained"
+                // variant="contained"
                 sx={{ mb: 2 }}
                 onClick={handleOpenAddRoomDialog}
             >
@@ -198,15 +208,19 @@ export default function RoomsOfBatch({ batchId }) {
             <Dialog
                 open={openAddRoomBatchDialog}
                 onClose={handleCloseAddRoomDialog}
-                maxWidth="md"
-                fullWidth
+
+
             >
                 <DialogTitle>Thêm phòng vào Batch</DialogTitle>
                 <DialogContent>
-                    <Box sx={{ height: 400, width: '100%' }}>
+                    <Box sx={{
+                        height: 500, width: '100%',
+
+                    }}>
                         <DataGrid
+
                             loading={loadingAllRooms}
-                            rows={allRooms} // SỬA LỖI: Sử dụng đúng state
+                            rows={allRooms}
                             columns={columns}
                             initialState={{
                                 sorting: {
