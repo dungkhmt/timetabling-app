@@ -41,4 +41,6 @@ public interface PlanGeneralClassService {
 
     PlanGeneralClass createClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass);
 
+    PlanGeneralClass updateClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass);
+
 }

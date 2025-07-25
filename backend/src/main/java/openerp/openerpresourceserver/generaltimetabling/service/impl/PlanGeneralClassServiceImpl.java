@@ -602,4 +602,58 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
 
         return aPlan;
     }
+
+    @Transactional
+    @Override
+    public PlanGeneralClass updateClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass) {
+        PlanGeneralClass existingPlan = planGeneralClassRepo.findById(planClass.getId())
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy kế hoạch mở lớp với ID: " + planClass.getId()));
+
+        // Cập nhật thông tin cơ bản
+        existingPlan.setModuleCode(planClass.getModuleCode());
+        existingPlan.setModuleName(planClass.getModuleName());
+        existingPlan.setMass(planClass.getMass());
+        existingPlan.setClassType(planClass.getClassType());
+        existingPlan.setNumberOfClasses(planClass.getNumberOfClasses());
+        existingPlan.setCrew(planClass.getCrew());
+        existingPlan.setLearningWeeks(planClass.getLearningWeeks());
+        existingPlan.setPromotion(planClass.getPromotion());
+        existingPlan.setWeekType(planClass.getWeekType());
+        existingPlan.setGroupId(planClass.getGroupId());
+        existingPlan.setProgramName(planClass.getProgramName());
+
+        // Cập nhật số lượng và thời lượng theo loại lớp
+        switch (planClass.getClassType()) {
+            case "LT+BT":
+                existingPlan.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+                existingPlan.setDuration(planClass.getDurationLTBT());
+                break;
+            case "LT":
+                existingPlan.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+                existingPlan.setDuration(planClass.getDurationLT());
+                break;
+            case "BT":
+                existingPlan.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+                existingPlan.setDuration(planClass.getDurationBT());
+                break;
+        }
+
+        TimeTablingCourse course = timeTablingCourseRepo.findById(planClass.getModuleCode()).orElse(null);
+        if(course == null){// course code does not exist -> create new
+            course = new TimeTablingCourse();
+            course.setId(planClass.getModuleCode());
+            course.setName(planClass.getModuleName());
+            course= timeTablingCourseRepo.save(course);
+        }
+        existingPlan.setModuleName(course.getName());
+
+        Group group = groupRepo.findById(planClass.getGroupId()).orElse(null);
+        if(group == null){
+            throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
+        }
+
+        existingPlan.setProgramName(group.getGroupName());
+
+        return planGeneralClassRepo.save(existingPlan);
+    }
 }
