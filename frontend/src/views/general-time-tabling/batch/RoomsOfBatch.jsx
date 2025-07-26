@@ -166,7 +166,7 @@ export default function RoomsOfBatch({ batchId }) {
                 console.error(err);
             }
         );
-        alert(JSON.stringify({batchId: batchId,roomId: roomId} ));
+        // alert(JSON.stringify({batchId: batchId,roomId: roomId} ));
     };
 
 
