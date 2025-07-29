@@ -152,7 +152,7 @@ export default function OpenedClassPlan() {
             ? `/plan-general-classes/update-class-openning-plan`
             : `/plan-general-classes/create-class-openning-plan`;
 
-        alert(JSON.stringify(payLoad));
+        // alert(JSON.stringify(payLoad));
 
         request(
             method,
@@ -226,7 +226,7 @@ export default function OpenedClassPlan() {
 
     const handleRowClick = (params) => {
         const classPlan = params.row;
-        alert(JSON.stringify(classPlan));
+        // alert(JSON.stringify(classPlan));
 
         setSelectedClassPlan(classPlan);
 
