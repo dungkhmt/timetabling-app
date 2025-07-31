@@ -4,13 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelInputGenerateClassSegmentFromClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdateTimeTablingClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.UpdatePlanClassRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.BulkMakeGeneralClassDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.ClearPlanClassInputModel;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
@@ -173,5 +170,26 @@ public class PlanGeneralClassController {
             return ResponseEntity.status(500).body(null);
         }
     }
+
+    @PutMapping("/update-class-openning")
+    public ResponseEntity<TimeTablingClass> updateClassPlan(Principal principal,@RequestBody UpdateClassOpenRequest planClass) {
+        log.info("Received request to update single class: {}", planClass);
+        try {
+//            if (planClass.getCreatedStamp() == null) {
+//                planClass.setCreatedStamp(new Date());
+//            }
+            TimeTablingClass updatedClass = planClassService.updateTimeTablingClass(principal.getName(),planClass);
+            log.info("Successfully created class: {}", updatedClass);
+            return ResponseEntity.ok(updatedClass); // Ensure the saved entity is returned
+        } catch (InvalidFieldException e) {
+            log.error("InvalidFieldException: {}", e.getErrorMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while creating single class: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+
 
 }

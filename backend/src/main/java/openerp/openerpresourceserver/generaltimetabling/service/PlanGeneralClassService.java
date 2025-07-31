@@ -1,9 +1,6 @@
 package openerp.openerpresourceserver.generaltimetabling.service;
 
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.BulkMakeGeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.PlanGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
@@ -42,5 +39,7 @@ public interface PlanGeneralClassService {
     PlanGeneralClass createClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass);
 
     PlanGeneralClass updateClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass);
+
+    TimeTablingClass updateTimeTablingClass(String userId ,UpdateClassOpenRequest request);
 
 }

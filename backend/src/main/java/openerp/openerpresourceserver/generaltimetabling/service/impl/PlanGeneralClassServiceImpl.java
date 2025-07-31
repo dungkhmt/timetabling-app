@@ -7,10 +7,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldEx
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValidator;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.BulkMakeGeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
@@ -656,4 +653,31 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
 
         return planGeneralClassRepo.save(existingPlan);
     }
+
+    @Override
+    @Transactional
+    public TimeTablingClass updateTimeTablingClass(String userId, UpdateClassOpenRequest request) {
+        // Find the existing class by ID
+        TimeTablingClass existingClass = timeTablingClassRepo.findById(request.getId())
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy lớp với ID: " + request.getId()));
+
+        // Validate the semester and learning weeks
+        List<AcademicWeek> foundWeeks = academicWeekRepo.findAllBySemester(existingClass.getSemester());
+        if (foundWeeks.isEmpty()) {
+            throw new NotFoundException("Không tìm thấy tuần học trong học kỳ");
+        }
+        existingClass.setModuleCode(request.getModuleCode());
+        existingClass.setModuleName(request.getModuleName());
+        existingClass.setDuration(request.getDuration());
+        existingClass.setLearningWeeks(request.getLearningWeeks());
+        existingClass.setQuantity(request.getQuantity());
+        existingClass.setQuantityMax(request.getQuantityMax());
+        existingClass.setClassType(request.getClassType());
+        existingClass.setCrew(request.getCrew());
+
+        // Save and return the updated class
+        return timeTablingClassRepo.save(existingClass);
+    }
+
+
 }
