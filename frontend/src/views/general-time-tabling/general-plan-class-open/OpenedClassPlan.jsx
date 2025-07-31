@@ -1,7 +1,25 @@
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
-import { Button, Dialog, DialogContent, DialogTitle, Paper, TextField, Autocomplete, CircularProgress, FormControl, MenuItem, InputLabel, Select, DialogActions, Box } from "@mui/material";
+import {
+    Button,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    Paper,
+    TextField,
+    Autocomplete,
+    CircularProgress,
+    FormControl,
+    MenuItem,
+    InputLabel,
+    Select,
+    DialogActions,
+    Box,
+    Tabs,
+    Chip,
+    Tab
+} from "@mui/material";
 import GeneralSemesterAutoComplete from "../common-components/GeneralSemesterAutoComplete";
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { request } from "api";
@@ -42,17 +60,18 @@ export default function OpenedClassPlan() {
         generateClasses: "Y",
     });
     const [loading, setLoading] = useState(false);
+    const [viewTab, setViewTab] = useState(0); // Added missing state for tabs
 
     const columns = [
-        { field: "id", headerName: "ID" },
-        { field: "moduleCode", headerName: "CourseCode" },
-        { field: "moduleName", headerName: "CourseName" },
-        { field: "programName", headerName: "Program" },
-        { field: "classType", headerName: "classType" },
-        { field: "mass", headerName: "mass" },
-        { field: "numberOfClasses", headerName: "Classes" },
-        { field: "duration", headerName: "duration" },
-        { field: "qty", headerName: "Qty" },
+        { field: "id", headerName: "ID", width: 70 },
+        { field: "moduleCode", headerName: "CourseCode", width: 120 },
+        { field: "moduleName", headerName: "CourseName", width: 200 },
+        { field: "programName", headerName: "Program", width: 150 },
+        { field: "classType", headerName: "classType", width: 100 },
+        { field: "mass", headerName: "mass", width: 80 },
+        { field: "numberOfClasses", headerName: "Classes", width: 80 },
+        { field: "duration", headerName: "duration", width: 80 },
+        { field: "qty", headerName: "Qty", width: 80 },
     ];
 
     function getCourses() {
@@ -152,8 +171,6 @@ export default function OpenedClassPlan() {
             ? `/plan-general-classes/update-class-openning-plan`
             : `/plan-general-classes/create-class-openning-plan`;
 
-        // alert(JSON.stringify(payLoad));
-
         request(
             method,
             url,
@@ -193,6 +210,7 @@ export default function OpenedClassPlan() {
             ...prev,
             selectedCourse: newSelectedCourse,
             courseCode: newSelectedCourse ? newSelectedCourse.id : null,
+            courseName: newSelectedCourse ? newSelectedCourse.courseName : null,
         }));
         if (newSelectedCourse) {
             setLoading(true);
@@ -226,24 +244,22 @@ export default function OpenedClassPlan() {
 
     const handleRowClick = (params) => {
         const classPlan = params.row;
-        // alert(JSON.stringify(classPlan));
-
         setSelectedClassPlan(classPlan);
 
         setFormData({
             selectedProgram: programs.find((p) => p.id === classPlan.groupId) || null,
             selectedCourse: courses.find((c) => c.id === classPlan.moduleCode) || null,
-            courseName:   classPlan.moduleName || null,
+            courseName: classPlan.moduleName || null,
             courseCode: classPlan.moduleCode || null,
             promotion: classPlan.promotion || null,
             nbClasses: classPlan.numberOfClasses || 1,
             classType: classPlan.classType || "LT+BT",
-            nbStudents: classPlan.qty|| 0 ,
-            nbStudentsLTBT: classPlan.lectureExerciseMaxQuantity ,
-            nbStudentsLT: classPlan.lectureMaxQuantity ,
-            nbStudentsBT: classPlan.exerciseMaxQuantity ,
-            learningWeeks: classPlan.learningWeeks ,
-            duration: classPlan.duration ,
+            nbStudents: classPlan.qty || 0,
+            nbStudentsLTBT: classPlan.lectureExerciseMaxQuantity || 0,
+            nbStudentsLT: classPlan.lectureMaxQuantity || 0,
+            nbStudentsBT: classPlan.exerciseMaxQuantity || 0,
+            learningWeeks: classPlan.learningWeeks || null,
+            duration: classPlan.duration || 0,
             durationLTBT: classPlan.durationLTBT || 0,
             durationLT: classPlan.durationLT || 0,
             durationBT: classPlan.durationBT || 0,
@@ -253,20 +269,15 @@ export default function OpenedClassPlan() {
             generateClasses: classPlan.generateClasses || "Y",
         });
 
-
-
         if (classPlan.moduleCode) {
-            handleCourseChange({ id: classPlan.moduleCode });
+            handleCourseChange({ id: classPlan.moduleCode, courseName: classPlan.moduleName });
         }
 
-
         setOpenEditClassPlanDialog(true);
-
     };
 
     function handleOpenAddForm() {
         setOpenAddClassPlanDialog(true);
-        // alert(JSON.stringify(formData));
         resetForm();
     }
 
@@ -278,307 +289,362 @@ export default function OpenedClassPlan() {
     }, []);
 
     const renderForm = (isEdit = false) => (
-        <Dialog open={isEdit ? openEditClassPlanDialog : openAddClassPlanDialog} onClose={handleClose} maxWidth="md">
+        <Dialog open={isEdit ? openEditClassPlanDialog : openAddClassPlanDialog} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle>{isEdit ? "Chỉnh sửa kế hoạch mở lớp" : "Kế hoạch mở lớp"}</DialogTitle>
             <DialogContent>
-                <Autocomplete
-                    options={programs || []}
-                    getOptionLabel={(option) => option.groupName || ""}
-                    isOptionEqualToValue={(option, value) => option.id === value?.id}
-                    value={formData.selectedProgram}
-                    onChange={(_, newValue) => setFormData((prev) => ({ ...prev, selectedProgram: newValue }))}
-                    renderInput={(params) => (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Autocomplete
+                        options={programs || []}
+                        getOptionLabel={(option) => option.groupName || ""}
+                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        value={formData.selectedProgram}
+                        onChange={(_, newValue) => setFormData((prev) => ({ ...prev, selectedProgram: newValue }))}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Nhóm"
+                                required
+                                error={!!errors.groupName}
+                                helperText={errors.groupName}
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <>
+                                            {loading ? <CircularProgress size={20} /> : null}
+                                            {params.InputProps.endAdornment}
+                                        </>
+                                    ),
+                                }}
+                            />
+                        )}
+                    />
+                    <Autocomplete
+                        options={courses || []}
+                        getOptionLabel={(option) => (option.id ? `${option.id} - ${option.courseName}` : "")}
+                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        value={formData.selectedCourse}
+                        onChange={(_, newValue) => handleCourseChange(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Học phần"
+                                required
+                                error={!!errors.moduleCode || !!errors.moduleName}
+                                helperText={errors.moduleCode || errors.moduleName}
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <>
+                                            {loading ? <CircularProgress size={20} /> : null}
+                                            {params.InputProps.endAdornment}
+                                        </>
+                                    ),
+                                }}
+                            />
+                        )}
+                    />
+                    <FormControl fullWidth>
+                        <InputLabel>Kiểu lớp</InputLabel>
+                        <Select
+                            name="classType"
+                            value={formData.classType}
+                            onChange={(e) => handleChangeClassType(e.target.value)}
+                            label="Kiểu lớp"
+                        >
+                            <MenuItem value="LT+BT">LT+BT</MenuItem>
+                            <MenuItem value="LT">LT</MenuItem>
+                            <MenuItem value="BT">BT</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Box sx={{ display: "flex", gap: 2 }}>
                         <TextField
-                            {...params}
-                            label="Nhóm"
+                            label="Tuần học *"
+                            name="learningWeeks"
+                            value={formData.learningWeeks || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, learningWeeks: e.target.value }))}
+                            fullWidth
                             required
-                            error={!!errors.groupName}
-                            helperText={errors.groupName}
-                            InputProps={{
-                                ...params.InputProps,
-                                endAdornment: (
-                                    <>
-                                        {loading ? <CircularProgress size={20} /> : null}
-                                        {params.InputProps.endAdornment}
-                                    </>
-                                ),
-                            }}
-                            sx={{ mt: 1, width: 500 }}
+                            placeholder="Ví dụ: 2-9,11-18"
+                            error={!!errors.learningWeeks}
+                            helperText={errors.learningWeeks}
                         />
-                    )}
-                />
-                <Autocomplete
-                    options={courses || []}
-                    getOptionLabel={(option) => (option.id ? `${option.id} - ${option.courseName}` : "")}
-                    isOptionEqualToValue={(option, value) => option.id === value?.id}
-                    value={{ id: formData.courseCode, courseName: formData.courseName}}
-                    onChange={(_, newValue) => handleCourseChange(newValue)}
-                    renderInput={(params) => (
                         <TextField
-                            {...params}
-                            label="Học phần"
+                            label="Số tiết"
+                            name="duration"
+                            value={formData.duration || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
+                            fullWidth
                             required
-                            error={!!errors.moduleCode || !!errors.moduleName}
-                            helperText={errors.moduleCode || errors.moduleName}
-                            InputProps={{
-                                ...params.InputProps,
-                                endAdornment: (
-                                    <>
-                                        {loading ? <CircularProgress size={20} /> : null}
-                                        {params.InputProps.endAdornment}
-                                    </>
-                                ),
-                            }}
-                            sx={{ mt: 2, mb: 2, width: 500 }}
+                            error={!!errors.duration}
+                            helperText={errors.duration}
                         />
-                    )}
-                />
-                <FormControl sx={{ mt: 1,width:500 }}>
-                    <InputLabel>Kiểu lớp</InputLabel>
-                    <Select
-                        name="classType"
-                        value={formData.classType}
-                        onChange={(e) => handleChangeClassType(e.target.value)}
-                        label="Kiểu lớp"
-                    >
-                        <MenuItem value="LT+BT">LT+BT</MenuItem>
-                        <MenuItem value="LT">LT</MenuItem>
-                        <MenuItem value="BT">BT</MenuItem>
-                    </Select>
-                </FormControl>
-                <Box sx={{ display: "flex", gap: 2, mt: 1,width:500 }}>
-                    <TextField
-                        label="Tuần học *"
-                        name="learningWeeks"
-                        value={formData.learningWeeks || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, learningWeeks: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder="Ví dụ: 2-9,11-18"
-                        error={!!errors.learningWeeks}
-                        helperText={errors.learningWeeks}
-                        sx={{ mt: 1, mb: 1 }}
-                    />
-                    <TextField
-                        label="Số tiết"
-                        name="duration"
-                        value={formData.duration || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.duration}
-                        helperText={errors.duration}
-                        sx={{ mt: 1, mb: 1 }}
-                    />
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, mt: 1 ,width:500 }}>
-                    <TextField
-                        label="Số tiết LT+BT"
-                        name="durationLTBT"
-                        value={formData.durationLTBT || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, durationLTBT: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.durationLTBT}
-                        helperText={errors.durationLTBT}
-                    />
-                    <TextField
-                        label="Số tiết LT"
-                        name="durationLT"
-                        value={formData.durationLT || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, durationLT: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.durationLT}
-                        helperText={errors.durationLT}
-                    />
-                    <TextField
-                        label="Số tiết BT"
-                        name="durationBT"
-                        value={formData.durationBT || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, durationBT: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.durationBT}
-                        helperText={errors.durationBT}
-                    />
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, mt: 2,width: 500 }}>
-                    <TextField
-                        label="Số SV LT+BT"
-                        name="nbStudentsLTBT"
-                        value={formData.nbStudentsLTBT || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, nbStudentsLTBT: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.nbStudentsLTBT}
-                        helperText={errors.nbStudentsLTBT}
-                    />
-                    <TextField
-                        label="Số SV LT"
-                        name="nbStudentsLT"
-                        value={formData.nbStudentsLT || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, nbStudentsLT: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.nbStudentsLT}
-                        helperText={errors.nbStudentsLT}
-                    />
-                    <TextField
-                        label="Số SV BT"
-                        name="nbStudentsBT"
-                        value={formData.nbStudentsBT || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, nbStudentsBT: e.target.value }))}
-                        fullWidth
-                        required
-                        placeholder=""
-                        error={!!errors.nbStudentsBT}
-                        helperText={errors.nbStudentsBT}
-                    />
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, mt: 2, mb: 1, width: 500 }}>
-                    <TextField
-                        label="Số lượng lớp"
-                        name="nbClasses"
-                        value={formData.nbClasses || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, nbClasses: e.target.value }))}
-                        type="number"
-                        fullWidth
-                        required
-                        error={!!errors.nbClasses}
-                        helperText={errors.nbClasses}
-                    />
-                    <TextField
-                        label="Số lượng sinh viên"
-                        name="nbStudents"
-                        value={formData.nbStudents || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, nbStudents: e.target.value }))}
-                        type="number"
-                        fullWidth
-                        required
-                        error={!!errors.nbStudents}
-                        helperText={errors.nbStudents}
-                    />
-                    <FormControl sx={{width: "100%" }}>
-                        <InputLabel>Tách LT-BT</InputLabel>
-                        <Select
-                            name="separateLTBT"
-                            value={formData.separateLTBT}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, separateLTBT: e.target.value }))}
-                            label="Tách LT-BT"
-                        >
-                            <MenuItem value="N">N</MenuItem>
-                            <MenuItem value="Y">Y</MenuItem>
-                        </Select>
-                    </FormControl>
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, mt: 2, alignItems: "flex-start" }}>
-                    <TextField
-                        label="Khóa"
-                        name="promotion"
-                        value={formData.promotion || ""}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, promotion: e.target.value }))}
-                        required
-                        error={!!errors.promotion}
-                        helperText={errors.promotion}
-                        sx={{ width: 80 }}
-                    />
-                    <FormControl sx={{ width: 125 }}>
-                        <InputLabel>Kiểu tuần</InputLabel>
-                        <Select
-                            name="weekType"
-                            value={formData.weekType}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, weekType: e.target.value }))}
-                            label="Kiểu tuần"
-                        >
-                            <MenuItem value="0">AB</MenuItem>
-                            <MenuItem value="1">A</MenuItem>
-                            <MenuItem value="2">B</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl sx={{ minWidth: 125 }}>
-                        <InputLabel>Kíp</InputLabel>
-                        <Select
-                            name="crew"
-                            value={formData.crew}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, crew: e.target.value }))}
-                            label="Kíp"
-                        >
-                            <MenuItem value="S">Sáng</MenuItem>
-                            <MenuItem value="C">Chiều</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl sx={{ minWidth: 125 }}>
-                        <InputLabel>Sinh lớp</InputLabel>
-                        <Select
-                            name="generateClasses"
-                            value={formData.generateClasses}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, generateClasses: e.target.value }))}
-                            label="Sinh lớp"
-                        >
-                            <MenuItem value="Y">Y</MenuItem>
-                            <MenuItem value="N">N</MenuItem>
-                        </Select>
-                    </FormControl>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <TextField
+                            label="Số tiết LT+BT"
+                            name="durationLTBT"
+                            value={formData.durationLTBT || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, durationLTBT: e.target.value }))}
+                            fullWidth
+                            required
+                            error={!!errors.durationLTBT}
+                            helperText={errors.durationLTBT}
+                        />
+                        <TextField
+                            label="Số tiết LT"
+                            name="durationLT"
+                            value={formData.durationLT || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, durationLT: e.target.value }))}
+                            fullWidth
+                            required
+                            error={!!errors.durationLT}
+                            helperText={errors.durationLT}
+                        />
+                        <TextField
+                            label="Số tiết BT"
+                            name="durationBT"
+                            value={formData.durationBT || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, durationBT: e.target.value }))}
+                            fullWidth
+                            required
+                            error={!!errors.durationBT}
+                            helperText={errors.durationBT}
+                        />
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <TextField
+                            label="Số SV LT+BT"
+                            name="nbStudentsLTBT"
+                            value={formData.nbStudentsLTBT || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, nbStudentsLTBT: e.target.value }))}
+                            fullWidth
+                            required
+                            error={!!errors.nbStudentsLTBT}
+                            helperText={errors.nbStudentsLTBT}
+                        />
+                        <TextField
+                            label="Số SV LT"
+                            name="nbStudentsLT"
+                            value={formData.nbStudentsLT || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, nbStudentsLT: e.target.value }))}
+                            fullWidth
+                            required
+                            error={!!errors.nbStudentsLT}
+                            helperText={errors.nbStudentsLT}
+                        />
+                        <TextField
+                            label="Số SV BT"
+                            name="nbStudentsBT"
+                            value={formData.nbStudentsBT || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, nbStudentsBT: e.target.value }))}
+                            fullWidth
+                            required
+                            error={!!errors.nbStudentsBT}
+                            helperText={errors.nbStudentsBT}
+                        />
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <TextField
+                            label="Số lượng lớp"
+                            name="nbClasses"
+                            value={formData.nbClasses || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, nbClasses: e.target.value }))}
+                            type="number"
+                            fullWidth
+                            required
+                            error={!!errors.nbClasses}
+                            helperText={errors.nbClasses}
+                        />
+                        <TextField
+                            label="Số lượng sinh viên"
+                            name="nbStudents"
+                            value={formData.nbStudents || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, nbStudents: e.target.value }))}
+                            type="number"
+                            fullWidth
+                            required
+                            error={!!errors.nbStudents}
+                            helperText={errors.nbStudents}
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Tách LT-BT</InputLabel>
+                            <Select
+                                name="separateLTBT"
+                                value={formData.separateLTBT}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, separateLTBT: e.target.value }))}
+                                label="Tách LT-BT"
+                            >
+                                <MenuItem value="N">Không</MenuItem>
+                                <MenuItem value="Y">Có</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <TextField
+                            label="Khóa"
+                            name="promotion"
+                            value={formData.promotion || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, promotion: e.target.value }))}
+                            required
+                            error={!!errors.promotion}
+                            helperText={errors.promotion}
+                            sx={{ flex: 1 }}
+                        />
+                        <FormControl sx={{ flex: 1 }}>
+                            <InputLabel>Kiểu tuần</InputLabel>
+                            <Select
+                                name="weekType"
+                                value={formData.weekType}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, weekType: e.target.value }))}
+                                label="Kiểu tuần"
+                            >
+                                <MenuItem value="0">AB</MenuItem>
+                                <MenuItem value="1">A</MenuItem>
+                                <MenuItem value="2">B</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl sx={{ flex: 1 }}>
+                            <InputLabel>Kíp</InputLabel>
+                            <Select
+                                name="crew"
+                                value={formData.crew}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, crew: e.target.value }))}
+                                label="Kíp"
+                            >
+                                <MenuItem value="S">Sáng</MenuItem>
+                                <MenuItem value="C">Chiều</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormControl sx={{ flex: 1 }}>
+                            <InputLabel>Sinh lớp</InputLabel>
+                            <Select
+                                name="generateClasses"
+                                value={formData.generateClasses}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, generateClasses: e.target.value }))}
+                                label="Sinh lớp"
+                            >
+                                <MenuItem value="Y">Có</MenuItem>
+                                <MenuItem value="N">Không</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
                 </Box>
             </DialogContent>
-            <DialogActions sx={{ padding: "16px", gap: "8px", borderTop: "1px solid #e0e0e0", backgroundColor: "#fafafa" }}>
-                <Button
-                    onClick={handleClose}
-                    variant="outlined"
-                    sx={{ minWidth: "100px", padding: "8px 16px", textTransform: "none" }}
-                >
-                    Cancel
+            <DialogActions>
+                <Button onClick={handleClose} variant="outlined">
+                    Hủy
                 </Button>
                 <Button
                     onClick={() => handleSave(isEdit)}
                     color="primary"
                     variant="contained"
-                    autoFocus
-                    sx={{ minWidth: "120px", padding: "8px 16px", textTransform: "none" }}
                     disabled={loading}
                 >
-                    {loading ? <CircularProgress size={24} /> : "Save"}
+                    {loading ? <CircularProgress size={24} /> : "Lưu"}
                 </Button>
             </DialogActions>
         </Dialog>
     );
 
     return (
-        <>
-            Opend Class Plan {batchId}
-            <Paper sx={{ height: 400, width: "100%" }}>
-                <Button onClick={handleOpenAddForm}>ADD</Button>
-                <DataGrid
-                    initialState={{
-                        sorting: { sortModel: [{ field: "id", sort: "asc" }] },
-                        filter: { filterModel: { items: [], quickFilterValues: [""] } },
-                    }}
-                    slots={{ toolbar: GridToolbar }}
-                    slotProps={{
-                        toolbar: {
-                            printOptions: { disableToolbarButton: true },
-                            csvOptions: { disableToolbarButton: true },
-                            showQuickFilter: true,
+        <div className="flex flex-col gap-3">
+            <Paper elevation={1} className="p-3">
+                <Tabs
+                    value={viewTab}
+                    onChange={(e, newVal) => setViewTab(newVal)}
+                    sx={{
+                        borderBottom: 1,
+                        borderColor: "divider",
+                        "& .MuiTab-root": {
+                            minWidth: "140px",
+                            fontWeight: 500,
+                            textTransform: "none",
+                            fontSize: "15px",
+                            py: 1.5,
                         },
                     }}
-                    rows={classPlans}
-                    columns={columns}
-                    pageSizeOptions={[5, 10]}
-                    checkboxSelection
-                    onRowClick={handleRowClick}
-                />
+                >
+                    <Tab
+                        label={
+                            <div className="flex items-center gap-2">
+                                <span>Kế hoạch lớp</span>
+                                <Chip
+                                    size="small"
+                                    label={classPlans?.length || 0}
+                                    color="default"
+                                />
+                            </div>
+                        }
+                    />
+                    <Tab
+                        label={
+                            <div className="flex items-center gap-2">
+                                <span>Lớp đã mở</span>
+                                <Chip
+                                    size="small"
+                                    label={classes?.length || 0}
+                                    color="default"
+                                />
+                            </div>
+                        }
+                    />
+                    <Tab
+                        label={
+                            <div className="flex items-center gap-2">
+                                <span>Phòng học</span>
+                            </div>
+                        }
+                    />
+                </Tabs>
+
+                {viewTab === 0 && (
+                    <div className="mt-3">
+                        <Paper variant="outlined" className="p-3">
+                            <Button onClick={handleOpenAddForm} variant="contained" sx={{ mb: 2 }}>
+                                Thêm kế hoạch
+                            </Button>
+                            <div style={{ height: 500, width: '100%' }}>
+                                <DataGrid
+                                    rows={classPlans}
+                                    columns={columns}
+                                    initialState={{
+                                        sorting: { sortModel: [{ field: "id", sort: "asc" }] },
+                                        pagination: { paginationModel: { pageSize: 10 } },
+                                    }}
+                                    pageSizeOptions={[5, 10, 25]}
+                                    slots={{ toolbar: GridToolbar }}
+                                    slotProps={{
+                                        toolbar: {
+                                            showQuickFilter: true,
+                                            printOptions: { disableToolbarButton: true },
+                                            csvOptions: { disableToolbarButton: true },
+                                        },
+                                    }}
+                                    onRowClick={handleRowClick}
+                                />
+                            </div>
+                        </Paper>
+                        {renderForm(false)}
+                        {renderForm(true)}
+                    </div>
+                )}
+
+                {viewTab === 1 && (
+                    <div className="mt-3">
+                        <Paper variant="outlined" className="p-3">
+                            <ListOpenedClass batchId={batchId} listClasses={classes} />
+                        </Paper>
+                    </div>
+                )}
+
+                {viewTab === 2 && (
+                    <div className="mt-3">
+                        <Paper variant="outlined" className="p-3">
+                            <RoomsOfBatch batchId={batchId} />
+                        </Paper>
+                    </div>
+                )}
             </Paper>
-            {renderForm(false)}
-            {renderForm(true)}
-            <ListOpenedClass batchId={batchId} listClasses={classes} />
-            <RoomsOfBatch batchId={batchId} />
-        </>
+        </div>
     );
 }
