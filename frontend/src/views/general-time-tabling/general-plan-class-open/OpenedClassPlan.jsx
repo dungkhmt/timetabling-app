@@ -597,6 +597,7 @@ export default function OpenedClassPlan() {
                     />
                 </Tabs>
 
+
                 {viewTab === 0 && (
                     <div className="mt-3">
                         <Paper variant="outlined" className="p-3">
