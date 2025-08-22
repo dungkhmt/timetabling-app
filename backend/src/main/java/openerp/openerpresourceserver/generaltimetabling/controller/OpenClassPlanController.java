@@ -7,6 +7,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.OpenBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.OpenClassPlan;
 import openerp.openerpresourceserver.generaltimetabling.service.ModuleService;
 import openerp.openerpresourceserver.generaltimetabling.service.OpenClassPlanService;
+import openerp.openerpresourceserver.generaltimetabling.service.StudyingCourseService;
 import openerp.openerpresourceserver.labtimetabling.controller.ClassPlanController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +24,15 @@ import java.util.List;
 @RequestMapping("/open-class-plan")
 
 public class OpenClassPlanController {
-    private static final Logger logger = LoggerFactory.getLogger(OpenClassPlanController.class);
+//    private static final Logger logger = LoggerFactory.getLogger(OpenClassPlanController.class);
 
 
     @Autowired
     private OpenClassPlanService openClassPlanService;
+
+    @Autowired
+    private StudyingCourseService studyingCourseService;
+
 
     @PostMapping("/get-all-class-plan-by-semester/{semester}")
     public ResponseEntity<List<OpenClassPlan>> getAllOpenBatch(@PathVariable String semester) {
@@ -60,8 +65,11 @@ public class OpenClassPlanController {
             }
             return new ResponseEntity<>(semesters, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error("Error fetching semesters: ", e);
+//            logger.error("Error fetching semesters: ", e);
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
 }

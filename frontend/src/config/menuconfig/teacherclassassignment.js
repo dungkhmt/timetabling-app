@@ -5,7 +5,7 @@ export const teacherClassAssignment = {
   child: [
     {
       id: "MENU_TEACHER_CLASS_ASSIGNMENT.BATCH",
-      path: "/teacher-class-assignment/list-batch",
+      path: "/teacher-class-assignment/ListClassBySchool",
       isPublic: true,
       text: "Phân công",
       child: [],
