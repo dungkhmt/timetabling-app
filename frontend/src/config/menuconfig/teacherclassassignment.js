@@ -12,9 +12,9 @@ export const teacherClassAssignment = {
     },
     {
       id: "MENU_TEACHER_CLASS_ASSIGNMENT.DASHBOARD",
-      path: "/teacher-class-assignment/dashboard",
+      path: "/teacher-class-assignment/ListClassPlan",
       isPublic: true,
-      text: "Dash board",
+      text: "Danh sách lớp",
       child: [],
     },
    ],
