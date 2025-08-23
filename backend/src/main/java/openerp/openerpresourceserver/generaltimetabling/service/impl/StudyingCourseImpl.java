@@ -16,7 +16,7 @@ public class StudyingCourseImpl implements StudyingCourseService {
 
     @Override
     public List<StudyingCourse> findAllBySchoolId(String schoolId) {
-        return List.of();
+        return studyingCourseRepo.findAllBySchoolId(schoolId);
     }
 
     @Override

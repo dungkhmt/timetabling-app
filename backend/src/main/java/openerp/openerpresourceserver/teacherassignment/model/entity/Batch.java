@@ -1,6 +1,5 @@
 package openerp.openerpresourceserver.teacherassignment.model.entity;
 
-import io.swagger.models.auth.In;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +16,7 @@ public class Batch {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String semester;
     private String name;
     private String createdByUserId;
