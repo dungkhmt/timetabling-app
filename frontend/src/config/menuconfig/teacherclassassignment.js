@@ -17,5 +17,12 @@ export const teacherClassAssignment = {
       text: "Danh sách lớp",
       child: [],
     },
+    {
+      id: "MENU_TEACHER_CLASS_ASSIGNMENT.SETTING",
+      path: "/teacher-class-assignment/SettingBatch",
+      isPublic: true,
+      text: "Cài đặt phân công",
+      child: [],
+    },
    ],
 };
