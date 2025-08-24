@@ -11,6 +11,8 @@ export default function ListClassPlan() {
     const [selectedBatch, setSelectedBatch] = useState({}); // Lưu batch đã chọn cho từng lớp
     const [loading, setLoading] = useState(false);
 
+
+
     const columns = [
         { field: "typeProgram", headerName: "Mã quản lý", width: 120 },
         { field: "classId", headerName: "Mã lớp", width: 100 },
@@ -36,7 +38,7 @@ export default function ListClassPlan() {
                                 <em>None</em>
                             </MenuItem>
                             {batches.map((batch) => (
-                                <MenuItem key={batch.id} value={batch.name}>
+                                <MenuItem key={batch.id} value={batch.id}>
                                     {batch.name}
                                 </MenuItem>
                             ))}
@@ -130,14 +132,16 @@ export default function ListClassPlan() {
 
         // Thực hiện request ở đây
         // Ví dụ: gửi classId và batchId lên server
-        const payload = {
-            classId: classId,
-            batchId: batchId
-        };
+        // const payload = {
+        //     classId: classId,
+        //     batchId: batchId
+        // };
+        //
+        // alert(JSON.stringify(payload))
 
         request(
             "post",
-            "/your-api-endpoint", // Thay bằng endpoint thực tế
+            `/teacher-assignment-batch-class/create-batch-class/${batchId}/${classId}`, // Thay bằng endpoint thực tế
             (res) => {
                 console.log("Request thành công:", res);
                 alert(`Đã xác nhận lớp ${classId} với batch ${batchId}`);
@@ -148,7 +152,6 @@ export default function ListClassPlan() {
                 alert("Có lỗi xảy ra khi xác nhận");
                 setLoading(false);
             },
-            payload
         );
     };
 
@@ -159,6 +162,8 @@ export default function ListClassPlan() {
         });
         setSelectedBatch(newSelectedBatch);
     };
+
+
 
     useEffect(() => {
         getAllSemesters();

@@ -5,7 +5,7 @@ import {
     DialogContent,
     DialogActions,
     Button,
-    Stack, Chip, Typography, FormControl, Select, InputLabel, MenuItem
+    Stack, Chip, Typography, FormControl, Select, InputLabel, MenuItem, TextField
 } from "@mui/material";
 import {request} from "../../../api";
 import {Box} from "@mui/system";
@@ -16,6 +16,8 @@ export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState(""); // For the select dropdown
     const [selectedCourses, setSelectedCourses] = useState([]); // For the stack
+
+    const [checkClass, setCheckClass] = useState([]); // For the checkboxes
 
     function getAllSchools() {
         request(
@@ -79,10 +81,24 @@ export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
         if (selectedSchool) {
             const payload = {
                 batchId: selectedBatch.id,
-                courseIds: selectedCourses.map(course => course.courseId)
+                courseIds: selectedCourses.map(course => course.courseId),
+                classId: Number(checkClass)
             };
 
             alert(JSON.stringify(payload));
+
+            request(
+                "post",
+                `/teacher-assignment-batch-class/create-batch-class/${payload.batchId}/${payload.classId}`, // Thay bằng endpoint thực tế
+                (res) => {
+                    console.log("Request thành công:", res);
+
+                },
+                (error) => {
+                    console.error("Request thất bại:", error);
+
+                },
+            );
 
 
             console.log("Selected School:", selectedSchool);
@@ -132,6 +148,19 @@ export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
                     </Select>
                 </FormControl>
 
+
+                <TextField
+                        label="nhập mã học phần"
+                        variant="outlined"
+                        fullWidth
+                        sx={{ mt: 2 }}
+                        value={checkClass}
+                        type="number"
+                        onChange={(e) => setCheckClass(Number(e.target.value))}
+                    />
+
+
+
                 {courses.length > 0 && (
                     <Box mt={2}>
                         <Typography variant="h6" gutterBottom>
@@ -156,6 +185,7 @@ export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
                         </FormControl>
                     </Box>
                 )}
+
 
                 {selectedCourses.length > 0 && (
                     <Box mt={2}>

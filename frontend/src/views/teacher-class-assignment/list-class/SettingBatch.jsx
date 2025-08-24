@@ -11,6 +11,7 @@ export default function SettingBatch() {
     const [batches, setBatches] = useState([]);
     const [openSettingBatchDialog, setOpenSettingBatchDialog] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null); // Store the selected batch
+    const [classes, setClasses] = useState([]);
 
     const columns = [
         { field: "id", headerName: "ID", width: 120 },
@@ -49,12 +50,27 @@ export default function SettingBatch() {
         // Store the selected batch and open the dialog
         setSelectedBatch(params.row);
         setOpenSettingBatchDialog(true);
+        getAllClassesByBatchId(params.row.id);
     };
 
     const handleCloseSettingBatchDialog = () => {
         setOpenSettingBatchDialog(false);
         setSelectedBatch(null);
     };
+
+    function getAllClassesByBatchId(BatchId) {
+        request(
+            "get",
+            `/teacher-assignment-batch-class/get-all-classes-by-batch/${BatchId}`,
+            (res) => {
+                console.log(res);
+                setClasses(res.data || []);
+            },
+            (error) => {
+                console.error(error);
+            }
+        );
+    }
 
 
     useEffect(() => {

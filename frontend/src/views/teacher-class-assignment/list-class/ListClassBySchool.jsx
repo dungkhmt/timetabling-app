@@ -17,7 +17,7 @@ export default function ListClassBySchool() {
 
     ];
 
-    function getAllClassesBySemester(semester) {
+    function getAllClassesBatchBySemester(semester) {
         request(
             "post",
             "/open-class-plan/get-all-class-plan-by-semester/"+ semester,
@@ -61,6 +61,7 @@ export default function ListClassBySchool() {
         );
 
     }
+
 
     function getAllSchools() {
         request(

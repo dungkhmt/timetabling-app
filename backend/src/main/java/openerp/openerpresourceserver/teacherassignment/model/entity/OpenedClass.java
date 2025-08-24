@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
 
 import java.util.List;
 
@@ -17,6 +18,8 @@ import java.util.List;
 public class OpenedClass {
     @Id
     private Long classId;
+
+
     private Long accompaniedClassId;
     private String courseId;
     private String semester;
@@ -24,6 +27,11 @@ public class OpenedClass {
     private Long maxStudents;
     private String typeProgram;
 
+    @OneToOne(mappedBy = "openedClass")
+    private BatchClass batchClass;
+
     @OneToMany(mappedBy = "openedClass", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TimeClass> timeClasses;
+
+
 }
