@@ -7,7 +7,7 @@ import {
     Button,
     Stack, Chip, Typography, FormControl, Select, InputLabel, MenuItem, TextField
 } from "@mui/material";
-import {request} from "../../../api";
+import {request} from "../../../../api";
 import {Box} from "@mui/system";
 
 export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
@@ -150,7 +150,7 @@ export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
 
 
                 <TextField
-                        label="nhập mã học phần"
+                        label="nhập mã lớp để thêm vào batch"
                         variant="outlined"
                         fullWidth
                         sx={{ mt: 2 }}

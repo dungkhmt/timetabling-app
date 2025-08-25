@@ -26,11 +26,14 @@ export default function ListClassPlan() {
             width: 200,
             renderCell: (params) => {
                 const classId = params.row.classId;
+                const defaultBatchId = params.row.batchClass?.id?.batchId;
+                const defaultBatch = batches.find(batch => batch.id === defaultBatchId);
+
                 return (
                     <FormControl fullWidth size="small">
                         <InputLabel>Chọn batch</InputLabel>
                         <Select
-                            value={selectedBatch[classId] || ""}
+                            value={selectedBatch[classId] || (defaultBatch ? defaultBatch.id : "")}
                             label="Chọn batch"
                             onChange={(event) => handleBatchChange(classId, event.target.value)}
                         >
@@ -47,6 +50,7 @@ export default function ListClassPlan() {
                 );
             }
         },
+
         {
             field: "confirm",
             headerName: "Xác nhận",

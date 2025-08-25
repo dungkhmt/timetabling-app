@@ -1,7 +1,7 @@
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import ListClassPlan from "../views/teacher-class-assignment/list-class/ListClassPlan";
 import ListClassBySchool from "../views/teacher-class-assignment/list-class/ListClassBySchool";
-import SettingBatch from "../views/teacher-class-assignment/list-class/SettingBatch";
+import SettingBatch from "../views/teacher-class-assignment/settingBatch/SettingBatch";
 
 export default function TeacherClassAssignmentRouter() {
     let { path } = useRouteMatch();

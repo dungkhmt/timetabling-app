@@ -1,8 +1,9 @@
 import {request} from "api";
 import React, {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
-import {Autocomplete, TextField} from "@mui/material";
-import SettingBatchDialog from "../components/SettingBatchDialog";
+import {Autocomplete, Button, TextField} from "@mui/material";
+import SettingBatchDialog from "./components/SettingBatchDialog";
+import AddBatchDialog from "./components/AddBatchDialog";
 
 export default function SettingBatch() {
 
@@ -12,10 +13,11 @@ export default function SettingBatch() {
     const [openSettingBatchDialog, setOpenSettingBatchDialog] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null); // Store the selected batch
     const [classes, setClasses] = useState([]);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
     const columns = [
         { field: "id", headerName: "ID", width: 120 },
-        { field: "name", headerName: "Tên batch", width: 120 },
+        { field: "name", headerName: "Tên batch", width: 250 },
     ];
 
     function getAllSemesters() {
@@ -72,6 +74,14 @@ export default function SettingBatch() {
         );
     }
 
+    const handleAddBatchClick = () => {
+        if (!selectedSemester) {
+            alert("Vui lòng chọn kỳ trước khi thêm batch mới!");
+            return;
+        }
+        setIsAddDialogOpen(true);
+    };
+
 
     useEffect(() => {
         getAllSemesters();
@@ -98,6 +108,25 @@ export default function SettingBatch() {
                         size="small"
                     />
                 )}
+            />
+
+            <Button
+                onClick={handleAddBatchClick}
+                variant="contained"
+                sx={{mb: 2}}
+            >
+                Thêm Batch Mới
+            </Button>
+            <AddBatchDialog
+                open={isAddDialogOpen}
+                onClose={() => setIsAddDialogOpen(false)}
+                semester={selectedSemester}
+                onBatchAdded={(newBatch) => {
+                    // Xử lý khi batch mới được thêm
+                    // getAllBatchBySemester()
+                    getAllBatchBySemester(selectedSemester)
+                    console.log("Batch mới:", newBatch);
+                }}
             />
 
             <DataGrid
