@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
 
 import java.util.List;
 
@@ -20,4 +21,7 @@ public class OpenedClassDto {
     private Long maxStudents;
     private String typeProgram;
     private List<TimeClassDto> timeClasses;
+
+    private BatchClassDto batchClass;
+
 }

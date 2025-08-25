@@ -27,7 +27,7 @@ public class OpenedClass {
     private Long maxStudents;
     private String typeProgram;
 
-    @OneToOne(mappedBy = "openedClass")
+    @OneToOne(mappedBy = "openedClass", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private BatchClass batchClass;
 
     @OneToMany(mappedBy = "openedClass", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

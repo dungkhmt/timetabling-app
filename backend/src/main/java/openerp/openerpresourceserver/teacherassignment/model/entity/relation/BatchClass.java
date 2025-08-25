@@ -17,14 +17,20 @@ public class BatchClass {
     @EmbeddedId
     private CompositeBatchClass id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("batchId")
     @JoinColumn(name = "batchId", referencedColumnName = "id", insertable = false, updatable = false)
     private Batch batch;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
+    @MapsId("classId")
     @JoinColumn(name = "classId", referencedColumnName = "classId", insertable = false, updatable = false)
     private OpenedClass openedClass;
 
-
+    @Override
+    public String toString() {
+        return "BatchClass{" +
+                "id=" + id +
+                '}';
+    }
 }

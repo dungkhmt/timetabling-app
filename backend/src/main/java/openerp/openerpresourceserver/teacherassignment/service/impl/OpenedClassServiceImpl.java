@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.teacherassignment.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.teacherassignment.model.dto.OpenedClassDto;
 import openerp.openerpresourceserver.teacherassignment.model.entity.OpenedClass;
 import openerp.openerpresourceserver.teacherassignment.repo.OpenedClassRepo;
@@ -12,7 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class OpenedClassImpl implements OpenedClassService {
+@Slf4j
+public class OpenedClassServiceImpl implements OpenedClassService {
 
     @Autowired
     private OpenedClassRepo openedClassRepo;
@@ -22,7 +24,22 @@ public class OpenedClassImpl implements OpenedClassService {
 
     @Override
     public List<OpenedClassDto> findAllBySemester(String semester) {
-        List<OpenedClass> openedClasses = openedClassRepo.findAllBySemester(semester);
+//        List<OpenedClass> openedClasses = openedClassRepo.findAllBySemester(semester);
+        List<OpenedClass> openedClasses = openedClassRepo.findAllBySemesterWithDto(semester);
+
+        log.info(" --- Retrieved OpenedClasses for semester: {} ---", semester);
+
+        openedClasses.forEach(openedClass -> {
+            // Kiểm tra nếu batchClass khác null
+            if (openedClass.getBatchClass() != null) {
+                log.info("OpenedClass ID: {}, Course Name: {}, Batch Class: {}",
+                        openedClass.getClassId(),
+                        openedClass.getCourseId() ,
+                        openedClass.getBatchClass() // hoặc getId() tùy thuộc vào trường bạn muốn log
+                );
+            }
+        });
+
         return openedClasses.stream()
                 .map(openedClass -> modelMapper.map(openedClass, OpenedClassDto.class))
                 .collect(Collectors.toList());

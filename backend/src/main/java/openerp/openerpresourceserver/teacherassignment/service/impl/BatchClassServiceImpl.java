@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class BatchClassImpl implements BatchClassService {
+public class BatchClassServiceImpl implements BatchClassService {
 
     @Autowired
     private BatchClassRepo batchClassRepo;

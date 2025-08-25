@@ -24,17 +24,17 @@ public class OpenedClassController {
     @PostMapping("/get-all-classes-by-semester/{semester}")
     public ResponseEntity<List<OpenedClassDto>> getAllClassesBySemester(@PathVariable String semester) {
 
-        try {
+//        try {
             List<OpenedClassDto> openedClassList = openedClassService.findAllBySemester(semester);
             if (openedClassList.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
             return new ResponseEntity<>(openedClassList, HttpStatus.OK);
 //             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-//            logger.error("Error fetching semesters: ", e);
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+//        } catch (Exception e) {
+////            logger.error("Error fetching semesters: ", e);
+//            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
     }
 
     @GetMapping("/get-all-distinct-semester")

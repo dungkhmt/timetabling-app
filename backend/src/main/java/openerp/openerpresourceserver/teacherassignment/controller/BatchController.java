@@ -1,15 +1,15 @@
 package openerp.openerpresourceserver.teacherassignment.controller;
 
+import jakarta.validation.Valid;
+import openerp.openerpresourceserver.teacherassignment.model.dto.BatchCreateDto;
+import openerp.openerpresourceserver.teacherassignment.model.dto.BatchDto;
 import openerp.openerpresourceserver.teacherassignment.model.entity.Batch;
 import openerp.openerpresourceserver.teacherassignment.service.BatchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,9 +20,9 @@ public class BatchController {
     private BatchService batchService;
 
     @GetMapping("/get-batch-semester/{semester}")
-    public ResponseEntity<List<Batch>> getAllSemesters(@PathVariable String semester) {
+    public ResponseEntity<List<BatchDto>> getAllSemesters(@PathVariable String semester) {
         try {
-            List<Batch> batchList = batchService.getAllBatchBySemester(semester);
+            List<BatchDto> batchList = batchService.getAllBatchBySemester(semester);
             if (batchList.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
@@ -30,6 +30,21 @@ public class BatchController {
             // return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
 //            logger.error("Error fetching semesters: ", e);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/create-batch")
+    public ResponseEntity<Batch> createBatch(@Valid @RequestBody BatchCreateDto requestDto) {
+        try {
+            Batch batch = requestDto.toEntity();
+            Batch createdBatch = batchService.createBatch(batch);
+            return new ResponseEntity<>(createdBatch, HttpStatus.OK);
+
+//            return ResponseEntity.ok(batch);
+//             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
+        } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
