@@ -71,7 +71,7 @@ export default function ListClassPlan() {
 
     function getAllClassesBySemester(semester) {
         request(
-            "post",
+            "get",
             "/teacher-assignment-opened-class/get-all-classes-by-semester/" + semester,
             (res) => {
                 console.log(res);
@@ -136,27 +136,27 @@ export default function ListClassPlan() {
 
         // Thực hiện request ở đây
         // Ví dụ: gửi classId và batchId lên server
-        // const payload = {
-        //     classId: classId,
-        //     batchId: batchId
-        // };
-        //
-        // alert(JSON.stringify(payload))
+        const payload = {
+            classId: classId,
+            batchId: batchId
+        };
 
-        request(
-            "post",
-            `/teacher-assignment-batch-class/create-batch-class/${batchId}/${classId}`, // Thay bằng endpoint thực tế
-            (res) => {
-                console.log("Request thành công:", res);
-                alert(`Đã xác nhận lớp ${classId} với batch ${batchId}`);
-                setLoading(false);
-            },
-            (error) => {
-                console.error("Request thất bại:", error);
-                alert("Có lỗi xảy ra khi xác nhận");
-                setLoading(false);
-            },
-        );
+        alert(JSON.stringify(payload))
+
+        // request(
+        //     "post",
+        //     `/teacher-assignment-batch-class/create-batch-class/${batchId}/${classId}`, // Thay bằng endpoint thực tế
+        //     (res) => {
+        //         console.log("Request thành công:", res);
+        //         alert(`Đã xác nhận lớp ${classId} với batch ${batchId}`);
+        //         setLoading(false);
+        //     },
+        //     (error) => {
+        //         console.error("Request thất bại:", error);
+        //         alert("Có lỗi xảy ra khi xác nhận");
+        //         setLoading(false);
+        //     },
+        // );
     };
 
     const handleBatchChangeForAll = (batchId) => {

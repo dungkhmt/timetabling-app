@@ -231,14 +231,16 @@ export default function SettingBatchDetail() {
     const handleSaveCourse = () => {
         if (selectedSchool && selectedCourses.length > 0) {
             const payload = {
+                semester: batchInfo.semester,
                 batchId: batchId,
                 courseIds: selectedCourses.map(course => course.courseId),
             };
 
+            // alert(JSON.stringify(payload));
+
             request(
                 "post",
-                `/course-assignment-batch/add-courses`,
-                payload,
+                `/teacher-assignment-opened-class/add-class-to-batch-based-on-courses`,
                 (res) => {
                     console.log("Courses added successfully:", res);
                     setSelectedCourses([]);
@@ -248,7 +250,8 @@ export default function SettingBatchDetail() {
                 (error) => {
                     console.error("Error adding courses:", error);
                     alert("Có lỗi xảy ra khi thêm khóa học!");
-                }
+                },
+                payload
             );
         }
     };
