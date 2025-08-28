@@ -1,7 +1,7 @@
 package openerp.openerpresourceserver.teacherassignment.service;
 
 import openerp.openerpresourceserver.teacherassignment.model.entity.composite.CompositeBatchClass;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 
 import java.util.List;
 

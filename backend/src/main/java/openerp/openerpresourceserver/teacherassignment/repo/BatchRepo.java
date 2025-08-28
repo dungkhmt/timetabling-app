@@ -1,7 +1,6 @@
 package openerp.openerpresourceserver.teacherassignment.repo;
 
 import openerp.openerpresourceserver.teacherassignment.model.entity.Batch;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

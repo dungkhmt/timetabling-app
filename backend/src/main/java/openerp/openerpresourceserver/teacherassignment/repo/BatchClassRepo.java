@@ -1,7 +1,7 @@
 package openerp.openerpresourceserver.teacherassignment.repo;
 
 import openerp.openerpresourceserver.teacherassignment.model.entity.composite.CompositeBatchClass;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

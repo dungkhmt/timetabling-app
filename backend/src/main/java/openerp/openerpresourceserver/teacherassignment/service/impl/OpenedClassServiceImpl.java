@@ -59,4 +59,9 @@ public class OpenedClassServiceImpl implements OpenedClassService {
                 .map(openedClass -> modelMapper.map(openedClass, OpenedClassDto.class))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<OpenedClass> findAllBySemesterAndCourseId(String semester, String courseId) {
+        return openedClassRepo.findAllBySemesterAndCourseId(semester, courseId);
+    }
 }

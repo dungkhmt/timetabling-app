@@ -26,4 +26,6 @@ public interface OpenedClassRepo extends JpaRepository<OpenedClass, Long> {
 
     @Query(value = "select distinct semester from teacherclassassignment_opened_classes;", nativeQuery = true)
     List<String> getDistinctInSemester();
+
+    List<OpenedClass> findAllBySemesterAndCourseId(String semester, String courseId);
 }

@@ -1,10 +1,8 @@
 package openerp.openerpresourceserver.teacherassignment.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 import openerp.openerpresourceserver.teacherassignment.service.BatchClassService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

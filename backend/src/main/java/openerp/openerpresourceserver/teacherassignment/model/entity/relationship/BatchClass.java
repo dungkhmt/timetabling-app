@@ -1,4 +1,4 @@
-package openerp.openerpresourceserver.teacherassignment.model.entity.relation;
+package openerp.openerpresourceserver.teacherassignment.model.entity.relationship;
 
 import jakarta.persistence.*;
 import lombok.*;

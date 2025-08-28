@@ -3,7 +3,7 @@ package openerp.openerpresourceserver.teacherassignment.service.impl;
 import openerp.openerpresourceserver.teacherassignment.model.entity.Batch;
 import openerp.openerpresourceserver.teacherassignment.model.entity.OpenedClass;
 import openerp.openerpresourceserver.teacherassignment.model.entity.composite.CompositeBatchClass;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 import openerp.openerpresourceserver.teacherassignment.repo.BatchClassRepo;
 import openerp.openerpresourceserver.teacherassignment.repo.BatchRepo;
 import openerp.openerpresourceserver.teacherassignment.repo.OpenedClassRepo;

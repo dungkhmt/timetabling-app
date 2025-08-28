@@ -1,6 +1,6 @@
 package openerp.openerpresourceserver.teacherassignment.service;
 
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchTeacher;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchTeacher;
 
 import java.util.List;
 

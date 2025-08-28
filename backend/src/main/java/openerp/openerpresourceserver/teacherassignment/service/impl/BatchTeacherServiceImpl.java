@@ -2,7 +2,7 @@ package openerp.openerpresourceserver.teacherassignment.service.impl;
 
 import openerp.openerpresourceserver.teacherassignment.model.entity.Batch;
 import openerp.openerpresourceserver.teacherassignment.model.entity.composite.CompositeBatchTeacher;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchTeacher;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchTeacher;
 import openerp.openerpresourceserver.teacherassignment.repo.BatchRepo;
 import openerp.openerpresourceserver.teacherassignment.repo.BatchTeacherRepo;
 import openerp.openerpresourceserver.teacherassignment.service.BatchTeacherService;

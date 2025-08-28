@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import openerp.openerpresourceserver.teacherassignment.model.entity.relation.BatchClass;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 
 import java.util.List;
 
