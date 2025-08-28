@@ -18,6 +18,12 @@ public interface OpenedClassRepo extends JpaRepository<OpenedClass, Long> {
             "WHERE oc.semester = :semester")
     List<OpenedClass> findAllBySemesterWithDto(@Param("semester") String semester);
 
+    @Query("SELECT oc FROM OpenedClass oc " +
+            "JOIN FETCH oc.batchClass bc " +
+            "LEFT JOIN FETCH oc.timeClasses " +
+            "WHERE bc.id.batchId = :batchId")
+    List<OpenedClass> findAllByBatchIdWithDto(@Param("batchId") Long batchId);
+
     @Query(value = "select distinct semester from teacherclassassignment_opened_classes;", nativeQuery = true)
     List<String> getDistinctInSemester();
 }

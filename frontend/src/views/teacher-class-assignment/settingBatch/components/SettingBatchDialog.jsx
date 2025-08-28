@@ -202,7 +202,7 @@ export default function SettingBatchDialog({ open, onClose, selectedBatch }) {
                                 </MenuItem>
                                 {courses.map(course => (
                                     <MenuItem key={course.courseId} value={course.courseId}>
-                                        {course.courseName}
+                                        {course.courseId + " - "+course.courseName}
                                     </MenuItem>
                                 ))}
                             </Select>

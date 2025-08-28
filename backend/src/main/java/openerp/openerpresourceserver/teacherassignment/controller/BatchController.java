@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/teacher-assignment-batch")
@@ -49,5 +50,13 @@ public class BatchController {
         }
     }
 
-
+    @GetMapping("/get-batch/{batchId}")
+    public ResponseEntity<BatchDto> getBatchById(@PathVariable Long batchId) {
+        BatchDto batchDto = batchService.findById(batchId);
+        if (batchDto != null) {
+            return new ResponseEntity<>(batchDto, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

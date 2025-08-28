@@ -53,4 +53,18 @@ public class OpenedClassController {
         }
 
     }
+
+    @GetMapping("/get-all-classes-by-batch/{batchId}")
+    public ResponseEntity<List<OpenedClassDto>> getAllClassesByBatch(@PathVariable Long batchId) {
+        try {
+            var openedClassList = openedClassService.findAllByBatchId(batchId);
+            if (openedClassList.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(openedClassList, HttpStatus.OK);
+            // return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

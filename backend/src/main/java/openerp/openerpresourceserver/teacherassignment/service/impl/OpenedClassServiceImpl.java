@@ -27,18 +27,18 @@ public class OpenedClassServiceImpl implements OpenedClassService {
 //        List<OpenedClass> openedClasses = openedClassRepo.findAllBySemester(semester);
         List<OpenedClass> openedClasses = openedClassRepo.findAllBySemesterWithDto(semester);
 
-        log.info(" --- Retrieved OpenedClasses for semester: {} ---", semester);
-
-        openedClasses.forEach(openedClass -> {
-            // Kiểm tra nếu batchClass khác null
-            if (openedClass.getBatchClass() != null) {
-                log.info("OpenedClass ID: {}, Course Name: {}, Batch Class: {}",
-                        openedClass.getClassId(),
-                        openedClass.getCourseId() ,
-                        openedClass.getBatchClass() // hoặc getId() tùy thuộc vào trường bạn muốn log
-                );
-            }
-        });
+//        log.info(" --- Retrieved OpenedClasses for semester: {} ---", semester);
+//
+//        openedClasses.forEach(openedClass -> {
+//            // Kiểm tra nếu batchClass khác null
+//            if (openedClass.getBatchClass() != null) {
+//                log.info("OpenedClass ID: {}, Course Name: {}, Batch Class: {}",
+//                        openedClass.getClassId(),
+//                        openedClass.getCourseId() ,
+//                        openedClass.getBatchClass() // hoặc getId() tùy thuộc vào trường bạn muốn log
+//                );
+//            }
+//        });
 
         return openedClasses.stream()
                 .map(openedClass -> modelMapper.map(openedClass, OpenedClassDto.class))
@@ -49,5 +49,14 @@ public class OpenedClassServiceImpl implements OpenedClassService {
     @Override
     public List<String> getAllDistinctSemester() {
         return openedClassRepo.getDistinctInSemester();
+    }
+
+    @Override
+    public List<OpenedClassDto> findAllByBatchId(Long batchId) {
+        List<OpenedClass> openedClasses = openedClassRepo.findAllByBatchIdWithDto(batchId);
+
+        return openedClasses.stream()
+                .map(openedClass -> modelMapper.map(openedClass, OpenedClassDto.class))
+                .collect(Collectors.toList());
     }
 }

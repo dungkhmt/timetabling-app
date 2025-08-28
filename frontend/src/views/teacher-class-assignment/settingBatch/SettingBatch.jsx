@@ -4,6 +4,7 @@ import {DataGrid} from "@mui/x-data-grid";
 import {Autocomplete, Button, TextField} from "@mui/material";
 import SettingBatchDialog from "./components/SettingBatchDialog";
 import AddBatchDialog from "./components/AddBatchDialog";
+import {useHistory} from "react-router-dom";
 
 export default function SettingBatch() {
 
@@ -14,6 +15,8 @@ export default function SettingBatch() {
     const [selectedBatch, setSelectedBatch] = useState(null); // Store the selected batch
     const [classes, setClasses] = useState([]);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const history = useHistory();
+
 
     const columns = [
         { field: "id", headerName: "ID", width: 120 },
@@ -50,9 +53,10 @@ export default function SettingBatch() {
 
     const handleRowClick = (params) => {
         // Store the selected batch and open the dialog
-        setSelectedBatch(params.row);
-        setOpenSettingBatchDialog(true);
-        getAllClassesByBatchId(params.row.id);
+        history.push(`/teacher-class-assignment/SettingBatch/${params.row.id}`);
+        // setSelectedBatch(params.row);
+        // setOpenSettingBatchDialog(true);
+        // getAllClassesByBatchId(params.row.id);
     };
 
     const handleCloseSettingBatchDialog = () => {

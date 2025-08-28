@@ -36,4 +36,13 @@ public class BatchServiceImpl implements BatchService {
     public Batch createBatch(Batch batch) {
         return batchRepo.save(batch);
     }
+
+    @Override
+    public BatchDto findById(Long id) {
+        Optional<Batch> batchOpt = batchRepo.findById(id);
+        return batchOpt.map(batch -> modelMapper.map(batch, BatchDto.class))
+                .orElse(null);
+    }
+
+
 }

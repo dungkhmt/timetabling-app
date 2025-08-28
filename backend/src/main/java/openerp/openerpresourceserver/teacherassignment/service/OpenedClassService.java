@@ -9,4 +9,6 @@ public interface OpenedClassService {
     List<OpenedClassDto> findAllBySemester(String semester);
 
     List<String> getAllDistinctSemester();
+
+    List<OpenedClassDto> findAllByBatchId(Long batchId);
 }

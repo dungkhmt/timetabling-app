@@ -12,4 +12,7 @@ import java.util.Optional;
 @Repository
 public interface BatchRepo extends JpaRepository<Batch, Long> {
     List<Batch> findAllBySemester(String semester);
+
+    @NotNull
+    Optional<Batch> findById(@NotNull Long id);
 }
