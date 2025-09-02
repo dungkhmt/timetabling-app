@@ -9,6 +9,7 @@ import openerp.openerpresourceserver.teacherassignment.model.entity.relationship
 import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchTeacher;
 
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data

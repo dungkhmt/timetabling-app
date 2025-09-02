@@ -2,13 +2,8 @@ package openerp.openerpresourceserver.teacherassignment.controller;
 
 import openerp.openerpresourceserver.teacherassignment.model.dto.AssignClassRequest;
 import openerp.openerpresourceserver.teacherassignment.model.dto.OpenedClassDto;
-
-import openerp.openerpresourceserver.teacherassignment.model.entity.Batch;
 import openerp.openerpresourceserver.teacherassignment.model.entity.OpenedClass;
-import openerp.openerpresourceserver.teacherassignment.model.entity.composite.CompositeBatchClass;
 import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
-import openerp.openerpresourceserver.teacherassignment.repo.BatchClassRepo;
-import openerp.openerpresourceserver.teacherassignment.repo.BatchRepo;
 import openerp.openerpresourceserver.teacherassignment.service.BatchClassService;
 import openerp.openerpresourceserver.teacherassignment.service.OpenedClassService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +23,10 @@ public class OpenedClassController {
 
     @Autowired
     private BatchClassService batchClassService;
+
+
+
+
 
     @GetMapping("/get-all-classes-by-semester/{semester}")
     public ResponseEntity<List<OpenedClassDto>> getAllClassesBySemester(@PathVariable String semester) {
@@ -100,4 +99,8 @@ public class OpenedClassController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
+
 }

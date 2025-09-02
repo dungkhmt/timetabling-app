@@ -31,4 +31,5 @@ public class TimeClass {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "classId", referencedColumnName = "classId", insertable = false, updatable = false)
     private OpenedClass openedClass;
+
 }

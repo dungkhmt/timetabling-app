@@ -23,5 +23,12 @@ public interface TeacherRepo extends JpaRepository<Teacher, String> {
 
     @Query(value = "select * from teacher;",nativeQuery = true)
     List<Teacher> getAllTeacher();
+
+    @Query("SELECT t FROM Teacher t " +
+            "JOIN FETCH t.batchTeachers bt " +
+            "left join fetch t.teacherCapacityList "+
+            "WHERE bt.id.batchId = :batchId")
+    List<Teacher> findAllByBatchId(@Param("batchId") Long batchId);
+
 }
 

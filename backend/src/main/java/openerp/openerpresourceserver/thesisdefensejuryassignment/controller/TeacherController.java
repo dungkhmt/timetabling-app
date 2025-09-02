@@ -1,6 +1,7 @@
 package openerp.openerpresourceserver.thesisdefensejuryassignment.controller;
 
 import lombok.AllArgsConstructor;
+import openerp.openerpresourceserver.thesisdefensejuryassignment.dto.TeacherDto;
 import openerp.openerpresourceserver.thesisdefensejuryassignment.entity.JuryTopic;
 import openerp.openerpresourceserver.thesisdefensejuryassignment.entity.Teacher;
 import openerp.openerpresourceserver.thesisdefensejuryassignment.service.TeacherService;
@@ -23,8 +24,9 @@ public class TeacherController {
     private TeacherService teacherService;
 
     @GetMapping("/get-all-teacher")
-    public ResponseEntity<List<Teacher>> getAllTeacher(){
-        List<Teacher> res = teacherService.getAllTeacher();
+    public ResponseEntity<List<TeacherDto>> getAllTeacher(){
+
+        List<TeacherDto> res = teacherService.getAllTeacher();
         return new ResponseEntity<>(res, HttpStatus.OK);
 //         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 

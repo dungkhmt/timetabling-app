@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data
@@ -32,6 +33,5 @@ public class OpenedClass {
 
     @OneToMany(mappedBy = "openedClass", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TimeClass> timeClasses;
-
 
 }
