@@ -1,5 +1,5 @@
 import { default as MenuIcon } from "@mui/icons-material/Menu";
-import { Box } from "@mui/material";
+import {Box, CssBaseline} from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import IconButton from "@mui/material/IconButton";
 import SvgIcon from "@mui/material/SvgIcon";
@@ -101,6 +101,7 @@ function Layout({ children }) {
 
   return (
     <Box sx={styles.root}>
+      <CssBaseline />
       <AppBar position="fixed" color="inherit" sx={styles.appBar}>
         <Toolbar>
           <IconButton

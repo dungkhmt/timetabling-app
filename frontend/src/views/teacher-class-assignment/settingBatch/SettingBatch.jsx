@@ -64,6 +64,28 @@ export default function SettingBatch() {
         setSelectedBatch(null);
     };
 
+    function handleAssignment() {
+        // Sửa lỗi: Kiểm tra nếu đã chọn semester
+        if (!selectedSemester) {
+            alert("Vui lòng chọn kỳ trước khi phân lớp tự động!");
+            return;
+        }
+
+        request(
+            "post",
+            // Sửa đường dẫn API - kiểm tra lại endpoint chính xác
+            `/teacher-assignment-opened-class/assign-classes-for-teachers/${selectedSemester}`,
+            (res) => {
+                console.log("Phân lớp thành công:", res);
+                alert("Phân lớp tự động thành công!");
+            },
+            (error) => {
+                console.error("Lỗi phân lớp:", error);
+                alert("Có lỗi xảy ra khi phân lớp tự động!");
+            }
+        );
+    }
+
     function getAllClassesByBatchId(BatchId) {
         request(
             "get",
@@ -121,6 +143,15 @@ export default function SettingBatch() {
             >
                 Thêm Batch Mới
             </Button>
+
+            <Button
+                onClick={handleAssignment}
+                variant="contained"
+                sx={{mb: 2, ml: 2}}
+            >
+                Phân lớp tự động
+            </Button>
+
             <AddBatchDialog
                 open={isAddDialogOpen}
                 onClose={() => setIsAddDialogOpen(false)}

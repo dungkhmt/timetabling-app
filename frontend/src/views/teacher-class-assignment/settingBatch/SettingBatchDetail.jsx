@@ -78,6 +78,19 @@ export default function SettingBatchDetail() {
                 console.error("Error fetching batch info:", error);
             }
         );
+
+        request(
+            "post",
+            `/teacher-assignment/assign-classes-for-teachers/${batchId}`,
+            (res) => {
+                console.log("Batch info:", res);
+
+            },
+            (error) => {
+                console.error("Error fetching batch info:", error);
+            }
+        );
+
     };
 
     function getAllSchools() {
