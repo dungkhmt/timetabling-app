@@ -12,4 +12,5 @@ import openerp.openerpresourceserver.teacherassignment.model.entity.composite.Co
 @AllArgsConstructor
 public class BatchClassDto {
     private CompositeBatchClass id;
+
 }

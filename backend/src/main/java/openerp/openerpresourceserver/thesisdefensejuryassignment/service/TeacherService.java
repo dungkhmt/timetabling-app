@@ -9,4 +9,6 @@ public interface TeacherService {
     List<TeacherDto> getAllTeacher();
 
     List<TeacherDto> getAllTeacherByBatchId(Long batchId);
+
+    List<TeacherDto> getTeacherByCourseId(String courseId,Long batchId);
 }

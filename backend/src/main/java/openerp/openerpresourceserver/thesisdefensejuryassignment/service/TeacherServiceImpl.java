@@ -36,4 +36,12 @@ public class TeacherServiceImpl implements TeacherService {
                 .toList();
     }
 
+    @Override
+    public List<TeacherDto> getTeacherByCourseId(String courseId, Long batchId) {
+        List<Teacher> teachers = teacherRepo.getAllTeacherByCourseId(courseId, batchId);
+        return teachers.stream()
+                .map(teacher -> modelMapper.map(teacher, TeacherDto.class))
+                .toList();
+    }
+
 }

@@ -1,12 +1,13 @@
 package openerp.openerpresourceserver.generaltimetabling.model.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.teacherassignment.model.entity.OpenedClass;
+
+import java.util.List;
 
 @Entity
 @Data
@@ -21,4 +22,7 @@ public class StudyingCourse {
     private String schoolId;
     private String volume;
     private String courseName;
+
+    @OneToMany(mappedBy = "studyingCourse",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OpenedClass> openedClass;
 }

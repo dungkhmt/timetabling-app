@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.StudyingCourseDto;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.StudyingCourse;
 
 import java.util.List;
 
@@ -22,5 +24,7 @@ public class OpenedClassDto {
     private List<TimeClassDto> timeClasses;
 
     private BatchClassDto batchClass;
+
+    private StudyingCourseDto studyingCourse;
 
 }

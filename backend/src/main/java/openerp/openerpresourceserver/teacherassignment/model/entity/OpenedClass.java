@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.StudyingCourse;
 import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchClass;
 
 import java.util.List;
@@ -33,5 +34,9 @@ public class OpenedClass {
 
     @OneToMany(mappedBy = "openedClass", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TimeClass> timeClasses;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "courseId", insertable = false, updatable = false)
+    private StudyingCourse studyingCourse;
 
 }

@@ -4,6 +4,7 @@ import com.google.ortools.Loader;
 import com.google.ortools.sat.CpModel;
 import com.google.ortools.sat.CpSolver;
 import com.google.ortools.sat.CpSolverStatus;
+import com.google.ortools.sat.IntVar;
 import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.teacherassignment.model.dto.BatchDto;
 import openerp.openerpresourceserver.teacherassignment.model.dto.OpenedClassDto;
@@ -19,10 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @RequestMapping("/teacher-assignment")
@@ -47,6 +45,8 @@ public class TeacherAssignmentController {
 
         List<List<TeacherDto>> teacherLists = new ArrayList<>(batchList.size());
 
+        List<TeacherDto> allTeachers = teacherService.getAllTeacher();
+
         batchList.forEach(batch -> {
             List<OpenedClassDto> openedClassList = openedClassService.findAllByBatchId(batch.getId());
             openedClassLists.add(openedClassList);
@@ -56,9 +56,63 @@ public class TeacherAssignmentController {
 
         });
 
+        // Tạo map để lưu index của từng teacher trong allTeachers (với ID là String)
+        Map<String, Integer> teacherIndexMap = new HashMap<>();
+        for (int i = 0; i < allTeachers.size(); i++) {
+            teacherIndexMap.put(allTeachers.get(i).getId(), i);
+        }
+
+
         Loader.loadNativeLibraries();
         CpModel model = new CpModel();
 
+        // Tạo mảng biến int cho openedClassLists
+        // mỗi phần tử là giá trị int của giáo viên phụ trách lớp học đó
+        List<List<IntVar>> openedClassTeacherVars = new ArrayList<>();
+
+        for (int batchIndex = 0; batchIndex < openedClassLists.size(); batchIndex++) {
+            List<OpenedClassDto> batchClasses = openedClassLists.get(batchIndex);
+            List<IntVar> batchVars = new ArrayList<>();
+
+            for (int classIndex = 0; classIndex < batchClasses.size(); classIndex++) {
+                // Tạo biến với giá trị từ 0 đến allTeachers.size() - 1
+                IntVar teacherVar = model.newIntVar(0, allTeachers.size() - 1,
+                        "teacher_batch_" + batchIndex + "_class_" + classIndex);
+
+                batchVars.add(teacherVar);
+            }
+
+            openedClassTeacherVars.add(batchVars);
+        }
+
+        for (int batchIndex = 0; batchIndex < openedClassLists.size(); batchIndex++) {
+            List<OpenedClassDto> batchClasses = openedClassLists.get(batchIndex);
+            List<TeacherDto> batchTeachers = teacherLists.get(batchIndex);
+            List<IntVar> batchVars = openedClassTeacherVars.get(batchIndex);
+
+            for (int classIndex = 0; classIndex < batchClasses.size(); classIndex++) {
+                IntVar teacherVar = batchVars.get(classIndex);
+
+                // Chỉ những giáo viên có thể dạy môn học của lớp học này
+                List<TeacherDto> eligibleTeachers = teacherService.getTeacherByCourseId(batchClasses.get(classIndex).getCourseId(), batchList.get(batchIndex).getId());
+                int[] eligibleTeacherIndices = eligibleTeachers.stream()
+                        .mapToInt(teacher -> teacherIndexMap.get(teacher.getId()))
+                        .toArray();
+                model.addAllowedAssignments(new IntVar[]{teacherVar}).addTuple(eligibleTeacherIndices);
+
+            }
+        }
+        // Tạo biến để tính tổng số tín chỉ mỗi giáo viên phải dạy
+        IntVar[] teacherTotalCredits = new IntVar[allTeachers.size()];
+        for (int i = 0; i < allTeachers.size(); i++) {
+            teacherTotalCredits[i] = model.newIntVar(0, Integer.MAX_VALUE, "teacher_credit_" + i);
+        }
+
+        // Thêm ràng buộc: tổng credit của mỗi giáo viên không vượt quá maxCredit
+        for (int teacherIndex = 0; teacherIndex < allTeachers.size(); teacherIndex++) {
+            TeacherDto teacher = allTeachers.get(teacherIndex);
+            model.addLessOrEqual(teacherTotalCredits[teacherIndex], teacher.getMaxCredit());
+        }
 
 
 

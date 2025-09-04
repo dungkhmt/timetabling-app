@@ -15,6 +15,7 @@ public interface OpenedClassRepo extends JpaRepository<OpenedClass, Long> {
     @Query("SELECT oc FROM OpenedClass oc " +
             "LEFT JOIN FETCH oc.batchClass " +
             "LEFT JOIN FETCH oc.timeClasses " +
+            "JOIN FETCH oc.studyingCourse " +
             "WHERE oc.semester = :semester")
     List<OpenedClass> findAllBySemesterWithDto(@Param("semester") String semester);
 

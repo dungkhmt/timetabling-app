@@ -30,5 +30,11 @@ public interface TeacherRepo extends JpaRepository<Teacher, String> {
             "WHERE bt.id.batchId = :batchId")
     List<Teacher> findAllByBatchId(@Param("batchId") Long batchId);
 
+    @Query("SELECT t FROM Teacher t " +
+            "JOIN FETCH t.batchTeachers bt " +
+            "left join fetch t.teacherCapacityList tc "+
+            "WHERE tc.id.courseId = :courseId and bt.id.batchId = :batchId")
+    List<Teacher> getAllTeacherByCourseId(@Param("courseId") @NotNull String courseId, @Param("batchId") @NotNull Long batchId);
+
 }
 
