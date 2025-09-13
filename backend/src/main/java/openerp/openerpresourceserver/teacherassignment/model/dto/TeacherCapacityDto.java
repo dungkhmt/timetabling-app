@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.request.CourseDto;
 import openerp.openerpresourceserver.teacherassignment.model.entity.composite.CompositeTeacherCapacity;
 
 @Data

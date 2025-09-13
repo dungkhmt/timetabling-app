@@ -74,7 +74,7 @@ export default function SettingBatch() {
         request(
             "post",
             // Sửa đường dẫn API - kiểm tra lại endpoint chính xác
-            `/teacher-assignment-opened-class/assign-classes-for-teachers/${selectedSemester}`,
+            `/teacher-assignment/assign-classes-for-teachers/${selectedSemester}`,
             (res) => {
                 console.log("Phân lớp thành công:", res);
                 alert("Phân lớp tự động thành công!");

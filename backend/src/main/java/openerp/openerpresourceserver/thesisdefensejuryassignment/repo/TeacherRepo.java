@@ -21,8 +21,12 @@ public interface TeacherRepo extends JpaRepository<Teacher, String> {
 
     Optional<Teacher> findByTeacherName(String teacherName);
 
-    @Query(value = "select * from teacher;",nativeQuery = true)
+//    @Query(value = "select *\n" +
+//            "from teacher right join teacher_course_for_assignment_plan on teacher.id = teacher_course_for_assignment_plan.teacher_id;",nativeQuery = true)
+    @Query("SELECT DISTINCT  t FROM Teacher t " +
+            " join fetch t.teacherCapacityList ")
     List<Teacher> getAllTeacher();
+
 
     @Query("SELECT t FROM Teacher t " +
             "JOIN FETCH t.batchTeachers bt " +

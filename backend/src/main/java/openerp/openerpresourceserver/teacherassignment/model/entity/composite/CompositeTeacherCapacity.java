@@ -16,5 +16,4 @@ public class CompositeTeacherCapacity implements Serializable {
     private String teacherId;
     private String courseId;
     private UUID planId;
-
 }

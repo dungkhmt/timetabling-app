@@ -27,7 +27,7 @@ public class TeacherCapacity {
 
     @ManyToOne
     @JoinColumn(name = "teacherId", referencedColumnName = "id", insertable = false, updatable = false)
+    @MapsId("teacherId")
     private Teacher teacher;
-
 
 }
