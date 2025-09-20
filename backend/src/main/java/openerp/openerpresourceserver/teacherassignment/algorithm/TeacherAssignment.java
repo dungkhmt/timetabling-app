@@ -3,11 +3,8 @@ package openerp.openerpresourceserver.teacherassignment.algorithm;
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
 import lombok.extern.slf4j.Slf4j;
-import openerp.openerpresourceserver.teacherassignment.model.dto.OpenedClassDto;
-import openerp.openerpresourceserver.teacherassignment.model.dto.TeacherCapacityDto;
 import openerp.openerpresourceserver.teacherassignment.model.entity.OpenedClass;
 import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.TeacherCapacity;
-import openerp.openerpresourceserver.thesisdefensejuryassignment.dto.TeacherDto;
 import openerp.openerpresourceserver.thesisdefensejuryassignment.entity.Teacher;
 
 import java.util.*;
@@ -41,6 +38,9 @@ public class TeacherAssignment {
 
         openedClassesList = filteredClasses;
 
+        // mô hình hiện tại chỉ hỗ trợ phân lớp những học phần mà giảng viên có thể dạy
+        // những học phần chưa có dữ liệu giảng viên dạy tạm thời bị bỏ qua
+
         Loader.loadNativeLibraries();
         CpModel model = new CpModel();
 
@@ -70,20 +70,23 @@ public class TeacherAssignment {
             model.addExactlyOne(allowedTeachers);
         }
 //
-//        // Ràng buộc 3: Tránh xung đột thời gian (nếu có thông tin thời gian)
+//        // Ràng buộc 2: Tránh xung đột thời gian (nếu có thông tin thời gian)
 //        // Giả sử TimeClassDto có thông tin về thời gian học
-//        for (int i = 0; i < openedClassesList.size(); i++) {
-//            for (int j = i + 1; j < openedClassesList.size(); j++) {
-//                OpenedClassDto class1 = openedClassesList.get(i);
-//                OpenedClassDto class2 = openedClassesList.get(j);
-//
-//                // Kiểm tra nếu hai lớp có thời gian trùng nhau
-//                if (hasTimeConflict(class1, class2)) {
-//                    // Đảm bảo cùng một giáo viên không dạy hai lớp trùng giờ
-//                    model.addDifferent(classTeacherVars.get(i), classTeacherVars.get(j));
-//                }
-//            }
-//        }
+        // --- RÀNG BUỘC TRÙNG GIỜ ---
+        for (int j = 0; j < numClasses; j++) {
+            for (int k = j + 1; k < numClasses; k++) {
+                if (hasTimeConflict(openedClassesList.get(j), openedClassesList.get(k))) {
+                    for (int i = 0; i < numTeachers; i++) {
+                        // Không cho GV i dạy cả 2 lớp j & k
+                        model.addAtMostOne(new Literal[]{
+                                assignmentVars[i][j],
+                                assignmentVars[i][k]
+                        });
+                    }
+                }
+            }
+        }
+
 
 //        hàm mục tiêu hiện tại: số lớp nhiều nhất của giảng viên đạt min
 
@@ -135,6 +138,38 @@ public class TeacherAssignment {
             log.warn("No solution found for teacher-class assignment");
             return null;
         }
+    }
+
+    private static int parseToMinutes(String s) {
+        if (s == null) return -1;
+        String t = s.trim();
+        if (t.isEmpty()) return -1;
+        int h = Integer.parseInt(t.substring(0, t.length() - 2));
+        int m = Integer.parseInt(t.substring(t.length() - 2));
+        return h * 60 + m;
+    }
+
+    private static boolean isOverlap(String s1, String e1, String s2, String e2) {
+        int aStart = parseToMinutes(s1);
+        int aEnd   = parseToMinutes(e1);
+        int bStart = parseToMinutes(s2);
+        int bEnd   = parseToMinutes(e2);
+        if (aStart < 0 || aEnd < 0 || bStart < 0 || bEnd < 0) return false;
+        return aStart < bEnd && bStart < aEnd; // overlap
+    }
+
+    /** Kiểm tra 2 lớp có buổi nào trùng nhau không */
+    private static boolean hasTimeConflict(OpenedClass c1, OpenedClass c2) {
+        if (c1.getTimeClasses() == null || c2.getTimeClasses() == null) return false;
+        for (var t1 : c1.getTimeClasses()) {
+            for (var t2 : c2.getTimeClasses()) {
+                if (isOverlap(t1.getStartTime(), t1.getEndTime(),
+                        t2.getStartTime(), t2.getEndTime())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }
