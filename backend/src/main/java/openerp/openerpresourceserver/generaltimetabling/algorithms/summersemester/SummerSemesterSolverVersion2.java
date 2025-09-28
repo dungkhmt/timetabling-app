@@ -641,6 +641,14 @@ class ClassBasedRoomAssignmentSolver{
         roomOccupation = new int[baseSolver.I.getRoomCapacity().length];
         Arrays.fill(roomOccupation,0);
 
+        int maxSlots = Constant.daysPerWeek*Constant.slotPerCrew*2 + 2;
+        //roomSlotOccupation = new int[maxRoomIndex + 1][maxSlots];
+        roomSlotOccupation = new int[baseSolver.I.getRoomCapacity().length + 1][maxSlots];
+        for(int r = 0; r < baseSolver.I.getRoomCapacity().length + 1; r++){
+            for(int sl = 0; sl < maxSlots; sl++)
+                roomSlotOccupation[r][sl] = 0;
+        }
+        log.info("ClassBasedRoomAssignmentSolver::Constructor finished allocate roomSlotOccupation");
     }
 
     public boolean checkValidRoom(ClassSegment cs, int r){
@@ -758,12 +766,7 @@ class ClassBasedRoomAssignmentSolver{
             log.info("solve, after sorting, room[" + r + "] " + baseSolver.W.mIndex2Room.get(r).getClassroom() + " cap = " + baseSolver.I.getRoomCapacity()[r]);
             if(r > maxRoomIndex) maxRoomIndex = r;
         }
-        int maxSlots = Constant.daysPerWeek*Constant.slotPerCrew*2 + 2;
-        //roomSlotOccupation = new int[maxRoomIndex + 1][maxSlots];
-        roomSlotOccupation = new int[baseSolver.I.getRoomCapacity().length + 1][maxSlots];
-        for(int r = 0; r < sortedRooms.size(); r++){
-            for(int sl = 0; sl < maxSlots; sl++) roomSlotOccupation[r][sl] = 0;
-        }
+
 
         //Map<Integer, Integer> mClassSegmentId2AssignedRoom = new HashMap<>();
         for(ClassSegment cs: baseSolver.classSegments){

@@ -40,6 +40,13 @@ public class Util {
         }
         return res;
     }
+    public static int findConsecutiveStartSlot(int duration, int slot1, int duration1, int SZ){
+        int slot = slot1 + duration1;
+        if(slot + duration - 1 <= SZ) return slot;
+        slot = slot1 - duration;
+        if(slot >= 1) return slot;
+        return -1;// not found
+    }
     public static boolean overLap(int startSlot1, int duration1, int startSlot2, int duration2){
         if(startSlot1 + duration1 <= startSlot2 || startSlot2 + duration2 <= startSlot1) return false;
         return true;

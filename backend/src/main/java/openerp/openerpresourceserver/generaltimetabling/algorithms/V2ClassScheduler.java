@@ -521,12 +521,12 @@ public class V2ClassScheduler {
             if(mClassId2PrioritizedClassRooms.get(classId)==null)
                 mClassId2PrioritizedClassRooms.put(classId, new ArrayList<>());
             Long groupId = cg.getGroupId();
-            Group g = mId2Group.get(groupId);
+            Group g = mId2Group.get(groupId);            
             if(g.getPriorityBuilding()!=null){
                 String buildingId = g.getPriorityBuilding();
                 if(mBuilding2ClassRooms.get(buildingId)!=null) {
                     for (Classroom r : mBuilding2ClassRooms.get(buildingId)) {
-                        if (r.getQuantityMax() >= gc.getQuantityMax())
+                        if (gc != null && gc.getQuantityMax() != null && r.getQuantityMax() != null && r.getQuantityMax() >= gc.getQuantityMax())
                             mClassId2PrioritizedClassRooms.get(classId).add(r);
                     }
                 }
@@ -1084,50 +1084,54 @@ public class V2ClassScheduler {
                 ClassSegment cs = data.getClassSegments().get(i);
                 //int day = solution[i] / (Constant.slotPerCrew*2);//12;
                 //int t1 = solution[i] - day * Constant.slotPerCrew*2;//12;
-                if(solution.get(cs.getId())==null){
+
+
+                if(cs != null){
+                    if(solution.get(cs.getId())==null){
                     log.info("autoScheduleTimeSlotRoomNew, CANNOT find time-slot for class " + cs.getId() + "???");
                     continue;
-                }
+                    }
 
-                //int day = solution.get(cs.getId()) / (Constant.slotPerCrew*2);//12;
-                //int t1 = solution.get(cs.getId()) - day * Constant.slotPerCrew*2;//12;
-                //int K = t1 / Constant.slotPerCrew;//6; // kip
-                //int tietBD = t1 - Constant.slotPerCrew * K;
-                //if(tietBD == 0) tietBD = Constant.slotPerCrew;
-                DaySessionSlot dss = new DaySessionSlot(solution.get(cs.getId()));
-                int day = dss.day;
-                int K = dss.session;
-                int tietBD = dss.slot;
-                //log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", kip = " + K + ", tietDB = " + tietBD);
+                    //int day = solution.get(cs.getId()) / (Constant.slotPerCrew*2);//12;
+                    //int t1 = solution.get(cs.getId()) - day * Constant.slotPerCrew*2;//12;
+                    //int K = t1 / Constant.slotPerCrew;//6; // kip
+                    //int tietBD = t1 - Constant.slotPerCrew * K;
+                    //if(tietBD == 0) tietBD = Constant.slotPerCrew;
+                    DaySessionSlot dss = new DaySessionSlot(solution.get(cs.getId()));
+                    int day = dss.day;
+                    int K = dss.session;
+                    int tietBD = dss.slot;
+                    //log.info("autoScheduleTimeSlotRoom, slot solution[" + i + "] = " + solution.get(cs.getId()) + ", day = " + day + ", kip = " + K + ", tietDB = " + tietBD);
 
 
-                //GeneralClass gClass = classes.get(scheduleMap.get(i));
+                    //GeneralClass gClass = classes.get(scheduleMap.get(i));
 
-                ModelResponseTimeTablingClass gClass = D.getMClassSegment2Class().get(i);
-                int duration = data.getClassSegments().get(i).getDuration();
-                //RoomReservation newRoomReservation = new RoomReservation(gClass.getCrew(), tietBD, tietBD + duration - 1, day + 2, null);
-                TimeTablingClassSegment classSegment = D.getMClassSegment2RoomReservation().get(i);
-                classSegment.setStartTime(tietBD);
-                classSegment.setEndTime(tietBD + duration -1);
-                //roomReservation.setWeekday(day + 2);
-                classSegment.setWeekday(day);
-                if(K == 0) classSegment.setCrew("S"); else classSegment.setCrew("C");
-                //newRoomReservation.setDuration(data.getNbSlots()[i]);
-                //newRoomReservation.setDuration(duration);
-                //newRoomReservation.setGeneralClass(gClass);
-                //gClass.getTimeSlots().add(newRoomReservation);
+                    ModelResponseTimeTablingClass gClass = D.getMClassSegment2Class().get(i);
+                    int duration = data.getClassSegments().get(i).getDuration();
+                    //RoomReservation newRoomReservation = new RoomReservation(gClass.getCrew(), tietBD, tietBD + duration - 1, day + 2, null);
+                    TimeTablingClassSegment classSegment = D.getMClassSegment2RoomReservation().get(i);
+                    classSegment.setStartTime(tietBD);
+                    classSegment.setEndTime(tietBD + duration -1);
+                    //roomReservation.setWeekday(day + 2);
+                    classSegment.setWeekday(day);
+                    if(K == 0) classSegment.setCrew("S"); else classSegment.setCrew("C");
+                    //newRoomReservation.setDuration(data.getNbSlots()[i]);
+                    //newRoomReservation.setDuration(duration);
+                    //newRoomReservation.setGeneralClass(gClass);
+                    //gClass.getTimeSlots().add(newRoomReservation);
 
-                if(solver.getMapSolutionRoom().get(cs.getId())!=null) {
-                    int idxRoom = solver.getMapSolutionRoom().get(cs.getId());
-                    if (idxRoom > -1) {
-                        //newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
-                        classSegment.setRoom(rooms.get(idxRoom).getClassroom());
+                    if(solver.getMapSolutionRoom().get(cs.getId())!=null) {
+                        int idxRoom = solver.getMapSolutionRoom().get(cs.getId());
+                        if (idxRoom > -1) {
+                            //newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
+                            classSegment.setRoom(rooms.get(idxRoom).getClassroom());
+                        }else{
+                            log.info("autoScheduleTimeSlotRoomNew -> do not find room for class segment " + cs.str());
+
+                        }
                     }else{
                         log.info("autoScheduleTimeSlotRoomNew -> do not find room for class segment " + cs.str());
-
                     }
-                }else{
-                    log.info("autoScheduleTimeSlotRoomNew -> do not find room for class segment " + cs.str());
                 }
                 //log.info("class[" + i + "] is assigned to slot " + solution.get(cs.getId()) + "(" + day + "," + K + "," + tietBD + "), room = " + idxRoom + " - " + classSegment.getRoom());
             }

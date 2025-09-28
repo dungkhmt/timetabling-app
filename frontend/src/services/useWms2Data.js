@@ -676,6 +676,17 @@ const autoAssignShipment = async (orderId) => {
   }
 };
 
+const getWeeklyLowStockForecast = async () => {
+  try {
+    const response = await wms2Service.getWeeklyLowStockForecast();
+    return response.data;
+  } catch (error) {
+    console.error("Error in getWeeklyLowStockForecast:", error);
+    toast.error("Không thể tải dự báo theo tuần");
+    throw error;
+  }
+};
+
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -736,6 +747,7 @@ const autoAssignShipment = async (orderId) => {
     getMonthlyFacilityReport,
     getDeliveryDashboard,
     getMoreInventoryItemsForOutbound,
-    autoAssignShipment
+    autoAssignShipment,
+    getWeeklyLowStockForecast,
   };
 };

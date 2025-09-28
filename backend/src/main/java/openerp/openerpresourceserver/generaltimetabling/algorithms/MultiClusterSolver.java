@@ -85,7 +85,7 @@ public class MultiClusterSolver implements Solver {
                     C,
                     I.getParams()
             );
-            MapDataScheduleTimeSlotRoomWrapper W = new MapDataScheduleTimeSlotRoomWrapper(IC,D.mClassSegment2Class,D.mClassSegment2RoomReservation,D.mIndex2Room,null);
+            MapDataScheduleTimeSlotRoomWrapper W = new MapDataScheduleTimeSlotRoomWrapper(IC,D.mClassSegment2Class,D.mClassSegment2RoomReservation,D.mIndex2Room,null);            
             if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_MAX_REGISTRATION_OPPORTUNITY_GREEDY_1))
                 oneClusterSolver = new CourseBasedConnectedClusterGreedySolver(IC);
             else if(oneClusterAlgorithm.equals(Constants.MANY_CLASS_PER_COURSE_FULL_SLOTS_SEPARATE_DAYS))
@@ -94,8 +94,17 @@ public class MultiClusterSolver implements Solver {
                 oneClusterSolver = new SummerSemesterSolver(W);
             }else if(oneClusterAlgorithm.equals(Constants.ALGO_BACKTRACKING_ONE_CLUSTER))
                 oneClusterSolver = new BacktrackingSolverOneCluster(W);
+            else{
+                log.warn("Unrecognized oneClusterAlgorithm: '{}', using default CourseBasedConnectedClusterGreedySolver", oneClusterAlgorithm);
+                oneClusterSolver = new CourseBasedConnectedClusterGreedySolver(IC);
+            }
 
-            oneClusterSolver.setTimeLimit(timeLimit);
+            if(oneClusterSolver != null) {
+                oneClusterSolver.setTimeLimit(timeLimit);
+            } else {
+                log.error("oneClusterSolver is null, cannot set time limit");
+                continue; 
+            }
             oneClusterSolver.solve();
             if(oneClusterSolver.hasSolution()){
                 foundSolution = true;

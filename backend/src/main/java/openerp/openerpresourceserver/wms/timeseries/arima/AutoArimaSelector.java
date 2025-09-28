@@ -50,9 +50,9 @@ public final class AutoArimaSelector {
         
         // Setup parameter space bounds
         Map<String, int[]> paramBounds = new HashMap<>();
-        paramBounds.put("p", new int[]{0, maxP});
+        paramBounds.put("p", new int[]{1, maxP});
         paramBounds.put("d", new int[]{0, maxD});
-        paramBounds.put("q", new int[]{0, maxQ});
+        paramBounds.put("q", new int[]{1, maxQ});
         paramBounds.put("P", new int[]{0, maxSP});
         paramBounds.put("D", new int[]{0, maxSD});
         paramBounds.put("Q", new int[]{0, maxSQ});

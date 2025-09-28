@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 
 @Data
@@ -45,6 +46,8 @@ public class ModelResponseTimeTablingClass {
     private String foreignLecturer;
 
     public String str(){
-        return "[id = " + id + ", course " + moduleCode + ", code " + classCode + ", type " + getClassType() + "]";
+        String CS ="";
+        for(TimeTablingClassSegment cs: timeSlots) CS += cs.getDuration() + ",";
+        return "[id = " + id + ", course " + moduleCode + ", code " + classCode + ", type " + getClassType() + ", class-segments = " + CS + "]";
     }
 }

@@ -26,6 +26,7 @@ import ProductChart from "../InventoryReport/components/ProductChart";
 import InsightsIcon from "@mui/icons-material/Insights";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import DateRangeIcon from "@mui/icons-material/DateRange";
 import { ORDER_TYPE_ID } from "../common/constants/constants";
 
 // TabPanel component để hiển thị nội dung tabs
@@ -53,19 +54,20 @@ const CreatePurchaseOrder = () => {
     const history = useHistory();
     const suggestedItems = location.state?.suggestedItems || [];
     const forecastData = location.state?.forecastData || [];
+    const isFromWeeklyForecast = location.state?.isFromWeeklyForecast || false;
 
     const [activeTab, setActiveTab] = useState(0);
     const [order, setOrder] = useState({
-    id: "", 
-    supplierId: "", 
-    note: "", 
-    orderName: "", 
-    discount: 0, 
-    costs: [],
-    orderDate: null, 
-    deliveryAfterDate: null, 
-    deliveryBeforeDate: null, 
-    orderItems: [], 
+        id: "", 
+        supplierId: "", 
+        note: "", 
+        orderName: "", 
+        discount: 0, 
+        costs: [],
+        orderDate: null, 
+        deliveryAfterDate: null, 
+        deliveryBeforeDate: null, 
+        orderItems: [], 
     });
 
     const [entities, setEntities] = useState({
@@ -79,11 +81,13 @@ const CreatePurchaseOrder = () => {
             setOrder(prev => ({
                 ...prev,
                 orderItems: [...suggestedItems],
-                note: "Đơn hàng tạo từ gợi ý dự báo tồn kho thấp"
+                note: isFromWeeklyForecast ? 
+                    "Đơn hàng tạo từ gợi ý dự báo tồn kho thấp (theo tuần)" :
+                    "Đơn hàng tạo từ gợi ý dự báo tồn kho thấp"
             }));
-            toast.info(`Đã thêm ${suggestedItems.length} sản phẩm từ dự báo tồn kho thấp`);
+            toast.info(`Đã thêm ${suggestedItems.length} sản phẩm từ dự báo tồn kho thấp${isFromWeeklyForecast ? ' (theo tuần)' : ''}`);
         }
-    }, [suggestedItems]);
+    }, [suggestedItems, isFromWeeklyForecast]);
 
     // Calculate subtotal of all items (price * quantity, before any discounts)
     const calculateItemsSubtotal = () => {
@@ -209,7 +213,7 @@ const CreatePurchaseOrder = () => {
         setActiveTab(newValue);
     };
 
-    // Chuẩn bị dữ liệu cho ProductChart (biểu đồ cột)
+    // Chuẩn bị dữ liệu cho ProductChart (biểu đồ cột) - weekly data
     const chartProducts = forecastData.map(item => ({
         productName: item.productName,
         quantity: item.totalPredictedQuantity || item.quantity || 0
@@ -237,24 +241,27 @@ const CreatePurchaseOrder = () => {
                     Tạo đơn hàng mua
                     {suggestedItems.length > 0 && (
                         <Chip 
-                            icon={<InsightsIcon />}
-                            label="Từ dự báo hàng tồn" 
+                            icon={isFromWeeklyForecast ? <DateRangeIcon /> : <InsightsIcon />}
+                            label={isFromWeeklyForecast ? "Từ dự báo tuần" : "Từ dự báo hàng tồn"} 
                             color="secondary" 
                             sx={{ ml: 2 }}
                         />
                     )}
                 </Typography>
 
-                {/* Hiển thị thông tin dự báo với tabs */}
+                {/* Hiển thị thông tin dự báo theo tuần với tabs */}
                 {forecastData.length > 0 && (
                     <Card sx={{ mb: 3, backgroundColor: "#f5f5f5" }}>
                         <CardContent>
                             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                                <InsightsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-                                Thông tin dự báo
+                                <DateRangeIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                                Thông tin dự báo theo tuần
                             </Typography>
                             <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Dự báo tiêu thụ dựa trên dữ liệu lịch sử xuất kho và mô hình ARIMA.
+                                {isFromWeeklyForecast ? 
+                                    "Dự báo tiêu thụ theo tuần dựa trên dữ liệu lịch sử xuất kho và mô hình ARIMA. Dự báo cho 4 tuần tới với độ tin cậy cao hơn." :
+                                    "Dự báo tiêu thụ dựa trên dữ liệu lịch sử xuất kho và mô hình ARIMA."
+                                }
                             </Typography>
 
                             {/* Tabs để chuyển đổi giữa các view */}
@@ -267,7 +274,7 @@ const CreatePurchaseOrder = () => {
                                     />
                                     <Tab 
                                         icon={<ShowChartIcon />} 
-                                        label="Chi tiết dự báo" 
+                                        label="Chi tiết dự báo tuần" 
                                         iconPosition="start"
                                     />
                                 </Tabs>
@@ -287,13 +294,14 @@ const CreatePurchaseOrder = () => {
                                                                 {item.productName}
                                                             </Typography>
                                                             <Typography variant="body2" color="primary">
-                                                                Dự báo: {item.totalPredictedQuantity || item.quantity} {item.unit}
+                                                                Dự báo 4 tuần: {item.totalPredictedQuantity || item.quantity} {item.unit}
                                                             </Typography>
-                                                            <Typography variant="body2">
-                                                                Giá: {item.price?.toLocaleString()} VND
+                                                            <Typography variant="body2" color="secondary">
+                                                                TB/tuần: {item.averageWeeklyQuantity || 0} {item.unit}
                                                             </Typography>
                                                             <Typography variant="caption" color="textSecondary">
-                                                                Tồn kho: {item.currentStock || 0}
+                                                                Tồn kho: {item.currentStock || 0} | 
+                                                                Hết sau: {item.weeksUntilStockout || 0} tuần
                                                             </Typography>
                                                         </CardContent>
                                                     </Card>
@@ -306,15 +314,15 @@ const CreatePurchaseOrder = () => {
                                     <Grid item xs={12}>
                                         <ProductChart 
                                             products={chartProducts}
-                                            title="Dự báo nhu cầu 7 ngày tới"
+                                            title="Dự báo nhu cầu 4 tuần tới"
                                             color="#2196f3"
-                                            emptyMessage="Không có dữ liệu dự báo"
+                                            emptyMessage="Không có dữ liệu dự báo theo tuần"
                                         />
                                     </Grid>
                                 </Grid>
                             </TabPanel>
 
-                            {/* Tab 2: Chi tiết với ProductForecastChart (biểu đồ đường ARIMA) */}
+                            {/* Tab 2: Chi tiết với ProductForecastChart (biểu đồ đường ARIMA theo tuần) */}
                             <TabPanel value={activeTab} index={1}>
                                 <Grid container spacing={3}>
                                     {forecastData.map((item) => (
