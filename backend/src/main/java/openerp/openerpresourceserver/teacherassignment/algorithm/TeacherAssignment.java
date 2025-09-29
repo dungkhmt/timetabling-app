@@ -173,8 +173,13 @@ public class TeacherAssignment {
     /** Kiểm tra 2 lớp có buổi nào trùng nhau không */
     private static boolean hasTimeConflict(OpenedClass c1, OpenedClass c2) {
         if (c1.getTimeClasses() == null || c2.getTimeClasses() == null) return false;
+
         for (var t1 : c1.getTimeClasses()) {
             for (var t2 : c2.getTimeClasses()) {
+                if (t1.getDayOfWeek() != null && t2.getDayOfWeek() != null &&
+                        !t1.getDayOfWeek().equals(t2.getDayOfWeek())) {
+                    continue;
+                }
                 if (isOverlap(t1.getStartTime(), t1.getEndTime(),
                         t2.getStartTime(), t2.getEndTime())) {
                     return true;

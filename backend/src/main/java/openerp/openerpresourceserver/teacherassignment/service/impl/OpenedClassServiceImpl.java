@@ -77,9 +77,15 @@ public class OpenedClassServiceImpl implements OpenedClassService {
     @Override
     public Map<Long, String> assignmentTeacher(String semester, String schoolId) {
         List<OpenedClass> openedClasses = openedClassRepo.findAllBySemesterAndSchoolIdWithDto(semester,schoolId);
+
+        // Lấy một nửa đầu danh sách
+        int halfSize = openedClasses.size() / 5;
+        openedClasses = openedClasses.subList(0, halfSize);
+
         List<Teacher> teachers = teacherRepo.getAllTeacher();
         Map<Long, String> result = TeacherAssignment.assignment(openedClasses, teachers);
-        return result != null ? result : new HashMap<>();    }
+        return result != null ? result : new HashMap<>();
+    }
 
 
 }
