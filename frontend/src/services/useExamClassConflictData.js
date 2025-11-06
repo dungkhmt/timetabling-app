@@ -17,6 +17,7 @@ export const useExamClassConflictData = (examPlanId = null) => {
 
   const createMutation = useMutation(examClassConflictService.createExamConflict, {
     onSuccess: () => {
+      refetch()
       queryClient.invalidateQueries('examClassConflicts');
       toast.success('Tạo xung đột mới thành công!');
     },
@@ -27,6 +28,7 @@ export const useExamClassConflictData = (examPlanId = null) => {
 
   const deleteMutation = useMutation(examClassConflictService.deleteExamConflict, {
     onSuccess: () => {
+      refetch()
       queryClient.invalidateQueries('examClassConflicts');
       toast.success('Xóa xung đột thành công!');
     },

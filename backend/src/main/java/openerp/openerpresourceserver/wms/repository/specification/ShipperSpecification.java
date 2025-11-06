@@ -27,7 +27,9 @@ public class ShipperSpecification implements Specification<Shipper> {
         String deliveryStatusId = filter.getDeliveryStatusId();
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("userLoginId"), "%" + keyword + "%");
+            Predicate nameLike = criteriaBuilder.like(root.get("name"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, nameLike));
         }
 
         if (statusId != null && !statusId.isEmpty()) {

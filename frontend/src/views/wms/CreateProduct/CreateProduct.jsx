@@ -23,8 +23,9 @@ const CreateProduct = () => {
     wholeSalePrice: '',
     retailPrice: '',
     productCategoryId: '',
-    statusId: 'ACTIVE', // Trạng thái mặc định
-    description: '' // Thêm trường mô tả
+    statusId: 'ACTIVE',
+    description: '',
+    vatRate: 0
   });
   
   const [entities, setEntities] = useState({

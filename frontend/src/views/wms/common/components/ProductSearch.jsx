@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Box, Autocomplete, TextField, CircularProgress } from '@mui/material';
-import { useOrderForm } from "../context/OrderFormContext";
-import { useEntityData } from "../hooks/useEntityData";
-import { debounce } from 'lodash';
-import { toast } from "react-toastify";
-import { useWms2Data } from 'services/useWms2Data';
-import { ORDER_TYPE_ID } from '../constants/constants';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Autocomplete, Box, TextField} from '@mui/material';
+import {useOrderForm} from "../context/OrderFormContext";
+import {useEntityData} from "../hooks/useEntityData";
+import {debounce} from 'lodash';
+import {toast} from "react-toastify";
+import {useWms2Data} from 'services/useWms2Data';
+import {ORDER_TYPE_ID} from '../constants/constants';
 
 const PAGE_SIZE = 20;
 
@@ -227,7 +227,7 @@ const ProductSearch = ({ orderTypeId = ORDER_TYPE_ID.SALES_ORDER }) => {
         discount: 0,
         // Add tax field for purchase orders (as percentage)
         ...(isPurchaseOrder && {
-          tax: product.vatRate // Default VAT rate as percentage, user can modify
+          tax: product.vatRate ?? 0 // Default VAT rate as percentage, user can modify
         }),
         note: ""
       };
@@ -308,10 +308,10 @@ const ProductSearch = ({ orderTypeId = ORDER_TYPE_ID.SALES_ORDER }) => {
           onScroll: handleScrollForResults,
           style: { maxHeight: '200px', overflow: 'auto' }
         }}
-        noOptionsText={productSearchText.length < 2 
-          ? "Nhập ít nhất 2 ký tự để tìm kiếm" 
-          : "Không tìm thấy sản phẩm"
-        }
+        // noOptionsText={productSearchText.length < 2
+        //   ? "Nhập ít nhất 2 ký tự để tìm kiếm"
+        //   : "Không tìm thấy sản phẩm"
+        // }
         renderInput={(params) => (
           <TextField 
             {...params} 

@@ -8,6 +8,7 @@ import ClassOpenPlanTable from "./components/ClassOpenPlanTable";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import GeneralGroupAutoComplete from "../common-components/GeneralGroupAutoComplete";
 import AddNewClassDialog from "./components/AddNewClassDialog";
+import ListBatch from "../batch/listbatch";
 
 const GeneralPlanClassOpenScreen = () => {
   const [selectedSemester, setSelectedSemester] = useState(null);
@@ -287,6 +288,9 @@ const GeneralPlanClassOpenScreen = () => {
           toast.success("Tạo lớp mới thành công!");
         }}
       />
+
+      <ListBatch semester={selectedSemester}/>
+
     </div>
   );
 };

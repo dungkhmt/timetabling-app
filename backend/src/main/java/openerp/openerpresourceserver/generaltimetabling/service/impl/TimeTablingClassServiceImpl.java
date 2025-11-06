@@ -4,7 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.ClassSegmentPartitionConfigForSummerSemester;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
+import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentClassSolver;
 import openerp.openerpresourceserver.generaltimetabling.exception.ConflictScheduleException;
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
@@ -15,14 +17,15 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ModelI
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RoomOccupationWithModuleCode;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.V2UpdateClassScheduleRequest;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +70,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Autowired
     private TimeTablingVersionRepo timeTablingVersionRepo;
+
+    @Autowired
+    private TimeTablingBatchRepo timeTablingBatchRepo;
 
     @Transactional
     private void createClassSegment(TimeTablingClass gc, List<Integer> seqSlots, Long versionId) {
@@ -347,12 +353,14 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public List<TimeTablingClassSegment> createClassSegmentForSummerSemester(CreateClassSegmentRequest I) {
+        TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
+        if(version == null) return new ArrayList<>(); // do nothing
+
         ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         //List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
-        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
-
-
+        //List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllByBatchId(version.getBatchId());
 
         log.info("createClassSegmentForSummerSemester, semester = " + I.getSemester() + " number classes = " + cls.size()
                 + " number courses = " + courses.size());
@@ -554,6 +562,223 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                         .groupName(c.getGroupName())
                         .listGroupName(mClassId2GroupNames.get(c.getId()))
                         .timeSlots(mClassId2ClassSegments.get(c.getId()))
+                        .learningWeeks(c.getLearningWeeks())
+                        .foreignLecturer(c.getForeignLecturer())
+                        .build()
+                ).toList();
+    }
+
+    @Override
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId) {
+        List<ModelResponseClassSegment> res = new ArrayList<>();
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByVersionId(versionId);
+        Set<Long> classIds = new HashSet<>();
+        for(TimeTablingClassSegment cs: classSegments) classIds.add(cs.getClassId());
+        List<Long> listClassIds = new ArrayList<>();
+        for(Long id: classIds) listClassIds.add(id);
+        List<TimeTablingClass> classes = timeTablingClassRepo.findAllByIdIn(listClassIds);
+        List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(listClassIds);
+        Set<Long> groupIds = new HashSet<>();
+        for(ClassGroup cg: classGroups) groupIds.add(cg.getGroupId());
+        List<Long> listGroupIds = new ArrayList<>();
+        for(Long gId: groupIds) listGroupIds.add(gId);
+        List<Group> groups = groupRepo.findAllByIdIn(listGroupIds);
+        Map<Long, Group> mId2Group = new HashMap<>();
+        for(Group g: groups) mId2Group.put(g.getId(),g);
+        Map<Long, List<Group>> mClassId2Groups = new HashMap<>();
+        for(ClassGroup cg: classGroups){
+            Long classId = cg.getClassId();
+            Long groupId = cg.getGroupId(); Group g = mId2Group.get(groupId);
+            if(mClassId2Groups.get(classId)==null) mClassId2Groups.put(classId, new ArrayList<>());
+            mClassId2Groups.get(classId).add(g);
+        }
+        Map<Long, TimeTablingClass> mId2Class = new HashMap<>();
+        for(TimeTablingClass cls: classes) mId2Class.put(cls.getId(),cls);
+        Set<Long> refClassIds = new HashSet<>();
+        for(TimeTablingClass cls: classes) refClassIds.add(cls.getRefClassId());
+        List<PlanGeneralClass> planClasses = planGeneralClassRepository.findAllByIdIn(refClassIds);
+        Map<Long, PlanGeneralClass> mId2PlanClass = new HashMap<>();
+        for(PlanGeneralClass pcls: planClasses) mId2PlanClass.put(pcls.getId(),pcls);
+
+        for(TimeTablingClassSegment cs: classSegments){
+            ModelResponseClassSegment mrcs = new ModelResponseClassSegment();
+            TimeTablingClass cls = mId2Class.get(cs.getClassId());
+            PlanGeneralClass pcls = mId2PlanClass.get(cls.getRefClassId());
+            mrcs.setId(cs.getId());
+            mrcs.setClassId(cs.getClassId());
+            mrcs.setClassCode(cls.getClassCode());
+            mrcs.setCourseCode(cls.getModuleCode());
+            mrcs.setCourseName("");
+            mrcs.setClassType(cls.getClassType());
+            mrcs.setMaxNbStudents(cls.getQuantityMax());
+            String groupNames = "";
+            if(mClassId2Groups.get(cs.getClassId())!=null){
+                for(int i = 0; i < mClassId2Groups.get(cs.getClassId()).size(); i++) {
+                    Group g = mClassId2Groups.get(cs.getClassId()).get(i);
+                    groupNames = groupNames + g.getGroupName();
+                    if(i < mClassId2Groups.get(cs.getClassId()).size()-1) groupNames = groupNames + ",";
+                }
+            }
+            mrcs.setGroupNames(groupNames);
+            mrcs.setDuration(cs.getDuration());
+            mrcs.setLearningWeeks(cls.getLearningWeeks());
+            if(pcls != null) mrcs.setPromotion(pcls.getPromotion());
+            if(pcls != null) mrcs.setVolumn(pcls.getMass());
+            mrcs.setDay(cs.getWeekday());
+            mrcs.setSession(cs.getCrew());
+            mrcs.setStartTime(cs.getStartTime());
+            mrcs.setEndTime(cs.getEndTime());
+            mrcs.setRoomCode(cs.getRoom());
+            mrcs.setGroups(mClassId2Groups.get(cs.getClassId()));
+
+            res.add(mrcs);
+        }
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        List<ModelResponseClassSegment> L = getClasssegmentsOfVersion(userId, versionId);
+        List<ModelResponseClassSegment> res = new ArrayList<>();
+        for(ModelResponseClassSegment cs: L){
+            boolean ok = true;
+            if(searchClassCode != null && !searchClassCode.equals("")&& !searchClassCode.equals("null")){
+                if(!cs.getClassCode().contains(searchClassCode)) ok = false;
+            }
+            if(searchCourseCode != null && !searchCourseCode.equals("")&& !searchCourseCode.equals("null")){
+                if(!cs.getCourseCode().contains(searchCourseCode)) ok = false;
+                log.info("getClasssegmentsOfVersionFiltered, consider courseCode " + cs.getCourseCode() + " ok = " + ok);
+            }
+            if(searchCourseName != null && !searchCourseName.equals("")&& !searchCourseName.equals("null")){
+                if(!cs.getCourseName().contains(searchCourseName)) ok = false;
+            }
+            if(searchGroupName != null && !searchGroupName.equals("")&& !searchGroupName.equals("null")){
+                boolean okok = false;
+                if(cs.getGroups() != null){
+                    for(Group g: cs.getGroups()){
+                        if(g.getGroupName().contains(searchGroupName)){
+                            okok = true; break;
+                        }
+                    }
+                }
+                if(!okok) ok = false;
+            }
+            if(ok) res.add(cs);
+        }
+        return res;
+    }
+    @Override
+    public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
+        if(ver == null) return null;
+
+        List<ModelResponseClassSegment> L = getClasssegmentsOfVersionFiltered(userId, versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName);
+        List<ModelResponseClassWithClassSegmentList> res = new ArrayList<>();
+        Map<Long, ModelResponseClassWithClassSegmentList> mId2Cls = new HashMap<>();
+        for(ModelResponseClassSegment cs: L){
+            ModelResponseClassWithClassSegmentList cls = mId2Cls.get(cs.getClassId());
+            if(cls == null){
+                cls = new ModelResponseClassWithClassSegmentList();
+                cls.setClassCode(cs.getClassCode());
+                cls.setClassId(cs.getClassId());
+                cls.setCourseCode(cs.getCourseCode());
+                cls.setCourseName(cs.getCourseName());
+                cls.setClassSegments(new ArrayList<>());
+                cls.setGroupNames(cs.getGroupNames());
+                cls.setMaxNbStudents(cs.getMaxNbStudents());
+                mId2Cls.put(cs.getClassId(),cls);
+                res.add(cls);
+            }else{
+                //ModelResponseClassWithClassSegmentList cls = mId2Cls.get(cs.getClassId());
+            }
+            cls.getClassSegments().add(cs);
+        }
+        for(ModelResponseClassWithClassSegmentList cls: res){
+            cls.getClassSegments().sort(new Comparator<ModelResponseClassSegment>() {
+                @Override
+                public int compare(ModelResponseClassSegment o1, ModelResponseClassSegment o2) {
+                    if(o1.getDay()==null) return -1;
+                    if(o2.getDay()==null) return 1;
+                    if(o1.getDay() > o2.getDay()) return 1;
+                    else if(o1.getDay() < o2.getDay()) return -1;
+                    if(o1.getSession()==null) return -1;
+                    if(o2.getSession()==null) return 1;
+                    if(o1.getSession().equals("S") && o2.getSession().equals("C")) return -1;
+                    else if(o1.getSession().equals("C") && o2.getSession().equals("S")) return 1;
+                    if(o1.getStartTime()==null) return -1;
+                    if(o2.getStartTime()==null) return 1;
+                    if(o1.getStartTime() > o2.getStartTime()) return 1;
+                    else if(o1.getStartTime() < o2.getStartTime()) return -1;
+                    return 0;
+                }
+            });
+
+            // add empty slots to class-segments (used for rendering on grid)
+            List<ModelResponseClassSegment> tmp = new ArrayList<>();
+            List<Integer> slots = new ArrayList<>();
+            for(ModelResponseClassSegment cs: cls.getClassSegments()){
+                if(cs.getDay()==null || cs.getRoomCode()==null||cs.getSession()==null) continue;
+                int session = 0; if(cs.getSession().equals("C")) session = 1;
+                DaySessionSlot dss = new DaySessionSlot(cs.getDay(),session,cs.getStartTime());
+                slots.add(dss.hash(ver.getNumberSlotsPerSession()));
+            }
+            int end = 7*ver.getNumberSlotsPerSession()*2;
+            if(slots.size() > 0)  end = slots.get(0) - 1;
+                for(int sl = 1; sl <= end; sl++){
+                    DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
+                    ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
+                            (dss.session == 0 ? "S" : "C"), dss.slot);
+                    tmp.add(cs);
+                }
+
+
+            for(int i = 0; i  < slots.size(); i++){
+                tmp.add(cls.getClassSegments().get(i));
+                int st = slots.get(i) + 1;
+                int fn = 7*ver.getNumberSlotsPerSession()*2;
+                if(i < slots.size()-1) fn = slots.get(i+1)-1;
+                for(int sl = st; sl <= fn; sl++){
+                    DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
+                    ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
+                            (dss.session == 0 ? "S" : "C"), dss.slot);
+                    tmp.add(cs);
+                }
+            }
+            cls.setClassSegments(tmp);
+        }
+        log.info("getClassesWithClasssegmentsOfVersionFiltered, L = " + L.size() + " res = "  + res.size());
+
+
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId) {
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllByBatchId(batchId);
+
+
+        return CLS.stream() // use sorted list
+                .map(c -> ModelResponseTimeTablingClass.builder()
+                        .id(c.getId())
+                        .quantity(c.getQuantity())
+                        .quantityMax(c.getQuantityMax())
+                        .moduleCode(c.getModuleCode())
+                        .moduleName(c.getModuleName())
+                        .classType(c.getClassType())
+                        .classCode(c.getClassCode())
+                        .semester(c.getSemester())
+                        .studyClass(c.getStudyClass())
+                        .mass(c.getMass())
+                        .state(c.getState())
+                        .crew(c.getCrew())
+                        .openBatch(c.getOpenBatch())
+                        .course(c.getCourse())
+                        .refClassId(c.getRefClassId())
+                        .parentClassId(c.getParentClassId())
+                        .duration(c.getDuration())
+                        .groupName(c.getGroupName())
+                        .listGroupName(null)
+                        .timeSlots(null)
                         .learningWeeks(c.getLearningWeeks())
                         .foreignLecturer(c.getForeignLecturer())
                         .build()
@@ -966,7 +1191,10 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public int computeClassCluster(ModelInputComputeClassCluster I) {
-        List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        //List<TimeTablingClass> cls = timeTablingClassRepo.findAllBySemester(I.getSemester());
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(I.getBatchId()).orElse(null);
+        if(batch==null) return 0;
+        List<TimeTablingClass> cls = timeTablingClassRepo.findAllByBatchId(I.getBatchId());
         List<Long> classIds = new ArrayList<>();
         for(TimeTablingClass c: cls) classIds.add(c.getId());
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(classIds);
@@ -983,7 +1211,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         List<List<TimeTablingClass>> clusters = solver.computeConnectedComponents(cls,classGroups);
         log.info("computeClassCluster, number of clusters = " + clusters.size());
 
-        List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        //List<Cluster> oldClusters = clusterRepo.findAllBySemester(I.getSemester());
+        List<Cluster> oldClusters = clusterRepo.findAllByBatchId(I.getBatchId());
+
         log.info("computeClassCluster, oldClusters.sz = " + oldClusters.size());
         for(Cluster c: oldClusters){
             List<ClusterClass> clusterClasses = clusterClassRepo.findAllByClusterId(c.getId());
@@ -1016,7 +1246,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             Cluster newCluster = new Cluster();
             newCluster.setId(nextId);
             newCluster.setName(clusterName);
-            newCluster.setSemester(I.getSemester());
+            newCluster.setSemester(batch.getSemester());
+            newCluster.setBatchId(I.getBatchId());
             newCluster = clusterRepo.save(newCluster);
             log.info("computeClassCluster, saved cluster " + newCluster.getId() + " name = " + newCluster.getName());
 
@@ -1152,6 +1383,87 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             ttcs = timeTablingClassSegmentRepo.save(ttcs);
         }
         return true;
+    }
+
+    @Override
+    public ModelResponseManualAssignTimeTable manualAssignTimetable2Classsegment(String userId, ModelInputManualAssignTimeTable I) {
+        log.info("manualAssignTimetable2Classsegment, Input = " + I.getClassSegmentId() + " version " + I.getVersionId());
+        ModelResponseManualAssignTimeTable res = new ModelResponseManualAssignTimeTable();
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
+        if(ver == null){
+            log.info("manualAssignTimetable2Classsegment, cannot find version, return");
+            res.setStatus(ModelResponseManualAssignTimeTable.STATUS_NOT_FOUND); return res;
+        }
+        TimeTablingClassSegment classSegment = timeTablingClassSegmentRepo.findById(I.getClassSegmentId()).orElse(null);
+        if(classSegment == null){
+            log.info("manualAssignTimetable2Classsegment, cannot find classSegment, return");
+            res.setStatus(ModelResponseManualAssignTimeTable.STATUS_NOT_FOUND); return res;
+        }
+        if(classSegment.getDuration() + I.getStartTime() - 1  > ver.getNumberSlotsPerSession()){
+            res.setStatus(ModelResponseManualAssignTimeTable.STATUS_OUT_OF_RANGE);
+            int endTime = I.getStartTime() + classSegment.getDuration() - 1;
+            res.setMessage("startTime = " + I.getStartTime() + " duration = " + classSegment.getDuration() +
+                    " -> endTime = " + endTime + " : out-of-range slot (" + ver.getNumberSlotsPerSession() + ")");
+            return res;
+        }
+        List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(ver.getSemester());
+        if(batches == null){
+            log.info("manualAssignTimetable2Classsegment, batches NULL???");
+            res.setStatus(ModelResponseManualAssignTimeTable.STATUS_NOT_FOUND);
+            return res;
+        }
+        log.info("manualAssignTimetable2Classsegment, ver.semester = " + ver.getSemester() + " -> batches.sz = " + batches.size());
+        List<Long> batchIds = batches.stream().map(b -> b.getId()).toList();
+        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo
+                .findAllByStatusAndBatchIdIn(TimeTablingTimeTableVersion.STATUS_PUBLISHED,batchIds);
+        List<Long> versionIds = new ArrayList<>();
+        versionIds.add(classSegment.getVersionId());
+        if(versions != null){
+            List<Long> tmp = versions.stream().map(v -> v.getId()).toList();
+            for(Long id: tmp) versionIds.add(id);
+        }
+
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByVersionIdIn(versionIds);
+        log.info("manualAssignTimetable2Classsegment classSegments to CHECK = " + classSegments.size() + " versionIds = " + versionIds.size());
+        List<TimeTablingClass> classes = timeTablingClassRepo.findAllByBatchIdIn(batchIds);
+        log.info("manualAssignTimetable2Classsegment, classes.sz = " + classes.size() + " in batchIds,sz " + batchIds.size());
+        Map<Long, TimeTablingClass> mId2Class = new HashMap<>();
+        for(TimeTablingClass cls: classes) mId2Class.put(cls.getId(),cls);
+        for(TimeTablingClassSegment cs: classSegments){
+            log.info("manualAssignTimetable2Classsegment, check CONFLICT with class segment " + cs.getId() + " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() + " end = " + cs.getEndTime());
+            if(cs.getRoom()==null) continue;
+            if(!cs.getCrew().equals(I.getSession())) continue;
+            if(cs.getWeekday() != I.getDay()) continue;
+            boolean overLap = Util.overLap(I.getStartTime(),I.getDuration(),cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1);
+            log.info("manualAssignTimetable2Classsegment, check CONFLICT with class segment " + cs.getId() +
+                    " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() +
+                    " end = " + cs.getEndTime() + " overLap = " + overLap);
+
+            if(overLap){
+                if(cs.getRoom().equals(I.getRoomCode())){
+                    String classCode = "NULL";
+                    if(mId2Class.get(cs.getClassId())!=null) classCode = mId2Class.get(cs.getClassId()).getClassCode();
+
+
+                    String msg = "Conflict room " + cs.getRoom() + " scheduled for class " + classCode + " classSegmentId = " + cs.getId() + " in version " + cs.getVersionId();
+                    log.info("manualAssignTimetable2Classsegment, DETECT Conflict room, msg = " + msg);
+                    //throw new ConflictScheduleException(msg);
+                    res.setStatus(ModelResponseManualAssignTimeTable.STATUS_CONFLICT);
+                    res.setMessage(msg);
+                    return res;
+                }
+            }
+        }
+        classSegment.setRoom(I.getRoomCode());
+        classSegment.setStartTime(I.getStartTime());
+        classSegment.setEndTime(I.getStartTime() + I.getDuration() - 1);
+        classSegment.setWeekday(I.getDay());
+        classSegment= timeTablingClassSegmentRepo.save(classSegment);
+        log.info("manualAssignTimetable2Classsegment, SAVE successfully timetable (" + classSegment.getWeekday() + "," + classSegment.getStartTime() + "," + classSegment.getRoom() + ")");
+
+        res.setStatus(ModelResponseManualAssignTimeTable.STATUS_SUCCESS);
+        res.setMessage("Assign Timetable successfully");
+        return res;
     }
 
     @Override

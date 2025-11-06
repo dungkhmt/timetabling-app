@@ -189,7 +189,7 @@ public class ExamTimetableController {
     public ResponseEntity<String[]> getAssignmentAlgorithm() {
         try {
             String[] assignments = {
-                "Greedy Algorithm (Khoa)",
+                "Greedy + Simulated Annealing Algorithm (Khoa)",
                 "Genetic Algorithm",
             };
             return ResponseEntity.ok(assignments);

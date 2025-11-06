@@ -31,8 +31,9 @@ public class ShipmentSpecification implements Specification<Shipment> {
         LocalDate expectedDeliveryDate = filter.getExpectedDeliveryDate();
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
-            predicates.add(criteriaBuilder.like(root.get("name"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("id"), keyword + "%");
+            Predicate nameLike = criteriaBuilder.like(root.get("shipmentName"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, nameLike));
         }
 
         if (statusId != null && !statusId.isEmpty()) {

@@ -1,6 +1,9 @@
 package openerp.openerpresourceserver.generaltimetabling.repo;
 
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import org.apache.poi.ss.formula.functions.T;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,9 +19,19 @@ public interface ClassroomRepo extends JpaRepository<Classroom, String> {
     @Query(value = "SELECT DISTINCT name FROM public.timetabling_building", nativeQuery = true)
     List<String> getBuilding();
 
-    @Query(value = "SELECT classroom_id, classroom, description, quantity_max, building_id FROM public.timetabling_classroom",
+    @Query(value = "SELECT classroom_id, classroom, description, quantity_max, building_id, status FROM public.timetabling_classroom",
             nativeQuery = true)
     List<Classroom> findAllWithBuilding();
+
+//    @Query(value = "SELECT DISTINCT classroom_id, classroom, description, quantity_max, building_id, status FROM public.timetabling_classroom",
+//            nativeQuery = true)
+//    List<Classroom> getAll();
+
+    List<Classroom> findByDescription(String description);
+
+
+
+
 
     List<Classroom> getClassroomByClassroom(String classroom);
 

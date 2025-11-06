@@ -28,7 +28,7 @@ const GeneralInfoPanel = ({ deliveryPlan }) => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <InfoItem label="ID kế hoạch" value={deliveryPlan.id} />
-            <InfoItem label="Tên kế hoạch" value={deliveryPlan.delveryPlanName} />
+            <InfoItem label="Tên kế hoạch" value={deliveryPlan.deliveryPlanName} />
             <InfoItem label="Người tạo" value={deliveryPlan.createdByUserName} />
             <InfoItem label="Cơ sở" value={deliveryPlan.facilityName} />
           </Grid>

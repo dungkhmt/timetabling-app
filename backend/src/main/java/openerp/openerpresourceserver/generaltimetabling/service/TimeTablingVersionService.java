@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface TimeTablingVersionService {
 
-    TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numberSlotsPerSession);
+    TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numberSlotsPerSession, Long batchId);
     
     TimeTablingTimeTableVersion updateVersion(Long id, String name, String status, Integer numberSlotsPerSession);
 
@@ -14,7 +14,8 @@ public interface TimeTablingVersionService {
     List<TimeTablingTimeTableVersion> getAllVersionsBySemesterAndName(String semester, String name);
     
     List<TimeTablingTimeTableVersion> getAllVersionsByName(String name);
-    
+    List<TimeTablingTimeTableVersion> getAllVersionsByBatchId(Long batchId);
+
     List<TimeTablingTimeTableVersion> getAllVersions();
     
 }

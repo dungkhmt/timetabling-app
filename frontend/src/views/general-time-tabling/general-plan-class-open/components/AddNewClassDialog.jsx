@@ -35,6 +35,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
     programName: selectedGroup?.groupName || "", 
     moduleCode: "", 
     moduleName: "", 
+    classType: "LT+BT",
     numberOfClasses: "", // Số lượng lớp học
     learningWeeks: "", // Tuần học
     weekType: "0", // Tuần chẵn/lẻ
@@ -49,6 +50,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [course, setCourse] = useState(null);
   // Fetch groups and courses
   const { allGroups, isLoadingGroups } = useGroupData();
   const { courses, isLoading: isLoadingCourses } = useCourseData();
@@ -68,9 +70,37 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
   // Cập nhật selectedCourse đồng thời cập nhật formData tương ứng
   const handleCourseChange = (newSelectedCourse) => {
     setSelectedCourse(newSelectedCourse);
+    setLoading(true);
+    request(
+      "get",
+      "/course-v2/" + newSelectedCourse.id,
+      (res) => {
+        console.log("Success response:", res.data);
+        setLoading(false);
+        if (onSuccess && res.data) {
+          onSuccess(res.data);
+          setCourse(res.data);
+          setFormData(prev => ({
+            ...prev,        
+            mass: res.data.volumn
+          }));
+        }
+        //toast.success("get Course Detail thành công!");
+        
+      },
+      null
+      
+    ).catch((err) => {
+      // This will catch any other errors that might occur
+      console.error("Unexpected error:", err);
+      setLoading(false);
+      toast.error(err.response.data);
+    });
+
     if (newSelectedCourse) {
       setFormData(prev => ({
         ...prev,
+        
         moduleCode: newSelectedCourse.id,
         moduleName: newSelectedCourse.courseName
       }));
@@ -83,6 +113,40 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
     }
   };
 
+  const handleChangeClassType = (e) => {
+    let classType = e.target.value
+    setFormData({
+      ...formData,
+      classType: classType
+    });
+    if(course){
+      if(classType === 'LT+BT'){
+        setFormData({
+          ...formData,
+          duration: course.durationLtBt,
+          lectureMaxQuantity: "", // Số SV Max (LT)
+          exerciseMaxQuantity: "", // Số SV Max (BT)
+          lectureExerciseMaxQuantity: course.maxStudentLTBT, // Số SV Max (LT+BT)
+        });
+      }else if(classType === "LT"){
+        setFormData({
+          ...formData,
+          duration: course.durationLt,
+          lectureMaxQuantity: course.maxStudentLT, // Số SV Max (LT)
+          exerciseMaxQuantity: "", // Số SV Max (BT)
+          lectureExerciseMaxQuantity: "", // Số SV Max (LT+BT)
+        });
+      }else if(classType === "BT"){
+        setFormData({
+          ...formData,
+          duration: course.durationBt,
+          lectureMaxQuantity: "", // Số SV Max (LT)
+          exerciseMaxQuantity: course.maxStudentBT, // Số SV Max (BT)
+          lectureExerciseMaxQuantity: "", // Số SV Max (LT+BT)
+        });  
+      }
+    }
+  }
   const handleChange = (e) => {
     const { name, value } = e.target;
     // Trim string values to remove leading and trailing whitespace
@@ -192,7 +256,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
           onSuccess(res.data);
         }
         toast.success("Tạo lớp mới thành công!");
-        handleClose();
+        //handleClose();
       },
       null
       ,
@@ -293,6 +357,7 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
                           </>
                         ),
                       }}
+                      
                     />
                   )}
                 />
@@ -301,6 +366,22 @@ const AddNewClassDialog = ({ open, onClose, semester, onSuccess, selectedGroup }
                 <input type="hidden" name="moduleName" value={formData.moduleName} />
               </Grid>
               
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Kiểu lớp</InputLabel>
+                  <Select
+                    name="classType"
+                    value={formData.classType}
+                    onChange={handleChangeClassType}
+                    label="Kiểu lớp"                    
+                  >
+                    <MenuItem value="LT+BT">LT+BT</MenuItem>
+                    <MenuItem value="LT">LT</MenuItem>
+                    <MenuItem value="BT">BT</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
               <Grid item xs={6}>
                 <TextField
                   label="Khóa"

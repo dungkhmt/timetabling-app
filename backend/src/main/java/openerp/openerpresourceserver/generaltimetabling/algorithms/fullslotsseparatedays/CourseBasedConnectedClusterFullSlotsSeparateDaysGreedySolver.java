@@ -405,29 +405,39 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
             courseGroupId.add(id);
             mCourseGroup2ClassSegments.get(id).add(cs);
 
+
             //if(mCourseCode2ClassSegments.get(cs.getCourseIndex())==null)
             //    mCourseCode2ClassSegments.put(cs.getCourseIndex(),new ArrayList<>());
             //mCourseCode2ClassSegments.get(cs.getCourseIndex()).add(cs);
-            //log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id);
+            if(cs.getDomainTimeSlots() == null || cs.getDomainTimeSlots().size() == 0) {
+                log.info("solve, class-segment[" + i + "], id = " + cs.getId() + " has course-group " + id + " domain-timeslot empty");
+            }
         }
 
 
 
         for(String id: courseGroupId){
-            int duration = 0;
+            int duration = -1;
             List<Integer> domain = null;
             for(ClassSegment cs: mCourseGroup2ClassSegments.get(id)){
                 if(duration < cs.getDuration()){
                     duration = cs.getDuration(); domain = cs.getDomainTimeSlots();
                 }
             }
+            log.info("solve, mCourseGroup2ClassSegments.get(" + id + ").sz = " + mCourseGroup2ClassSegments.get(id).size());
+            if(domain == null)
+                log.info("solve, consider courseGraph " + courseGroupId + " domain null");
             mCourseGroup2Domain.put(id,domain);
+            log.info("solve, mCourseGroup2Domain.put(" + id + "," + domain.size() + ")");
             mCourseGroup2Duration.put(id,duration);
         }
 
         // sort domain time-slot of course-group based on the classes scheduled in time-slots
         for(String cg: mCourseGroup2Domain.keySet()){
             List<Integer> D = mCourseGroup2Domain.get(cg);
+            if(D == null || D.size() == 0){
+                log.info("solve mCourseGroup2Domain.get(" + cg + ") return empty domain D");
+            }
             Collections.sort(D, new Comparator<Integer>() {
                 @Override
                 public int compare(Integer o1, Integer o2) {

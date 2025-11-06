@@ -6,7 +6,7 @@ public class Constants {
     public static final String DEFAULT_ADMIN_USER_NAME = "wms_director";
 
     // prefixs for entity id
-    public static final String PRDUCT_ID_PREFIX = "PRD";
+    public static final String PRODUCT_ID_PREFIX = "PRD";
     public static final String FACILITY_ID_PREFIX = "FAC";
     public static final String SUPPLIER_ID_PREFIX = "SUP";
     public static final String ADDRESS_ID_PREFIX = "ADR";
@@ -29,4 +29,8 @@ public class Constants {
     public static final String ORDER_ITEM_BILLING_ID_PREFIX = "ORDB";
     public static final String DELIVERY_PLAN_ORDER_ID_PREFIX = "DPOR";
     public static final String DELIVERY_PLAN_SHIPPER_ID_PREFIX = "DPSH";
+    public static final String PRODUCT_PRICE_ID_PREFIX = "PRDP";
+
+    // Redis keys
+    public static final String PRODUCT_PRICE_CACHE_REDIS_KEY = "product:price-cache";
 }

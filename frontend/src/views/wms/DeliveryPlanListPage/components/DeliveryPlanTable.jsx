@@ -86,7 +86,7 @@ const DeliveryPlanTable = ({
                   sx={{ cursor: 'pointer' }}
                 >
                   <TableCell>{plan.id}</TableCell>
-                  <TableCell>{plan.delveryPlanName}</TableCell>
+                  <TableCell>{plan.deliveryPlanName}</TableCell>
                   <TableCell>{plan.createdByUserName}</TableCell>
                   <TableCell>{plan.facilityName}</TableCell>
                   <TableCell align="center">

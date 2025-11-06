@@ -34,7 +34,10 @@ public class SaleOrderSpecification implements Specification<OrderHeader> {
         String orderTypeId = OrderType.SALES_ORDER.name();
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("id"), keyword + "%");
+            Predicate orderNameLike = criteriaBuilder.like(root.get("orderName"), "%" + keyword + "%");
+            Predicate customerNameLike = criteriaBuilder.like(root.join("toCustomer").get("name"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, orderNameLike, customerNameLike));
         }
 
         if (statusId != null && !statusId.isEmpty()) {

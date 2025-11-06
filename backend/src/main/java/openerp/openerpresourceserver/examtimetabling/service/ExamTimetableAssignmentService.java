@@ -393,7 +393,7 @@ public class ExamTimetableAssignmentService {
             "FROM exam_timetable_assignment a " +
             "JOIN exam_timetabling_class c ON a.exam_timtabling_class_id = c.id " +
             "WHERE a.exam_timetable_id = :timetableId " +
-            "ORDER BY c.description";
+            "ORDER BY c.description, c.course_id, a.id";
         
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("timetableId", timetableId);
@@ -477,9 +477,9 @@ public class ExamTimetableAssignmentService {
         String sql = 
             "SELECT " +
             "c.class_id, c.class_id as class_lt, c.course_id, c.course_name, " +
-            "c.description, c.group_id, '' as nhom, '' as sessionid, " +
-            "c.number_students, c.period, '' as managerid, c.management_code, " +
-            "'' as teachunitid, c.school, c.exam_class_id, " +
+            "c.description, c.group_id, " +
+            "c.number_students, c.period, c.management_code, " +
+            "c.school, c.exam_class_id, " +
             "a.date, a.week_number, s.name as session_name, " +
             "a.room_id as room_name " +
             "FROM exam_timetable_assignment a " +
@@ -509,9 +509,9 @@ public class ExamTimetableAssignmentService {
             Row headerRow = sheet.createRow(0);
             String[] headers = {
                 "Mã lớp QT", "Mã lớp LT", "Mã học phần", "Tên học phần", 
-                "Ghi chú", "studyGroupID", "Nhóm", "sessionid", 
-                "SL", "Đợt mở", "ManagerID", "Mã_QL", 
-                "TeachUnitID", "Tên trường/khoa", "Mã lớp thi",
+                "Ghi chú", "studyGroupID",
+                "SL", "Đợt mở", "Mã_QL", 
+                "Tên trường/khoa", "Mã lớp thi",
                 "Ngày", "Tuần", "Kíp", "Phòng"
             };
             
@@ -528,10 +528,10 @@ public class ExamTimetableAssignmentService {
             for (Object[] result : results) {
                 Row row = sheet.createRow(rowNum++);
                 
-                for (int i = 0; i < 15; i++) {
+                for (int i = 0; i < 11; i++) {
                     Cell cell = row.createCell(i);
                     if (result[i] != null) {
-                        if (i == 8) {
+                        if (i == 6) {
                             cell.setCellValue(getInteger(result[i]));
                         } else {
                             cell.setCellValue(getString(result[i]));
@@ -542,7 +542,7 @@ public class ExamTimetableAssignmentService {
                 }
                 
                 // Date
-                Object dateObj = result[15];
+                Object dateObj = result[11];
                 String dateStr = "";
                 if (dateObj != null) {
                     if (dateObj instanceof java.sql.Date) {
@@ -553,17 +553,17 @@ public class ExamTimetableAssignmentService {
                         dateStr = ((LocalDate) dateObj).format(dateFormatter);
                     }
                 }
-                row.createCell(15).setCellValue(dateStr);
+                row.createCell(11).setCellValue(dateStr);
                 
                 // Week
-                Integer weekNumber = getInteger(result[16]);
-                row.createCell(16).setCellValue(weekNumber != null ? "W" + weekNumber : "");
+                Integer weekNumber = getInteger(result[12]);
+                row.createCell(12).setCellValue(weekNumber != null ? "W" + weekNumber : "");
                 
                 // Session
-                row.createCell(17).setCellValue(getString(result[17]) != null ? getString(result[17]) : "");
+                row.createCell(13).setCellValue(getString(result[13]) != null ? getString(result[13]) : "");
                 
                 // Room
-                row.createCell(18).setCellValue(getString(result[18]) != null ? getString(result[18]) : "");
+                row.createCell(14).setCellValue(getString(result[14]) != null ? getString(result[14]) : "");
             }
             
             for (int i = 0; i < headers.length; i++) {

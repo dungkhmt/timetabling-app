@@ -37,15 +37,11 @@ const AutoAssignConfirmDialog = ({
   const [dateOptions, setDateOptions] = useState([]);
   const [hasError, setHasError] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('');
-  const [timeLimit, setTimeLimit] = useState('5');
+  const [timeLimit, setTimeLimit] = useState('30');
   const [algorithmError, setAlgorithmError] = useState(false);
 
   // Time limit options in minutes
   const timeLimitOptions = [
-    { value: '1', label: '1 phút' },
-    { value: '3', label: '3 phút' },
-    { value: '5', label: '5 phút' },
-    { value: '10', label: '10 phút' },
     { value: '30', label: '30 phút' },
     { value: '60', label: '1 giờ' },
     { value: '120', label: '2 giờ' },
@@ -221,7 +217,7 @@ const AutoAssignConfirmDialog = ({
       setHasError(false);
       setSelectedAlgorithm('');
       setAlgorithmError(false);
-      setTimeLimit('5'); 
+      setTimeLimit('30'); 
     } else if (algorithms.length > 0 && !selectedAlgorithm) {
       setSelectedAlgorithm(algorithms[0].value);
     }

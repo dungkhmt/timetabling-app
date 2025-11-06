@@ -8,16 +8,15 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.Classr
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Building;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassOpened;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
 import openerp.openerpresourceserver.generaltimetabling.repo.BuildingRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClassOpenedRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.GroupRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassroomService;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -41,7 +40,6 @@ public class ClassroomServiceImpl implements ClassroomService {
     public List<Classroom> getClassroom() {
         return classroomRepo.findAllWithBuilding();
     }
-
     @Override
     public List<String> getBuilding() {
         return classroomRepo.getBuilding();
@@ -147,5 +145,11 @@ public class ClassroomServiceImpl implements ClassroomService {
         }
 
         return classroomRepo.findByGroupNameAndOptionalMaxQuantity(groupName, maxAmount);
+    }
+
+    @Override
+    public List<Classroom> findAllActiveRooms() {
+        List<Classroom> classrooms = classroomRepo.findAllByStatus("ACTIVE");
+        return classrooms;
     }
 }

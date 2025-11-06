@@ -12,6 +12,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 
 
@@ -41,8 +42,11 @@ public interface GeneralClassService {
 
     List<GeneralClass> autoScheduleGroup(String semester, String groupName, int timeLimit);
 
-    List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(String semester, List<Long> classIds, int timeLimit, String algorithm, int maxDaySchedule, Long versionId);
-    //List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
+    List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(ModelInputAutoScheduleTimeSlotRoom I);
+
+    List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom4ClassSegments(ModelInputAutoScheduleTimeSlotRoom I);
+
+                                                                               //List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
 
     List<GeneralClass> autoSchedule(String semester, int timeLimit);
 

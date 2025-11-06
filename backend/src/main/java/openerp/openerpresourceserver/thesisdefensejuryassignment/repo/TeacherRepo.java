@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.thesisdefensejuryassignment.repo;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import openerp.openerpresourceserver.thesisdefensejuryassignment.entity.Teacher;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TeacherRepo extends JpaRepository<Teacher, String> {
@@ -18,5 +20,25 @@ public interface TeacherRepo extends JpaRepository<Teacher, String> {
     Optional<Teacher> findByUserLoginId(String userLoginId);
 
     Optional<Teacher> findByTeacherName(String teacherName);
+
+//    @Query(value = "select *\n" +
+//            "from teacher right join teacher_course_for_assignment_plan on teacher.id = teacher_course_for_assignment_plan.teacher_id;",nativeQuery = true)
+    @Query("SELECT DISTINCT  t FROM Teacher t " +
+            " join fetch t.teacherCapacityList ")
+    List<Teacher> getAllTeacher();
+
+
+    @Query("SELECT t FROM Teacher t " +
+            "JOIN FETCH t.batchTeachers bt " +
+            "left join fetch t.teacherCapacityList "+
+            "WHERE bt.id.batchId = :batchId")
+    List<Teacher> findAllByBatchId(@Param("batchId") Long batchId);
+
+    @Query("SELECT t FROM Teacher t " +
+            "JOIN FETCH t.batchTeachers bt " +
+            "left join fetch t.teacherCapacityList tc "+
+            "WHERE tc.id.courseId = :courseId and bt.id.batchId = :batchId")
+    List<Teacher> getAllTeacherByCourseId(@Param("courseId") @NotNull String courseId, @Param("batchId") @NotNull Long batchId);
+
 }
 

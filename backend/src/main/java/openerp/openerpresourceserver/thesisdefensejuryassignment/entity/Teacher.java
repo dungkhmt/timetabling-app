@@ -5,12 +5,15 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.BatchTeacher;
+import openerp.openerpresourceserver.teacherassignment.model.entity.relationship.TeacherCapacity;
 import org.springframework.data.annotation.CreatedDate;
 import openerp.openerpresourceserver.thesisdefensejuryassignment.entity.embedded.DefenseJuryTeacherRole;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data
@@ -58,6 +61,12 @@ public class Teacher implements Serializable {
     @OneToMany(mappedBy = "scheduledReviewer")
     @JsonIgnore
     private List<Thesis> scheduledReviewedThesisList;
+
+    @OneToMany(mappedBy = "teacher", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<TeacherCapacity> teacherCapacityList;
+
+    @OneToMany(mappedBy = "teacher", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<BatchTeacher> batchTeachers;
 
     /*------------------------------------------------------------------*/
     public List<AcademicKeyword> getAcademicKeywordList() {

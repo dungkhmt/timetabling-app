@@ -17,6 +17,16 @@ public class DaySessionSlot {
         slot += 1; // (tiet 1, 2, 3, 4, 5, 6)
         day = day + 2; // (2: monday; 3:tuesday; 4: wednesday)
     }
+    public DaySessionSlot(int slotIndex, int nbSlotPerSession){
+        slotIndex -= 1;
+        day = slotIndex / (nbSlotPerSession*2); // Constant.slotPerCrew = 6 (6 tiet 1 session)
+        int t = slotIndex - day*nbSlotPerSession*2;
+        session = t / nbSlotPerSession; // 0 (morning) and 1 (afternoon)
+        slot = t - nbSlotPerSession * session;
+        //if(slot == 0) slot = Constant.slotPerCrew;
+        slot += 1; // (tiet 1, 2, 3, 4, 5, 6)
+        day = day + 2; // (2: monday; 3:tuesday; 4: wednesday)
+    }
 
     public DaySessionSlot(int day, int session, int slot) {
         this.day = day;
@@ -26,6 +36,9 @@ public class DaySessionSlot {
 
     public int hash(){
         return (day-2)*Constant.slotPerCrew*2 + session*Constant.slotPerCrew + slot;
+    }
+    public int hash(int nbSlotPerSession){
+        return (day-2)*nbSlotPerSession*2 + session*nbSlotPerSession + slot;
     }
     public String toString(){
         String s = "day " + day + (session == 0 ? " Morning " : " Afternoon ") + " - slot " + slot;

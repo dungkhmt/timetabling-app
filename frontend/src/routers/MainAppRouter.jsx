@@ -21,6 +21,7 @@ import AssetManagementRouter from "./AssetManagementRouter";
 import TrainingFrogCourseRouter from "./TrainingFrogCourseRouter";
 import ExamTimeTablingRouter from "./ExamTimeTablingRouter"
 import WMSRouter from "./WMSRouter";
+import TeacherClassAssignmentRouter from "./TeacherClassAssignmentRouter";
 const styles = {
   loadingProgress: {
     position: "fixed",
@@ -95,6 +96,10 @@ function MainAppRouter(props) {
           <PrivateRoute
             component={ExamTimeTablingRouter}
             path="/exam-time-tabling"
+          />
+          <PrivateRoute
+              component={TeacherClassAssignmentRouter}
+              path="/teacher-class-assignment"
           />
           <Route component={NotFound} />
         </Switch>

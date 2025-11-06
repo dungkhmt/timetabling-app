@@ -30,7 +30,7 @@ import org.apache.poi.ss.usermodel.BorderStyle;
 @Component
 public class GeneralExcelHelper {
     public static String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    static String[] HEADERS = { "SL thực", "Loại lớp", "Mã HP","Tên HP", "Tuần học", "Thời lượng", "SL max",
+    static String[] HEADERS = { "SL thực", "Loại lớp", "Mã HP","Tên HP", "Nhóm","Tuần học", "Thời lượng", "SL max",
             "Lớp học", "Trạng thái", "Mã lớp", "Mã lớp tham chiếu", "Mã lớp tạm thời", "Mã lớp cha", "Kíp", "Đợt", "Khóa", "Giáo viên nước ngoài"};
     static String SHEET = "Sheet1";
     static String DEFAULT_SHEET = "Sheet1";
@@ -46,11 +46,11 @@ public class GeneralExcelHelper {
     /**
      * End column in excel to read class information (End with column Q)
      */
-    private final static int END_COL_TO_READ_CLASS_INFO = 16;
+    private final static int END_COL_TO_READ_CLASS_INFO = 17;
     /**
      * Start column in excel to read class schedule (Start with column R)
      */
-    private final static int START_COL_TO_READ_CLASS_SCHEDULE = 17;
+    private final static int START_COL_TO_READ_CLASS_SCHEDULE = 18;
     /**
      * End column in excel to read class information (End with column BA)
      */
@@ -406,7 +406,7 @@ public class GeneralExcelHelper {
      * Overload of convertGeneralClassToExcel that accepts a map of class segments and numberSlotsPerSession
      * This version creates a timetable with morning and afternoon sessions combined in one continuous day view
      */
-    public static ByteArrayInputStream convertGeneralClassToExcelWithAllSession(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Integer numberSlotsPerSession) {
+    public static ByteArrayInputStream convertGeneralClassToExcelWithAllSession(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Map<Long, List<String>> mClassId2GroupNames, Integer numberSlotsPerSession) {
         /*Handle Excel write*/
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             /* Init the cell style*/
@@ -600,50 +600,62 @@ public class GeneralExcelHelper {
                             c.setCellValue(timeTablingClass.getModuleName());
                             break;
                         case 4:
+                            String groupNames = "";
+                            List<String> GN = mClassId2GroupNames.get(timeTablingClass.getId());
+                            for(int ii = 0; ii < GN.size(); ii++){
+                                groupNames += GN.get(ii);
+                                if(ii < GN.size()-1) groupNames += ",";
+                            }
+                            log.info("exxport exxcel class " + timeTablingClass.getClassCode() + " -> groups = " + groupNames);
+                            c.setCellValue(groupNames);
+                            break;
+
+                        case 5:
+
                             c.setCellValue(timeTablingClass.getLearningWeeks());
                             break;
-                        case 5:
+                        case 6:
                             c.setCellValue(timeTablingClass.getMass());
                             break;
-                        case 6:
+                        case 7:
                             if (timeTablingClass.getQuantityMax() != null) {
                                 c.setCellValue(timeTablingClass.getQuantityMax());
                             }
                             break;
-                        case 7:
+                        case 8:
                             c.setCellValue(timeTablingClass.getStudyClass());
                             break;
-                        case 8:
+                        case 9:
                             c.setCellValue(timeTablingClass.getState());
                             break;
-                        case 9:
+                        case 10:
                             c.setCellValue(timeTablingClass.getClassCode());
                             break;
-                        case 10:
+                        case 11:
                             if (timeTablingClass.getRefClassId() != null) {
                                 c.setCellValue(timeTablingClass.getRefClassId());
                             }
                             break;
-                        case 11:
+                        case 12:
                             if (timeTablingClass.getId()!= null) {
                                 c.setCellValue(timeTablingClass.getId());
                             }
                             break;
-                        case 12:
+                        case 13:
                             if (timeTablingClass.getParentClassId() != null) {
                                 c.setCellValue(timeTablingClass.getParentClassId());
                             }
                             break;
-                        case 13:
+                        case 14:
                             c.setCellValue(timeTablingClass.getCrew());
                             break;
-                        case 14:
+                        case 15:
                             c.setCellValue(timeTablingClass.getOpenBatch());
                             break;
-                        case 15:
+                        case 16:
                             c.setCellValue(timeTablingClass.getCourse());
                             break;
-                        case 16:
+                        case 17:
                             c.setCellValue(timeTablingClass.getForeignLecturer());
                             break;
                         default:
@@ -733,7 +745,7 @@ public class GeneralExcelHelper {
         }
     }
 
-    public static ByteArrayInputStream convertGeneralClassToExcel(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Integer numberSlotsPerSession) {
+    public static ByteArrayInputStream convertGeneralClassToExcel(List<TimeTablingClass> classes, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments, Map<Long, List<String>> mClassId2GroupNames, Integer numberSlotsPerSession) {
         /*Handle Excel write*/
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             /* Init the cell style*/

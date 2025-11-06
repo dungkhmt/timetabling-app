@@ -53,8 +53,8 @@ public class ExamTimetableSolution {
     }
     
     // Constants for optimization weights
-    private static final double WEIGHT_GROUP_SPACING = 10.0;  // 1st priority
-    private static final double WEIGHT_TIMESLOT_BALANCE = 7.0; // 2nd priority
+    private static final double WEIGHT_GROUP_SPACING = 30.0;  // 1st priority
+    private static final double WEIGHT_TIMESLOT_BALANCE = 10.0; // 2nd priority
     private static final double WEIGHT_ROOM_BALANCE = 3.0;    // 3nd priority
     private static final double WEIGHT_EARLY_SLOTS = 2.0;     // 4rd priority
     

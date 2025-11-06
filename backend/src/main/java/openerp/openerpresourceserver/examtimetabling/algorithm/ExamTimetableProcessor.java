@@ -105,7 +105,7 @@ public class ExamTimetableProcessor {
 
     /**
      * Split large courses into smaller sub-courses
-     * Courses with >10 classes will be split based on group and size constraints
+     * Courses with > 10 classes will be split based on group and size constraints
      */
     private Map<String, List<ExamClass>> splitLargeCourses(Map<String, List<ExamClass>> originalCourseGroups) {
         Map<String, List<ExamClass>> newCourseGroups = new HashMap<>();

@@ -67,7 +67,7 @@ const RouteMapComponent = ({ route, facilityLocation }) => {
     return (
       <Box 
         sx={{ 
-          height: 400, 
+          height: 600,
           width: '100%', 
           mt: 2, 
           mb: 3, 
@@ -103,7 +103,7 @@ const RouteMapComponent = ({ route, facilityLocation }) => {
   const defaultCenter = [depot.latitude, depot.longitude];
   
   return (
-    <Box sx={{ height: 400, width: '100%', mt: 2, mb: 3, position: 'relative' }}>
+    <Box sx={{ height: 600, width: '100%', mt: 2, mb: 3, position: 'relative' }}>
       {!isMapReady && (
         <Box 
           sx={{ 
@@ -186,7 +186,7 @@ const RouteMapComponent = ({ route, facilityLocation }) => {
         <Polyline 
           positions={pathPositions}
           pathOptions={{ 
-            color: '#2196f3', 
+            color: '#ff1a1a',
             weight: 4,
             opacity: 0.8,
             dashArray: '5, 10',

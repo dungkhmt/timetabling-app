@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface TimeTablingClassRepo extends JpaRepository<TimeTablingClass, Long> {
     List<TimeTablingClass> findAllBySemester(String semester);
+    List<TimeTablingClass> findAllByBatchId(Long batchId);
+    List<TimeTablingClass> findAllByBatchIdIn(List<Long> batchIds);
+
+
 
     List<TimeTablingClass> findAllByRefClassId(Long refClassId);
 

@@ -8,6 +8,19 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Tim
 import java.util.*;
 @Log4j2
 public class Utils {
+    public static List<Integer> fromString(String s, String delimiter){
+        String[] a = s.split(delimiter);
+        List<Integer> res = new ArrayList<>();
+        if(a != null)for(String i: a){
+            try {
+                int x = Integer.valueOf(i);
+                res.add(x);
+            }catch (Exception e){
+                return null;
+            }
+        }
+        return res;
+    }
     public static boolean consecutiveSameSessionClassSegments(TimeTablingClassSegment cs1, TimeTablingClassSegment cs2){
         if(cs1.getRoom() != cs2.getRoom()) return false;
         if(!cs1.getCrew().equals(cs2.getCrew())) return false;

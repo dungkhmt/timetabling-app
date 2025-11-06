@@ -1,7 +1,7 @@
-import { useMutation } from "react-query";
-import { toast } from "react-toastify";
-import { wms2Service } from "repositories/wms2Repository";
-import { useHistory } from "react-router-dom";
+import {useMutation} from "react-query";
+import {toast} from "react-toastify";
+import {wms2Service} from "repositories/wms2Repository";
+import {useHistory} from "react-router-dom";
 import {GREEDY} from "../views/wms/common/constants/constants"; // React Router v5
 export const useWms2Data = () => {
   const history = useHistory(); // Use useHistory from React Router v5
@@ -10,7 +10,9 @@ export const useWms2Data = () => {
     onSuccess: (res) => {
       const { data } = res;
       console.log("Res :", res);
-      if (data && data.code === 201) toast.success("Tạo đơn hàng thành công!");
+      if (data && data.code === 201) {toast.success("Tạo đơn hàng thành công!");
+      history.push("/wms/sales/orders");
+      }
       else
         toast.error("Có lỗi xảy ra khi tạo đơn hàng : " + data.message ?? "");
     },
@@ -687,6 +689,60 @@ const getWeeklyLowStockForecast = async () => {
   }
 };
 
+const getInvoiceByShipmentId = async (shipmentId) => {
+  try {
+    const response = await wms2Service.getInvoiceByShipmentId(shipmentId);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getInvoiceByShipmentId:", error);
+    toast.error("Không thể tải hóa đơn");
+    throw error;
+  }
+};
+
+const getInvoiceById = async (invoiceId) => {
+  try {
+    const response = await wms2Service.getInvoiceById(invoiceId);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getInvoiceById:", error);
+    toast.error("Không thể tải hóa đơn");
+    throw error;
+  }
+};
+
+const getInventoryItemByProductId = async (page, limit, productId) => {
+    try {
+        const response = await wms2Service.getInventoryItemByProductId(page, limit, productId);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching inventory items by product ID:", error);
+        toast.error("Không thể tải thông tin kho hàng theo sản phẩm");
+        return { data: {} };
+  }
+};
+
+const getProductPrice = async (productId) => {
+    try {
+        const response = await wms2Service.getProductPrice(productId);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching product price:", error);
+        toast.error("Không thể tải giá sản phẩm");
+        return { data: {} };
+    }
+}
+
+const createProductPrice = async (data) => {
+    try {
+        const response = await wms2Service.createProductPrice(data);
+        return response.data;
+    } catch (error) {
+        console.error("Error creating product price:", error);
+        toast.error("Không thể tạo giá sản phẩm");
+        return { data: {} };
+    }
+};
 
   // Trả về các hàm thay vì dữ liệu
   return {
@@ -749,5 +805,10 @@ const getWeeklyLowStockForecast = async () => {
     getMoreInventoryItemsForOutbound,
     autoAssignShipment,
     getWeeklyLowStockForecast,
+    getInvoiceByShipmentId,
+    getInvoiceById,
+    getInventoryItemByProductId,
+    getProductPrice,
+    createProductPrice
   };
 };

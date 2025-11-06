@@ -23,6 +23,9 @@ public class TimeTablingCourse {
     @Column(name="name")
     private String name;
 
+    @Column(name="volumn")
+    private String volumn;
+
     @Column(name="slots_priority")
     private String slotPriority;// 3,2,1
 
@@ -45,5 +48,14 @@ public class TimeTablingCourse {
     @Column(name = "max_student_lt_bt")
     private Integer maxStudentLTBT;
 
+    @Column(name="duration_lt_bt")
+    private Integer durationLtBt;
+    @Column(name="duration_lt")
+    private Integer durationLt;
+    @Column(name="duration_bt")
+    private Integer durationBt;
+
+    @Column(name="separate_lt_bt")
+    private String separateLTBT; // Y means that LT and BT classes must be separated
 
 }

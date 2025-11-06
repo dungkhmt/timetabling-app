@@ -28,6 +28,7 @@ public class CVRPCWSSolver implements CVRPSolver {
         // Step 3: Initialize individual routes for each customer (depot -> customer -> depot)
         Map<Integer, Route> customerToRoute = new HashMap<>();
         List<Route> routes = new ArrayList<>();
+        double maxCapicity = getMaxVehicleCapacity(input.getVehicles());
 
         for (int i = 1; i < nodes.size(); i++) {
             Route route = new Route();
@@ -53,7 +54,7 @@ public class CVRPCWSSolver implements CVRPSolver {
             }
 
             // Check if routes can be merged
-            if (canMergeRoutes(route1, route2, customer1, customer2, input, params)) {
+            if (canMergeRoutes(route1, route2, customer1, customer2, input, params, maxCapicity)) {
                 Route mergedRoute = mergeRoutes(route1, route2, customer1, customer2, input);
 
                 // Update customer-to-route mapping
@@ -102,10 +103,10 @@ public class CVRPCWSSolver implements CVRPSolver {
     }
 
     private boolean canMergeRoutes(Route route1, Route route2, int customer1, int customer2,
-                                   CVRPInput input, CVRPParams params) {
+                                   CVRPInput input, CVRPParams params, double maxCapicity) {
         // Check capacity constraint
         if (params.isUseCapacityConstraints() &&
-                route1.load + route2.load > getMaxVehicleCapacity(input.getVehicles())) {
+                route1.load + route2.load > maxCapicity) {
             return false;
         }
 
@@ -189,6 +190,16 @@ public class CVRPCWSSolver implements CVRPSolver {
         CVRPSolution solution = CVRPSolution.createEmpty();
         List<VRPRoute> vrpRoutes = new ArrayList<>();
         List<Node> unscheduledNodes = new ArrayList<>();
+
+        // Sort vehicles by capacity in descending order
+        vehicles = vehicles.stream()
+                .sorted(Comparator.comparingDouble(Vehicle::getCapacity).reversed())
+                .toList();
+
+        // Sort routes by load in descending order
+        routes = routes.stream()
+                .sorted(Comparator.comparingDouble(route -> -route.load))
+                .toList();
 
         int vehicleIndex = 0;
 

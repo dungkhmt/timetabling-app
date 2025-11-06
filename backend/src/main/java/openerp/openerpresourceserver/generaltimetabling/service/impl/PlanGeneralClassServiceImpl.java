@@ -7,15 +7,9 @@ import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldEx
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekValidator;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateTimeTablingClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateSubClassDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateTimeTablingClassFromPlanDto;
-import openerp.openerpresourceserver.generaltimetabling.model.dto.BulkMakeGeneralClassDto;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.CreateSingleClassOpenDto;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.AcademicWeek;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.ClassGroup;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Group;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.PlanGeneralClassService;
@@ -50,7 +44,9 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
     @Autowired
     private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
     @Autowired
-    private GroupRepo groupRepo;    
+    private GroupRepo groupRepo;
+    @Autowired
+    private TimeTablingBatchRepo timeTablingBatchRepo;
     
     @Override
     @Transactional
@@ -78,20 +74,33 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         cls.setMass(request.getMass());
         cls.setGroupName(groupName);
         cls.setCrew(request.getCrew());
+        cls.setBatchId(request.getBatchId());
+        cls.setCreatedByUserId(request.getCreatedByUserId());
         //newClass.setQuantityMax(request.getQuantityMax());
-        if(request.getLectureExerciseMaxQuantity()!=null)
+        //if(request.getLectureExerciseMaxQuantity()!=null)
+        //    cls.setQuantityMax(request.getLectureExerciseMaxQuantity());
+        //if(request.getLectureMaxQuantity()!=null)
+        //    cls.setQuantityMax(request.getLectureMaxQuantity());
+        //if(request.getExerciseMaxQuantity()!=null)
+        //    cls.setQuantityMax(request.getExerciseMaxQuantity());
+        //cls.setQuantityMax(request.getQuantityMax());
+        if(request.getClassType().equals("LT+BT")){
             cls.setQuantityMax(request.getLectureExerciseMaxQuantity());
-        if(request.getLectureMaxQuantity()!=null)
+        }else if(request.getClassType().equals("LT")){
             cls.setQuantityMax(request.getLectureMaxQuantity());
-        if(request.getExerciseMaxQuantity()!=null)
+        }else if(request.getClassType().equals("BT")){
             cls.setQuantityMax(request.getExerciseMaxQuantity());
+        }else{
+            cls.setQuantityMax(request.getQuantityMax());
+        }
         cls.setLearningWeeks(request.getLearningWeeks());
         cls.setDuration(request.getDuration());
-        if (request.getClassType() != null && !request.getClassType().isEmpty()) {
-            cls.setClassType(request.getClassType());
-        } else {
-            cls.setClassType("LT+BT");
-        }
+        //if (request.getClassType() != null && !request.getClassType().isEmpty()) {
+        //    cls.setClassType(request.getClassType());
+        //} else {
+        //    cls.setClassType("LT+BT");
+        //}
+        cls.setClassType(request.getClassType());
 
 
         if(request.getWeekType().equals("Chẵn")) {
@@ -112,6 +121,7 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         //newClass.setParentClassId(nextId);
         cls.setClassCode(clsId.toString());
         cls.setId(clsId);
+        cls.setParentClassId(request.getParentClassId());
 
         cls = timeTablingClassRepo.save(cls);
         ClassGroup clsGroup = new ClassGroup(cls.getId(),groupId);
@@ -196,6 +206,11 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
     }
 
     @Override
+    public List<PlanGeneralClass> getOpenedClassPlans(Long batchId) {
+        return planGeneralClassRepo.findAllByBatchId(batchId);
+    }
+
+    @Override
     @Transactional
     public List<TimeTablingClass> getClassOfPlan(Long planClassId){
         List<TimeTablingClass> timeTablingClasses = timeTablingClassRepo.findAllByRefClassId(planClassId);
@@ -241,7 +256,7 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
 
             log.info("generateTimeTablingClassFromPlan, plan course " + pl.getModuleCode() + " number classes = " + pl.getNumberOfClasses());
                 CreateTimeTablingClassDto r = new CreateTimeTablingClassDto();
-                r.setNbClasses(pl.getNumberOfClasses());
+                //r.setNbClasses(pl.getNumberOfClasses());
                 r.setWeekType(pl.getWeekType());
                 r.setId(pl.getId());
                 r.setProgramName(pl.getProgramName());
@@ -434,7 +449,7 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         for (int i = 1; i <= planClass.getNumberOfClasses(); i++) {
             CreateTimeTablingClassDto req = new CreateTimeTablingClassDto();
             req.setId(savedClass.getId());
-            req.setNbClasses(planClass.getNumberOfClasses());
+            //req.setNbClasses(planClass.getNumberOfClasses());
             req.setClassType(planClass.getClassType());
             if(course.getMaxStudentLT()!=null && course.getMaxStudentLT() > 0){
                 req.setClassType("LT");
@@ -469,4 +484,200 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
 
         return savedClass;
     }
+
+    @Transactional
+    @Override
+    public PlanGeneralClass createClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass) {
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(planClass.getBatchId()).orElse(null);
+        if(batch == null){
+            throw new InvalidFieldException("cannot find batch id = " + planClass.getBatchId());
+        }
+        Group group = groupRepo.findById(planClass.getGroupId()).orElse(null);
+        if(group == null){
+            throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
+        }
+
+        TimeTablingCourse course = timeTablingCourseRepo.findById(planClass.getModuleCode()).orElse(null);
+        if(course == null){// course code does not exist -> create new
+            course = new TimeTablingCourse();
+            course.setId(planClass.getModuleCode());
+            course.setName(planClass.getModuleName());
+            course= timeTablingCourseRepo.save(course);
+        }
+
+        PlanGeneralClass aPlan = new PlanGeneralClass();
+        aPlan.setGroupId(planClass.getGroupId());
+        aPlan.setProgramName(group.getGroupName());
+        aPlan.setModuleCode(planClass.getModuleCode());
+        aPlan.setModuleName(course.getName());
+        aPlan.setClassType(planClass.getClassType());
+        aPlan.setSemester(batch.getSemester());
+        aPlan.setNumberOfClasses(planClass.getNumberOfClasses());
+        aPlan.setCreatedByUserId(userId);
+        aPlan.setBatchId(planClass.getBatchId());
+        if(planClass.getClassType().equals("LT+BT")){
+            aPlan.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+            aPlan.setDuration(planClass.getDurationLTBT());
+        }else if(planClass.getClassType().equals("LT")){
+            aPlan.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+            aPlan.setDuration(planClass.getDurationLT());
+        }else if(planClass.getClassType().equals("BT")){
+            aPlan.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+            aPlan.setDuration(planClass.getDurationBT());
+        }
+        aPlan.setPromotion(planClass.getPromotion());
+        aPlan.setCrew(planClass.getCrew());
+        aPlan.setWeekType(planClass.getWeekType());
+
+
+
+        aPlan = planGeneralClassRepo.save(aPlan);
+
+        if(planClass.getGenerateClasses() != null && planClass.getGenerateClasses().equals("Y")) {
+            // create classes
+            for (int i = 1; i <= planClass.getNumberOfClasses(); i++) {
+                CreateTimeTablingClassDto req = new CreateTimeTablingClassDto();
+                req.setId(aPlan.getId());
+                //req.setNbClasses(planClass.getNumberOfClasses());
+                if(planClass.getSeparateLTBT() != null && planClass.getSeparateLTBT().equals("Y")){
+                    req.setClassType("LT");
+                    //req.setDuration(course.getDurationLt());
+                    req.setDuration(planClass.getDurationLT());
+                }else {
+                    req.setClassType(planClass.getClassType());
+                    //req.setDuration(course.getDurationLtBt());
+                    if(planClass.getClassType().equals("BT"))
+                        req.setDuration(planClass.getDurationLTBT());
+                    else if(planClass.getClassType().equals("LT+BT"))
+                        req.setDuration(planClass.getDurationLTBT());
+                }
+                //if (course.getMaxStudentLT() != null && course.getMaxStudentLT() > 0) {
+                //    req.setClassType("LT");
+                //}
+                //req.setDuration(planClass.getDuration());
+                req.setCrew(planClass.getCrew());
+                req.setMass(planClass.getMass());
+                req.setLearningWeeks(planClass.getLearningWeeks());
+                req.setModuleCode(planClass.getModuleCode());
+                req.setSemester(batch.getSemester());
+                req.setModuleName(course.getName());
+                //req.setQuantityMax(course.getMaxStudentLT());
+                req.setQuantityMax(planClass.getQuantityMax());
+                req.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+                req.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+                req.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+                req.setProgramName(planClass.getProgramName());
+                req.setWeekType(planClass.getWeekType());
+                req.setBatchId(batch.getId());
+                req.setMass(course.getVolumn());
+                req.setCreatedByUserId(userId);
+                TimeTablingClass cls = makeClass(req, planClass.getGroupId());
+
+                if(planClass.getClassType().equals("LT+BT") && planClass.getSeparateLTBT() != null
+                        && planClass.getSeparateLTBT().equals("Y")) {
+                    // make sub-class (class BT of the current class LT
+                    if (course.getMaxStudentBT() != null && course.getMaxStudentLT() != null &&
+                            course.getMaxStudentLT() > 0 && course.getMaxStudentBT() > 0) {
+                        //int nbSubClass = course.getMaxStudentLT() / course.getMaxStudentBT();
+                        int nbSubClass = planClass.getLectureMaxQuantity()/planClass.getExerciseMaxQuantity();
+                        if(planClass.getLectureMaxQuantity()%planClass.getExerciseMaxQuantity() != 0){
+                            nbSubClass++;
+                        }
+                        for (int k = 1; k <= nbSubClass; k++) {
+                            req.setClassType("BT");
+                            req.setParentClassId(cls.getId());
+                            req.setDuration(planClass.getDurationBT());
+
+                            //req.setDuration(course.getDurationBt());
+                            //req.setQuantityMax(course.getMaxStudentBT());
+                            makeClass(req, planClass.getGroupId());
+                        }
+                    }
+                }
+            }
+        }
+
+        return aPlan;
+    }
+
+    @Transactional
+    @Override
+    public PlanGeneralClass updateClassOpenningPlan(String userId, CreateSingleClassOpenDto planClass) {
+        PlanGeneralClass existingPlan = planGeneralClassRepo.findById(planClass.getId())
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy kế hoạch mở lớp với ID: " + planClass.getId()));
+
+        // Cập nhật thông tin cơ bản
+        existingPlan.setModuleCode(planClass.getModuleCode());
+        existingPlan.setModuleName(planClass.getModuleName());
+        existingPlan.setMass(planClass.getMass());
+        existingPlan.setClassType(planClass.getClassType());
+        existingPlan.setNumberOfClasses(planClass.getNumberOfClasses());
+        existingPlan.setCrew(planClass.getCrew());
+        existingPlan.setLearningWeeks(planClass.getLearningWeeks());
+        existingPlan.setPromotion(planClass.getPromotion());
+        existingPlan.setWeekType(planClass.getWeekType());
+        existingPlan.setGroupId(planClass.getGroupId());
+        existingPlan.setProgramName(planClass.getProgramName());
+
+        // Cập nhật số lượng và thời lượng theo loại lớp
+        switch (planClass.getClassType()) {
+            case "LT+BT":
+                existingPlan.setLectureExerciseMaxQuantity(planClass.getLectureExerciseMaxQuantity());
+                existingPlan.setDuration(planClass.getDurationLTBT());
+                break;
+            case "LT":
+                existingPlan.setLectureMaxQuantity(planClass.getLectureMaxQuantity());
+                existingPlan.setDuration(planClass.getDurationLT());
+                break;
+            case "BT":
+                existingPlan.setExerciseMaxQuantity(planClass.getExerciseMaxQuantity());
+                existingPlan.setDuration(planClass.getDurationBT());
+                break;
+        }
+
+        TimeTablingCourse course = timeTablingCourseRepo.findById(planClass.getModuleCode()).orElse(null);
+        if(course == null){// course code does not exist -> create new
+            course = new TimeTablingCourse();
+            course.setId(planClass.getModuleCode());
+            course.setName(planClass.getModuleName());
+            course= timeTablingCourseRepo.save(course);
+        }
+        existingPlan.setModuleName(course.getName());
+
+        Group group = groupRepo.findById(planClass.getGroupId()).orElse(null);
+        if(group == null){
+            throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
+        }
+
+        existingPlan.setProgramName(group.getGroupName());
+
+        return planGeneralClassRepo.save(existingPlan);
+    }
+
+    @Override
+    @Transactional
+    public TimeTablingClass updateTimeTablingClass(String userId, UpdateClassOpenRequest request) {
+        // Find the existing class by ID
+        TimeTablingClass existingClass = timeTablingClassRepo.findById(request.getId())
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy lớp với ID: " + request.getId()));
+
+        // Validate the semester and learning weeks
+        List<AcademicWeek> foundWeeks = academicWeekRepo.findAllBySemester(existingClass.getSemester());
+        if (foundWeeks.isEmpty()) {
+            throw new NotFoundException("Không tìm thấy tuần học trong học kỳ");
+        }
+        existingClass.setModuleCode(request.getModuleCode());
+        existingClass.setModuleName(request.getModuleName());
+        existingClass.setDuration(request.getDuration());
+        existingClass.setLearningWeeks(request.getLearningWeeks());
+        existingClass.setQuantity(request.getQuantity());
+        existingClass.setQuantityMax(request.getQuantityMax());
+        existingClass.setClassType(request.getClassType());
+        existingClass.setCrew(request.getCrew());
+
+        // Save and return the updated class
+        return timeTablingClassRepo.save(existingClass);
+    }
+
+
 }

@@ -13,4 +13,5 @@ public class TimeTableVersionRequest {
     private String semester;
     private String userId;
     private Integer numberSlotsPerSession;
+    private String batchId;
 }

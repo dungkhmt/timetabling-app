@@ -453,7 +453,10 @@ public class V2ClassScheduler {
     }
     */
     public MapDataScheduleTimeSlotRoomWrapper mapDataNew(List<ModelResponseTimeTablingClass> classes,
-                                                         List<Classroom> rooms, Map<String,
+                                                         List<Classroom> rooms,
+                                                         List<Integer> scheduleDays,
+                                                         List<Integer> scheduleSlots,
+                                                         Map<String,
             List<TimeTablingClassSegment>> mId2RoomReservation,
                                                          List<TimeTablingCourse> ttcourses,
                                                          List<Group> groups,List<ClassGroup> classGroups,
@@ -718,9 +721,13 @@ public class V2ClassScheduler {
                     } else {
                         if(gr != null){
                             if(algoParams.TIME_SLOT_ORDER.equals(AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_EARLIEST)){
-                                D[idx] = Util.generateSlotsFromEarliest(algoParams.MAX_DAY_SCHEDULED,algoParams.SLOT_PER_SESSION,gc.getCrew(),d[idx]);
+                                //D[idx] = Util.generateSlotsFromEarliest(algoParams.MAX_DAY_SCHEDULED,algoParams.SLOT_PER_SESSION,gc.getCrew(),d[idx]);
+                                D[idx] = Util.generateSlotsFromEarliest(scheduleDays,scheduleSlots,algoParams.SLOT_PER_SESSION,gc.getCrew(),d[idx]);
+
                             }else if(algoParams.TIME_SLOT_ORDER.equals(AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_PRIORITY_SETTINGS)){
-                                List<Integer> L = Util.generateSlots(algoParams.MAX_DAY_SCHEDULED, Constants.PRIORITY_SLOT_LATEST, gr.getDaySeq(), gr.getSlotSeq(), gc.getCrew(), d[idx]);
+                                //List<Integer> L = Util.generateSlots(algoParams.MAX_DAY_SCHEDULED, Constants.PRIORITY_SLOT_LATEST, gr.getDaySeq(), gr.getSlotSeq(), gc.getCrew(), d[idx]);
+                                List<Integer> L = Util.generateSlots(scheduleDays,scheduleSlots, Constants.PRIORITY_SLOT_LATEST, gr.getDaySeq(), gr.getSlotSeq(), gc.getCrew(), d[idx]);
+
                                 //log.info("mapData, compute D[" + i + "], daySeq = " + gr.getDaySeq() + ", slotSeq = " + gr.getSlotSeq() + ", crew = " + gc.getCrew() + " got L= " + L);
                                 TimeTablingCourse crs = mId2Course.get(gc.getCourse());
                                 List<Integer> LP = new ArrayList<>();
@@ -731,7 +738,8 @@ public class V2ClassScheduler {
                                 log.info("mapData, class code " + gc.getClassCode() + " group not null -> compute D[" + idx + "], LP = " + LP.toString() + ", D[" + idx + "] = " + D[idx].toString());
                             }
                         }else{
-                            D[idx] = Util.generateSLotSequence(gc.getCrew(),d[idx]);
+                            //D[idx] = Util.generateSLotSequence(gc.getCrew(),d[idx]);
+                            D[idx] = Util.generateSLotSequence(scheduleDays, scheduleSlots,gc.getCrew(),d[idx]);
                             log.info("mapData, group EQUAL null -> D[" + idx + "].sz = " + D[idx].size());
                         }
                     }
@@ -988,8 +996,11 @@ public class V2ClassScheduler {
  */
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoomNew(List<ModelResponseTimeTablingClass> classes,
                                                                            List<ModelResponseTimeTablingClass> allClasses,
-                                                                           List<Classroom> rooms, Map<String,
-            List<TimeTablingClassSegment>> mId2RoomReservations, List<TimeTablingCourse> ttcourses,
+                                                                           List<Classroom> rooms,
+                                                                           List<Integer> days, // 2, 3, 4, ...
+                                                                           List<Integer> slots,// 1, 2, 3, 4, 5, 6
+                                                                           Map<String, List<TimeTablingClassSegment>> mId2RoomReservations,
+                                                                           List<TimeTablingCourse> ttcourses,
                                                                            List<Group> groups,
                                                                            List<ClassGroup> classGroups,
                                                                            int timeLimit, String algorithm,
@@ -1001,7 +1012,7 @@ public class V2ClassScheduler {
 
         //algoParams.TIME_SLOT_ORDER = AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_PRIORITY_SETTINGS;
 
-        MapDataScheduleTimeSlotRoomWrapper D = mapDataNew(classes, rooms,mId2RoomReservations,ttcourses,groups,classGroups,params);
+        MapDataScheduleTimeSlotRoomWrapper D = mapDataNew(classes, rooms,days, slots, mId2RoomReservations,ttcourses,groups,classGroups,params);
         MapDataScheduleTimeSlotRoom data = D.data;
         log.info("autoScheduleTimeSlotRoom, mapData, data has " + data.getClassSegments().size() + " class-segments");
         //data.print();

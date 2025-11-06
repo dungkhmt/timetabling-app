@@ -29,8 +29,9 @@ public class FacilitySpecification implements Specification<Facility> {
         List<String> statusId = filter.getStatusId();
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
-            predicates.add(criteriaBuilder.like(root.get("name"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("id").as(String.class), "%" + keyword + "%");
+            Predicate nameLike = criteriaBuilder.like(root.get("name"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, nameLike));
         }
 
         if (statusId != null && !statusId.isEmpty()) {

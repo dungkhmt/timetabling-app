@@ -9,9 +9,13 @@ import java.util.List;
 public interface TimeTablingClassSegmentRepo extends JpaRepository<TimeTablingClassSegment, Long> {
     List<TimeTablingClassSegment> findAllByClassIdIn(List<Long> classIds);
 
+    List<TimeTablingClassSegment> findAllByIdIn(List<Long> ids);
+
     List<TimeTablingClassSegment> findAllByClassId(Long classId);
 
     List<TimeTablingClassSegment> findAllByVersionId(Long versionId);
+    List<TimeTablingClassSegment> findAllByVersionIdIn(List<Long> versionIds);
+
 
     List<TimeTablingClassSegment> findAllByVersionIdAndClassIdIn(Long versionId, List<Long> classIds);
 

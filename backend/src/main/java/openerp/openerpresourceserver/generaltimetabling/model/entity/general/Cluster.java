@@ -22,4 +22,7 @@ public class Cluster {
     private String name;
     @Column(name="semester")
     private String semester;
+    @Column(name="batch_id")
+    private Long batchId;
+
 }

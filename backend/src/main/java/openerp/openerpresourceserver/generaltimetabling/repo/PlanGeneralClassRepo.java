@@ -6,10 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface PlanGeneralClassRepo extends JpaRepository<PlanGeneralClass, Long> {
     List<PlanGeneralClass> findAllBySemester(String semester);
+    List<PlanGeneralClass> findAllByBatchId(Long batchId);
+
+    List<PlanGeneralClass> findAllByIdIn(Set<Long> ids);
 
     void deleteAllBySemester(String semester);
 

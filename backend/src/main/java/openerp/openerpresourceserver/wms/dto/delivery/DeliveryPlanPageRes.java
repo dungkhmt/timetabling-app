@@ -25,7 +25,7 @@ public class DeliveryPlanPageRes {
 
     private BigDecimal totalWeight;
 
-    private String delveryPlanName;
+    private String deliveryPlanName;
 
     private LocalDate deliveryDate;
 

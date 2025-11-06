@@ -1,4 +1,4 @@
-import { request } from "api";
+import {request} from "api";
 
 export const wms2Service = {
   
@@ -81,7 +81,7 @@ export const wms2Service = {
         return request("get", `shipment/inbound/${shipmentId}`);
     },
   exportInBoundShipment: (shipmentId) => {
-    return request("put", `/invoice/export-inbound/${shipmentId}` , null, null, null);
+    return request("put", `/invoice/import-inbound/${shipmentId}` , null, null, null);
   },
   getLowStockForecast : () => {
     return request("get", `/forecast/daily-low-stock`);
@@ -180,4 +180,20 @@ export const wms2Service = {
   autoAssignShipment: (orderId) => {
   return request("get", `/shipment/auto-assign-outbound/${orderId}`);
 },
+getInvoiceByShipmentId: (shipmentId) => {
+  return request("get", `/invoice/shipment/${shipmentId}`);
+},
+
+getInvoiceById: (invoiceId) => {
+  return request("get", `/invoice/${invoiceId}`);
+},
+  getInventoryItemByProductId(page, limit, productId) {
+    return request("get", `/inventory-item/product/${productId}?page=${page}&limit=${limit}`);
+  },
+  getProductPrice (productId) {
+    return request("get", `/product-price/${productId}`);
+  },
+    createProductPrice: (data) => {
+        return request("post", "/product-price", null, null, data);
+    },
 };

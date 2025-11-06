@@ -7,10 +7,8 @@ import openerp.openerpresourceserver.wms.constant.enumrator.InvoiceType;
 import openerp.openerpresourceserver.wms.constant.enumrator.OrderItemBillingType;
 import openerp.openerpresourceserver.wms.constant.enumrator.ShipmentStatus;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
-import openerp.openerpresourceserver.wms.entity.InventoryItem;
-import openerp.openerpresourceserver.wms.entity.Invoice;
-import openerp.openerpresourceserver.wms.entity.InvoiceItem;
-import openerp.openerpresourceserver.wms.entity.OrderItemBilling;
+import openerp.openerpresourceserver.wms.dto.invoice.InvoiceDTO;
+import openerp.openerpresourceserver.wms.entity.*;
 import openerp.openerpresourceserver.wms.exception.DataNotFoundException;
 import openerp.openerpresourceserver.wms.mapper.GeneralMapper;
 import openerp.openerpresourceserver.wms.repository.*;
@@ -19,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -35,6 +34,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InventoryItemRepo inventoryItemRepo;
     private final OrderItemBillingRepo orderItemBillingRepo;
     private final GeneralMapper generalMapper;
+    private final AddressRepo addressRepo;
 
     @Override
     @Transactional
@@ -166,6 +166,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 var newInventoryItem = generalMapper.convertToEntity(inventoryItemDetail, InventoryItem.class);
                 newInventoryItem.setId(SnowFlakeIdGenerator.getInstance().nextId(INVENTORY_ITEM_ID_PREFIX));
                 newInventoryItem.setStatusId(InventoryStatus.VALID.name());
+                newInventoryItem.setReceivedDate(LocalDate.now());
                 inventoryItemRepo.save(newInventoryItem);
             } else {
                 inventoryItem.setQuantity(inventoryItem.getQuantity() + inventoryItemDetail.getQuantity());
@@ -222,5 +223,130 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .message("Import shipment success")
                 .build();
 
+    }
+
+    @Override
+    public ApiResponse<InvoiceDTO> getInvoiceByShipmentId(String shipmentId) {
+            var shipment = shipmentRepo.findById(shipmentId)
+                    .orElseThrow(() -> new DataNotFoundException("Shipment not found with id: " + shipmentId));
+            
+            var orderItemBillings = orderItemBillingRepo.findByShipmentId(shipmentId);
+            if (orderItemBillings.isEmpty()) {
+                throw new DataNotFoundException("No invoice found for shipment: " + shipmentId);
+            }
+            
+            var invoiceItem = orderItemBillings.get(0).getInvoiceItem();
+            var invoice = invoiceItem.getInvoice();
+            
+            return ApiResponse.<InvoiceDTO>builder()
+                    .code(200)
+                    .message("Invoice retrieved successfully")
+                    .data(buildInvoiceDTO(invoice, shipment))
+                    .build();
+
+    }
+
+    @Override
+    public ApiResponse<InvoiceDTO> getInvoiceById(String invoiceId) {
+            var invoice = invoiceRepo.findById(invoiceId)
+                    .orElseThrow(() -> new DataNotFoundException("Invoice not found with id: " + invoiceId));
+            
+            return ApiResponse.<InvoiceDTO>builder()
+                    .code(200)
+                    .message("Invoice retrieved successfully")
+                    .data(buildInvoiceDTO(invoice, null))
+                    .build();
+    }
+
+    private InvoiceDTO buildInvoiceDTO(Invoice invoice, Shipment shipment) {
+        var orderItemBillings = orderItemBillingRepo.findByInvoiceId(invoice.getId());
+        
+        var invoiceItems = orderItemBillings.stream()
+                .map(this::buildInvoiceItemDTO)
+                .toList();
+        
+        var subtotal = invoiceItems.stream()
+                .map(InvoiceDTO.InvoiceItemDTO::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        var totalDiscount = invoiceItems.stream()
+                .map(InvoiceDTO.InvoiceItemDTO::getDiscount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        var totalTax = invoiceItems.stream()
+                .map(InvoiceDTO.InvoiceItemDTO::getTax)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        var totalQuantity = invoiceItems.stream()
+                .mapToInt(InvoiceDTO.InvoiceItemDTO::getQuantity)
+                .sum();
+        
+        var totalAmount = subtotal.subtract(totalDiscount).add(totalTax);
+
+        InvoiceDTO.CustomerInfoDTO customerInfo = null;
+        InvoiceDTO.SupplierInfoDTO supplierInfo = null;
+        
+        if (invoice.getToCustomer() != null) {
+            var address = addressRepo.findById(
+                    invoice.getToCustomer().getCurrentAddressId()
+            ).orElseThrow(
+                    () -> new DataNotFoundException("Customer address not found for customer: " + invoice.getToCustomer().getId())
+            );
+            var customer = invoice.getToCustomer();
+            customerInfo = generalMapper.convertToEntity(
+                    customer, InvoiceDTO.CustomerInfoDTO.class);
+            customerInfo.setFullAddress(address.getFullAddress());
+        }
+        
+        if (invoice.getFromSupplier() != null) {
+            var address = addressRepo.findById(
+                    invoice.getFromSupplier().getCurrentAddressId()
+            ).orElseThrow(
+                    () -> new DataNotFoundException("Supplier address not found for supplier: " + invoice.getFromSupplier().getId())
+            );
+            var supplier = invoice.getFromSupplier();
+            supplierInfo = generalMapper.convertToEntity(
+                    supplier, InvoiceDTO.SupplierInfoDTO.class);
+            supplierInfo.setFullAddress(address.getFullAddress());
+        }
+        
+        return InvoiceDTO.builder()
+                .id(invoice.getId())
+                .invoiceName(invoice.getInvoiceName())
+                .invoiceTypeId(invoice.getInvoiceTypeId())
+                .statusId(invoice.getStatusId())
+                .createdStamp(invoice.getCreatedStamp())
+                .customerInfo(customerInfo)
+                .supplierInfo(supplierInfo)
+                .items(invoiceItems)
+                .subtotal(subtotal)
+                .totalDiscount(totalDiscount)
+                .totalTax(totalTax)
+                .totalAmount(totalAmount)
+                .totalQuantity(totalQuantity)
+                .createdByUserName(invoice.getCreatedByUser() != null ?
+                        invoice.getCreatedByUser().getFullName() : "N/A")
+                .build();
+    }
+
+    private InvoiceDTO.InvoiceItemDTO buildInvoiceItemDTO(OrderItemBilling billing) {
+        var product = billing.getProduct();
+        var orderItem = billing.getOrderItem();
+        
+        BigDecimal discount = orderItem.getDiscount() != null ? orderItem.getDiscount() : BigDecimal.ZERO;
+        BigDecimal tax = orderItem.getTax() != null ? orderItem.getTax() : BigDecimal.ZERO;
+        
+        return InvoiceDTO.InvoiceItemDTO.builder()
+                .id(billing.getId())
+                .seqId(billing.getInvoiceItem().getInvoiceItemSeqId())
+                .productId(product.getId())
+                .productName(product.getName())
+                .unit(billing.getUnit())
+                .quantity(billing.getQuantity())
+                .discount(discount)
+                .tax(tax)
+                .price(orderItem.getPrice())
+                .amount(billing.getAmount())
+                .build();
     }
 }

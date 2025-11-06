@@ -2,9 +2,11 @@ package openerp.openerpresourceserver.generaltimetabling.service.impl;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingBatchRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingClassRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingVersionRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -26,28 +29,38 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     private TimeTablingClassService timeTablingClassService;
 
     @Autowired
-    TimeTablingClassRepo timeTablingClassRepo;
+    private TimeTablingClassRepo timeTablingClassRepo;
+
+    @Autowired
+    private TimeTablingBatchRepo timeTablingBatchRepo;
 
     @Override
     @Transactional
-    public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot) {
-        log.info("Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}", 
+    public TimeTablingTimeTableVersion createVersion(String name, String status, String semester, String userId, Integer numOfSlot, Long batchId) {
+        log.info("createVersion, Creating new timetabling version with name: {}, status: {}, semester: {}, userId: {}",
                 name, status, semester, userId);
-        
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(batchId).orElse(null);
+        if(batch == null) return null;
+
         TimeTablingTimeTableVersion version = new TimeTablingTimeTableVersion();
         version.setName(name);
         version.setStatus(status);
-        version.setSemester(semester);
+        version.setSemester(batch.getSemester());
         version.setCreatedByUserId(userId);
         version.setNumberSlotsPerSession(numOfSlot);
+        version.setBatchId(batchId);
+        version.setCreatedStamp(new Date());
         // ID sẽ được tự động tạo bởi cơ sở dữ liệu
         
         version = timeTablingVersionRepo.save(version);
 
         // create class-segments of classes of the semester
-        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllBySemester(semester);
+        //List<TimeTablingClass> CLS = timeTablingClassRepo.findAllBySemester(semester);
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAllByBatchId(batchId);
+        log.info("createVersion, classes of batch " + batchId + " -> CLS.sz = " + CLS.size());
         for(TimeTablingClass cls: CLS){
             TimeTablingClassSegment cs = timeTablingClassService.createClassSegment(cls.getId(),cls.getCrew(),cls.getDuration(),version.getId());
+            log.info("createVersion, created class-segment " + cs.getId());
         }
         return version;
     }
@@ -62,6 +75,12 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     public List<TimeTablingTimeTableVersion> getAllVersionsByName(String name) {
         log.info("Fetching all timetabling versions with name containing: {}", name);
         return timeTablingVersionRepo.findByNameContaining(name);
+    }
+
+    @Override
+    public List<TimeTablingTimeTableVersion> getAllVersionsByBatchId(Long batchId) {
+        List<TimeTablingTimeTableVersion> res = timeTablingVersionRepo.findAllByBatchId(batchId);
+        return res;
     }
 
     @Override

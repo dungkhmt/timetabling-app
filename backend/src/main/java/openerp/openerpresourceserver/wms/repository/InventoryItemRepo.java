@@ -24,4 +24,6 @@ public interface InventoryItemRepo extends JpaRepository<InventoryItem, String> 
     InventoryItem findByFacilityIdAndProductIdAndLotIdAndManufacturingDateAndExpirationDate(String facilityId, String productId, String lotId,
                                                                                             LocalDate manufacturingDate,
                                                                                             LocalDate expirationDate);
+
+    Page<InventoryItem> findByProductId(String productId, PageRequest pageRequest);
 }

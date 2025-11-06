@@ -30,5 +30,6 @@ public class Group {
     @Column(name="day_seq")
     private String daySeq;
 
-
+    @Column(name="status")
+    private String status;
 }

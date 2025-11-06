@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.wms.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
@@ -22,7 +23,7 @@ public class SupplierController {
     }
 
     @PostMapping("/create")
-    public ApiResponse<Void> createSupplier(@RequestBody CreateSupplierReq supplier) {
+    public ApiResponse<Void> createSupplier(@RequestBody @Valid CreateSupplierReq supplier) {
         return supplierService.createSupplier(supplier);
     }
 

@@ -12,7 +12,11 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Pla
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
 
 import java.util.List;
 
@@ -25,6 +29,13 @@ public interface TimeTablingClassService {
     List<TimeTablingClassSegment> createClassSegmentForSummerSemester(CreateClassSegmentRequest I);
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(String semester, Long groupId, Long versionId);
+
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId);
+    public List<ModelResponseClassSegment> getClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+
+    public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+
+    public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId);
     public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
 
     List<ModelResponseTimeTablingClass> getTimeTablingClassDtos(List<Long> classIds, Long versionId);
@@ -58,6 +69,7 @@ public interface TimeTablingClassService {
     public List<ModelResponseTimeTablingClass> getClassByCluster(Long clusterId, Long versionId);
 
     public boolean updateTimeTableClassSegment(String semester, List<V2UpdateClassScheduleRequest> saveRequests);
+    public ModelResponseManualAssignTimeTable manualAssignTimetable2Classsegment(String userId,  ModelInputManualAssignTimeTable I);
 
     TimeTablingClassSegment createClassSegment(Long classId, String crew, Integer duration, Long versionId);
 

@@ -69,6 +69,7 @@ export const prepareClassPayload = (formData, semester) => {
     learningWeeks: formData.learningWeeks,
     weekType: formData.weekType,
     crew: formData.crew,
+    classType: formData.classType,
     promotion: formData.promotion,
     mass: formData.mass || ""
   };

@@ -10,7 +10,14 @@ export const generalTimeTabling = {
       text: "Kế hoạch mở lớp",
       child: [],
     },
-     {
+    {
+      id: "MENU_CLASS_PLAN.LIST_BATCH",
+      path: "/general-time-tabling/list-batch",
+      isPublic: true,
+      text: "Kế hoạch mở lớp (new)",
+      child: [],
+    },
+    {
       id: "MENU_GENERAL_TIME_TABLING.UPLOAD_SCREEN",
       path: "/general-time-tabling/plan-class-open-summer",
       isPublic: true,
@@ -39,6 +46,13 @@ export const generalTimeTabling = {
       child: [],
     },
     {
+      id: "MENU_TIMETABLING.MAKE_TIMETABLING",
+      path: "/general-time-tabling/list-batch-make-timetabling",
+      isPublic: true,
+      text: "Xếp thời khóa biểu (new)",
+      child: [],
+    },
+    {
       id: "MENU_GENERAL_TIME_TABLING.SCHEDULE_SCREEN_SUMMER",
       path: "/general-time-tabling/schedule-class-summer",
       isPublic: true,
@@ -50,6 +64,13 @@ export const generalTimeTabling = {
       path: "/general-time-tabling/room-occupation",
       isPublic: true,
       text: "Xem tình trạng phòng học",
+      child: [],
+    },
+    {
+      id: "MENU_GENERAL_TIME_TABLING.FIND_EMPTY_ROOM",
+      path: "/general-time-tabling/find-empty-room",
+      isPublic: true,
+      text: "Tìm phòng học trống",
       child: [],
     },
     {

@@ -33,7 +33,11 @@ public class DeliveryPlanSpecification implements Specification<DeliveryPlan> {
 
 
         if (keyword != null && !keyword.isEmpty()) {
-            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+//            predicates.add(criteriaBuilder.like(root.get("id"), "%" + keyword + "%"));
+            Predicate idLike = criteriaBuilder.like(root.get("id"), keyword + "%");
+            Predicate deliveryPlanNameLike = criteriaBuilder.like(root.get("deliveryPlanName"), "%" + keyword + "%");
+            Predicate facilityNameLike = criteriaBuilder.like(root.join("facility").get("name"), "%" + keyword + "%");
+            predicates.add(criteriaBuilder.or(idLike, deliveryPlanNameLike, facilityNameLike));
         }
 
         if (status != null && !status.isEmpty()) {

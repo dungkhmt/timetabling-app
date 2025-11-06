@@ -15,6 +15,8 @@ public interface GroupRepo extends JpaRepository<Group, Long> {
     @Query(value = "SELECT DISTINCT semester FROM public.timetabling_group", nativeQuery = true)
     List<String> getSemester();
 
+    List<Group> findAllByIdIn(List<Long> ids);
+    List<Group> findAllByStatus(String status);
     Optional<Group> findByGroupName(String groupName);
 
     List<Group> getAllByGroupName(String groupName);

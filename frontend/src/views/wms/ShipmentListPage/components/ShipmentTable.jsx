@@ -1,23 +1,21 @@
 import React from "react";
 import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Typography
+    Box,
+    Chip,
+    CircularProgress,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    Typography
 } from "@mui/material";
-import { format } from "date-fns";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import { useHistory } from "react-router-dom";
-import { SHIPMENT_TYPE_ID } from "../../common/constants/constants";
+import {format} from "date-fns";
+import {useHistory} from "react-router-dom";
+import {SHIPMENT_TYPE_ID} from "../../common/constants/constants";
 
 const ShipmentTable = ({
   shipmentTypeId,
@@ -44,8 +42,10 @@ const ShipmentTable = ({
         return <Chip size="small" label="Đã tạo" color="default" />;
       case 'PENDING':
         return <Chip size="small" label="Chờ xử lý" color="warning" />;
+      case 'FULLY_TO_BE_DELIVERED':
+        return <Chip size="small" label="Chờ giao hàng" color="info" />;
       case 'EXPORTED':
-        return <Chip size="small" label="Đã xuất kho" color="info" />;
+        return <Chip size="small" label="Đã xuất kho" color="secondary" />;
       case 'SHIPPED':
         return <Chip size="small" label="Đang vận chuyển" color="primary" />;
       case 'PARTIALLY_DELIVERED':

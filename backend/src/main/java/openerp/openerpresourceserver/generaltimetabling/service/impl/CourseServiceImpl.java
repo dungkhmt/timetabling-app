@@ -1,23 +1,67 @@
 package openerp.openerpresourceserver.generaltimetabling.service.impl;
 
+import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.exception.CourseNotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.exception.CourseUsedException;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.CourseDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Course;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingCourse;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.CourseRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingClassRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingCourseRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 
 @Service
+@Log4j2
 public class CourseServiceImpl implements CourseService {
     @Autowired
     private CourseRepo courseRepo;
+    @Autowired
+    private TimeTablingCourseRepo timeTablingCourseRepo;
+
+    @Autowired
+    private TimeTablingClassRepo timeTablingClassRepo;
+
+    private void synchronizeCourses(){
+        //List<GeneralClass> cls = gcoRepo.findAll();
+        List<TimeTablingClass> CLS = timeTablingClassRepo.findAll();
+        Set<String> courseCodes = new HashSet<>();
+        Map<String, String> mCourseCode2Name = new HashMap<>();
+        Map<String, String> mCourseCode2Volumn = new HashMap<>();
+        //for(GeneralClass gc: cls){
+        for(TimeTablingClass gc: CLS){
+            String courseCode = gc.getModuleCode();
+            courseCodes.add(courseCode);
+            mCourseCode2Name.put(courseCode,gc.getModuleName());
+            mCourseCode2Volumn.put(courseCode,gc.getMass());
+        }
+        for(String courseCode: courseCodes){
+            TimeTablingCourse course = timeTablingCourseRepo.findById(courseCode).orElse(null);
+            if(course == null) {
+                String courseName = mCourseCode2Name.get(courseCode);
+                course = new TimeTablingCourse();
+                course.setId(courseCode);
+                course.setName(courseName);
+                course.setMaxTeacherInCharge(50);
+                course.setVolumn(mCourseCode2Volumn.get(courseCode));
+                timeTablingCourseRepo.save(course);
+                log.info("synchronizeCourses save " + courseCode + "," + courseName + " volumn " + course.getVolumn());
+            }else{
+                course.setVolumn(mCourseCode2Volumn.get(courseCode));
+                log.info("synchronizeCourses save " + courseCode + "," + course.getName() + " volumn " + course.getVolumn());
+                course = timeTablingCourseRepo.save(course);
+            }
+        }
+    }
 
     @Override
     public List<Course> getCourse() {
+        //synchronizeCourses();
         if(courseRepo.findAll() == null) throw new CourseUsedException("k có lop");
         return courseRepo.findAll();
     }
@@ -40,6 +84,7 @@ public class CourseServiceImpl implements CourseService {
         Integer maxTeacherInCharge = requestDto.getMaxTeacherInCharge();
 
         course.setCourseName(courseName);
+        course.setVolumn(requestDto.getVolumn());
         course.setMaxTeacherInCharge(maxTeacherInCharge);
         course.setSlotsPriority(slotsPriority);
 
@@ -66,6 +111,7 @@ public class CourseServiceImpl implements CourseService {
         Course newCourse = new Course();
         newCourse.setId(id);
         newCourse.setCourseName(courseName);
+        newCourse.setVolumn(courseDto.getVolumn());
         newCourse.setSlotsPriority(courseDto.getSlotsPriority());
         newCourse.setMaxTeacherInCharge(courseDto.getMaxTeacherInCharge());
 
@@ -82,5 +128,11 @@ public class CourseServiceImpl implements CourseService {
         }
 
         courseRepo.deleteById(id);
+    }
+
+    @Override
+    public TimeTablingCourse getCourseDetail(String courseId) {
+        TimeTablingCourse course = timeTablingCourseRepo.findById(courseId).orElse(null);
+        return course;
     }
 }

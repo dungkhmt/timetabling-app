@@ -21,8 +21,12 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Roo
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
@@ -79,13 +83,56 @@ public class TimeTablingClassController {
         return ResponseEntity.status(410).body("Mã lớp hoặc mã lớp tạm thời, mã lớp cha không phải là 1 số!");
     }
 
+    @GetMapping("/get-class-segments-of-version")
+    public ResponseEntity<?> getClasssegmentsOfVersion(Principal principal,
+                @RequestParam("versionId") Long versionId,
+                @RequestParam("searchCourseCode") String searchCourseCode,
+                                                       @RequestParam("searchCourseName") String searchCourseName,
+                                                       @RequestParam("searchClassCode") String searchClassCode,
+                                                       @RequestParam("searchGroupName") String searchGroupName
+                ){
+        log.info("getClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+        + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        return ResponseEntity.ok().body(res);
+    }
+
+    @GetMapping("/get-classes-with-class-segments-of-version")
+    public ResponseEntity<?> getClassesWithClasssegmentsOfVersion(Principal principal,
+                                                       @RequestParam("versionId") Long versionId,
+                                                       @RequestParam("searchCourseCode") String searchCourseCode,
+                                                       @RequestParam("searchCourseName") String searchCourseName,
+                                                       @RequestParam("searchClassCode") String searchClassCode,
+                                                       @RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getClassesWithClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        return ResponseEntity.ok().body(res);
+    }
+
+
     @GetMapping("/")
     public List<ModelResponseTimeTablingClass> requestGetClasses(
             @RequestParam("semester") String semester,
             @RequestParam(value = "groupName", required = false) Long groupId,
             @RequestParam(value = "versionId", required = false) Long versionId) {
         log.info("requestGetClasses, group = " + groupId + ", semester = " + semester + ", versionId = " + versionId);
-        return timeTablingClassService.getTimeTablingClassDtos(semester, groupId, versionId);
+        List<ModelResponseTimeTablingClass> res = timeTablingClassService.getTimeTablingClassDtos(semester, groupId, versionId);
+        log.info("requestGetClasses, res = " + res.size());
+        return res;
+
+    }
+
+    @GetMapping("/get-all-classes-of-batch")
+    public ResponseEntity<?> getAllClassesOfBatch(Principal principal, @RequestParam("batchId") Long batchId){
+        List<ModelResponseTimeTablingClass> res = timeTablingClassService.getTimeTablingClassOfBatch(principal.getName(), batchId);
+        return ResponseEntity.ok().body(res);
     }
 
     @GetMapping("/get-by-parent-class")
@@ -107,6 +154,11 @@ public class TimeTablingClassController {
         return ResponseEntity.ok().body(updatedGeneralClass);
     }
 
+    @PostMapping("/manual-assign-timetable-class-segment")
+    public ResponseEntity<?> manualAssignTimeTable2ClassSegment(Principal principal, @RequestBody ModelInputManualAssignTimeTable I){
+        ModelResponseManualAssignTimeTable res = timeTablingClassService.manualAssignTimetable2Classsegment(principal.getName(), I);
+        return ResponseEntity.ok().body(res);
+    }
     @PostMapping("/update-class-schedule-v2")
     public ResponseEntity<List<GeneralClass>> requestUpdateClassScheduleV2(@RequestParam("semester")String semester, @RequestBody UpdateClassScheduleRequest request ) {
         boolean ok = timeTablingClassService.updateTimeTableClassSegment(semester, request.getSaveRequests());
@@ -215,8 +267,15 @@ public class TimeTablingClassController {
     }
     @PostMapping("/auto-schedule-timeslot-room")
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
-        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I.getSemester(),I.getClassIds(),I.getTimeLimit(),I.getAlgorithm(),I.getMaxDaySchedule(), I.getVersionId()));
+        return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I));
+
     }
+
+    //@PostMapping("/auto-schedule-timeslot-room-4-class-segments")
+    //public ResponseEntity<?> autoScheduleTimeSlotRoom4ClassSegments(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
+    //    return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom4ClassSegments(I));
+    //}
+
     @PostMapping("/auto-schedule-time")
     public ResponseEntity<List<GeneralClass>> requestAutoScheduleTime(
             @RequestParam("semester") String semester,
@@ -278,6 +337,13 @@ public class TimeTablingClassController {
         log.info("computeClassCluster, semester = " + I.getSemester() + " result cnt = " + cnt);
         return ResponseEntity.ok().body(cnt);
     }
+    @PostMapping("/compute-class-cluster-of-batch")
+    public ResponseEntity<?> computeClassClusterOfBatch(Principal principal, @RequestBody ModelInputComputeClassCluster I){
+        log.info("computeClassCluster, semester = " + I.getSemester());
+        int cnt = timeTablingClassService.computeClassCluster(I);
+        log.info("computeClassCluster, semester = " + I.getSemester() + " batch = " + I.getBatchId() + " -> result cnt = " + cnt);
+        return ResponseEntity.ok().body(cnt);
+    }
 
     @GetMapping("/get-by-cluster/{clusterId}")
     public ResponseEntity<?> getGeneralClassesByCluster(
@@ -290,6 +356,11 @@ public class TimeTablingClassController {
     @GetMapping("/get-clusters-by-semester")
     public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("semester") String semester) {
         List<Cluster> clusters = clusterRepo.findAllBySemester(semester);
+        return ResponseEntity.ok(clusters);
+    }
+    @GetMapping("/get-clusters-by-batch")
+    public ResponseEntity<List<Cluster>> getClustersBySemester(@RequestParam("batchId") Long batchId) {
+        List<Cluster> clusters = clusterRepo.findAllByBatchId(batchId);
         return ResponseEntity.ok(clusters);
     }
 
@@ -310,6 +381,13 @@ public class TimeTablingClassController {
         List<TimeTablingClass> res = timeTablingClassService.assignSessionToClassesSummer(I);
         return ResponseEntity.ok().body(res);
     }
+
+    @PostMapping("/create-class-segments-for-summer-semester-new")
+    public ResponseEntity<?> createClassSegmentsForSummerSemesterNew(Principal principal, @RequestBody CreateClassSegmentRequest I){
+        timeTablingClassService.createClassSegmentForSummerSemester(I);
+        return ResponseEntity.ok().body("OK");
+    }
+
 
     @PostMapping("/create-class-segments-for-summer-semester")
     public ResponseEntity<?> createClassSegmentsForSummerSemester(Principal principal, @RequestBody CreateClassSegmentRequest I){

@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.generaltimetabling.controller;
 
+
 import jakarta.validation.Valid;
 import openerp.openerpresourceserver.generaltimetabling.exception.ClassroomNotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.exception.ClassroomUsedException;
@@ -23,6 +24,7 @@ public class ClassroomController {
     @Autowired
     private ClassroomService service;
 
+
     @PostMapping("/clear-all")
     public ResponseEntity<List<Classroom>> clearAllClassRoom() {
         service.clearAllClassRoom();
@@ -42,16 +44,19 @@ public class ClassroomController {
 
     @GetMapping("/get-all")
     public ResponseEntity<List<Classroom>> getAllClassroom() {
-        try {
-            List<Classroom> classroomList = service.getClassroom();
-            if (classroomList.isEmpty()) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-            return new ResponseEntity<>(classroomList, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+//        try {
+//            List<Classroom> classroomList = service.getClassroom();
+//            if (classroomList.isEmpty()) {
+//                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//            }
+//            return new ResponseEntity<>(classroomList, HttpStatus.OK);
+//        } catch (Exception e) {
+//            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+        List<Classroom> listRoom = service.findAllActiveRooms();
+        return ResponseEntity.ok().body(listRoom);
     }
+
 
     @GetMapping("/get-all-building")
     public ResponseEntity<List<String>> getAllBuilding() {
@@ -118,11 +123,16 @@ public class ClassroomController {
 
     @PostMapping("/")
     public ResponseEntity<List<Classroom>> requestGetClassroomByBuildings(@RequestBody(required = false) GetClassRoomByBuildingsRequest request) {
+        //return getAllClassroom();
+        List<Classroom> classroomList = service.findAllActiveRooms();
+        return ResponseEntity.ok().body(classroomList);
+        /*
         if (request == null || (request.getGroupName() == null && request.getMaxAmount() == null)) {
             return getAllClassroom();
         }
 
         return ResponseEntity.ok(service.getMaxQuantityClassRoomByBuildings(request.getGroupName(), request.getMaxAmount()));
+        */
     }
 
 

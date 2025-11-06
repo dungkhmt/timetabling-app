@@ -31,4 +31,6 @@ public class ProductDetailRes {
     private String productCategoryName;
 
     private String statusId;
+
+    private BigDecimal vatRate;
 }

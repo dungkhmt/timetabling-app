@@ -120,14 +120,14 @@ const ShipperFilters = ({
             >
               Tìm kiếm
             </Button>
-            <Button
-              variant="outlined"
-              onClick={onResetFilters}
-              startIcon={<RestartAltIcon />}
-              fullWidth
-            >
-              Đặt lại
-            </Button>
+            {/*<Button*/}
+            {/*  variant="outlined"*/}
+            {/*  onClick={onResetFilters}*/}
+            {/*  startIcon={<RestartAltIcon />}*/}
+            {/*  fullWidth*/}
+            {/*>*/}
+            {/*  Đặt lại*/}
+            {/*</Button>*/}
           </Box>
         </Grid>
       </Grid>

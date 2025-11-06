@@ -1,5 +1,6 @@
 package openerp.openerpresourceserver.wms.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import openerp.openerpresourceserver.wms.dto.ApiResponse;
 import openerp.openerpresourceserver.wms.dto.Pagination;
@@ -28,7 +29,7 @@ public class ProductController {
     }
 
     @PostMapping("/create")
-    public ApiResponse<Void> createProduct(@RequestBody CreateProductReq req) {
+    public ApiResponse<Void> createProduct(@RequestBody @Valid CreateProductReq req) {
         return productService.createProduct(req);
     }
 

@@ -44,7 +44,6 @@ import static io.micrometer.common.util.StringUtils.isBlank;
 import static openerp.openerpresourceserver.wms.constant.Constants.DEFAULT_ADMIN_USER_NAME;
 import static openerp.openerpresourceserver.wms.constant.Constants.ORDER_ITEM_ID_PREFIX;
 import static openerp.openerpresourceserver.wms.util.CommonUtil.getAllWeeklyStartDates;
-import static openerp.openerpresourceserver.wms.util.CommonUtil.getRandomElements;
 
 @Service
 @RequiredArgsConstructor
@@ -234,7 +233,9 @@ public class SaleOrderServiceImpl implements SaleOrderService{
     @Override
     @Transactional
     public void simulateSaleOrder() throws InterruptedException {
-        List<LocalDate> weeks = getAllWeeklyStartDates(LocalDate.now().minusYears(2), LocalDate.now());
+        LocalDate to = LocalDate.of(2025, 7, 5);
+        LocalDate from = LocalDate.of(2023, 7, 5);
+        List<LocalDate> weeks = getAllWeeklyStartDates(from, to);
         List<Customer> customers = customerRepo.findAll();
         List<Facility> facilities = facilityRepo.findAll();
         List<Product> products = productRepo.findAll();
@@ -253,8 +254,8 @@ public class SaleOrderServiceImpl implements SaleOrderService{
             for (int i = 0; i < 7; i++) {
                 LocalDate day = weekStart.plusDays(i);
 
-                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, customers.size()-1);
-                List<Customer> assignedCustomers = getRandomElements(customers, 0, numberOfCustomers);
+//                var numberOfCustomers = ThreadLocalRandom.current().nextInt(1, customers.size()-1);
+//                List<Customer> assignedCustomers = getRandomElements(customers, 0, numberOfCustomers);
 
                 for (Product product : products) {
                     LocalDateTime timestamp = day.atTime(
@@ -262,7 +263,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
                             ThreadLocalRandom.current().nextInt(0, 60));
 
                     executor.execute(() -> {
-                        var orderHeader = saveOrderForProduct(assignedCustomers, timestamp,  addressMap, saleChannels, product, userLogin);
+                        var orderHeader = saveOrderForProduct(customers, timestamp,  addressMap, saleChannels, product, userLogin);
                         if (orderHeader == null) {
                             return;
                         }
@@ -307,7 +308,7 @@ public class SaleOrderServiceImpl implements SaleOrderService{
             AtomicInteger increment = new AtomicInteger(0);
             List<OrderItem> orderItems = List.of(assignedProduct).stream()
                     .map(product -> {
-                        int quantity = ThreadLocalRandom.current().nextInt(80, 100);
+                        int quantity = ThreadLocalRandom.current().nextInt(100, 501);
                         BigDecimal price = product.getWholeSalePrice();
 
                         var orderItem =  OrderItem.builder()

@@ -16,6 +16,7 @@ export default function CourseDataGrid({ courses, isLoading, onEdit, onDelete, o
   const columns = [
     { headerName: "Mã môn học", field: "id", width: 130 },
     { headerName: "Tên môn học", field: "courseName", width: 300 },
+    { headerName: "Khối lượng", field: "volumn", width: 300 },    
     { headerName: "Độ ưu tiên ca học", field: "slotsPriority", width: 170 },
     { headerName: "Số giáo viên tối đa", field: "maxTeacherInCharge", width: 150 },
     {
