@@ -34,7 +34,7 @@ public class TeacherAssignment {
             }
         }
 
-        log.info("Filtered OpenedClassList Size (teachable only): {}", filteredClasses.size());
+        log.info("Filtered OpenedClassList Size (teachable only): {}", Optional.of(filteredClasses.size()));
 
         openedClassesList = filteredClasses;
 
@@ -69,9 +69,8 @@ public class TeacherAssignment {
             }
             model.addExactlyOne(allowedTeachers);
         }
-//
-//        // Ràng buộc 2: Tránh xung đột thời gian (nếu có thông tin thời gian)
-//        // Giả sử TimeClassDto có thông tin về thời gian học
+
+        // Ràng buộc 2: Tránh xung đột thời gian
         // --- RÀNG BUỘC TRÙNG GIỜ ---
         for (int j = 0; j < numClasses; j++) {
             for (int k = j + 1; k < numClasses; k++) {
@@ -87,16 +86,29 @@ public class TeacherAssignment {
             }
         }
 
+        // Ràng buộc 3 tổng số tín chỉ các lớp mỗi giáo viên không quá max credit giáo viên đó
+
+        for( int i =0 ; i < numTeachers; i++){
+            long maxCredit = teacherList.get(i).getMaxCredit();
+            LinearExprBuilder creditSum = LinearExpr.newBuilder();
+
+            for (int j = 0; j < numClasses; j++) {
+                long credit = extractCreditFromVolume(openedClassesList.get(j).getStudyingCourse().getVolume());
+                creditSum.addTerm(assignmentVars[i][j], credit);
+            }
+            // Thêm ràng buộc tổng tín chỉ <= maxCredit
+            model.addLessOrEqual(creditSum, maxCredit);
+        }
+
+
+
 
 //        hàm mục tiêu hiện tại: số lớp nhiều nhất của giảng viên đạt min
 
         // Biến để theo dõi số lớp mỗi giáo viên dạy
         IntVar[] teacherLoads = new IntVar[numTeachers];
         for (int i = 0; i < numTeachers; i++) {
-            List<Literal> classesTaught = new ArrayList<>();
-            for (int j = 0; j < numClasses; j++) {
-                classesTaught.add(assignmentVars[i][j]);
-            }
+            List<Literal> classesTaught = new ArrayList<>(Arrays.asList(assignmentVars[i]).subList(0, numClasses));
             // Chuyển List<Literal> sang LinearArgument[]
             LinearArgument[] classesArray = classesTaught.toArray(new LinearArgument[0]);
             teacherLoads[i] = model.newIntVar(0, numClasses, "teacher_load_" + i);
@@ -118,7 +130,7 @@ public class TeacherAssignment {
         Map<Long, String> assignmentResult = new HashMap<>();
 
         if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
-            log.info("Solution found with objective value: {}", solver.objectiveValue());
+            log.info("Solution found with objective value: {}", Optional.of(solver.objectiveValue()));
 
             // Extract and return the solution
             for (int j = 0; j < numClasses; j++) {
@@ -161,8 +173,13 @@ public class TeacherAssignment {
     /** Kiểm tra 2 lớp có buổi nào trùng nhau không */
     private static boolean hasTimeConflict(OpenedClass c1, OpenedClass c2) {
         if (c1.getTimeClasses() == null || c2.getTimeClasses() == null) return false;
+
         for (var t1 : c1.getTimeClasses()) {
             for (var t2 : c2.getTimeClasses()) {
+                if (t1.getDayOfWeek() != null && t2.getDayOfWeek() != null &&
+                        !t1.getDayOfWeek().equals(t2.getDayOfWeek())) {
+                    continue;
+                }
                 if (isOverlap(t1.getStartTime(), t1.getEndTime(),
                         t2.getStartTime(), t2.getEndTime())) {
                     return true;
@@ -171,5 +188,32 @@ public class TeacherAssignment {
         }
         return false;
     }
+
+
+    /**
+     * Trích xuất số tín chỉ từ chuỗi volume có dạng "2(2-1-0-4)"
+     * @param volume chuỗi volume
+     * @return số tín chỉ (phần số trước dấu ngoặc)
+     */
+    private static long extractCreditFromVolume(String volume) {
+        if (volume == null || volume.isEmpty()) {
+            return 0;
+        }
+        try {
+            // Tìm vị trí của dấu '('
+            int parenIndex = volume.indexOf('(');
+            if (parenIndex > 0) {
+                // Lấy phần trước dấu '(' và chuyển thành số
+                return Long.parseLong(volume.substring(0, parenIndex).trim());
+            } else {
+                // Nếu không có dấu '(', thử parse toàn bộ chuỗi
+                return Long.parseLong(volume.trim());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Cannot parse credit from volume: {}, using 0", volume);
+            return 0;
+        }
+    }
+
 
 }

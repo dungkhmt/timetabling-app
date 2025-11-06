@@ -21,7 +21,7 @@ public class CorsConfig {
             List<String> allowedOrigins
     ) {
         final var config = new CorsConfiguration();
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(Boolean.TRUE);
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedHeaders(Collections.singletonList("*"));
         config.setAllowedMethods(Collections.singletonList("*"));
