@@ -729,26 +729,37 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot);
                     tmp.add(cs);
+                    log.info("INIT -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
+
                 }
 
 
             for(int i = 0; i  < slots.size(); i++){
-                tmp.add(cls.getClassSegments().get(i));
-                int st = slots.get(i) + 1;
+                log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i));
+                ModelResponseClassSegment csr = cls.getClassSegments().get(i);
+                tmp.add(csr);
+                log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " add real cs " + csr.getDay() + "-" + csr.getSession()+"-" + csr.getStartTime() + " duration " + csr.getDuration());
+                int st = slots.get(i) + csr.getDuration();
                 int fn = 7*ver.getNumberSlotsPerSession()*2;
                 if(i < slots.size()-1) fn = slots.get(i+1)-1;
+                log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn);
                 for(int sl = st; sl <= fn; sl++){
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot);
                     tmp.add(cs);
+                    log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn + " -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
+
                 }
             }
             cls.setClassSegments(tmp);
+            log.info("getClassesWithClasssegmentsOfVersionFiltered, class-segments length = " + cls.getClassSegments().size());
         }
         log.info("getClassesWithClasssegmentsOfVersionFiltered, L = " + L.size() + " res = "  + res.size());
 
 
+
+        //return res.subList(0,50);
         return res;
     }
 

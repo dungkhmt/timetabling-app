@@ -27,7 +27,7 @@ export default function MakeTimetable(){
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [selectedRows, setSelectedRows] = useState([]);
     const [selectedVersion, setSelectedVersion] = useState(null);
-    const [numberSlotsToDisplay, setNumberSlotsToDisplay] = useState(6);
+    const [numberSlotsToDisplay, setNumberSlotsToDisplay] = useState(5);
     
     const[isCreateBySemester, setIsCreateBySemester] = useState(false);
       

@@ -43,6 +43,8 @@ const TimeTableMutliSlotPerRow = ({
   searchGroupName
 }) => {
   const [classWithClassSegments, setClassWithClassSegments] = useState([]);
+  const [activePageClassWithClassSegments, setActivePageClassWithClassSegments] = useState([]);
+  
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +52,7 @@ const TimeTableMutliSlotPerRow = ({
   const [open, setOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [isAddSlotDialogOpen, setIsAddSlotDialogOpen] = useState(false);
   const [selectedPeriods, setSelectedPeriods] = useState("");
@@ -132,10 +134,12 @@ const TimeTableMutliSlotPerRow = ({
                               + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
                               + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
                               (res)=>{
-                                  console.log('get-classes-with-class-segments-of-version, res.length = ' + res.data.length);
+                                  console.log('get-classes-with-class-segments-of-version, res = ' + res.data);
                                   setClassWithClassSegments(res.data || []);
                                   setLoading(false);
                                   setTotalRows(res.data.length);
+                                  setActivePageClassWithClassSegments(res.data.slice(0*rowsPerPage,0*rowsPerPage + rowsPerPage));
+
                               },
                               (error)=>{
                                   console.error(error);
@@ -257,18 +261,6 @@ const TimeTableMutliSlotPerRow = ({
     }));
   };
 
-const renderCellTimetable = (cs, index) => {
-  return (
-    <td
-      key = {`${cs.id}`}
-      colSpan={cs.duration}
-      style={{ width: "70px" }}
-        className="border border-gray-300 text-center cursor-pointer px-1"
-      >
-      <span className="text-[14px]">{cs.roomCode}</span>  
-    </td>
-  );
-}  
 const renderCellContent = (classIndex, day, period) => {
   // Tính toán index thực từ index hiện tại và trang hiện tại
   const actualIndex = page * rowsPerPage + classIndex;
@@ -489,11 +481,23 @@ const handleCancelMove = () => {
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
+    let P = classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage);
+    P.map((cls,index) =>{
+      console.log('class ' + cls.classCode + ': ');
+      cls.classSegments.map((cs,i) => {
+        console.log(cs.day + '-' + cs.session + '-' + cs.startTime + '-' + cs.duration);
+      })
+    })
+    setActivePageClassWithClassSegments(classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage));
+
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    let rpp = parseInt(event.target.value, 10);
+    setRowsPerPage(rpp);
     setPage(0);
+    setActivePageClassWithClassSegments(classWithClassSegments.slice(0*rpp,0*rpp + rpp));
+    
   };
 
   const handleSelectAll = (event) => {
@@ -790,12 +794,12 @@ const handleCancelMove = () => {
           </div>
         </table>
       ) : (
-        <div className="overflow-x-auto" style={{ flex: "1" }}>
+        <div className="overflow-auto" style={{ flex: "1", maxHeight: "calc(100vh - 200px)" }}>
           <table
             className="min-w-full border-separate border-spacing-0"
             style={{ tableLayout: "auto" }}
           >
-            <thead className="sticky top-0 z-10 bg-white">
+            <thead className="sticky top-0 z-10 bg-white" style={{ position: "sticky", top: 0 }}>
               <tr>
                 <th
                   className="border-[1px] border-solid border-gray-300 p-1"
@@ -963,8 +967,9 @@ const handleCancelMove = () => {
             </thead>
             <tbody>
               {classWithClassSegments && classWithClassSegments.length > 0 ? (
-                classWithClassSegments
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                //classWithClassSegments
+                //  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                activePageClassWithClassSegments
                   .map((classDetail, index) => {
                     const isItemSelected = isSelected(
                       classDetail.classId
@@ -1094,17 +1099,53 @@ const handleCancelMove = () => {
                             </td>
                           </>
                         )}
-                        {/*days.flatMap((day) =>
-                          periods.map((period) =>
-                            renderCellContent(index, day, period)
-                          )
-                        )*/}
-                        {
-                          classDetail.classSegments.map((cs,idx) => 
-                              renderCellTimetable(cs,idx)
-                            )
+                        {days.flatMap((day) => {
+                          const dayIndex = days.indexOf(day) + 2;
+                          const allPeriods = [...periods, ...periods.map(p => p + effectiveSlots)];
+                          const renderedPeriods = new Set();
+                          const cells = [];
                           
-                        }
+                          allPeriods.forEach((period) => {
+                            // Skip if this period was already rendered as part of a colspan
+                            if (renderedPeriods.has(period)) {
+                              return;
+                            }
+                            
+                            // Find matching class segment for this day and period
+                            const matchingSegment = classDetail.classSegments?.find(
+                              cs => cs.day === dayIndex && cs.startTime === period
+                            );
+                            
+                            if (matchingSegment) {
+                              // Mark all periods covered by this segment as rendered
+                              for (let i = 0; i < matchingSegment.duration; i++) {
+                                renderedPeriods.add(matchingSegment.startTime + i);
+                              }
+                              
+                              cells.push(
+                                <td
+                                  key={`${classDetail.id}-${day}-${period}`}
+                                  colSpan={matchingSegment.duration}
+                                  style={{ width: `${70 * matchingSegment.duration}px` }}
+                                  className="border border-gray-300 text-center cursor-pointer px-1"
+                                >
+                                  <span className="text-[14px]">{matchingSegment.roomCode}</span>
+                                </td>
+                              );
+                            } else {
+                              // Render empty cell
+                              cells.push(
+                                <td
+                                  key={`${classDetail.id}-${day}-${period}`}
+                                  style={{ width: "70px" }}
+                                  className="border border-gray-300 text-center cursor-pointer px-1"
+                                ></td>
+                              );
+                            }
+                          });
+                          
+                          return cells;
+                        })}
                       </tr>
                     );
                   })
@@ -1136,7 +1177,7 @@ const handleCancelMove = () => {
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[25, 50, 100]}
+        rowsPerPageOptions={[5, 25, 50, 100]}
         labelRowsPerPage="Rows per page:"
         labelDisplayedRows={({ from, to, count }) =>
           `${from}-${to} trên ${count}`
