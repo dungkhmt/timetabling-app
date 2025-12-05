@@ -22,10 +22,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
+import openerp.openerpresourceserver.generaltimetabling.model.response.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -730,7 +727,6 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                             (dss.session == 0 ? "S" : "C"), dss.slot);
                     tmp.add(cs);
                     log.info("INIT -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
-
                 }
 
 
@@ -760,6 +756,137 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
 
         //return res.subList(0,50);
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
+        if(ver == null) return null;
+
+
+        List<ModelResponseClassSegment> L = getClasssegmentsOfVersionFiltered(userId, versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName);
+        List<ModelResponseRoomBasedTimetable> res = new ArrayList<>();
+        Map<String, List<ModelResponseClassSegment>> mRoom2ClassSegments = new HashMap<>();
+        for(ModelResponseClassSegment cs:L){
+            String roomCode= cs.getRoomCode();
+            if(roomCode == null || roomCode.equals("null")) continue;
+            
+            if(mRoom2ClassSegments.get(roomCode)==null)
+                mRoom2ClassSegments.put(roomCode, new ArrayList<>());
+            mRoom2ClassSegments.get(roomCode).add(cs);
+        }
+
+        for(String roomCode:mRoom2ClassSegments.keySet()){
+            List<ModelResponseClassSegment> CS = mRoom2ClassSegments.get(roomCode);
+            CS.sort(new Comparator<>() {
+                @Override
+                public int compare(ModelResponseClassSegment o1, ModelResponseClassSegment o2) {
+
+                    if (o1.getDay() == null) return -1;
+                    if (o2.getDay() == null) return 1;
+                    if (o1.getDay() > o2.getDay()) return 1;
+                    else if (o1.getDay() < o2.getDay()) return -1;
+                    if (o1.getSession() == null) return -1;
+                    if (o2.getSession() == null) return 1;
+                    if (o1.getSession().equals("S") && o2.getSession().equals("C")) return -1;
+                    else if (o1.getSession().equals("C") && o2.getSession().equals("S")) return 1;
+                    if (o1.getStartTime() == null) return -1;
+                    if (o2.getStartTime() == null) return 1;
+                    if (o1.getStartTime() > o2.getStartTime()) return 1;
+                    else if (o1.getStartTime() < o2.getStartTime()) return -1;
+                    return 0;
+                }
+            });
+            // merge overlap time-periods
+            List<ModelResponseTimetableClass> newL= new ArrayList<>();
+            int i = 0;
+            while(i < CS.size()) {
+                ModelResponseClassSegment csi = CS.get(i);
+                String classCodes= csi.getClassCode();
+                int endTime = -1;
+                if(csi.getStartTime()!=null)
+                    endTime = csi.getStartTime() + csi.getDuration()-1;
+                int j = i + 1;
+                while (j < CS.size()) {
+                    ModelResponseClassSegment csj = CS.get(j);
+                    if(csi.getDay()==null||csj.getDay()==null) break;
+                    if(!csi.getDay().equals(csj.getDay())) break;
+                    if(csi.getSession()==null|| csj.getSession()==null) break;
+                    if(!csj.getSession().equals(csi.getSession())) break;
+                    if(csj.getStartTime()==null|| csi.getStartTime()==null) break;
+                    if(csj.getStartTime()>= csi.getStartTime()+csi.getDuration()) break;// not overlap
+                    classCodes = classCodes + ","+ csj.getClassCode();
+                    endTime = csj.getStartTime() + csj.getDuration()-1;
+                    j = j + 1;
+                }
+                ModelResponseTimetableClass ncs = new ModelResponseTimetableClass();
+                ncs.setDay(csi.getDay());
+                ncs.setSession(csi.getSession());
+                if(csi.getStartTime()!=null) {
+                    ncs.setStartTime(csi.getStartTime());
+                    ncs.setEndTime(endTime);
+                    ncs.setDuration(endTime - csi.getStartTime() + 1);
+                    ncs.setDay(csi.getDay());
+                    ncs.setSession(csi.getSession());
+                    ncs.setClassCodes(classCodes);
+                }
+                newL.add(ncs);
+                i = j;
+            }
+
+            // add empty slot for rendering grid timetable
+            List<ModelResponseTimetableClass> tmp = new ArrayList<>();
+            List<Integer> slots = new ArrayList<>();
+            for(ModelResponseTimetableClass ttc: newL){
+                if(ttc.getDay()==null || ttc.getSession()==null|| ttc.getStartTime()==null) continue;
+
+                int session = 0;
+                if(ttc.getSession().equals("C")) session = 1;
+                DaySessionSlot dss = new DaySessionSlot(ttc.getDay(),session,ttc.getStartTime());
+                slots.add(dss.hash(ver.getNumberSlotsPerSession()));
+            }
+            int end = 7*ver.getNumberSlotsPerSession()*2;
+            if(slots.size() > 0)  end = slots.get(0) - 1;
+            for(int sl = 1; sl <= end; sl++){
+                DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
+                ModelResponseTimetableClass ttc = new ModelResponseTimetableClass(dss.day,
+                        (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"");
+                tmp.add(ttc);
+                log.info("INIT -> add " + ttc.getDay() + "-" + ttc.getSession() + "-" + ttc.getStartTime());
+            }
+
+
+            for(int j = 0; j  < slots.size(); j++){
+                log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j));
+                ModelResponseTimetableClass ttc = newL.get(j);
+                tmp.add(ttc);
+                log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " add real cs " + ttc.getDay() + "-" + ttc.getSession()+"-" + ttc.getStartTime() + " duration " + ttc.getDuration());
+                int st = slots.get(j) + ttc.getDuration();
+                int fn = 7*ver.getNumberSlotsPerSession()*2;
+                if(j < slots.size()-1) fn = slots.get(j+1)-1;
+                log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn);
+                for(int sl = st; sl <= fn; sl++){
+                    DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
+                    ModelResponseTimetableClass ttci = new ModelResponseTimetableClass(dss.day,
+                            (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"");
+                    tmp.add(ttci);
+                    log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn + " -> add " + ttci.getDay() + "-" + ttci.getSession() + "-" + ttci.getStartTime()  + "-" + ttci.getDuration());
+
+                }
+            }
+
+
+            ModelResponseRoomBasedTimetable resItem = new ModelResponseRoomBasedTimetable();
+            resItem.setRoomCode(roomCode);
+            //resItem.setClasses(newL);
+            resItem.setClasses(tmp);
+
+            res.add(resItem);
+
+            //if(res.size() > 1) break;
+        }
+
         return res;
     }
 

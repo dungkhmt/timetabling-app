@@ -1,6 +1,8 @@
 import React, {useEffect, useState} from "react";
 import TimeTableNew from "./components/TimeTableNew";
 import TimeTableMultiSlotPerRow from "./components/TimeTableMultiSlotPerRow";
+import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
+
 
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import {request} from "api";
@@ -16,6 +18,7 @@ import {
     FormControl, MenuItem, InputLabel, Select, DialogActions, Box
 
 } from "@mui/material";
+//import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
 export default function MakeTimetable(){
     const {versionId} = useParams();
     const [classes, setClasses] = useState([]);
@@ -319,7 +322,25 @@ export default function MakeTimetable(){
                         />            
 
                     </TabPanel>
-                    <TabPanel value="3">Item Three</TabPanel>
+                    <TabPanel value="3">
+                        <RoomBasedTimeTable
+                            selectedSemester={selectedSemester}
+                            classes={allClasses}
+                            //getClasses = {getAllClasses}
+                            versionId={versionId}
+                            selectedGroup={selectedGroup}
+                            onSaveSuccess={onSaveSuccess}
+                            //loading={loading}
+                            selectedRows={selectedRows}
+                            onSelectedRowsChange={setSelectedRows}
+                            selectedVersion={selectedVersion}
+                            numberSlotsToDisplay={numberSlotsToDisplay}
+                            searchCourseCode = {searchCourseCode}
+                            searchClassCode = {searchClassCode}
+                            searchCourseName = {searchCourseName}
+                            searchGroupName = {searchGroupName}
+                        /> 
+                    </TabPanel>
                 </TabContext>
             </Box>
            

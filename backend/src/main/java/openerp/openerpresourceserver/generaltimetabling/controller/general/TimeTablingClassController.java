@@ -23,10 +23,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAd
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
-import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
+import openerp.openerpresourceserver.generaltimetabling.model.response.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
 import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
@@ -112,6 +109,23 @@ public class TimeTablingClassController {
                 + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
         List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
         //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        return ResponseEntity.ok().body(res);
+    }
+
+    @GetMapping("/get-room-based-timetable-with-class-segments-of-version")
+    public ResponseEntity<?> getRoomBasedTimeTableWithClasssegmentsOfVersion(Principal principal,
+                                                                  @RequestParam("versionId") Long versionId,
+                                                                  @RequestParam("searchCourseCode") String searchCourseCode,
+                                                                  @RequestParam("searchCourseName") String searchCourseName,
+                                                                  @RequestParam("searchClassCode") String searchClassCode,
+                                                                  @RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getClassesWithClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        List<ModelResponseRoomBasedTimetable> res = timeTablingClassService.getRoomBasedTimetable(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
 
         return ResponseEntity.ok().body(res);
     }

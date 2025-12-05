@@ -17,6 +17,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSe
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseManualAssignTimeTable;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseRoomBasedTimetable;
 
 import java.util.List;
 
@@ -34,6 +35,9 @@ public interface TimeTablingClassService {
     public List<ModelResponseClassSegment> getClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+
+    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId);
     public List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);
