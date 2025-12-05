@@ -1,0 +1,43 @@
+ClassSolverFindSlotsAndRooms.solve(cls){
+	// apply exhaustivesearch to find slot, room, day
+	tryClassSegment(0);
+}
+
+CourseSchedulerSummerSemesterVersion3.solve(){
+	for(class id: ids){
+            if(baseSolver.isScheduled(id)) continue;
+            ModelResponseTimeTablingClass cls = baseSolver.mClassId2Class.get(id);
+            ClassSolverFindSlotsAndRooms CSFSR = new ClassSolverFindSlotsAndRooms(baseSolver,cls,
+                    groupSolver.session,baseSolver.sortedRooms);
+            boolean ok = CSFSR.solve();
+            if(match.get(id)!=null){
+                Long mid = match.get(id);
+                if(baseSolver.isScheduled(mid)) continue;
+                ModelResponseTimeTablingClass mcls = baseSolver.mClassId2Class.get(mid);
+                ClassSolverFindSlotsAndRooms mCSFSR = new ClassSolverFindSlotsAndRooms(baseSolver,mcls,
+                        groupSolver.session,baseSolver.sortedRooms);
+                ok = mCSFSR.solve();
+            }
+        }		
+
+}
+
+GroupSchedulerSummerSemesterVersion3.solve(){
+	for course do {
+		CourseSchedulerSummerSemesterVersion3 CSSS = new CourseSchedulerSummerSemesterVersion3(baseSolver,this,courseCode,CLS);
+        boolean ok = CSSS.solve();
+	}
+}
+
+
+scheduleGroup(L){
+	GroupSchedulerSummerSemesterVersion3 GSSS = new GroupSchedulerSummerSemesterVersion3(this,L,session);
+    boolean ok = GSSS.solve();
+}
+
+SummerSemesterSolverVersion3.solve(){
+	scheduleLargeClasses();
+	call scheduleGroup(classes of a program/IT, ET,..)
+	
+
+}

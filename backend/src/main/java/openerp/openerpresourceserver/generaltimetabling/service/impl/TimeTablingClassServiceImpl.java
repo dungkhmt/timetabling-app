@@ -664,6 +664,19 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         return res;
     }
+
+    @Override
+    public List<ModelResponseClassSegment> getUnscheduledClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        List<ModelResponseClassSegment> L = getClasssegmentsOfVersionFiltered(userId,versionId,searchCourseCode,searchCourseName,searchClassCode,searchGroupName);
+        List<ModelResponseClassSegment> res = new ArrayList<>();
+        for(ModelResponseClassSegment cs: L){
+            if(cs.getStartTime()==null || cs.getDay()==null||cs.getSession()==null){
+                res.add(cs);
+            }
+        }
+        return res;
+    }
+
     @Override
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
         TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);

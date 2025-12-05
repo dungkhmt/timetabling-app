@@ -96,6 +96,22 @@ public class TimeTablingClassController {
 
         return ResponseEntity.ok().body(res);
     }
+    @GetMapping("/get-unscheduled-class-segments-of-version")
+    public ResponseEntity<?> getUnscheduledClasssegmentsOfVersion(Principal principal,
+                                                       @RequestParam("versionId") Long versionId,
+                                                       @RequestParam("searchCourseCode") String searchCourseCode,
+                                                       @RequestParam("searchCourseName") String searchCourseName,
+                                                       @RequestParam("searchClassCode") String searchClassCode,
+                                                       @RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getUnscheduledClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        List<ModelResponseClassSegment> res = timeTablingClassService.getUnscheduledClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        return ResponseEntity.ok().body(res);
+    }
 
     @GetMapping("/get-classes-with-class-segments-of-version")
     public ResponseEntity<?> getClassesWithClasssegmentsOfVersion(Principal principal,

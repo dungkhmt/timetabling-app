@@ -18,10 +18,13 @@ import {
     FormControl, MenuItem, InputLabel, Select, DialogActions, Box
 
 } from "@mui/material";
+import TimeTableNewUnscheduled from "./components/TimeTableNewUnscheduled";
 //import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
 export default function MakeTimetable(){
     const {versionId} = useParams();
     const [classes, setClasses] = useState([]);
+    const [unscheduledClasses, setUnscheduledClasses] = useState([]);
+    
     const [allClasses, setAllClasses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -77,6 +80,27 @@ export default function MakeTimetable(){
                         );
 
     }
+
+    function getUnscheduledClasses(){
+        setLoading(true);
+        request(
+                            "get",
+                            "/general-classes/get-unscheduled-class-segments-of-version?versionId=" + versionId
+                            + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
+                            + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
+                            (res)=>{
+                                console.log(res);
+                                setUnscheduledClasses(res.data || []);
+                                setLoading(false);
+                            },
+                            (error)=>{
+                                console.error(error);
+                                setError(error);
+                            },
+                        );
+
+    }
+
     function getAllClasses(){
         // all search keywords are null
         setLoading(true);
@@ -240,6 +264,7 @@ export default function MakeTimetable(){
         }
     useEffect(() => {
         getClasses();
+        getUnscheduledClasses();
         getAllClasses();
         getCourses();
         getPrograms();
@@ -282,9 +307,10 @@ export default function MakeTimetable(){
                 <TabContext value={value}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <TabList onChange={handleChange} aria-label="lab API tabs example">
-                            <Tab label="Item One" value="1" />
-                            <Tab label="Item Two" value="2" />
-                            <Tab label="Item Three" value="3" />
+                            <Tab label="Moring & Afternoon on 2 Rows" value="1" />
+                            <Tab label="Moring & Afternoon Same Row" value="2" />
+                            <Tab label="View By Rooms" value="3" />
+                            <Tab label="Unscheduled Classes" value="4" />
                         </TabList>
                     </Box>
                     <TabPanel value="1">
@@ -340,6 +366,21 @@ export default function MakeTimetable(){
                             searchCourseName = {searchCourseName}
                             searchGroupName = {searchGroupName}
                         /> 
+                    </TabPanel>
+                    <TabPanel value="4">
+                        <TimeTableNewUnscheduled 
+                            selectedSemester={selectedSemester}
+                            classes={unscheduledClasses}
+                            getClasses = {getClasses}
+                            versionId={versionId}
+                            selectedGroup={selectedGroup}
+                            onSaveSuccess={onSaveSuccess}
+                            loading={loading}
+                            selectedRows={selectedRows}
+                            onSelectedRowsChange={setSelectedRows}
+                            selectedVersion={selectedVersion}
+                            numberSlotsToDisplay={numberSlotsToDisplay}
+                        />
                     </TabPanel>
                 </TabContext>
             </Box>

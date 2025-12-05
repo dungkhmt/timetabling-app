@@ -33,6 +33,7 @@ public interface TimeTablingClassService {
 
     public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId);
     public List<ModelResponseClassSegment> getClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+    public List<ModelResponseClassSegment> getUnscheduledClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
