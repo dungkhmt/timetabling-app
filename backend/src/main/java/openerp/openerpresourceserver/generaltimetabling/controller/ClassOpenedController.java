@@ -117,6 +117,7 @@ public class ClassOpenedController {
         }
     }
 
+    /*
     @PostMapping("/auto-make-general-schedule")
     public ResponseEntity<String> autoMakeGeneralSchedule(@Valid @RequestBody AutoMakeScheduleDto autoMakeScheduleDto) {
         try {
@@ -128,4 +129,6 @@ public class ClassOpenedController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+     */
 }

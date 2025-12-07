@@ -274,4 +274,9 @@ public class ACOTimetableSolver implements Solver {
             log.info("Segment " + id + " -> slot " + solutionSlot.get(id) + ", room " + solutionRoom.get(id));
         }
     }
+
+    @Override
+    public String name() {
+        return "ACOTimetableSolver";
+    }
 }

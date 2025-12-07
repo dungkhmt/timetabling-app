@@ -28,5 +28,5 @@ public interface ClassOpenedService {
 
     void automationMakeScheduleForCTTT(AutoMakeScheduleDto autoMakeScheduleDto);
 
-    void autoMakeGeneralSchedule(@Valid AutoMakeScheduleDto autoMakeScheduleDto);
+    //void autoMakeGeneralSchedule(@Valid AutoMakeScheduleDto autoMakeScheduleDto);
 }

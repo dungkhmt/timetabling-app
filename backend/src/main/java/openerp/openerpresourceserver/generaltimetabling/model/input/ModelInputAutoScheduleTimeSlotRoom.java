@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 public class ModelInputAutoScheduleTimeSlotRoom {
     List<Long> ids;
-    private String semester;
+    //private String semester;
     private int timeLimit;
     private String algorithm;
     private int maxDaySchedule;

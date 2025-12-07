@@ -90,6 +90,20 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
     }
 
     @Override
+    public boolean approveVersion(Long id) {
+        TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(id).orElse(null);
+        if(version == null) return false;
+        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAllByBatchId(version.getBatchId());
+        for(TimeTablingTimeTableVersion ver: versions){
+            ver.setStatus(TimeTablingTimeTableVersion.STATUS_DRAFT);
+        }
+        version.setStatus(TimeTablingTimeTableVersion.STATUS_PUBLISHED);
+        timeTablingVersionRepo.saveAll(versions);
+
+        return true;
+    }
+
+    @Override
     public void deleteVersion(Long id) {
         log.info("Deleting timetabling version with id: {}", id);
         timeTablingVersionRepo.deleteById(id);

@@ -215,6 +215,22 @@ export default function MakeTimetable(){
             setOpenScheduleDialog(true);
         }
 
+        function approveVersion(){
+            let payLoad = {
+                versionId: Number(versionId)
+            };
+            request(
+                "post",
+                "/general-classes/approve-version-timetable",
+                (res) => {
+                    //getClasses();
+                    //setOpenScheduleDialog(false);
+                },
+                null,
+                payLoad
+            );
+        }
+
         function performSchedule(){
             let payLoad = {
                 ids: selectedRows,
@@ -303,6 +319,13 @@ export default function MakeTimetable(){
             >
                 Clear Schedule
             </Button>
+
+            <Button
+                onClick = {() =>{ approveVersion(); }}
+            >
+                APPROVE
+            </Button>
+
             <Box sx={{ width: '100%', typography: 'body1' }}>
                 <TabContext value={value}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

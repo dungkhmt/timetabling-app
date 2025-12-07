@@ -588,6 +588,11 @@ public class V2ClassScheduler {
             if(mRoom2Index.get(rId)==null)
                 log.info("mapDataNew, roomId " + rId + " not mapped");
 
+            //if(mId2RoomReservation.get(rId)==null)
+            //    log.info("mapDataNew, roomId " + rId + " index " + mRoom2Index.get(rId) + " mapped to NULL class segment");
+            //else
+            //    log.info("mapDataNew, roomId " + rId + " index " + mRoom2Index.get(rId) + " mapped to Class segments " + mId2RoomReservation.get(rId).size());
+
             int roomIdx = mRoom2Index.get(rId);
             for(TimeTablingClassSegment rr: mId2RoomReservation.get(rId)){
                 if(rr.getStartTime() != null && rr.getEndTime() != null && rr.getWeekday() != null){
@@ -595,7 +600,7 @@ public class V2ClassScheduler {
                     for(int s = rr.getStartTime(); s <= rr.getEndTime(); s++) {
                         int slot = Constant.slotPerCrew * 2 * (rr.getWeekday() - 2) + KIP * Constant.slotPerCrew + s;
                         roomOccupation[roomIdx].add(slot);
-                        log.info("mapData, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
+                        //log.info("mapData, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
                     }
                 }
             }
@@ -994,8 +999,11 @@ public class V2ClassScheduler {
     }
 
  */
+    public String name(){
+        return "V2ClassScheduler";
+    }
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoomNew(List<ModelResponseTimeTablingClass> classes,
-                                                                           List<ModelResponseTimeTablingClass> allClasses,
+                                                                           //List<ModelResponseTimeTablingClass> allClasses,
                                                                            List<Classroom> rooms,
                                                                            List<Integer> days, // 2, 3, 4, ...
                                                                            List<Integer> slots,// 1, 2, 3, 4, 5, 6
@@ -1063,6 +1071,7 @@ public class V2ClassScheduler {
             //solver = new SummerSemesterSolver(D);
             //solver = new SummerSemesterSolverVersion2(D);
             solver = new SummerSemesterSolverVersion3(D);
+            log.info(name() + "::autoScheduleTimeSlotRoomNew, finished creating object solver " + solver.name());
         }else {
             MultiClusterSolver msolver = new MultiClusterSolver(D);
             msolver.oneClusterAlgorithm = algorithm;

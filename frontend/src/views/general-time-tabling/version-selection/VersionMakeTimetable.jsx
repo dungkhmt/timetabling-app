@@ -76,6 +76,15 @@ export default function VersionMakeTimetable(){
             field: "name"
         },
         {
+            title: "Status",
+            field: "status"
+        },
+        {
+            title: "Slots Per Session",
+            field: "numberSlotsPerSession"
+        },
+        
+        {
             title: "created by",
             field: "createdByUserId"
         },

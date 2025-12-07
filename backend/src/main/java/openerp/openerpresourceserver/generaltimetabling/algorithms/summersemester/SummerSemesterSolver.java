@@ -1889,4 +1889,9 @@ public class SummerSemesterSolver implements Solver {
     public void printSolution() {
 
     }
+
+    @Override
+    public String name() {
+        return "SummerSemesterSolver";
+    }
 }

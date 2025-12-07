@@ -421,4 +421,9 @@ public class BacktrackingSolverOneCluster implements Solver {
     public void printSolution() {
 
     }
+
+    @Override
+    public String name() {
+        return "BacktrackingSolverOneCluster";
+    }
 }

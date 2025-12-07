@@ -2076,4 +2076,9 @@ public class SummerSemesterSolverVersion2 implements Solver {
     public void printSolution() {
 
     }
+
+    @Override
+    public String name() {
+        return "SummerSemesterSolverVersion2";
+    }
 }

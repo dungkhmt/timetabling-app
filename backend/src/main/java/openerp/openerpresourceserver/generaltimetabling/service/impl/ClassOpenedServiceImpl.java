@@ -337,7 +337,7 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
 
         //Tự động sắp xếp phòng khi yêu cầu
         if (isClassroomArranged) {
-            this.autoSetClassroom(listClassMakeSchedule, priorityBuilding);
+            //this.autoSetClassroom(listClassMakeSchedule, priorityBuilding);
         }
     }
 
@@ -348,6 +348,8 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
      * Hàm này được sử dụng để tự động gán tòa nhà ưu tiên cho danh sách các lóp
      * 
      */
+
+    /*
     private void autoSetClassroom(List<ClassOpened> listClassMakeSchedule, String priorityBuilding) {
         for (ClassOpened elClass : listClassMakeSchedule) {
             Boolean isSeparateClass = elClass.getIsSeparateClass();
@@ -428,7 +430,7 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
             }
         }
     }
-
+    */
     private Boolean checkConflictTimeForListFirstClass(List<ClassOpened> listClassOpened, long currentStartPeriod, long currentFinish) {
         boolean setClassroomDone = true;
         for (ClassOpened el : listClassOpened) {
@@ -546,7 +548,7 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
             classOpenedRepo.save(el);
         });
     }
-
+    /*
     public void autoMakeGeneralSchedule(AutoMakeScheduleDto autoMakeScheduleDto) {
         int maxPeriod = 12;
 
@@ -573,14 +575,14 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
                             priorityBuilding, Long.valueOf(classOpened.getQuantityMax()));
             for (int day : weekDays) {
                 for (int curPeriod = 1; curPeriod<= 12; curPeriod++) {
-                    /*Check if the course is separable*/
+
                     if(courseLength == 4 && curPeriod % 6 == 2 && !classOpened.getIsSeparateClass()) {
                         long startPeriod = curPeriod;
                         long endPeriod = calculateFinishPeriod(classOpened.getMass(), startPeriod, true);
-                        /*Check if classList doesnt have any class at that time*/
+
                         if(!checkTimeConflict(classOpenedList, startPeriod, endPeriod, day, crew)) {
                             for (Classroom classroom : classroomList) {
-                                /*Check if at that time, the room is empty*/
+
                                 if (!checkRoomConflict(classOpenedList, classroom, startPeriod, endPeriod, day, crew)) {
                                     classOpened.setStartPeriod(String.valueOf(startPeriod));
                                     classOpened.setWeekday(String.valueOf(day));
@@ -600,7 +602,7 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
                             long seperateStartPeriod = curPeriod;
                             long seperateEndPeriod = calculateFinishPeriod(classOpened.getMass(), seperateStartPeriod, true);
                             for (Classroom classroom : classroomList) {
-                                /*Check if at that time, the room is empty*/
+
                                 if(!checkRoomConflict(classOpenedList, classroom, seperateStartPeriod, seperateEndPeriod, day, crew)) {
                                     classOpened.setStartPeriod(String.valueOf(seperateStartPeriod));
                                     classOpened.setWeekday(String.valueOf(day));
@@ -616,10 +618,10 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
                     } else {
                         long startPeriod = curPeriod;
                         long endPeriod = calculateFinishPeriod(classOpened.getMass(), startPeriod, false);
-                        /*Check if classList doesnt have any class at that time*/
+
                         if(!checkTimeConflict(classOpenedList, startPeriod, endPeriod, day, crew)) {
                             for (Classroom classroom : classroomList) {
-                                /*Check if at that time, the room is empty*/
+
                                 if (!checkRoomConflict(classOpenedList, classroom, startPeriod, endPeriod, day, crew)) {
                                     classOpened.setStartPeriod(String.valueOf(startPeriod));
                                     classOpened.setWeekday(String.valueOf(day));
@@ -633,14 +635,13 @@ public class ClassOpenedServiceImpl implements ClassOpenedService {
                     }
                 }
             }
-            /*If the classOpened info is enough
-            then save to database*/
+
             if(classOpened.getIsEnoughTimeTableInfo()) {
                 classOpenedRepo.save(classOpened);
             }
         }
     }
-
+    */
     private boolean checkTimeConflict(List<ClassOpened> classOpenedList, long startPeriod, long endPeriod, int day, String crew) {
         
         return false;

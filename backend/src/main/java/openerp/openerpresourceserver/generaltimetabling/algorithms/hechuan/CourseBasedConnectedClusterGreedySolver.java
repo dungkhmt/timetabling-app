@@ -518,4 +518,9 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
     public void printSolution() {
 
     }
+
+    @Override
+    public String name() {
+        return "CourseBasedConnectedClusterGreedySolver";
+    }
 }

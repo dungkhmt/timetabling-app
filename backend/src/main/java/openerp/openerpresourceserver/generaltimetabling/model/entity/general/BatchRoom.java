@@ -21,4 +21,7 @@ public class BatchRoom {
     @Id
     @Column(name="room_id")
     private String roomId;
+
+    @Column(name="status")
+    private String status;
 }

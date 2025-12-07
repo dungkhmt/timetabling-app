@@ -468,4 +468,9 @@ public class GreedySolver1 implements Solver {
     public void printSolution() {
 
     }
+
+    @Override
+    public String name() {
+        return "GreedySolver1";
+    }
 }

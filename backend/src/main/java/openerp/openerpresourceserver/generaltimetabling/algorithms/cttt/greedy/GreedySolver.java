@@ -257,6 +257,12 @@ public class GreedySolver implements Solver {
             }
         }
     }
+
+    @Override
+    public String name() {
+        return "GreedySolver";
+    }
+
     public static void main(String[] args){
         try{
             Gson gson = new Gson();

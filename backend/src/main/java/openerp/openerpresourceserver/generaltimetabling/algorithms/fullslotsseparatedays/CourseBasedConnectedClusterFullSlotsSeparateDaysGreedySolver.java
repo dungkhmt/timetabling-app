@@ -940,6 +940,11 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
 
     }
 
+    @Override
+    public String name() {
+        return "CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver";
+    }
+
     public static void main(String[] args){
         try{
             List<Integer> L = new ArrayList<>();

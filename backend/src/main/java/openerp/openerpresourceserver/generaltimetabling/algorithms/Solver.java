@@ -11,4 +11,5 @@ public interface Solver {
     public Map<Integer, Integer> getMapSolutionRoom();
     public void setTimeLimit(int timeLimit);
     public void printSolution();
+    public String name();
 }

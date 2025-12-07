@@ -19,16 +19,10 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
-import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
-import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
-import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputManualAssignTimeTable;
-import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.input.*;
 import openerp.openerpresourceserver.generaltimetabling.model.response.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
-import openerp.openerpresourceserver.generaltimetabling.service.ClassGroupService;
-import openerp.openerpresourceserver.generaltimetabling.service.ExcelService;
-import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
-import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
+import openerp.openerpresourceserver.generaltimetabling.service.*;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -49,6 +43,7 @@ public class TimeTablingClassController {
     private ClusterRepo clusterRepo;
 
     private TimeTablingClassService timeTablingClassService;
+    private TimeTablingVersionService timeTablingVersionService;
 
     @ExceptionHandler(ConflictScheduleException.class)
     public ResponseEntity resolveScheduleConflict(ConflictScheduleException e) {
@@ -299,6 +294,11 @@ public class TimeTablingClassController {
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
         return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I));
 
+    }
+    @PostMapping("/approve-version-timetable")
+    public ResponseEntity<?> approveVersionTimetable(Principal principal, @RequestBody ModelInputApproveVersionTimetable I){
+        boolean ok = timeTablingVersionService.approveVersion(I.getVersionId());
+        return ResponseEntity.ok().body(ok);
     }
 
     //@PostMapping("/auto-schedule-timeslot-room-4-class-segments")

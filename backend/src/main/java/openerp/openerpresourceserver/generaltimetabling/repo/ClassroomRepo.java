@@ -39,13 +39,16 @@ public interface ClassroomRepo extends JpaRepository<Classroom, String> {
 
     void deleteById(String id);
 
+    /*
     @Query(value = "SELECT c FROM Classroom c WHERE " +
             " c.quantityMax >= :amountStudent ORDER BY SUBSTRING(c.classroom, 1, 2), CAST(SUBSTRING(c.classroom, 4) AS INTEGER), c.quantityMax ASC")
     List<Classroom> findClassroomByQuantityMaxAfter(Long amountStudent);
 
+
     @Query(value = "SELECT c FROM Classroom c WHERE LOWER(c.classroom) LIKE LOWER(CONCAT('%', :building, '%'))" +
             " AND c.quantityMax >= :amountStudent ORDER BY SUBSTRING(c.classroom, 1, 2), CAST(SUBSTRING(c.classroom, 4) AS INTEGER), c.quantityMax ASC")
     List<Classroom> findClassroomByBuildingAndQuantityMaxAfter(String building, Long amountStudent);
+    */
 
     List<Classroom> getClassRoomByBuilding(String priorityBuilding);
 

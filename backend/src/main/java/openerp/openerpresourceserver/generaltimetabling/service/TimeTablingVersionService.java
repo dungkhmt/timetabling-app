@@ -17,5 +17,7 @@ public interface TimeTablingVersionService {
     List<TimeTablingTimeTableVersion> getAllVersionsByBatchId(Long batchId);
 
     List<TimeTablingTimeTableVersion> getAllVersions();
+
+    boolean approveVersion(Long id);
     
 }

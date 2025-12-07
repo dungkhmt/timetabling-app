@@ -353,6 +353,12 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
         if(version == null) return new ArrayList<>(); // do nothing
 
+        // remove all existing class segments of the current version
+        List<TimeTablingClassSegment> CS = timeTablingClassSegmentRepo.findAllByVersionId(version.getId());
+        timeTablingClassSegmentRepo.deleteAll(CS);
+
+        // load original timetabling classes of the batch version.getBatchId()
+
         ClassSegmentPartitionConfigForSummerSemester P = new ClassSegmentPartitionConfigForSummerSemester();
         List<TimeTablingCourse> courses = timeTablingCourseRepo.findAll();
         //List<TimeTablingClass> cls = timeTablingClassRepo.findAll();
@@ -739,32 +745,32 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot);
                     tmp.add(cs);
-                    log.info("INIT -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
+                    //log.info("INIT -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
                 }
 
 
             for(int i = 0; i  < slots.size(); i++){
-                log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i));
+                //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i));
                 ModelResponseClassSegment csr = cls.getClassSegments().get(i);
                 tmp.add(csr);
-                log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " add real cs " + csr.getDay() + "-" + csr.getSession()+"-" + csr.getStartTime() + " duration " + csr.getDuration());
+                //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " add real cs " + csr.getDay() + "-" + csr.getSession()+"-" + csr.getStartTime() + " duration " + csr.getDuration());
                 int st = slots.get(i) + csr.getDuration();
                 int fn = 7*ver.getNumberSlotsPerSession()*2;
                 if(i < slots.size()-1) fn = slots.get(i+1)-1;
-                log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn);
+                //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn);
                 for(int sl = st; sl <= fn; sl++){
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot);
                     tmp.add(cs);
-                    log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn + " -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
+                    //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn + " -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
 
                 }
             }
             cls.setClassSegments(tmp);
-            log.info("getClassesWithClasssegmentsOfVersionFiltered, class-segments length = " + cls.getClassSegments().size());
+            //log.info("getClassesWithClasssegmentsOfVersionFiltered, class-segments length = " + cls.getClassSegments().size());
         }
-        log.info("getClassesWithClasssegmentsOfVersionFiltered, L = " + L.size() + " res = "  + res.size());
+        //log.info("getClassesWithClasssegmentsOfVersionFiltered, L = " + L.size() + " res = "  + res.size());
 
 
 
@@ -866,25 +872,25 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 ModelResponseTimetableClass ttc = new ModelResponseTimetableClass(dss.day,
                         (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"");
                 tmp.add(ttc);
-                log.info("INIT -> add " + ttc.getDay() + "-" + ttc.getSession() + "-" + ttc.getStartTime());
+                //log.info("INIT -> add " + ttc.getDay() + "-" + ttc.getSession() + "-" + ttc.getStartTime());
             }
 
 
             for(int j = 0; j  < slots.size(); j++){
-                log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j));
+                //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j));
                 ModelResponseTimetableClass ttc = newL.get(j);
                 tmp.add(ttc);
-                log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " add real cs " + ttc.getDay() + "-" + ttc.getSession()+"-" + ttc.getStartTime() + " duration " + ttc.getDuration());
+                //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " add real cs " + ttc.getDay() + "-" + ttc.getSession()+"-" + ttc.getStartTime() + " duration " + ttc.getDuration());
                 int st = slots.get(j) + ttc.getDuration();
                 int fn = 7*ver.getNumberSlotsPerSession()*2;
                 if(j < slots.size()-1) fn = slots.get(j+1)-1;
-                log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn);
+                //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn);
                 for(int sl = st; sl <= fn; sl++){
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseTimetableClass ttci = new ModelResponseTimetableClass(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"");
                     tmp.add(ttci);
-                    log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn + " -> add " + ttci.getDay() + "-" + ttci.getSession() + "-" + ttci.getStartTime()  + "-" + ttci.getDuration());
+                    //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn + " -> add " + ttci.getDay() + "-" + ttci.getSession() + "-" + ttci.getStartTime()  + "-" + ttci.getDuration());
 
                 }
             }
@@ -900,6 +906,14 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             //if(res.size() > 1) break;
         }
 
+        // serialize startTime on th whole day: if session = C then startTime= startTime + ver.getNumberSlotsPerSession()
+        for(ModelResponseRoomBasedTimetable i: res){
+            for(ModelResponseTimetableClass ttc:i.getClasses()){
+                if(ttc.getSession().equals("C")){
+                    ttc.setStartTime(ttc.getStartTime() + ver.getNumberSlotsPerSession());
+                }
+            }
+        }
         return res;
     }
 
