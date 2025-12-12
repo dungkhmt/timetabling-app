@@ -231,6 +231,13 @@ public class ClassSolverFindSlotsAndRooms{
             log.info(name() + "::solve, found a schedule for class " + cls.str() + " qty " + cls.getQuantityMax());
         }else{
             log.info(name() + "::solve, cannot find a schedule for class " + cls.str() + " qty " + cls.getQuantityMax());
+            baseSolver.addLog(cls.getClassCode(),null,"cannot find a schedule for class " + cls.str() + " qty " + cls.getQuantityMax());
+            List<ClassSegment> CS= baseSolver.mClassId2ClassSegments.get(cls.getId());
+            for(ClassSegment cs: CS){
+                Long csId = Long.valueOf(cs.getId());
+                baseSolver.addLog(cls.getClassCode(),null,"cannot find a schedule for class segment " + cs.toString() + " qty " + cs.getNbStudents());
+
+            }
         }
         return found;
     }

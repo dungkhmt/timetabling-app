@@ -1126,7 +1126,7 @@ const handleCancelMove = () => {
                                 <td
                                   key={`${classDetail.roomCode}-${day}-${period}`}
                                   colSpan={matchingSegment.duration}
-                                  style={{ width: `${70 * matchingSegment.duration}px` }}
+                                  style={{ width: `${70 * matchingSegment.duration}px`, backgroundColor: `${matchingSegment.color}`}}
                                   className="border border-gray-300 text-center cursor-pointer px-1"
                                 >
                                   <span className="text-[14px]">{matchingSegment.classCodes}</span>

@@ -16,6 +16,7 @@ import openerp.openerpresourceserver.generaltimetabling.helper.ClassTimeComparat
 import openerp.openerpresourceserver.generaltimetabling.helper.LearningWeekExtractor;
 import openerp.openerpresourceserver.generaltimetabling.mapper.RoomOccupationMapper;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.GeneralClassDto;
@@ -90,6 +91,11 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
     @Autowired
     private TimeTablingVersionRepo timeTablingVersionRepo;
+    @Autowired
+    private BatchRoomRepo batchRoomRepo;
+
+    @Autowired
+    private TimetablingLogScheduleRepo timetablingLogScheduleRepo;
 
     @Override
     public ModelResponseGeneralClass getClassDetailWithSubClasses(Long classId) {
@@ -670,7 +676,12 @@ public class GeneralClassServiceImp implements GeneralClassService {
         }
         V2ClassScheduler optimizer = new V2ClassScheduler(params, ver);
         //List<Classroom> rooms = classroomRepo.findAll();
-        List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");
+        //List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");
+        // select only rooms configured for the batch
+        List<BatchRoom> batchRooms= batchRoomRepo.findAllByBatchId(ver.getBatchId());
+        List<String> roomIds = batchRooms.stream().map(BatchRoom::getRoomId).collect(Collectors.toList());
+        List<Classroom> rooms = classroomRepo.findAllByStatusAndIdIn("ACTIVE", roomIds);
+
         List<Integer> days = Utils.fromString(I.getDays(),",");
         List<Integer> slots = Utils.fromString(I.getSlots(),",");
 
@@ -681,6 +692,25 @@ public class GeneralClassServiceImp implements GeneralClassService {
         List<ModelResponseTimeTablingClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoomNew(classes,
                 //allClassesOfSemester,
                 rooms,days,slots,mId2RoomReservations,courses, groups,classGroups,I.getTimeLimit(),I.getAlgorithm(),params);
+
+        //write scheduling logs
+        // remove old logs
+        List<TimetablingLogSchedule> oldogs= timetablingLogScheduleRepo.findAllByVersionId(ver.getId());
+        timetablingLogScheduleRepo.deleteAll(oldogs);
+
+        // add new logs
+        List<ModelSchedulingLog> logs= optimizer.logs;
+        List<TimetablingLogSchedule> TLS = new ArrayList<>();
+        for(ModelSchedulingLog log: logs){
+            TimetablingLogSchedule tls = new TimetablingLogSchedule();
+            tls.setClassSegmentId(log.getClassSegmentId());
+            tls.setClassCode(log.getClassCode());
+            tls.setDescription(log.getDescription());
+            tls.setCreatedStamp(log.getCreatedDate());
+            tls.setVersionId(ver.getId());
+            TLS.add(tls);
+        }
+        timetablingLogScheduleRepo.saveAll(TLS);
 
         for(ModelResponseTimeTablingClass c: autoScheduleClasses){
             for(TimeTablingClassSegment cs: c.getTimeSlots()){

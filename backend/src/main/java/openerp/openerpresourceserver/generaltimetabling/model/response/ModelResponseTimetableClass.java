@@ -16,4 +16,5 @@ public class ModelResponseTimetableClass {
     private Integer endTime;
     private Integer duration;
     private String classCodes;
+    private String color;
 }

@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity.CourseNotOverlapBackTrackingSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import org.aspectj.weaver.patterns.ConcreteCflowPointcut;
 
 import java.util.*;
@@ -943,6 +944,11 @@ public class CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver implem
     @Override
     public String name() {
         return "CourseBasedConnectedClusterFullSlotsSeparateDaysGreedySolver";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 
     public static void main(String[] args){

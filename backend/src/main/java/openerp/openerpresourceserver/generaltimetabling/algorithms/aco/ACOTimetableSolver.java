@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataSchedu
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.util.*;
 
@@ -278,5 +279,10 @@ public class ACOTimetableSolver implements Solver {
     @Override
     public String name() {
         return "ACOTimetableSolver";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 }

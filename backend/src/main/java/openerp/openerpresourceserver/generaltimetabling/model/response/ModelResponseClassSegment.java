@@ -31,9 +31,14 @@ public class ModelResponseClassSegment {
     private Integer endTime;
     private String roomCode;
     private List<Group> groups;
+    private String color;
 
     public ModelResponseClassSegment(int day, String session, int startTime){
         setDay(day); setSession(session); setStartTime(startTime); setRoomCode("");
         setDuration(1);
+    }
+    public ModelResponseClassSegment(int day, String session, int startTime, String color){
+        setDay(day); setSession(session); setStartTime(startTime); setRoomCode("");
+        setDuration(1); setColor(color);
     }
 }

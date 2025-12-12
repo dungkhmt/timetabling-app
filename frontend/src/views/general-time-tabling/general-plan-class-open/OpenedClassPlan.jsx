@@ -29,6 +29,7 @@ import RoomsOfBatch from "../batch/RoomsOfBatch";
 export default function OpenedClassPlan() {
     const [selectedSemester, setSelectedSemester] = useState(null);
     const { batchId } = useParams();
+    const [batch, setBatch] = useState(null);
     const [classPlans, setClassPlans] = useState([]);
     const [classes, setClasses] = useState([]);
     const [openAddClassPlanDialog, setOpenAddClassPlanDialog] = useState(false);
@@ -37,7 +38,9 @@ export default function OpenedClassPlan() {
     const [errors, setErrors] = useState({});
     const [courses, setCourses] = useState([]);
     const [programs, setPrograms] = useState([]);
+    const [batches,setBatches] = useState([]);
     const [formData, setFormData] = useState({
+        id:null,
         selectedProgram: null,
         selectedCourse: null,
         course: null,
@@ -58,6 +61,7 @@ export default function OpenedClassPlan() {
         crew: "",
         separateLTBT: "N",
         generateClasses: "Y",
+        selectedBatchId: null,
     });
     const [loading, setLoading] = useState(false);
     const [viewTab, setViewTab] = useState(0); // Added missing state for tabs
@@ -74,6 +78,14 @@ export default function OpenedClassPlan() {
         { field: "qty", headerName: "Qty", width: 80 },
     ];
 
+    function getBatch(){
+         request("get", "/timetabling-batch/get-batch-detail/" + batchId, (res) => {
+            setBatch(res.data);
+            setBatches(res.data.batchesOfSemester);
+            console.log('getBatch, batches of semester:', res.data.batchesOfSemester);
+            //getAllBatchesOfSemester(res.data.semester);
+        });
+    }
     function getCourses() {
         request("get", "/course-v2/get-all", (res) => {
             setCourses(res.data);
@@ -89,6 +101,12 @@ export default function OpenedClassPlan() {
     function getAllClassesOfBatch() {
         request("get", `/general-classes/get-all-classes-of-batch?batchId=${batchId}`, (res) => {
             setClasses(res.data);
+        });
+    }
+
+    function getAllBatchesOfSemester(semesterId) {
+        request("get", `/timetabling-batch/get-all/`+ `${batch.semester}`, (res) => {
+            setBatches(res.data);
         });
     }
 
@@ -131,6 +149,7 @@ export default function OpenedClassPlan() {
             crew: "",
             separateLTBT: "N",
             generateClasses: "Y",
+            selectedBatchId:null
         });
         setErrors({});
     };
@@ -143,7 +162,7 @@ export default function OpenedClassPlan() {
 
     const handleSave = (isEdit = false) => {
         const payLoad = {
-            batchId: batchId,
+            batchId: formData.selectedBatchId,
             moduleCode: formData.courseCode,
             classType: formData.classType,
             numberOfClasses: formData.nbClasses,
@@ -245,8 +264,9 @@ export default function OpenedClassPlan() {
     const handleRowClick = (params) => {
         const classPlan = params.row;
         setSelectedClassPlan(classPlan);
-
+        //getAllBatchesOfSemester(batch.semester);
         setFormData({
+            id: classPlan.id,
             selectedProgram: programs.find((p) => p.id === classPlan.groupId) || null,
             selectedCourse: courses.find((c) => c.id === classPlan.moduleCode) || null,
             courseName: classPlan.moduleName || null,
@@ -282,6 +302,7 @@ export default function OpenedClassPlan() {
     }
 
     useEffect(() => {
+        getBatch();
         getListOpenClassPlans();
         getAllClassesOfBatch();
         getCourses();
@@ -293,6 +314,31 @@ export default function OpenedClassPlan() {
             <DialogTitle>{isEdit ? "Chỉnh sửa kế hoạch mở lớp" : "Kế hoạch mở lớp"}</DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Autocomplete
+                        options={batches || []}
+                        getOptionLabel={(option) => option.name || ""}
+                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                        value={formData.selectedBatchId}
+                        onChange={(_, newValue) => setFormData((prev) => ({ ...prev, selectedBatchId: newValue.id }))}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Batch"
+                                required
+                                error={!!errors.name}
+                                helperText={errors.name}
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <>
+                                            {loading ? <CircularProgress size={20} /> : null}
+                                            {params.InputProps.endAdornment}
+                                        </>
+                                    ),
+                                }}
+                            />
+                        )}
+                    />
                     <Autocomplete
                         options={programs || []}
                         getOptionLabel={(option) => option.groupName || ""}

@@ -6,9 +6,11 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlo
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoom;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 @Log4j2
@@ -23,6 +25,12 @@ public class OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolve
     public String name(){
         return "OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver";
     }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
+    }
+
     public void testPrint(){
         for(int i = 0; i < I.getClassSegments().size(); i++){
             log.info("testPrint class-segment[" + i + "]: " + I.getClassSegments().get(i));

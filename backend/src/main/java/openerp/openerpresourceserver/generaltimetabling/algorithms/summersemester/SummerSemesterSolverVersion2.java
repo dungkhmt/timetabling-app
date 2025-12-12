@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import org.springframework.core.metrics.jfr.FlightRecorderApplicationStartup;
@@ -2080,5 +2081,10 @@ public class SummerSemesterSolverVersion2 implements Solver {
     @Override
     public String name() {
         return "SummerSemesterSolverVersion2";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 }

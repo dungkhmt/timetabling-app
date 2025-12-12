@@ -8,6 +8,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotssepa
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentSolver;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.io.File;
 import java.util.HashMap;
@@ -31,6 +32,11 @@ public class FullClusters implements Solver {
 
     public String name(){
         return "ACOSolver";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 
     public boolean checkTimeRoom(){

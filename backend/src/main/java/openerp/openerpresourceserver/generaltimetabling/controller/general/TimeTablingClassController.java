@@ -16,13 +16,16 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimetablingLogSchedule;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.input.*;
 import openerp.openerpresourceserver.generaltimetabling.model.response.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimetablingLogScheduleRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,6 +47,9 @@ public class TimeTablingClassController {
 
     private TimeTablingClassService timeTablingClassService;
     private TimeTablingVersionService timeTablingVersionService;
+
+    @Autowired
+    private TimetablingLogScheduleRepo timetablingLogScheduleRepo;
 
     @ExceptionHandler(ConflictScheduleException.class)
     public ResponseEntity resolveScheduleConflict(ConflictScheduleException e) {
@@ -293,8 +299,14 @@ public class TimeTablingClassController {
     @PostMapping("/auto-schedule-timeslot-room")
     public ResponseEntity<?> autoScheduleTimeSlotRoom(Principal principal, @RequestBody ModelInputAutoScheduleTimeSlotRoom I){
         return ResponseEntity.ok().body(gService.autoScheduleTimeSlotRoom(I));
-
     }
+
+    @GetMapping("/get-schedule-logs/{versionId}")
+    public ResponseEntity<?> getScheduleLogs(Principal principal, @PathVariable Long versionId){
+        List<TimetablingLogSchedule> res= timetablingLogScheduleRepo.findAllByVersionId(versionId);
+        return ResponseEntity.ok().body(res);
+    }
+
     @PostMapping("/approve-version-timetable")
     public ResponseEntity<?> approveVersionTimetable(Principal principal, @RequestBody ModelInputApproveVersionTimetable I){
         boolean ok = timeTablingVersionService.approveVersion(I.getVersionId());

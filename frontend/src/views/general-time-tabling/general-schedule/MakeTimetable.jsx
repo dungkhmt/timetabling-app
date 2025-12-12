@@ -19,6 +19,8 @@ import {
 
 } from "@mui/material";
 import TimeTableNewUnscheduled from "./components/TimeTableNewUnscheduled";
+import ScheduleLog from "./components/ScheduleLog";
+
 //import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
 export default function MakeTimetable(){
     const {versionId} = useParams();
@@ -334,6 +336,7 @@ export default function MakeTimetable(){
                             <Tab label="Moring & Afternoon Same Row" value="2" />
                             <Tab label="View By Rooms" value="3" />
                             <Tab label="Unscheduled Classes" value="4" />
+                             <Tab label="LOGS" value="5" />
                         </TabList>
                     </Box>
                     <TabPanel value="1">
@@ -403,6 +406,13 @@ export default function MakeTimetable(){
                             onSelectedRowsChange={setSelectedRows}
                             selectedVersion={selectedVersion}
                             numberSlotsToDisplay={numberSlotsToDisplay}
+                        />
+                    </TabPanel>
+                    <TabPanel value="5">
+                        <ScheduleLog
+                            
+                            versionId={versionId}
+                            
                         />
                     </TabPanel>
                 </TabContext>

@@ -5,9 +5,10 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
-
+import openerp.openerpresourceserver.generaltimetabling.model.entity.TimetablingLogSchedule;
 
 
 import java.util.*;
@@ -63,11 +64,15 @@ public class SummerSemesterSolverVersion3 implements Solver {
     List<Integer> unScheduledClassSegment;
     boolean foundSolution;
     int timeLimit;
+
+    List<ModelSchedulingLog> logs = null;
+
     public SummerSemesterSolverVersion3(MapDataScheduleTimeSlotRoomWrapper W){
         this.I = W.data; this.W = W;
         optionDays = new ArrayList<>();
         optionDays.add(day1); optionDays.add(day2); optionDays.add(day3);
         roomSolver = new ClassBasedRoomAssignmentSolverVersion3(this);
+        logs = new ArrayList<>();
         log.info(name() + "::Constructor finished creating object roomSolver");
         mClassId2Class = new HashMap<>();
         for(ModelResponseTimeTablingClass cls: W.classes){
@@ -131,6 +136,14 @@ public class SummerSemesterSolverVersion3 implements Solver {
         }
 
         mClassId2MatchClass = new HashMap<>();
+    }
+    public void addLog(String classCode, Long classSegmentId, String description){
+        ModelSchedulingLog log = new ModelSchedulingLog();
+        log.setClassCode(classCode);
+        log.setDescription(description);
+        log.setCreatedDate(new Date());
+        log.setClassSegmentId(classSegmentId);
+        logs.add(log);
     }
 
     public int[] sortCapacityRoom(Set<Integer> rooms, boolean desc){
@@ -543,6 +556,12 @@ public class SummerSemesterSolverVersion3 implements Solver {
     public String name(){
         return "SummerSemesterSolverVersion3";
     }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return logs;
+    }
+
     @Override
     public void solve() {
         log.info(name() + "::solve...START, nbClassSegments = " + I.getClassSegments().size());
@@ -769,6 +788,7 @@ public class SummerSemesterSolverVersion3 implements Solver {
                         " is NOT partitioned, not in any cluster");
             }
         }
+
 
     }
     public boolean isScheduledClassSegment(ClassSegment cs){

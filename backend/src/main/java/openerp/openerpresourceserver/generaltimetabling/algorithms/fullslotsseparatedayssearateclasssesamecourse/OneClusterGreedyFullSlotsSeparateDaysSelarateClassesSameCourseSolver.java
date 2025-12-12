@@ -4,6 +4,7 @@ import com.nimbusds.jose.shaded.gson.Gson;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.io.File;
 import java.util.*;
@@ -49,6 +50,12 @@ public class OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolve
     public String name(){
         return "OneClusterGreedyFullSlotsSeparateDaysSelarateClassesSameCourseSolver";
     }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
+    }
+
     public void testPrint(){
         for(int i = 0; i < I.getClassSegments().size(); i++){
             log.info("testPrint class-segment[" + i + "]: " + I.getClassSegments().get(i));

@@ -4,6 +4,7 @@ import io.swagger.models.auth.In;
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
@@ -1893,5 +1894,10 @@ public class SummerSemesterSolver implements Solver {
     @Override
     public String name() {
         return "SummerSemesterSolver";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 }

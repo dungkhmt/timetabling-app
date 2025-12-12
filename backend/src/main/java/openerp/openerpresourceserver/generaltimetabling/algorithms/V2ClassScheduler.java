@@ -22,6 +22,7 @@ import openerp.openerpresourceserver.generaltimetabling.exception.InvalidFieldEx
 import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundException;
 import openerp.openerpresourceserver.generaltimetabling.helper.MassExtractor;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
@@ -41,6 +42,7 @@ public class V2ClassScheduler {
 
     private AlgorithmConfigParams algoParams = new AlgorithmConfigParams();
     private TimeTablingTimeTableVersion version = null;
+    public List<ModelSchedulingLog> logs = null;
 
     public V2ClassScheduler(List<TimeTablingConfigParams> params,TimeTablingTimeTableVersion version){
         this.params = params;
@@ -1159,6 +1161,8 @@ public class V2ClassScheduler {
             //    rr.setRoom(rooms.get(solver.getSolution()[roomReservations.indexOf(rr)]).getClassroom());
             //});
         }
+        logs = solver.getLogs();
+
         return classes;
     }
     public static List<GeneralClass> autoScheduleTimeSlot(List<GeneralClass> classes, int timeLimit) {

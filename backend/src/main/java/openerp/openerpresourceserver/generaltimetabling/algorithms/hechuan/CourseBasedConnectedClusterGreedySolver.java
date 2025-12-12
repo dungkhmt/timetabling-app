@@ -6,6 +6,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.classschedulingmaxregistrationopportunity.CourseNotOverlapBackTrackingSolver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 
 import java.util.*;
@@ -522,5 +523,10 @@ public class CourseBasedConnectedClusterGreedySolver implements Solver {
     @Override
     public String name() {
         return "CourseBasedConnectedClusterGreedySolver";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 }

@@ -49,26 +49,26 @@ public class PlanGeneralClass {
     }
 
     public void setLectureMaxQuantity(Integer lectureMaxQuantity) {
-        if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
-            throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
-        } else {
+        //if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
+        //    throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
+        //} else {
             this.lectureMaxQuantity = lectureMaxQuantity;
-        }
+        //}
     }
 
     public void setExerciseMaxQuantity(Integer exerciseMaxQuantity) {
-        if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
-            throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
-        } else {
+        //if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
+        //    throw new InvalidFieldException("Số lượng tối đa của LT+BT phải trống!");
+        //} else {
             this.exerciseMaxQuantity = exerciseMaxQuantity;
-        }
+        //}
     }
 
     public void setLectureExerciseMaxQuantity(Integer lectureExerciseMaxQuantity) {
-        if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
-            throw new InvalidFieldException("Số lượng tối đa của LT và BT cần phải trống!");
-        } else {
+        //if ((lectureMaxQuantity != null || exerciseMaxQuantity != null) && lectureExerciseMaxQuantity != null) {
+        //    throw new InvalidFieldException("Số lượng tối đa của LT và BT cần phải trống!");
+        //} else {
             this.lectureExerciseMaxQuantity = lectureExerciseMaxQuantity;
-        }
+        //}
     }
 }

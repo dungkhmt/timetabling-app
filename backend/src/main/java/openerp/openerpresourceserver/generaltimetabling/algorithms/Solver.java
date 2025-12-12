@@ -1,5 +1,8 @@
 package openerp.openerpresourceserver.generaltimetabling.algorithms;
 
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
+
+import java.util.List;
 import java.util.Map;
 
 public interface Solver {
@@ -12,4 +15,5 @@ public interface Solver {
     public void setTimeLimit(int timeLimit);
     public void printSolution();
     public String name();
+    public List<ModelSchedulingLog> getLogs();
 }

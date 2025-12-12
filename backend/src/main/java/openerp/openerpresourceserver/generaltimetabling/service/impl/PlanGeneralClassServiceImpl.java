@@ -606,6 +606,37 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         PlanGeneralClass existingPlan = planGeneralClassRepo.findById(planClass.getId())
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy kế hoạch mở lớp với ID: " + planClass.getId()));
 
+        // update timetabling classes (try first with update only batchId of this plan
+        if(existingPlan.getBatchId()!=planClass.getBatchId()) {
+            List<TimeTablingClass> classes = timeTablingClassRepo.findAllByRefClassId(planClass.getId());
+            for(TimeTablingClass cls: classes){
+                cls.setBatchId(planClass.getBatchId());
+                log.info("updateClassOpenningPlan update batch " + planClass.getBatchId() + " for class " + cls.getId());
+            }
+            timeTablingClassRepo.saveAll(classes);
+
+            //if there are versions of the batch, then add class segments to that version and remove class segments from versions of old batch
+            List<TimeTablingTimeTableVersion> vers = timeTablingVersionRepo.findAllByBatchId(planClass.getBatchId());
+            for(TimeTablingTimeTableVersion ver: vers){
+                for(TimeTablingClass cls: classes) {
+                    TimeTablingClassSegment cs = new TimeTablingClassSegment();
+                    cs.setClassId(cls.getId());
+                    cs.setVersionId(ver.getId());
+                    cs.setDuration(cls.getDuration());
+                    cs = timeTablingClassSegmentRepo.save(cs);
+                }
+            }
+
+            // remove class segments of old batch
+            List<TimeTablingTimeTableVersion> oldvers = timeTablingVersionRepo.findAllByBatchId(existingPlan.getBatchId());
+            for(TimeTablingTimeTableVersion ver: oldvers){
+                List<TimeTablingClassSegment> CS = timeTablingClassSegmentRepo.findAllByVersionId(ver.getId());
+                timeTablingClassSegmentRepo.deleteAll(CS);
+            }
+
+        }
+
+
         // Cập nhật thông tin cơ bản
         existingPlan.setModuleCode(planClass.getModuleCode());
         existingPlan.setModuleName(planClass.getModuleName());
@@ -618,6 +649,7 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         existingPlan.setWeekType(planClass.getWeekType());
         existingPlan.setGroupId(planClass.getGroupId());
         existingPlan.setProgramName(planClass.getProgramName());
+        existingPlan.setBatchId(planClass.getBatchId());
 
         // Cập nhật số lượng và thời lượng theo loại lớp
         switch (planClass.getClassType()) {
@@ -644,13 +676,16 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
         }
         existingPlan.setModuleName(course.getName());
 
-        Group group = groupRepo.findById(planClass.getGroupId()).orElse(null);
-        if(group == null){
-            throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
+        if(planClass.getGroupId() != null) {
+            Group group = groupRepo.findById(planClass.getGroupId()).orElse(null);
+            //if (group == null) {
+            //    throw new InvalidFieldException("cannot find group id = " + planClass.getGroupId());
+            //}
+            if(group != null) {
+                existingPlan.setProgramName(group.getGroupName());
+            }
         }
-
-        existingPlan.setProgramName(group.getGroupName());
-
+        log.info("updateClassOpenningPlan prepare to save DB");
         return planGeneralClassRepo.save(existingPlan);
     }
 

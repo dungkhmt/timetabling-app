@@ -33,6 +33,7 @@ export default function ListBatch(){
                 to={{
                     pathname:
                       "/opened-class-plan/" + rowData["id"],
+                     //"/opened-class-plan/" + selectedSemester?.semester + "/"+ rowData["id"]
                 }}
             >
                 {rowData["name"]}

@@ -3,6 +3,7 @@ package openerp.openerpresourceserver.generaltimetabling.algorithms.fullslotssep
 import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.*;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.util.*;
 @Log4j2
@@ -425,5 +426,10 @@ public class BacktrackingSolverOneCluster implements Solver {
     @Override
     public String name() {
         return "BacktrackingSolverOneCluster";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 }

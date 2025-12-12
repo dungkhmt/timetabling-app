@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAddR
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputCreateTimeTablingBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTablingBatch;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.BatchRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResposeBatchDetail;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingBatchRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.BatchRoomService;
 import org.apache.poi.ss.formula.functions.T;
@@ -45,7 +46,15 @@ public class TimeTablingBatchController {
         log.info("getAllBatchByUser, user = " + principal.getName() + " res.sz = " + res.size());
         return ResponseEntity.ok().body(res);
     }
-
+    @GetMapping("/get-batch-detail/{batchId}")
+    public ResponseEntity<?> getBatchById(Principal principal, @PathVariable Long batchId){
+        TimeTablingBatch batch = timeTablingBatchRepo.findById(batchId).orElse(null);
+        List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllByCreatedByUserIdAndSemester(principal.getName(),batch.getSemester());
+        ModelResposeBatchDetail res = new ModelResposeBatchDetail();
+        res.setBatchId(batchId); res.setBatchName(batch.getName());
+        res.setBatchesOfSemester(batches);
+        return ResponseEntity.ok().body(res);
+    }
 
     @GetMapping("/get-batch-room/{batchId}")
     public ResponseEntity<?> getBatchRoom(@PathVariable Long batchId){

@@ -743,7 +743,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 for(int sl = 1; sl <= end; sl++){
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
-                            (dss.session == 0 ? "S" : "C"), dss.slot);
+                            (dss.session == 0 ? "S" : "C"), dss.slot,"white");
                     tmp.add(cs);
                     //log.info("INIT -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
                 }
@@ -752,6 +752,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             for(int i = 0; i  < slots.size(); i++){
                 //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i));
                 ModelResponseClassSegment csr = cls.getClassSegments().get(i);
+                csr.setColor("yellow");
                 tmp.add(csr);
                 //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " add real cs " + csr.getDay() + "-" + csr.getSession()+"-" + csr.getStartTime() + " duration " + csr.getDuration());
                 int st = slots.get(i) + csr.getDuration();
@@ -761,7 +762,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 for(int sl = st; sl <= fn; sl++){
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
-                            (dss.session == 0 ? "S" : "C"), dss.slot);
+                            (dss.session == 0 ? "S" : "C"), dss.slot,"white");
                     tmp.add(cs);
                     //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn + " -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
 
@@ -870,7 +871,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             for(int sl = 1; sl <= end; sl++){
                 DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                 ModelResponseTimetableClass ttc = new ModelResponseTimetableClass(dss.day,
-                        (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"");
+                        (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"","white");
                 tmp.add(ttc);
                 //log.info("INIT -> add " + ttc.getDay() + "-" + ttc.getSession() + "-" + ttc.getStartTime());
             }
@@ -879,6 +880,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             for(int j = 0; j  < slots.size(); j++){
                 //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j));
                 ModelResponseTimetableClass ttc = newL.get(j);
+                ttc.setColor("yellow");
                 tmp.add(ttc);
                 //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " add real cs " + ttc.getDay() + "-" + ttc.getSession()+"-" + ttc.getStartTime() + " duration " + ttc.getDuration());
                 int st = slots.get(j) + ttc.getDuration();
@@ -888,7 +890,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 for(int sl = st; sl <= fn; sl++){
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseTimetableClass ttci = new ModelResponseTimetableClass(dss.day,
-                            (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"");
+                            (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"","white");
                     tmp.add(ttci);
                     //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn + " -> add " + ttci.getDay() + "-" + ttci.getSession() + "-" + ttci.getStartTime()  + "-" + ttci.getDuration());
 

@@ -7,6 +7,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataSchedu
 import openerp.openerpresourceserver.generaltimetabling.algorithms.MapDataScheduleTimeSlotRoomOneGroup;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.io.File;
 import java.util.*;
@@ -263,6 +264,11 @@ public class GreedySolver3 implements Solver {
     @Override
     public String name() {
         return "GreedySolver3";
+    }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
     }
 
     public static void main(String[] args){

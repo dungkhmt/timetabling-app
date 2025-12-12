@@ -7,6 +7,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.Solver;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ConnectedComponentSolver;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 
 import java.io.File;
 import java.util.HashMap;
@@ -30,6 +31,12 @@ public class MultiClusterSeparateClassesSameCourseSolver implements Solver {
     public String name(){
         return "CourseBasedMultiClusterGreedySolver";
     }
+
+    @Override
+    public List<ModelSchedulingLog> getLogs() {
+        return null;
+    }
+
     public boolean checkTimeRoom(){
         for(int i = 0; i < I.getClassSegments().size(); i++){
             ClassSegment csi = I.getClassSegments().get(i);
