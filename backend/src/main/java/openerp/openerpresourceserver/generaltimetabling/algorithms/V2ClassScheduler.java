@@ -587,16 +587,17 @@ public class V2ClassScheduler {
             roomOccupation[i] = new ArrayList<>();
         }
         for(String rId: mId2RoomReservation.keySet()){
-            if(mRoom2Index.get(rId)==null)
+            if(mRoom2Index.get(rId)==null) {// room was used but not considered in the room list allowed forscheduling
                 log.info("mapDataNew, roomId " + rId + " not mapped");
-
+                continue;
+            }
             //if(mId2RoomReservation.get(rId)==null)
             //    log.info("mapDataNew, roomId " + rId + " index " + mRoom2Index.get(rId) + " mapped to NULL class segment");
             //else
             //    log.info("mapDataNew, roomId " + rId + " index " + mRoom2Index.get(rId) + " mapped to Class segments " + mId2RoomReservation.get(rId).size());
 
             int roomIdx = mRoom2Index.get(rId);
-            for(TimeTablingClassSegment rr: mId2RoomReservation.get(rId)){
+            if(mId2RoomReservation.get(rId) != null) for(TimeTablingClassSegment rr: mId2RoomReservation.get(rId)){
                 if(rr.getStartTime() != null && rr.getEndTime() != null && rr.getWeekday() != null){
                     int KIP = rr.getCrew().equals("S") ? 0 : 1;
                     for(int s = rr.getStartTime(); s <= rr.getEndTime(); s++) {
@@ -607,6 +608,8 @@ public class V2ClassScheduler {
                 }
             }
         }
+        log.info("mapDataNew DONE setup roomOccupation");
+
         ClassSegment[] classSegments = new ClassSegment[n];
         List<Integer>[] relatedGroups = new ArrayList[n];
         int[] indexOfClass = new int[n];// indexOfClass[j] : index of the class of the class-segment (RoomReservation) j

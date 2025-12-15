@@ -25,7 +25,7 @@ import {
 import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import { toast } from "react-toastify";
 
-const RoomBasedTimeTable = ({
+const TimeTableMutliSlotPerRowApprovedOfSemester = ({
   classes,
   //getClasses,
   versionId,
@@ -68,12 +68,21 @@ const RoomBasedTimeTable = ({
   const [error, setError] = useState(null);
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
-    const savedSettings = localStorage.getItem("room-based-timetable-column-visibility");
+    const savedSettings = localStorage.getItem("timetable-column-visibility");
     return savedSettings
       ? JSON.parse(savedSettings)
       : {
-          roomCode: true,
-          capacity: true,
+          classCode: true,
+          studyClass: true,
+          learningWeeks: true,
+          moduleCode: true,
+          moduleName: true,
+          crew: true,
+          quantityMax: true,
+          classType: true,
+          mass: true,
+          duration: true,
+          batch: true,
           actions: true,
         };
   });
@@ -120,9 +129,10 @@ const RoomBasedTimeTable = ({
           setLoading(true);
           request(
                               "get",
-                              "/general-classes/get-room-based-timetable-with-class-segments-of-version?versionId=" + versionId
+                              "/general-classes/get-classes-with-class-segments-approved-of-semester?semester=" + selectedSemester
                               //"/general-classes/get-class-segments-of-version?versionId=" + versionId
-                              + "&searchRoomCode=" + searchTerm,
+                              + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
+                              + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
                               (res)=>{
                                   console.log('get-classes-with-class-segments-of-version, res = ' + res.data);
                                   setClassWithClassSegments(res.data || []);
@@ -343,7 +353,7 @@ const renderCellContent = (classIndex, day, period) => {
           });
         }}
       >
-        <span className="text-[14px]">{classInfo.classCodes}</span>
+        <span className="text-[14px]">{classInfo.roomCode}</span>
       </td>
     );
   }
@@ -473,10 +483,10 @@ const handleCancelMove = () => {
     setPage(newPage);
     let P = classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage);
     P.map((cls,index) =>{
-      //console.log('class ' + cls.classCode + ': ');
-      //cls.classes.map((cs,i) => {
-      //  console.log(cs.day + '-' + cs.session + '-' + cs.startTime + '-' + cs.duration);
-      //})
+      console.log('class ' + cls.classCode + ': ');
+      cls.classSegments.map((cs,i) => {
+        console.log(cs.day + '-' + cs.session + '-' + cs.startTime + '-' + cs.duration);
+      })
     })
     setActivePageClassWithClassSegments(classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage));
 
@@ -526,11 +536,6 @@ const handleCancelMove = () => {
     setSelectedClassForSlot(null);
   };
 
-  const handleFilter = () => {
-    
-    getClasses();
-  }
-
   const handleSettingsOpen = () => {
     setIsSettingsOpen(true);
   };
@@ -546,7 +551,7 @@ const handleCancelMove = () => {
     };
     setColumnVisibility(newVisibility);
     localStorage.setItem(
-      "room-based-timetable-column-visibility",
+      "timetable-column-visibility",
       JSON.stringify(newVisibility)
     );
   };
@@ -556,8 +561,17 @@ const handleCancelMove = () => {
   };
 
   const columnDefinitions = [
-    { id: "roomCode", label: "Mã phòng" },
-    { id: "capacity", label: "SL chỗ" },
+    { id: "classCode", label: "Mã lớp" },
+    { id: "studyClass", label: "Nhóm" },
+    { id: "learningWeeks", label: "Tuần học" },
+    { id: "moduleCode", label: "Mã học phần" },
+    { id: "moduleName", label: "Tên học phần" },
+    { id: "crew", label: "Kíp" },
+    { id: "quantityMax", label: "SL MAX" },
+    { id: "classType", label: "Loại lớp" },
+    { id: "mass", label: "Thời lượng" },
+    { id: "duration", label: "Số tiết" },
+    { id: "batch", label: "Khóa" },
     { id: "actions", label: "Thêm/Xóa" },
   ];
 
@@ -591,18 +605,6 @@ const handleCancelMove = () => {
             ) : null,
           }}
         />
-        <Button
-          variant="outlined"
-          startIcon={<Settings />}
-          onClick={handleFilter}
-          size="small"
-          sx={{
-            height: "36px",
-            textTransform: "none",
-          }}
-        >
-          Filter 
-        </Button>
         <Button
           variant="outlined"
           startIcon={<Settings />}
@@ -641,20 +643,92 @@ const handleCancelMove = () => {
                   size="small"
                 />
               </th>
-              {columnVisibility.roomCode && (
-                <th
-                  className="border-[1px] border-solid border-gray-300 p-1"
-                  style={{ width: "120px", minWidth: "120px" }}
-                >
-                  Phòng
-                </th>
-              )}
-              {columnVisibility.capacity && (
+              {columnVisibility.classCode && (
                 <th
                   className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "60px", minWidth: "60px" }}
                 >
-                  SL chỗ
+                  Mã lớp
+                </th>
+              )}
+              {columnVisibility.studyClass && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Nhóm
+                </th>
+              )}
+              {columnVisibility.learningWeeks && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "45px", minWidth: "45px" }}
+                >
+                  Tuần học
+                </th>
+              )}
+              {columnVisibility.moduleCode && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "70px", minWidth: "70px" }}
+                >
+                  Mã học phần
+                </th>
+              )}
+              {columnVisibility.moduleName && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "100px", minWidth: "100px" }}
+                >
+                  Tên học phần
+                </th>
+              )}
+              {columnVisibility.crew && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "40px", minWidth: "40px" }}
+                >
+                  Kíp
+                </th>
+              )}
+              {columnVisibility.quantityMax && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "50px", minWidth: "50px" }}
+                >
+                  SL MAX
+                </th>
+              )}
+              {columnVisibility.classType && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Loại lớp
+                </th>
+              )}
+              {columnVisibility.mass && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Thời lượng
+                </th>
+              )}
+              {columnVisibility.duration && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "50px", minWidth: "50px" }}
+                >
+                  Số tiết
+                </th>
+              )}
+              {columnVisibility.batch && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "50px", minWidth: "50px" }}
+                >
+                  Khóa
                 </th>
               )}
               {columnVisibility.actions && (
@@ -744,22 +818,94 @@ const handleCancelMove = () => {
                     size="small"
                   />
                 </th>
-                {columnVisibility.roomCode && (
-                <th
-                  className="border-[1px] border-solid border-gray-300 p-1"
-                  style={{ width: "120px", minWidth: "120px" }}
-                >
-                  Phòng
-                </th>
-              )}
-              {columnVisibility.capacity && (
-                <th
-                  className="border-[1px] border-solid border-gray-300 p-1"
-                  style={{ width: "60px", minWidth: "60px" }}
-                >
-                  SL chỗ
-                </th>
-              )}
+                {columnVisibility.classCode && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Mã lớp
+                  </th>
+                )}
+                {columnVisibility.studyClass && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "80px", minWidth: "80px" }}
+                  >
+                    Nhóm
+                  </th>
+                )}
+                {columnVisibility.learningWeeks && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "45px", minWidth: "45px" }}
+                  >
+                    Tuần học
+                  </th>
+                )}
+                {columnVisibility.moduleCode && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "70px", minWidth: "70px" }}
+                  >
+                    Mã học phần
+                  </th>
+                )}
+                {columnVisibility.moduleName && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "100px", minWidth: "100px" }}
+                  >
+                    Tên học phần
+                  </th>
+                )}
+                {columnVisibility.crew && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "40px", minWidth: "40px" }}
+                  >
+                    Kíp
+                  </th>
+                )}
+                {columnVisibility.quantityMax && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "50px", minWidth: "50px" }}
+                  >
+                    SL MAX
+                  </th>
+                )}
+                {columnVisibility.classType && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Loại lớp
+                  </th>
+                )}
+                {columnVisibility.mass && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Thời lượng
+                  </th>
+                )}
+                {columnVisibility.duration && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "50px", minWidth: "50px" }}
+                  >
+                    Số tiết
+                  </th>
+                )}
+                {columnVisibility.batch && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "50px", minWidth: "50px" }}
+                  >
+                    Khóa
+                  </th>
+                )}
                 {columnVisibility.actions && (
                   <>
                     <th
@@ -826,7 +972,7 @@ const handleCancelMove = () => {
                 activePageClassWithClassSegments
                   .map((classDetail, index) => {
                     const isItemSelected = isSelected(
-                      classDetail.roomCode
+                      classDetail.classId
                     );
 
                     let groupDisplay = "";
@@ -836,7 +982,7 @@ const handleCancelMove = () => {
                     
                     return (
                       <tr
-                        key={`${classDetail.roomCode}`}
+                        key={`${classDetail.id}`}
                         style={{ height: "40px" }} // Reduced row height from 52px
                         className={isItemSelected ? "bg-blue-50" : ""}
                       >
@@ -844,19 +990,65 @@ const handleCancelMove = () => {
                           <Checkbox
                             checked={isItemSelected}
                             onChange={(event) =>
-                              handleSelectRow(event, classDetail.roomCode)
+                              handleSelectRow(event, classDetail.id)
                             }
                             size="small"
                           />
                         </td>
-                        {columnVisibility.roomCode && (
+                        {columnVisibility.classCode && (
                           <td className="border border-gray-300 text-center px-1">
-                            {classDetail.roomCode}
+                            {classDetail.classCode}
                           </td>
                         )}
-                        {columnVisibility.capacity && (
+                        {columnVisibility.studyClass && (
                           <td className="border border-gray-300 text-center px-1">
-                            {classDetail.capacity}
+                            {classDetail.groupNames}
+                          </td>
+                        )}
+                        {columnVisibility.learningWeeks && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.learningWeeks}
+                          </td>
+                        )}
+                        {columnVisibility.moduleCode && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.courseCode}
+                          </td>
+                        )}
+                        {columnVisibility.moduleName && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.courseName}
+                          </td>
+                        )}
+                        {columnVisibility.crew && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.session}
+                          </td>
+                        )}
+                        {columnVisibility.quantityMax && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.maxNbStudents}
+                            
+                          </td>
+                        )}
+                        {columnVisibility.classType && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.classType}
+                          </td>
+                        )}
+                        {columnVisibility.mass && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.volumn}
+                          </td>
+                        )}
+                        {columnVisibility.duration && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.duration}
+                          </td>
+                        )}
+                        {columnVisibility.batch && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.promotion}
                           </td>
                         )}
                         {columnVisibility.actions && (
@@ -883,7 +1075,7 @@ const handleCancelMove = () => {
                               )}
                             </td>
                             <td className="border border-gray-300 text-center px-1">
-                              {classDetail.roomCode && (
+                              {classDetail.id && (
                                 <Button
                                   onClick={() =>
                                     handleRemoveTimeSlot(
@@ -920,7 +1112,7 @@ const handleCancelMove = () => {
                             }
                             
                             // Find matching class segment for this day and period
-                            const matchingSegment = classDetail.classes?.find(
+                            const matchingSegment = classDetail.classSegments?.find(
                               cs => cs.day === dayIndex && cs.startTime === period
                             );
                             
@@ -932,19 +1124,19 @@ const handleCancelMove = () => {
                               
                               cells.push(
                                 <td
-                                  key={`${classDetail.roomCode}-${day}-${period}`}
+                                  key={`${classDetail.id}-${day}-${period}`}
                                   colSpan={matchingSegment.duration}
-                                  style={{ width: `${70 * matchingSegment.duration}px`, backgroundColor: `${matchingSegment.color}`}}
+                                  style={{ width: `${70 * matchingSegment.duration}px`,backgroundColor: `${matchingSegment.color}` }}
                                   className="border border-gray-300 text-center cursor-pointer px-1"
                                 >
-                                  <span className="text-[14px]">{matchingSegment.classCodes}</span>
+                                  <span className="text-[14px]">{matchingSegment.roomCode}</span>
                                 </td>
                               );
                             } else {
                               // Render empty cell
                               cells.push(
                                 <td
-                                  key={`${classDetail.roomCode}-${day}-${period}`}
+                                  key={`${classDetail.id}-${day}-${period}`}
                                   style={{ width: "70px" }}
                                   className="border border-gray-300 text-center cursor-pointer px-1"
                                 ></td>
@@ -1207,4 +1399,4 @@ const handleCancelMove = () => {
   );
 };
 
-export default RoomBasedTimeTable;
+export default TimeTableMutliSlotPerRowApprovedOfSemester;

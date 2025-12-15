@@ -1,6 +1,8 @@
 package openerp.openerpresourceserver.generaltimetabling.service;
 
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseVersionDetail;
+
 import java.util.List;
 
 public interface TimeTablingVersionService {
@@ -19,5 +21,8 @@ public interface TimeTablingVersionService {
     List<TimeTablingTimeTableVersion> getAllVersions();
 
     boolean approveVersion(Long id);
-    
+
+    boolean updateStatusVersion(Long id, String status);
+
+    ModelResponseVersionDetail getVersionDetail(Long id);
 }

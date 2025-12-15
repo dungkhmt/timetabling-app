@@ -140,4 +140,26 @@ public class TimeTablingBatchController {
                     .body("Error removing room from batch");
         }
     }
+
+    @DeleteMapping("/remove-all-rooms-from-batch")
+    public ResponseEntity<?> removeRoomFromBatch(
+            @RequestParam Long batchId) {
+
+        try {
+
+//            Long batchIdlong = Long.parseLong(batchId);
+//            // Xóa bản ghi từ timetabling_batch_room
+            batchRoomService.deleteByBatchId(batchId);
+//
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Xóa hết phòng khỏi batch thành công"
+            ));
+//            return null;
+        } catch (Exception e) {
+            log.error("Error removing room from batch: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error removing room from batch");
+        }
+    }
 }

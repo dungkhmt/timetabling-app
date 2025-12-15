@@ -17,9 +17,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.dto.request.genera
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.general.UpdateGeneralClassRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.TimetablingLogSchedule;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.Cluster;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.RoomReservation;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.input.*;
 import openerp.openerpresourceserver.generaltimetabling.model.response.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
@@ -32,8 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import openerp.openerpresourceserver.generaltimetabling.model.entity.general.GeneralClass;
 
 @RestController
 @RequestMapping("/general-classes")
@@ -129,24 +125,54 @@ public class TimeTablingClassController {
 
         return ResponseEntity.ok().body(res);
     }
-
-    @GetMapping("/get-room-based-timetable-with-class-segments-of-version")
-    public ResponseEntity<?> getRoomBasedTimeTableWithClasssegmentsOfVersion(Principal principal,
-                                                                  @RequestParam("versionId") Long versionId,
+    @GetMapping("/get-classes-with-class-segments-approved-of-semester")
+    public ResponseEntity<?> getClassesWithClasssegmentsApprovedOfSemester(Principal principal,
+                                                                  @RequestParam("semester") String semester,
                                                                   @RequestParam("searchCourseCode") String searchCourseCode,
                                                                   @RequestParam("searchCourseName") String searchCourseName,
                                                                   @RequestParam("searchClassCode") String searchClassCode,
                                                                   @RequestParam("searchGroupName") String searchGroupName
     ){
-        log.info("getClassesWithClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+        log.info("getClassesWithClasssegmentsApprovedOfSemester, semester = " + semester + " searchCourseCode = " + searchCourseCode
                 + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
-        //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsApprovedOfSemesterFiltered(principal.getName(), semester, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
         //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
-        List<ModelResponseRoomBasedTimetable> res = timeTablingClassService.getRoomBasedTimetable(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
 
         return ResponseEntity.ok().body(res);
     }
 
+    @GetMapping("/get-room-based-timetable-with-class-segments-of-version")
+    public ResponseEntity<?> getRoomBasedTimeTableWithClasssegmentsOfVersion(Principal principal,
+                                                                  @RequestParam("versionId") Long versionId,
+                                                                  @RequestParam("searchRoomCode") String searchRoomCode
+                                                                  //@RequestParam("searchCourseName") String searchCourseName,
+                                                                  //@RequestParam("searchClassCode") String searchClassCode,
+                                                                  //@RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getClassesWithClasssegmentsOfVersion, versionId = " + versionId + " searchRoomCode = " + searchRoomCode);
+        //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        List<ModelResponseRoomBasedTimetable> res = timeTablingClassService.getRoomBasedTimetable(principal.getName(), versionId, searchRoomCode);
+
+        return ResponseEntity.ok().body(res);
+    }
+
+    @GetMapping("/get-room-based-timetable-with-class-segments-approved-of-semester")
+    public ResponseEntity<?> getRoomBasedTimeTableWithClasssegmentsApprovedOfSemester(Principal principal,
+                                                                             @RequestParam("semester") String semester,
+                                                                                      @RequestParam("searchRoomCode") String searchRoomCode
+                                                                                      //@RequestParam("searchCourseName") String searchCourseName,
+                                                                                      //@RequestParam("searchClassCode") String searchClassCode,
+                                                                                      //@RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getRoomBasedTimeTableWithClasssegmentsApprovedOfSemester, semester = " + semester + " searchRoomCode = " + searchRoomCode);
+        //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        List<ModelResponseRoomBasedTimetable> res = timeTablingClassService.getRoomBasedTimetableApprovedOfSemester(principal.getName(), semester, searchRoomCode);
+        //List<ModelResponseRoomBasedTimetable> res = new ArrayList<>();
+
+        return ResponseEntity.ok().body(res);
+    }
 
     @GetMapping("/")
     public List<ModelResponseTimeTablingClass> requestGetClasses(
@@ -311,6 +337,17 @@ public class TimeTablingClassController {
     public ResponseEntity<?> approveVersionTimetable(Principal principal, @RequestBody ModelInputApproveVersionTimetable I){
         boolean ok = timeTablingVersionService.approveVersion(I.getVersionId());
         return ResponseEntity.ok().body(ok);
+    }
+    @PostMapping("/make-draft-version-timetable")
+    public ResponseEntity<?> makeDraftVersionTimetable(Principal principal, @RequestBody ModelInputApproveVersionTimetable I){
+        boolean ok = timeTablingVersionService.updateStatusVersion(I.getVersionId(), TimeTablingTimeTableVersion.STATUS_DRAFT);
+        return ResponseEntity.ok().body(ok);
+    }
+
+    @GetMapping("/get-version-detail/{versionId}")
+    public ResponseEntity<?> getVersionDetail(Principal principal, @PathVariable Long versionId){
+        ModelResponseVersionDetail res= timeTablingVersionService.getVersionDetail(versionId);
+        return ResponseEntity.ok().body(res);
     }
 
     //@PostMapping("/auto-schedule-timeslot-room-4-class-segments")

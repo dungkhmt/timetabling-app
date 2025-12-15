@@ -770,6 +770,12 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             }
             cls.setClassSegments(tmp);
             //log.info("getClassesWithClasssegmentsOfVersionFiltered, class-segments length = " + cls.getClassSegments().size());
+
+            for(ModelResponseClassSegment cs: cls.getClassSegments()){
+                if(cs.getSession().equals("C")){
+                    cs.setStartTime(cs.getStartTime()+ ver.getNumberSlotsPerSession());
+                }
+            }
         }
         //log.info("getClassesWithClasssegmentsOfVersionFiltered, L = " + L.size() + " res = "  + res.size());
 
@@ -780,12 +786,35 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     }
 
     @Override
-    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+    public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsApprovedOfSemesterFiltered(String userId, String semester, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        List<ModelResponseClassWithClassSegmentList> res= new ArrayList<>();
+        List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(semester);
+        if(batches != null){
+            log.info("getClassesWithClasssegmentsApprovedOfSemesterFiltered batches = " + batches.size());
+            for(TimeTablingBatch b: batches){
+                List<TimeTablingTimeTableVersion> vers = timeTablingVersionRepo.findAllByStatusAndBatchId(TimeTablingTimeTableVersion.STATUS_PUBLISHED,b.getId());
+                log.info("getClassesWithClasssegmentsApprovedOfSemesterFiltered batch " + b.getId() + " vers = " + vers.size());
+                for(TimeTablingTimeTableVersion ver: vers) {
+                    List<ModelResponseClassWithClassSegmentList> L = getClassesWithClasssegmentsOfVersionFiltered(userId, ver.getId(), searchCourseCode, searchCourseName, searchClassCode, searchGroupName);
+                    log.info("getClassesWithClasssegmentsApprovedOfSemesterFiltered batch " + b.getId() + " ver = " + ver.getId() + " L = " + L.size());
+                    for(ModelResponseClassWithClassSegmentList cls: L){
+                        res.add(cls);
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchRoomCode) {
         TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
         if(ver == null) return null;
+        List<Classroom> allrooms = classroomRepo.findAllByStatus(Classroom.STATUS_ACTIVE);
+        Map<String, Classroom> mCode2Room= new HashMap<>();
+        for(Classroom r: allrooms) mCode2Room.put(r.getClassroom(),r);
 
-
-        List<ModelResponseClassSegment> L = getClasssegmentsOfVersionFiltered(userId, versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName);
+        List<ModelResponseClassSegment> L = getClasssegmentsOfVersionFiltered(userId, versionId, null, null, null, null);
         List<ModelResponseRoomBasedTimetable> res = new ArrayList<>();
         Map<String, List<ModelResponseClassSegment>> mRoom2ClassSegments = new HashMap<>();
         for(ModelResponseClassSegment cs:L){
@@ -798,6 +827,12 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
 
         for(String roomCode:mRoom2ClassSegments.keySet()){
+            if(searchRoomCode!=null&&!searchRoomCode.equals("")){
+                if(!roomCode.contains(searchRoomCode)){
+                    log.info("getRoomBasedTimetable, filtering room " + roomCode + " searchRoomCode = " + searchRoomCode + " not contain ->continue");
+                    continue;
+                }
+            }
             List<ModelResponseClassSegment> CS = mRoom2ClassSegments.get(roomCode);
             CS.sort(new Comparator<>() {
                 @Override
@@ -909,13 +944,60 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
 
         // serialize startTime on th whole day: if session = C then startTime= startTime + ver.getNumberSlotsPerSession()
+        Set<String> roomUsed = new HashSet();
         for(ModelResponseRoomBasedTimetable i: res){
+            Classroom cr = mCode2Room.get(i.getRoomCode());
+            if(cr != null){
+                long c = cr.getQuantityMax();
+                i.setCapacity((int)c);
+                roomUsed.add(cr.getClassroom());
+            }
             for(ModelResponseTimetableClass ttc:i.getClasses()){
                 if(ttc.getSession().equals("C")){
                     ttc.setStartTime(ttc.getStartTime() + ver.getNumberSlotsPerSession());
                 }
             }
         }
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetableApprovedOfSemester(String userId, String semester, String searchRoomCode) {
+        List<ModelResponseRoomBasedTimetable> res = new ArrayList<>();
+        List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(semester);
+        if(batches != null){
+            log.info("getRoomBasedTimetableApprovedOfSemester batches = " + batches.size());
+            for(TimeTablingBatch b: batches){
+                List<TimeTablingTimeTableVersion> vers = timeTablingVersionRepo.findAllByStatusAndBatchId(TimeTablingTimeTableVersion.STATUS_PUBLISHED,b.getId());
+                log.info("getRoomBasedTimetableApprovedOfSemester batch " + b.getId() + " vers = " + vers.size());
+                for(TimeTablingTimeTableVersion ver: vers) {
+                    List<ModelResponseRoomBasedTimetable> L = getRoomBasedTimetable(userId, ver.getId(), searchRoomCode);
+                    log.info("getRoomBasedTimetableApprovedOfSemester batch " + b.getId() + " ver = " + ver.getId() + " L = " + L.size());
+                    for(ModelResponseRoomBasedTimetable cls: L){
+                        res.add(cls);
+                    }
+                }
+            }
+        }
+        Set<String> roomUsed = new HashSet();
+        for(ModelResponseRoomBasedTimetable i: res){
+            roomUsed.add(i.getRoomCode());
+        }
+        List<Classroom> allrooms = classroomRepo.findAllByStatus(Classroom.STATUS_ACTIVE);
+        Map<String, Classroom> mCode2Room= new HashMap<>();
+        for(Classroom r: allrooms) mCode2Room.put(r.getClassroom(),r);
+
+        for(Classroom r: allrooms){
+            if(!roomUsed.contains(r.getClassroom())){
+                ModelResponseRoomBasedTimetable e = new ModelResponseRoomBasedTimetable();
+                e.setRoomCode(r.getClassroom());
+                long c =r.getQuantityMax();
+                e.setCapacity((int)c);
+                e.setClasses(new ArrayList<>());
+                res.add(e);
+            }
+        }
+
         return res;
     }
 

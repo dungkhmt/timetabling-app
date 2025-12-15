@@ -104,6 +104,25 @@ export default function RoomsOfBatch({ batchId }) {
         getAllRooms();
     }
 
+    function handleRemoveAllRooms() {
+        request(
+            "delete",
+            `/timetabling-batch/remove-all-rooms-from-batch?batchId=${batchId}`,
+            (res) => {
+                toast.success(`Đã xóa phòng khỏi batch thành công!`);
+                getBatchRooms(); // Tải lại danh sách phòng
+            },
+            (err) => {
+                if (err.response?.status === 404) {
+                    toast.error(`ERROR 404`);
+                } else {
+                    toast.error(`ERROR`);
+                }
+                console.error(err);
+            }
+        );
+    }
+
     function handleCloseAddRoomDialog() {
         setOpenAddRoomBatchDialog(false);
         setSelectedRoomIds([]); // Xóa các lựa chọn khi đóng dialog
@@ -185,6 +204,13 @@ export default function RoomsOfBatch({ batchId }) {
                 onClick={handleOpenAddRoomDialog}
             >
                 Thêm phòng
+            </Button>
+            <Button
+                // variant="contained"
+                sx={{ mb: 2 }}
+                onClick={handleRemoveAllRooms}
+            >
+                Xóa hết phòng
             </Button>
 
             {loading ? (

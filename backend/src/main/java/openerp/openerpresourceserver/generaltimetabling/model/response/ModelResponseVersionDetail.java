@@ -5,15 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModelResponseRoomBasedTimetable {
+public class ModelResponseVersionDetail {
+    private Long id;
+    private String semester;
+    private Long batchId;
 
-    private String roomCode;
-    private int capacity;
-    private List<ModelResponseTimetableClass> classes;
 }

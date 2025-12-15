@@ -10,5 +10,6 @@ public interface BatchRoomService {
     void addBatchRoom(BatchRoom batchRoom);
 
     void deleteByBatchIdAndRoomId(Long batchId, String roomId);
+    void deleteByBatchId(Long batchId);
 
 }

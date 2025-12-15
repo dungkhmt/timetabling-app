@@ -35,5 +35,12 @@ public class BatchRoomImpl implements BatchRoomService {
         batchRoomRepo.deleteById(id);
     }
 
+    @Override
+    public void deleteByBatchId(Long batchId) {
+        List<BatchRoom> batchRooms = batchRoomRepo.findAllByBatchId(batchId);
+        batchRooms.forEach(batchRoom -> batchRoomRepo.delete(batchRoom));
+
+    }
+
 
 }

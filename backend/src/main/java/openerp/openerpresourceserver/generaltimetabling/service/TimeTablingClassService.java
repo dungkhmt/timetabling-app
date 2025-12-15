@@ -36,8 +36,10 @@ public interface TimeTablingClassService {
     public List<ModelResponseClassSegment> getUnscheduledClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+    public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsApprovedOfSemesterFiltered(String userId, String semester, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
-    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchRoomCode);
+    public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetableApprovedOfSemester(String userId, String semester, String searchRoomCode);
 
 
     public List<ModelResponseTimeTablingClass> getTimeTablingClassOfBatch(String userId, Long batchId);

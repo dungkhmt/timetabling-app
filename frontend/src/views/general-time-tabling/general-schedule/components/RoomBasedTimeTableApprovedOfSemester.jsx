@@ -25,7 +25,7 @@ import {
 import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import { toast } from "react-toastify";
 
-const RoomBasedTimeTable = ({
+const RoomBasedTimeTableApprovedOfSemester = ({
   classes,
   //getClasses,
   versionId,
@@ -120,7 +120,8 @@ const RoomBasedTimeTable = ({
           setLoading(true);
           request(
                               "get",
-                              "/general-classes/get-room-based-timetable-with-class-segments-of-version?versionId=" + versionId
+                              "/general-classes/get-room-based-timetable-with-class-segments-approved-of-semester?semester=" 
+                              + selectedSemester
                               //"/general-classes/get-class-segments-of-version?versionId=" + versionId
                               + "&searchRoomCode=" + searchTerm,
                               (res)=>{
@@ -1207,4 +1208,4 @@ const handleCancelMove = () => {
   );
 };
 
-export default RoomBasedTimeTable;
+export default RoomBasedTimeTableApprovedOfSemester;

@@ -6,6 +6,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.TimeTabling
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClass;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseVersionDetail;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingBatchRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingClassRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingVersionRepo;
@@ -101,6 +102,31 @@ public class TimeTablingVersionServiceImpl implements TimeTablingVersionService 
         timeTablingVersionRepo.saveAll(versions);
 
         return true;
+    }
+
+    @Override
+    public boolean updateStatusVersion(Long id, String status) {
+        log.info("updateStatusVersion, updating status version with id: {}", id," status: " + status);
+        TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(id).orElse(null);
+        if(version == null){
+            log.info("updateStatusVersion, updating status version with id: {}", id," status: " + status + " version is null");
+            return false;
+        }
+        version.setStatus(status);
+        version = timeTablingVersionRepo.save(version);
+        log.info("updateStatusVersion, updating status version with id: {}", id," status: " + status + " update successfully");
+        return true;
+    }
+
+    @Override
+    public ModelResponseVersionDetail getVersionDetail(Long id) {
+        TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(id).orElse(null);
+        if(version == null) return null;
+        ModelResponseVersionDetail detail = new ModelResponseVersionDetail();
+        detail.setId(version.getId());
+        detail.setBatchId(version.getBatchId());
+        detail.setSemester(version.getSemester());
+        return detail;
     }
 
     @Override

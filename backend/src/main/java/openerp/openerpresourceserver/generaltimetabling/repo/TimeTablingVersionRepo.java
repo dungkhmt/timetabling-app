@@ -15,5 +15,6 @@ public interface TimeTablingVersionRepo extends JpaRepository<TimeTablingTimeTab
     List<TimeTablingTimeTableVersion> findAllByBatchId(Long batchId);
 
     List<TimeTablingTimeTableVersion> findAllByStatusAndBatchIdIn(String status, List<Long> batchIds);
+    List<TimeTablingTimeTableVersion> findAllByStatusAndBatchId(String status, Long batchId);
 
 }

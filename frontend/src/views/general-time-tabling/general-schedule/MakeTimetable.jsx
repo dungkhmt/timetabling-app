@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, version} from "react";
 import TimeTableNew from "./components/TimeTableNew";
 import TimeTableMultiSlotPerRow from "./components/TimeTableMultiSlotPerRow";
 import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
@@ -20,10 +20,13 @@ import {
 } from "@mui/material";
 import TimeTableNewUnscheduled from "./components/TimeTableNewUnscheduled";
 import ScheduleLog from "./components/ScheduleLog";
+import TimeTableMutliSlotPerRowApprovedOfSemester from "./components/TimeTableMutliSlotPerRowApprovedOfSemester";
+import RoomBasedTimeTableApprovedOfSemester from "./components/RoomBasedTimeTableApprovedOfSemester";
 
 //import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
 export default function MakeTimetable(){
     const {versionId} = useParams();
+    const [versionDetail, setVersionDetail] = useState(null);
     const [classes, setClasses] = useState([]);
     const [unscheduledClasses, setUnscheduledClasses] = useState([]);
     
@@ -232,6 +235,21 @@ export default function MakeTimetable(){
                 payLoad
             );
         }
+        function draftVersion(){
+            let payLoad = {
+                versionId: Number(versionId)
+            };
+            request(
+                "post",
+                "/general-classes/make-draft-version-timetable",
+                (res) => {
+                    //getClasses();
+                    //setOpenScheduleDialog(false);
+                },
+                null,
+                payLoad
+            );
+        }
 
         function performSchedule(){
             let payLoad = {
@@ -280,7 +298,18 @@ export default function MakeTimetable(){
         function handleScheduleDialogClose(){
             setOpenScheduleDialog(false);
         }
+
+    function getVersionDetails(){
+        request(
+            "get","/general-classes/get-version-detail/" + versionId,
+                (res) => {
+                    setVersionDetail(res.data);
+                    setSelectedSemester(res.data.semester);
+                }
+        );
+    }      
     useEffect(() => {
+        getVersionDetails();
         getClasses();
         getUnscheduledClasses();
         getAllClasses();
@@ -327,6 +356,11 @@ export default function MakeTimetable(){
             >
                 APPROVE
             </Button>
+            <Button
+                onClick = {() =>{ draftVersion(); }}
+            >
+                MAKE DRAFT
+            </Button>
 
             <Box sx={{ width: '100%', typography: 'body1' }}>
                 <TabContext value={value}>
@@ -337,6 +371,8 @@ export default function MakeTimetable(){
                             <Tab label="View By Rooms" value="3" />
                             <Tab label="Unscheduled Classes" value="4" />
                              <Tab label="LOGS" value="5" />
+                             <Tab label="Class Based Approved Of Semester" value="6" />
+                            <Tab label="Room Based Approved Of Semester" value="7" />
                         </TabList>
                     </Box>
                     <TabPanel value="1">
@@ -415,6 +451,49 @@ export default function MakeTimetable(){
                             
                         />
                     </TabPanel>
+                    <TabPanel value="6">
+                        <TimeTableMutliSlotPerRowApprovedOfSemester
+                            selectedSemester={selectedSemester}
+                            //selectedSemester={versionDetail.semester}
+                            classes={allClasses}
+                            //getClasses = {getAllClasses}
+                            versionId={versionId}
+                            selectedGroup={selectedGroup}
+                            onSaveSuccess={onSaveSuccess}
+                            //loading={loading}
+                            selectedRows={selectedRows}
+                            onSelectedRowsChange={setSelectedRows}
+                            selectedVersion={selectedVersion}
+                            numberSlotsToDisplay={numberSlotsToDisplay}
+                            searchCourseCode = {searchCourseCode}
+                            searchClassCode = {searchClassCode}
+                            searchCourseName = {searchCourseName}
+                            searchGroupName = {searchGroupName}
+                            
+                        />
+                    </TabPanel>
+                    <TabPanel value="7">
+                        <RoomBasedTimeTableApprovedOfSemester
+                            selectedSemester={selectedSemester}
+                           //selectedSemester={versionDetail.semester}
+                            classes={allClasses}
+                            //getClasses = {getAllClasses}
+                            versionId={versionId}
+                            selectedGroup={selectedGroup}
+                            onSaveSuccess={onSaveSuccess}
+                            //loading={loading}
+                            selectedRows={selectedRows}
+                            onSelectedRowsChange={setSelectedRows}
+                            selectedVersion={selectedVersion}
+                            numberSlotsToDisplay={numberSlotsToDisplay}
+                            searchCourseCode = {searchCourseCode}
+                            searchClassCode = {searchClassCode}
+                            searchCourseName = {searchCourseName}
+                            searchGroupName = {searchGroupName}
+                            
+                        />
+                    </TabPanel>
+                    
                 </TabContext>
             </Box>
            

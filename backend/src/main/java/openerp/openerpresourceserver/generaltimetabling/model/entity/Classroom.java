@@ -13,6 +13,8 @@ import lombok.*;
 @Entity
 @Table(name = "timetabling_classroom")
 public class Classroom {
+    public static String STATUS_ACTIVE = "ACTIVE";
+    public static String STATUS_DISABLED = "DISABLE";
 
     @Id
     @Column(name = "classroom_id", updatable = false, nullable = false)

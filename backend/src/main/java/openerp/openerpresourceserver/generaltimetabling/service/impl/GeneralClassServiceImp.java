@@ -29,6 +29,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.occupation.RoomOccupation;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAdvancedFilter;
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputAutoScheduleTimeSlotRoom;
+import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseClassWithClassSegmentList;
 import openerp.openerpresourceserver.generaltimetabling.model.response.ModelResponseGeneralClass;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.GeneralClassService;
@@ -641,7 +642,19 @@ public class GeneralClassServiceImp implements GeneralClassService {
         //List<ModelResponseTimeTablingClass> foundClasses = timeTablingClassService.getTimeTablingClassDtos(I.getIds(),I.getVersionId());
 
         log.info("autoScheduleTimeSlotRoom, classSegments.sz = " + classSegments.size() + " classIds.sz = " + classIds.size() + " -> nb general classes = " + classes.size());
-        List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(ver.getSemester());//I.getSemester());
+        //List<ModelResponseTimeTablingClass> allClassesOfSemester = timeTablingClassService.findAllBySemester(ver.getSemester());//I.getSemester());
+        List<ModelResponseClassWithClassSegmentList> allScheduledClassesOfSemester = timeTablingClassService.getClassesWithClasssegmentsApprovedOfSemesterFiltered(null,ver.getSemester(),null,null,null,null);
+        List<ModelResponseClassWithClassSegmentList> allClassesOfVersion = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(null,ver.getId(),null,null,null,null);
+        List<ModelResponseClassWithClassSegmentList> allClassesOfSemester = new ArrayList<>();
+
+        for(ModelResponseClassWithClassSegmentList c: allScheduledClassesOfSemester){
+            allClassesOfSemester.add(c);
+        }
+        for(ModelResponseClassWithClassSegmentList c: allClassesOfVersion){
+            allClassesOfSemester.add(c);
+        }
+
+
         log.info("autoScheduleTimeSlotRoom, allClassesOfSemester = " + allClassesOfSemester.size());
         List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
         for(ModelResponseTimeTablingClass cls : classes){
@@ -651,11 +664,13 @@ public class GeneralClassServiceImp implements GeneralClassService {
         }
         //classes = selectedClassesOfSemester;
 
-        List<Long> allClassIds = allClassesOfSemester.stream().map(gc -> gc.getId()).toList();
+        List<Long> allClassIds = allClassesOfSemester.stream().map(gc -> gc.getClassId()).toList();
         //List<GeneralClass> autoScheduleClasses = V2ClassScheduler.autoScheduleTimeSlot(foundClasses, timeLimit);
         log.info("autoScheduleTimeSlotRoom, allClassesOfSemester = " + allClassesOfSemester.size() + " allClassIds = " + allClassIds.size());
         //List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByClassIdIn(ids);
-        List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByVersionIdAndClassIdIn(I.getVersionId(),allClassIds);
+        //List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByVersionIdAndClassIdIn(I.getVersionId(),allClassIds);
+        List<TimeTablingClassSegment> classSegmentsOfSemester = timeTablingClassSegmentRepo.findAllByClassIdIn(allClassIds);
+
         //collect room occupation taking into account versions published
 
         //List<RoomReservation> roomReservationsOfSemester = roomReservationRepo.findAllByGeneralClassIn(allClassesOfSemester);
@@ -671,7 +686,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
                     mId2RoomReservations.put(cs.getRoom(),new ArrayList<>());
                 }
                 mId2RoomReservations.get(cs.getRoom()).add(cs);
-                //log.info("autoScheduleTimeSlotRoom, mId2RoomReservations.get(" + cs.getRoom() + ").add (classSegmentId " + cs.getId() + ")");
+
+               if(cs.getRoom().equals("D3-5-301"))log.info("autoScheduleTimeSlotRoom, mId2RoomReservations.get(" + cs.getRoom() + ").add (classSegmentId " + cs.getId() + ") at slot " + cs.getCrew() + "-day" + cs.getWeekday() + "-start"+ cs.getStartTime()+ "-duration" + cs.getDuration());
             }
         }
         V2ClassScheduler optimizer = new V2ClassScheduler(params, ver);
@@ -701,6 +717,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         // add new logs
         List<ModelSchedulingLog> logs= optimizer.logs;
         List<TimetablingLogSchedule> TLS = new ArrayList<>();
+        if(logs != null)
         for(ModelSchedulingLog log: logs){
             TimetablingLogSchedule tls = new TimetablingLogSchedule();
             tls.setClassSegmentId(log.getClassSegmentId());
