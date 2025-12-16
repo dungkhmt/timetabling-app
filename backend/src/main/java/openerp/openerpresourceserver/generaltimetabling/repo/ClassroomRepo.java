@@ -36,6 +36,8 @@ public interface ClassroomRepo extends JpaRepository<Classroom, String> {
     List<Classroom> getClassroomByClassroom(String classroom);
 
     List<Classroom> findAllByStatusAndIdIn(@NotNull String status, @NotNull List<String> roomIds);
+    List<Classroom> findAllByIdIn(List<String> roomIds);
+
     List<Classroom> findAllByStatus(String status);
 
     void deleteById(String id);

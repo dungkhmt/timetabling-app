@@ -97,6 +97,8 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
     @Autowired
     private TimetablingLogScheduleRepo timetablingLogScheduleRepo;
+    @Autowired
+    private VersionRoomRepo versionRoomRepo;
 
     @Override
     public ModelResponseGeneralClass getClassDetailWithSubClasses(Long classId) {
@@ -694,8 +696,10 @@ public class GeneralClassServiceImp implements GeneralClassService {
         //List<Classroom> rooms = classroomRepo.findAll();
         //List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");
         // select only rooms configured for the batch
-        List<BatchRoom> batchRooms= batchRoomRepo.findAllByBatchId(ver.getBatchId());
-        List<String> roomIds = batchRooms.stream().map(BatchRoom::getRoomId).collect(Collectors.toList());
+        //List<BatchRoom> batchRooms= batchRoomRepo.findAllByBatchId(ver.getBatchId());
+        //List<String> roomIds = batchRooms.stream().map(BatchRoom::getRoomId).collect(Collectors.toList());
+        List<VersionRoom> versionRooms = versionRoomRepo.findAllByVersionId(ver.getId());
+        List<String> roomIds = versionRooms.stream().map(VersionRoom::getRoomId).collect(Collectors.toList());
         List<Classroom> rooms = classroomRepo.findAllByStatusAndIdIn("ACTIVE", roomIds);
 
         List<Integer> days = Utils.fromString(I.getDays(),",");

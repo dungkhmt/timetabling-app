@@ -2,9 +2,17 @@ package openerp.openerpresourceserver.generaltimetabling.controller;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelInputAddRoomsToVersion;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.TimeTableVersionRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.UpdateVersionRequest;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.BatchRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.VersionRoom;
+import openerp.openerpresourceserver.generaltimetabling.repo.BatchRoomRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.TimeTablingVersionRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.VersionRoomRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingVersionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/timetabling-versions")
@@ -23,8 +33,67 @@ public class TimeTablingVersionController {
 
     private final TimeTablingVersionService timeTablingVersionService;
     @Autowired
-    private TimeTablingClassService timeTablingClassService;    
-    
+    private TimeTablingClassService timeTablingClassService;
+
+    @Autowired
+    private VersionRoomRepo versionRoomRepo;
+
+    @Autowired
+    private TimeTablingVersionRepo timeTablingVersionRepo;
+    @Autowired
+    private BatchRoomRepo batchRoomRepo;
+    @Autowired
+    private ClassroomRepo classroomRepo;
+
+    @PostMapping("/add-rooms-to-version")
+    public ResponseEntity<?> addRoomsToVersion(Principal principal, @RequestBody ModelInputAddRoomsToVersion m){
+        log.info("addRoomsToVersion version = " + m.getVersionId());
+        for(String roomId: m.getRoomIds()){
+            List<VersionRoom> L = versionRoomRepo.findAllByVersionIdAndRoomId(m.getVersionId(),roomId);
+            if(L == null || L.size()==0){
+                VersionRoom vr = new VersionRoom();
+                vr.setRoomId(roomId); vr.setVersionId(m.getVersionId());
+                vr= versionRoomRepo.save(vr);
+                log.info("addRoomsToVersion saved (" + m.getVersionId() + ","+ roomId + ")");
+            }
+        }
+        return ResponseEntity.ok().body("OK");
+    }
+    @PostMapping("/remove-rooms-from-version")
+    public ResponseEntity<?> removeRoomsFromVersion(Principal principal, @RequestBody ModelInputAddRoomsToVersion m){
+        log.info("removeRoomsFromVersion version = " + m.getVersionId());
+        for(String roomId: m.getRoomIds()){
+            List<VersionRoom> L = versionRoomRepo.findAllByVersionIdAndRoomId(m.getVersionId(),roomId);
+            if(L != null && L.size() > 0){
+                versionRoomRepo.deleteAll(L);
+                log.info("removeRoomsFromVersion removed (" + m.getVersionId() + ","+ roomId + ")");
+            }
+        }
+        return ResponseEntity.ok().body("OK");
+    }
+
+
+    @GetMapping("/get-rooms-of-version/{versionId}")
+    public ResponseEntity<?> getRoomsOfVersion(Principal principal, @PathVariable Long versionId) {
+        List<VersionRoom>versionRooms= versionRoomRepo.findAllByVersionId(versionId);
+        List<String> roomIds = versionRooms.stream().map(VersionRoom::getRoomId).collect(Collectors.toList());
+        List<Classroom> rooms = classroomRepo.findAllByIdIn(roomIds);
+        return ResponseEntity.ok().body(rooms);
+    }
+    @GetMapping("/get-rooms-of-batch/{versionId}")
+    public ResponseEntity<?> getRoomsOfBatchContainVersion(Principal principal, @PathVariable Long versionId) {
+        TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
+        if (ver == null) {
+            return ResponseEntity.ok().body(new ArrayList<>());
+        }
+        List<BatchRoom> batchRooms = batchRoomRepo.findAllByBatchId(ver.getBatchId());
+        List<String> roomIds = batchRooms.stream().map(BatchRoom::getRoomId).collect(Collectors.toList());
+        List<Classroom> rooms = classroomRepo.findAllByIdIn(roomIds);
+        //List<VersionRoom>versionRooms= versionRoomRepo.findAllByVersionId(versionId);
+        return ResponseEntity.ok().body(rooms);
+    }
+
+
     @PostMapping("/create")
     public ResponseEntity<TimeTablingTimeTableVersion> createVersion(Principal principal, @RequestBody TimeTableVersionRequest request) {
         log.info("Received request to create new timetabling version: {}", request);

@@ -22,6 +22,7 @@ import TimeTableNewUnscheduled from "./components/TimeTableNewUnscheduled";
 import ScheduleLog from "./components/ScheduleLog";
 import TimeTableMutliSlotPerRowApprovedOfSemester from "./components/TimeTableMutliSlotPerRowApprovedOfSemester";
 import RoomBasedTimeTableApprovedOfSemester from "./components/RoomBasedTimeTableApprovedOfSemester";
+import VersionRoom from "../version-selection/VersionRoom";
 
 //import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
 export default function MakeTimetable(){
@@ -373,6 +374,7 @@ export default function MakeTimetable(){
                              <Tab label="LOGS" value="5" />
                              <Tab label="Class Based Approved Of Semester" value="6" />
                             <Tab label="Room Based Approved Of Semester" value="7" />
+                            <Tab label="Rooms" value="8" />
                         </TabList>
                     </Box>
                     <TabPanel value="1">
@@ -493,8 +495,13 @@ export default function MakeTimetable(){
                             
                         />
                     </TabPanel>
-                    
-                </TabContext>
+                    <TabPanel value="8">
+                        <VersionRoom
+                            versionId={versionId}
+                        />      
+                        
+                    </TabPanel>
+                </TabContext>   
             </Box>
            
 
