@@ -685,10 +685,13 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        log.info("getClassesWithClasssegmentsOfVersionFiltered, version = " + versionId);
         TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(versionId).orElse(null);
         if(ver == null) return null;
 
         List<ModelResponseClassSegment> L = getClasssegmentsOfVersionFiltered(userId, versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName);
+        log.info("getClassesWithClasssegmentsOfVersionFiltered, version = " + versionId + " GOT list L = " + L.size());
+
         List<ModelResponseClassWithClassSegmentList> res = new ArrayList<>();
         Map<Long, ModelResponseClassWithClassSegmentList> mId2Cls = new HashMap<>();
         for(ModelResponseClassSegment cs: L){

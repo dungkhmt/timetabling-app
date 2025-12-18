@@ -507,7 +507,16 @@ public class SummerSemesterSolverVersion3 implements Solver {
                 //log.info("detectSession, class segment " + cs.str() + " -> dds = " + dss.toString() + " add session " + dss.session);
             }
         }
-        if(S.size() > 1) return 0;// both morning and afternoon
+        if(S.size() > 1){
+            for(ClassSegment cs: L) {
+                for (int s : cs.getDomainTimeSlots()) {
+                    DaySessionSlot dss = new DaySessionSlot(s);
+                    S.add(dss.session);
+                    log.info("detectSession, both morning and afternoon class segment " + cs.str() + " -> dds = " + dss.toString() + " add session " + dss.session);
+                }
+            }
+            return 0;// both morning and afternoon
+        }
         else{
             for(int s: S){
                 if(s == 0) return 1; else return 2;

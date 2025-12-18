@@ -5,6 +5,7 @@ import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlo
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
 import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 
 import java.util.*;
@@ -40,6 +41,7 @@ public class ClassSolverFindSlotsAndRooms{
         domain_days = new ArrayList<>();
         occupationDay = new int[Constant.daysPerWeek + 2];
         Arrays.fill(occupationDay,0);
+        log.info("ClassSolverFindSlotsAndRooms:constructor, sortedRooms.sz = " + sortedRooms.length);
         for(int i = 0; i < CS.size(); i++){
             List<Integer> d_rooms = new ArrayList<>();
             List<Integer> d_slots = new ArrayList<>();
@@ -89,6 +91,22 @@ public class ClassSolverFindSlotsAndRooms{
             log.info("ClassSolverFindSlotsAndRooms:constructor, class cls = " + cls.str() +
                     " classsegment " + i + " -> d_days " + d_days.size() + " d_slots = " + d_slots.size() + " d_rooms = " + d_rooms.size());
 
+            if(d_rooms.size() ==0){
+                ModelSchedulingLog log = new ModelSchedulingLog();
+                log.setDescription("ClassSolverFindSlotsAndRooms:constructor for class " + cls.str() + ",class segment " + cs.getId() + " detect domain rooms EMPTY!!!");
+
+                baseSolver.logs.add(log);
+            }
+            if(d_slots.size() ==0){
+                ModelSchedulingLog log = new ModelSchedulingLog();
+                log.setDescription("ClassSolverFindSlotsAndRooms:constructor for class " + cls.str() + ",class segment " + cs.getId() + " detect domain slots EMPTY!!!");
+                baseSolver.logs.add(log);
+            }
+            if(d_days.size() ==0){
+                ModelSchedulingLog log = new ModelSchedulingLog();
+                log.setDescription("ClassSolverFindSlotsAndRooms:constructor for class " + cls.str() + ",class segment " + cs.getId() + " detect domain days EMPTY!!!");
+                baseSolver.logs.add(log);
+            }
             domain_rooms.add(d_rooms);
             domain_slots.add(d_slots);
             domain_days.add(d_days);

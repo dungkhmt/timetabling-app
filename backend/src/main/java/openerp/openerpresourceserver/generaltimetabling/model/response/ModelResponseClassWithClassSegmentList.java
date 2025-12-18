@@ -31,4 +31,6 @@ public class ModelResponseClassWithClassSegmentList {
     //private String roomCode;
     private List<Group> groups;
     private List<ModelResponseClassSegment> classSegments;
+
+
 }
