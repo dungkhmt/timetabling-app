@@ -8,6 +8,9 @@ import openerp.openerpresourceserver.generaltimetabling.exception.NotFoundExcept
 import openerp.openerpresourceserver.generaltimetabling.model.dto.GetClassRoomByBuildingsRequest;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.ClassroomDto;
 import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.VersionRoom;
+import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
+import openerp.openerpresourceserver.generaltimetabling.repo.VersionRoomRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.ClassroomService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,10 @@ public class ClassroomController {
     @Autowired
     private ClassroomService service;
 
+    @Autowired
+    private VersionRoomRepo versionRoomRepo;
+    @Autowired
+    private ClassroomRepo classroomRepo;
 
     @PostMapping("/clear-all")
     public ResponseEntity<List<Classroom>> clearAllClassRoom() {
@@ -41,7 +48,14 @@ public class ClassroomController {
         List<Classroom> classroomList = service.getClassroom();
         return new ResponseEntity<>(null, HttpStatus.OK);
     }
+    @GetMapping("/get-classrooms-of-version/{versionId}")
+    public ResponseEntity<?> getClassroomsOfVersion(@PathVariable Long versionId) {
+        List<VersionRoom> versionRooms= versionRoomRepo.findAllByVersionId(versionId);
+        List<String> ids = versionRooms.stream().map(vr -> vr.getRoomId()).toList();
+        List<Classroom> classrooms = classroomRepo.findAllByStatusAndIdIn(Classroom.STATUS_ACTIVE,ids);
+        return ResponseEntity.ok().body(classrooms);
 
+    }
     @GetMapping("/get-all")
     public ResponseEntity<List<Classroom>> getAllClassroom() {
 //        try {

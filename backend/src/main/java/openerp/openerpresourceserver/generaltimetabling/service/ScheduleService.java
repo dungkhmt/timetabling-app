@@ -15,4 +15,6 @@ public interface ScheduleService {
     void calculateTimePerformance(RequestPerformanceDto requestDto);
 
     void calculateAllTimePerformance();
+
+    boolean checkAvailableRoom(Long versionId, String roomCode, int day, String session, int startSlot,int duration);
 }

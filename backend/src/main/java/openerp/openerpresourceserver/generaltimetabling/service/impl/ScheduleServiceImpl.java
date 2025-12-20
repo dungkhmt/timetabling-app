@@ -5,14 +5,10 @@ import jakarta.persistence.Query;
 import openerp.openerpresourceserver.generaltimetabling.common.CommonUtil;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.FilterScheduleDto;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.request.RequestPerformanceDto;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Classroom;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Schedule;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.Semester;
-import openerp.openerpresourceserver.generaltimetabling.model.entity.TimePerformance;
-import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
-import openerp.openerpresourceserver.generaltimetabling.repo.ScheduleRepo;
-import openerp.openerpresourceserver.generaltimetabling.repo.SemesterRepo;
-import openerp.openerpresourceserver.generaltimetabling.repo.TimePerformanceRepo;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.*;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.entity.general.TimeTablingTimeTableVersion;
+import openerp.openerpresourceserver.generaltimetabling.repo.*;
 import openerp.openerpresourceserver.generaltimetabling.service.ScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ScheduleServiceImpl implements ScheduleService {
@@ -49,6 +46,17 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Autowired
     private ClassroomRepo classroomRepo;
+
+    @Autowired
+    private TimeTablingVersionRepo timeTablingVersionRepo;
+
+    @Autowired
+    private TimeTablingBatchRepo timeTablingBatchRepo;
+
+    @Autowired
+    private TimeTablingClassRepo timeTablingClassRepo;
+    @Autowired
+    private TimeTablingClassSegmentRepo timeTablingClassSegmentRepo;
 
     //---------------Search for schedule--------------------
 
@@ -159,6 +167,32 @@ public class ScheduleServiceImpl implements ScheduleService {
                 this.calculateTimePerformancePerClassroom(filterScheduleDto);
             }
         }
+    }
+
+    @Override
+    public boolean checkAvailableRoom(Long versionId, String roomCode, int day, String session, int startSlot, int duration) {
+        TimeTablingTimeTableVersion version = timeTablingVersionRepo.findById(versionId).orElse(null);
+        if(version == null) {
+            return false;
+        }
+        List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(version.getSemester());
+        List<Long> bids = batches.stream().map(TimeTablingBatch::getId).collect(Collectors.toList());
+        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAllByStatusAndBatchIdIn(TimeTablingTimeTableVersion.STATUS_PUBLISHED,bids);
+        List<Long> versionIds = versions.stream().map(TimeTablingTimeTableVersion::getId).collect(Collectors.toList());
+        versionIds.add(versionId);
+        List<TimeTablingClassSegment>classSegments= timeTablingClassSegmentRepo.findAllByVersionIdIn(versionIds);
+        for(TimeTablingClassSegment cs : classSegments) {
+            if(cs.getRoom() == null) continue;
+            if(cs.getCrew() == null) continue;
+            if(cs.getWeekday()==null ) continue;
+            if(cs.getStartTime() ==null ) { continue; }
+            if(!cs.getRoom().equals(roomCode)) continue;
+            if(cs.getWeekday() != day) continue;
+            if(!cs.getCrew().equals(session)) continue;
+            boolean notOverLap= cs.getStartTime()+cs.getDuration() <= startSlot || startSlot + duration <= cs.getStartTime();
+            if(!notOverLap) return false;
+        }
+        return true;
     }
 
     public Double calculateTimePerformPerSchedule(Schedule schedule) {

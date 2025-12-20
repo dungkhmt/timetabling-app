@@ -24,6 +24,7 @@ import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputMa
 import openerp.openerpresourceserver.generaltimetabling.model.input.ModelInputSearchRoom;
 import openerp.openerpresourceserver.generaltimetabling.model.response.*;
 import openerp.openerpresourceserver.generaltimetabling.repo.*;
+import openerp.openerpresourceserver.generaltimetabling.service.ScheduleService;
 import openerp.openerpresourceserver.generaltimetabling.service.TimeTablingClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -70,6 +71,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Autowired
     private TimeTablingBatchRepo timeTablingBatchRepo;
+
+    @Autowired
+    private ScheduleService scheduleService;
 
     @Transactional
     private void createClassSegment(TimeTablingClass gc, List<Integer> seqSlots, Long versionId) {
@@ -1639,6 +1643,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public ModelResponseManualAssignTimeTable manualAssignTimetable2Classsegment(String userId, ModelInputManualAssignTimeTable I) {
+
         log.info("manualAssignTimetable2Classsegment, Input = " + I.getClassSegmentId() + " version " + I.getVersionId());
         ModelResponseManualAssignTimeTable res = new ModelResponseManualAssignTimeTable();
         TimeTablingTimeTableVersion ver = timeTablingVersionRepo.findById(I.getVersionId()).orElse(null);
@@ -1658,6 +1663,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     " -> endTime = " + endTime + " : out-of-range slot (" + ver.getNumberSlotsPerSession() + ")");
             return res;
         }
+
         List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(ver.getSemester());
         if(batches == null){
             log.info("manualAssignTimetable2Classsegment, batches NULL???");
@@ -1686,7 +1692,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             if(cs.getRoom()==null) continue;
             if(!cs.getCrew().equals(I.getSession())) continue;
             if(cs.getWeekday() != I.getDay()) continue;
-            boolean overLap = Util.overLap(I.getStartTime(),I.getDuration(),cs.getStartTime(),cs.getEndTime()-cs.getStartTime()+1);
+            boolean overLap = Util.overLap(I.getStartTime(),I.getDuration(),cs.getStartTime(),cs.getDuration());//cs.getEndTime()-cs.getStartTime()+1);
             log.info("manualAssignTimetable2Classsegment, check CONFLICT with class segment " + cs.getId() +
                     " room = " + cs.getRoom() + " day " + cs.getWeekday() + " start = " + cs.getStartTime() +
                     " end = " + cs.getEndTime() + " overLap = " + overLap);

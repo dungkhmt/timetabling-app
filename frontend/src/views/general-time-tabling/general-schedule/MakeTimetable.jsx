@@ -2,7 +2,7 @@ import React, {useEffect, useState, version} from "react";
 import TimeTableNew from "./components/TimeTableNew";
 import TimeTableMultiSlotPerRow from "./components/TimeTableMultiSlotPerRow";
 import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
-
+import TimeTableClassSegmentNew from "./components/TimeTableClassSegmentNew";
 
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import {request} from "api";
@@ -367,8 +367,8 @@ export default function MakeTimetable(){
                 <TabContext value={value}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <TabList onChange={handleChange} aria-label="lab API tabs example">
-                            <Tab label="Moring & Afternoon on 2 Rows" value="1" />
-                            <Tab label="Moring & Afternoon Same Row" value="2" />
+                            <Tab label="Class Segments" value="1" />
+                            <Tab label="Classes" value="2" />
                             <Tab label="View By Rooms" value="3" />
                             <Tab label="Unscheduled Classes" value="4" />
                              <Tab label="LOGS" value="5" />
@@ -378,6 +378,26 @@ export default function MakeTimetable(){
                         </TabList>
                     </Box>
                     <TabPanel value="1">
+                        
+                        <TimeTableClassSegmentNew
+
+                            selectedSemester={selectedSemester}
+                            classes={allClasses}
+                            //getClasses = {getAllClasses}
+                            versionId={versionId}
+                            selectedGroup={selectedGroup}
+                            onSaveSuccess={onSaveSuccess}
+                            //loading={loading}
+                            //selectedRows={selectedRows}
+                            //onSelectedRowsChange={setSelectedRows}
+                            selectedVersion={selectedVersion}
+                            numberSlotsToDisplay={numberSlotsToDisplay}
+                            searchCourseCode = {searchCourseCode}
+                            searchClassCode = {searchClassCode}
+                            searchCourseName = {searchCourseName}
+                            searchGroupName = {searchGroupName}
+                        />   
+                        
                         <TimeTableNew 
                             selectedSemester={selectedSemester}
                             classes={classes}
@@ -391,6 +411,7 @@ export default function MakeTimetable(){
                             selectedVersion={selectedVersion}
                             numberSlotsToDisplay={numberSlotsToDisplay}
                         />
+
                     </TabPanel>
                     <TabPanel value="2">
                         <TimeTableMultiSlotPerRow

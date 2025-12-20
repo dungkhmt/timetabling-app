@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Checkbox } from "@mui/material";
+import { Checkbox,MenuItem, InputLabel, Select } from "@mui/material";
 import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import useDebounce from "hooks/useDebounce";
@@ -25,36 +25,65 @@ import {
 import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import { toast } from "react-toastify";
 
-const TimeTableNew = ({
+const TimeTableClassSegmentNew = ({
   classes,
-  getClasses,
+  //getClasses,
   versionId,
   selectedSemester,
   selectedVersion, 
   selectedGroup,
   onSaveSuccess,
-  loading,
-  selectedRows,
-  onSelectedRowsChange,
+  //loading,
+  //selectedRows,
+  //onSelectedRowsChange,
   numberSlotsToDisplay, 
+  searchCourseCode,
+  searchClassCode,
+  searchCourseName,
+  searchGroupName
 }) => {
+  const [classWithClassSegments, setClassWithClassSegments] = useState([]);
+  const [activePageClassWithClassSegments, setActivePageClassWithClassSegments] = useState([]);
+  
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300); // 300ms delay
   const [open, setOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedClassSegmentIds, setSelectedClassSegmentIds] = useState([]);
+  const [rowIndexSelected, setRowIndexSelected] = useState([]);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [isAddSlotDialogOpen, setIsAddSlotDialogOpen] = useState(false);
   const [selectedPeriods, setSelectedPeriods] = useState("");
   const [selectedClassForSlot, setSelectedClassForSlot] = useState(null);
+  
+  const [openManualAssign,setOpenManualAssign] = useState(false);
+  const [classrooms, setClassrooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedStartTime, setSelectedStartTime] = useState(null);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedClass, setDraggedClass] = useState(null);
   const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState(null);
+
+      const [scheduleTimeLimit, setScheduleTimeLimit] = useState(5);
+      const [algorithm, setAlgorithm] = useState("");
+      const [algorithms, setAlgorithms] = useState([]);
+      const [daysSchedule, setDaysSchedule] = useState('2,3,4,5,6');
+      const [slotsSchedule, setSlotsSchedule] = useState('1,2,3,4,5,6');
+      const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
+      const [openClearScheduleDialog,setOpenClearScheduleDialog] = useState(false);
+      const [errors, setErrors] = useState({});
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const savedSettings = localStorage.getItem("timetable-column-visibility");
     return savedSettings
@@ -75,11 +104,79 @@ const TimeTableNew = ({
         };
   });
 
-  const { classrooms } = useClassrooms(selectedGroup?.groupName || "", null);
+
   const { handlers, states } = useGeneralSchedule();
 
+  function getAlgorithms(){
+              request("get", 
+                  "/general-classes/get-list-algorithm-names",
+                  (res) => {
+                      setAlgorithms(res.data);
+                  }
+              );
+          }
+
+          function performSchedule(){
+            
+              let payLoadSchedule = {                  
+                  timeLimit: scheduleTimeLimit,
+
+                  ids: selectedClassSegmentIds,
+                  algorithm: algorithm,
+                  versionId: Number(versionId),
+                  days: daysSchedule,
+                  slots: slotsSchedule
+                  
+              };
+             // alert('performSchdule, payload = ' + JSON.stringify(payLoadSchedule));
+              request(
+                  "post",
+                  "/general-classes/auto-schedule-timeslot-room",
+                  (res) => {
+                      getClasses();
+                      setOpenScheduleDialog(false);
+                  },
+                  null,
+                  payLoadSchedule
+              );
+          }
+          function performClearSchedule(){
+              let ids = [];
+              for(let i=0;i<rowIndexSelected.length;i++){
+                  if(rowIndexSelected[i]){ ids.push(classes[i].id); }
+              }
+              let payLoad = {
+                  //ids: setSelectedClassSegmentIds//selectedRows
+                  ids: ids
+                };
+              //alert('performClearSchedule, payload = ' + JSON.stringify(rowIndexSelected));
+              request(
+                         "post",
+                         `/general-classes/reset-schedule?semester=`,
+                         (res) => {
+                            if(res.data == 'ok'){
+                              getClasses();
+                              //getAllClasses();
+                            }else{
+                            //  alert(res.data.message);
+                            }
+                         },
+                         null,
+                         payLoad,
+                         {},
+                         null,
+                         null
+                  );
+              setOpenClearScheduleDialog(false);
+          }
+          function handleScheduleDialogClose(){
+              setOpenScheduleDialog(false);
+          }
+  
   useEffect(() => {
-    
+      getClasses();
+      getRooms();
+      getAlgorithms();
       console.log('useEffect, classes = ',classes);
     
   }, []);
@@ -113,7 +210,48 @@ const TimeTableNew = ({
     setOpen(false);
   };
 
-  const handleSave = async () => {
+  function getRooms(){
+    let body = {};
+    request(
+      "get",
+      "/get-classrooms-of-version/"+ versionId,
+      (res) => {
+        console.log(res);
+        setClassrooms(res.data || []);
+        setLoading(false);
+      },
+      (error) => {
+        console.error(error);
+        setError(error);
+        setLoading(false);
+      }
+    );
+  }
+      function getClasses(){
+          setLoading(true);
+          request(
+                              "get",
+                              //"/general-classes/get-classes-with-class-segments-of-version?versionId=" + versionId
+                              "/general-classes/get-class-segments-of-version-new?versionId=" + versionId
+                              + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
+                              + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
+                              (res)=>{
+                                  console.log('get-classes-with-class-segments-of-version, res = ' + res.data);
+                                  setClassWithClassSegments(res.data || []);
+                                  setLoading(false);
+                                  setTotalRows(res.data.length);
+                                  setActivePageClassWithClassSegments(res.data.slice(0*rowsPerPage,0*rowsPerPage + rowsPerPage));
+
+                              },
+                              (error)=>{
+                                  console.error(error);
+                                  setError(error);
+                              },
+                          );
+  
+      }
+  
+  const handleSaveManualAssign = async () => {
     /*
     if (!selectedClass || !selectedSemester) return;
 
@@ -143,8 +281,8 @@ const TimeTableNew = ({
       classSegmentId: selectedClass.id,
       session: selectedClass.session,
       //day: days.indexOf(selectedClass.day) + 2,
-      day: selectedClass.day,
-      startTime: selectedClass.startTime,
+      day: selectedDay,
+      startTime: selectedStartTime,
       duration: selectedClass.duration,
       roomCode: selectedRoom
     }; 
@@ -445,23 +583,63 @@ const handleCancelMove = () => {
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
+    let P = classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage);
+    P.map((cls,index) =>{
+      console.log('class ' + cls.classCode + ': ');
+      cls.classSegments.map((cs,i) => {
+        console.log(cs.day + '-' + cs.session + '-' + cs.startTime + '-' + cs.duration);
+      })
+    })
+    setActivePageClassWithClassSegments(classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage));
+
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    let rpp = parseInt(event.target.value, 10);
+    setRowsPerPage(rpp);
     setPage(0);
+    setActivePageClassWithClassSegments(classWithClassSegments.slice(0*rpp,0*rpp + rpp));
+    
   };
 
-  const handleSelectAll = (event) => {
+  const 
+  handleSelectAll = (event) => {
     if (event.target.checked) {
-      const newSelected = classes.map((row) => row.id);
-      onSelectedRowsChange(newSelected);
+      const newSelected = classWithClassSegments.map((row) => row.classId);
+      //onSelectedRowsChange(newSelected);
+      setSelectedClassSegmentIds(newSelected)
+      let newRowIndexSelected = [];
+      classes.map((row,index) => { newRowIndexSelected.push(true); });
+      setRowIndexSelected(newRowIndexSelected);
+      console.log('handleSelectAll, CHECKED -> rowIndexSelected = ' + JSON.stringify(rowIndexSelected));
     } else {
-      onSelectedRowsChange([]);
+      //onSelectedRowsChange([]);
+      setSelectedClassSegmentIds([]);
+      let newRowIndexSelected = [];
+      classes.map((row,index) => { newRowIndexSelected.push(false); });
+      setRowIndexSelected(newRowIndexSelected);
+      console.log('handleSelectAll, UN-CHECKED -> rowIndexSelected = ' + JSON.stringify(rowIndexSelected));
     }
+
+
   };
 
-  const handleSelectRow = (event, csId) => {
+  const handleSelectRow = (event, index, csId) => {
+    let classSegmentId = activePageClassWithClassSegments[index].classId;
+    //alert('select row csId = ' + classSegmentId + ' index = ' + index + ' checked = ' + event.target.checked);
+    const selectedIndex = selectedClassSegmentIds.indexOf(classSegmentId);
+    let newSelected = [];
+
+    if (selectedIndex === -1) {
+      newSelected = [...selectedClassSegmentIds, classSegmentId];
+    } else {
+      newSelected = selectedClassSegmentIds.filter((id) => id !== classSegmentId);
+    }
+
+    setSelectedClassSegmentIds(newSelected);
+    //alert('selectedClassSegmentIds = ' + JSON.stringify(newSelected));
+
+    /*
     const selectedIndex = selectedRows.indexOf(csId);
     let newSelected = [];
 
@@ -472,11 +650,28 @@ const handleCancelMove = () => {
     }
 
     onSelectedRowsChange(newSelected);
+    */
   };
 
-  const isSelected = (csId) =>
-    selectedRows.indexOf(csId) !== -1;
-
+  const isSelected = (csId) => 
+    //selectedRows.indexOf(csId) !== -1;
+    selectedClassSegmentIds.indexOf(csId) !== -1;
+  
+  function handleConfirmManualAssign(){
+    handleSaveManualAssign();
+  }
+  function handleCancelManualAssign(){
+    setOpenManualAssign(false);
+  }
+  
+  function handleCellClick(index, day, period){
+    let classSegmentId = classWithClassSegments[index].classId;
+    setSelectedDay(day);
+    setSelectedStartTime(period);
+    setSelectedClass(classWithClassSegments[index]);
+    //alert('click index = ' + index + ' classSgmentId = ' + classSegmentId + ' day = ' + day + ' period = '  + period);
+    setOpenManualAssign(true);
+  }
   const handleOpenAddSlotDialog = (classDetail) => {
     setSelectedClassForSlot(classDetail);
     setIsAddSlotDialogOpen(true);
@@ -530,6 +725,23 @@ const handleCancelMove = () => {
   return (
     <div className="h-full w-full flex flex-col justify-start">
       <div className="flex justify-end items-center gap-2 mb-1 pt-1 z-20 overflow-visible">
+        <Button
+          variant="outlined"
+          onClick={() => {setOpenScheduleDialog(true);}}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Auto Schedule
+        </Button>
+        <Button
+          onClick = {() =>{ setOpenClearScheduleDialog(true); }}
+        >
+          Clear Schedule
+        </Button>
+                    
         <TextField
           placeholder="Tìm kiếm (mã lớp, phòng, tên học phần...)"
           variant="outlined"
@@ -573,10 +785,10 @@ const handleCancelMove = () => {
 
       {loading ? (
         <table
-          className="min-w-full border-separate border-spacing-0"
-            style={{ tableLayout: "auto" }}
+          className="overflow-x-auto flex items-center flex-col border-separate border-spacing-0"
+          style={{ flex: "1" }}
         >
-          <thead className="sticky top-0 z-10 bg-white" style={{ position: "sticky", top: 0 }}>
+          <thead className="sticky top-0 z-10 bg-white">
             <tr>
               <th
                 className="border-[1px] border-solid border-gray-300 p-1"
@@ -584,12 +796,12 @@ const handleCancelMove = () => {
               >
                 <Checkbox
                   indeterminate={
-                    selectedRows.length > 0 &&
-                    selectedRows.length < classes.length
+                    selectedClassSegmentIds.length > 0 &&
+                    selectedClassSegmentIds.length < classes.length
                   }
                   checked={
                     classes.length > 0 &&
-                    selectedRows.length === classes.length
+                    selectedClassSegmentIds.length === classes.length
                   }
                   onChange={handleSelectAll}
                   size="small"
@@ -718,7 +930,7 @@ const handleCancelMove = () => {
                 }
                 className="border-[1px] border-solid border-gray-300"
               ></td>
-              {days.flatMap((day) =>
+              {days.flatMap((day) => [
                 periods.map((period) => (
                   <td
                     key={`${day}-${period}`}
@@ -728,6 +940,7 @@ const handleCancelMove = () => {
                     {period}
                   </td>
                 ))
+              ]
               )}
             </tr>
           </thead>
@@ -736,7 +949,7 @@ const handleCancelMove = () => {
           </div>
         </table>
       ) : (
-        <div className="overflow-x-auto" style={{ flex: "1" }}>
+        <div className="overflow-auto" style={{ flex: "1", maxHeight: "calc(100vh - 200px)" }}>
           <table
             className="min-w-full border-separate border-spacing-0"
             style={{ tableLayout: "auto" }}
@@ -749,12 +962,12 @@ const handleCancelMove = () => {
                 >
                   <Checkbox
                     indeterminate={
-                      selectedRows.length > 0 &&
-                      selectedRows.length < classes.length
+                      selectedClassSegmentIds.length > 0 &&
+                      selectedClassSegmentIds.length < classes.length
                     }
                     checked={
                       classes.length > 0 &&
-                      selectedRows.length === classes.length
+                      selectedClassSegmentIds.length === classes.length
                     }
                     onChange={handleSelectAll}
                     size="small"
@@ -884,7 +1097,7 @@ const handleCancelMove = () => {
                   }
                   className="border-[1px] border-solid border-gray-300"
                 ></td>
-                {days.flatMap((day) =>
+                {days.flatMap((day) => [
                   periods.map((period) => (
                     <td
                       key={`${day}-${period}`}
@@ -894,13 +1107,15 @@ const handleCancelMove = () => {
                       {period}
                     </td>
                   ))
+                ]
                 )}
               </tr>
             </thead>
             <tbody>
-              {classes && classes.length > 0 ? (
-                classes
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              {classWithClassSegments && classWithClassSegments.length > 0 ? (
+                //classWithClassSegments
+                //  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                activePageClassWithClassSegments
                   .map((classDetail, index) => {
                     const isItemSelected = isSelected(
                       classDetail.id
@@ -919,9 +1134,10 @@ const handleCancelMove = () => {
                       >
                         <td className="border border-gray-300 text-center px-1">
                           <Checkbox
-                            checked={isItemSelected}
+                            //checked={isItemSelected}
+                            checked = {rowIndexSelected[index]}
                             onChange={(event) =>
-                              handleSelectRow(event, classDetail.id)
+                              handleSelectRow(event, index, classDetail.id)
                             }
                             size="small"
                           />
@@ -959,6 +1175,7 @@ const handleCancelMove = () => {
                         {columnVisibility.quantityMax && (
                           <td className="border border-gray-300 text-center px-1">
                             {classDetail.maxNbStudents}
+                            
                           </td>
                         )}
                         {columnVisibility.classType && (
@@ -1029,11 +1246,56 @@ const handleCancelMove = () => {
                             </td>
                           </>
                         )}
-                        {days.flatMap((day) =>
-                          periods.map((period) =>
-                            renderCellContent(index, day, period)
-                          )
-                        )}
+                        {days.flatMap((day) => {
+                          const dayIndex = days.indexOf(day) + 2;
+                          //const allPeriods = [...periods, ...periods.map(p => p + effectiveSlots)];
+                          const allPeriods = [...periods];
+                          const renderedPeriods = new Set();
+                          const cells = [];
+                          
+                          allPeriods.forEach((period) => {
+                            // Skip if this period was already rendered as part of a colspan
+                            if (renderedPeriods.has(period)) {
+                              return;
+                            }
+                            
+                            // Find matching class segment for this day and period
+                            const matchingSegment = classDetail.classSegments?.find(
+                              cs => cs.day === dayIndex && cs.startTime === period
+                            );
+                            
+                            if (matchingSegment) {
+                              // Mark all periods covered by this segment as rendered
+                              for (let i = 0; i < matchingSegment.duration; i++) {
+                                renderedPeriods.add(matchingSegment.startTime + i);
+                              }
+                              
+                              cells.push(
+                                <td
+                                  key={`${classDetail.id}-${day}-${period}`}
+                                  colSpan={matchingSegment.duration}
+                                  style={{ width: `${70 * matchingSegment.duration}px`,backgroundColor: `${matchingSegment.color}` }}
+                                  className="border border-gray-300 text-center cursor-pointer px-1"
+                                >
+                                  <span className="text-[14px]">{matchingSegment.roomCode}</span>
+                                </td>
+                              );
+                            } else {
+                              // Render empty cell
+                              cells.push(
+                                <td
+                                  key={`${classDetail.id}-${day}-${period}`}
+                                  style={{ width: "70px" }}
+                                  className="border border-gray-300 text-center cursor-pointer px-1"
+                                  onClick={() => handleCellClick(index, dayIndex, period)}
+
+                                ></td>
+                              );
+                            }
+                          });
+                          
+                          return cells;
+                        })}
                       </tr>
                     );
                   })
@@ -1060,12 +1322,12 @@ const handleCancelMove = () => {
       <TablePagination
         className="border-y-[1px] border-solid border-gray-300"
         component="div"
-        count={classes.length}
+        count={totalRows}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[25, 50, 100]}
+        rowsPerPageOptions={[5, 25, 50, 100]}
         labelRowsPerPage="Rows per page:"
         labelDisplayedRows={({ from, to, count }) =>
           `${from}-${to} trên ${count}`
@@ -1107,125 +1369,6 @@ const handleCancelMove = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Existing modals */}
-      <Modal
-        open={open}
-        disableEscapeKeyDown
-        disableBackdropClick
-        onClose={(_, reason) => {
-          if (reason !== "backdropClick") {
-            handleClose();
-          }
-        }}
-        style={{ position: "fixed" }}
-      >
-        <Box
-          onClick={(e) => e.stopPropagation()}
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            boxShadow: 24,
-            p: 4,
-            outline: "none",
-            zIndex: 1000,
-          }}
-        >
-          <h2 id="modal-title">Thông tin lớp học</h2>
-          {selectedClass ? (
-            <div>
-              <TextField
-                label="Mã lớp"
-                name="code"
-                value={selectedClass.code || ""}
-                onChange={handleInputChange}
-                fullWidth
-                disabled
-                margin="normal"
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-              <FormControl fullWidth margin="normal">
-                <Autocomplete
-                  options={classrooms.map((classroom) => classroom.classroom)}
-                  value={selectedRoom || ""}
-                  onChange={(event, newValue) => {
-                    //alert('slected room ' + newValue);
-                    //console.log('seleted room change, event',event);
-                    setSelectedRoom(newValue);
-                    //handleInputChange({
-                    //  target: { name: "room", value: newValue },
-                    //});
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Phòng học" />
-                  )}
-                  freeSolo
-                />
-              </FormControl>
-              <TextField
-                label="Tiết bắt đầu"
-                name="startTime"
-                type="number"
-                value={selectedClass.startTime || ""}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Số tiết học"
-                name="duration"
-                type="number"
-                disabled
-                value={selectedClass.duration || ""}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Ngày"
-                name="day"
-                type="number"
-                value={selectedClass.day || ""}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-            </div>
-          ) : (
-            <p>Không có thông tin lớp học</p>
-          )}
-          <div className="flex justify-between mt-[20px] gap-4">
-            <Button
-              onClick={handleClose}
-              variant="outlined"
-              color="secondary"
-              disabled={states.isSavingTimeSlot}
-              sx={{ minWidth: "100px", padding: "8px 16px" }}
-            >
-              Đóng
-            </Button>
-            <Button
-              onClick={handleSave}
-              variant="contained"
-              color="primary"
-              disabled={states.isSavingTimeSlot}
-              sx={{ minWidth: "100px", padding: "8px 16px" }}
-            >
-              {states.isSavingTimeSlot ? "Đang lưu..." : "Lưu"}
-            </Button>
-          </div>
-        </Box>
-      </Modal>
 
       <Dialog open={isAddSlotDialogOpen} onClose={handleCloseAddSlotDialog}>
         <DialogTitle>Thêm ca học</DialogTitle>
@@ -1283,8 +1426,203 @@ const handleCancelMove = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={openManualAssign} >
+        <DialogTitle>Gan phong thu cong</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+              <FormControl fullWidth margin="normal">
+                <Autocomplete
+                  options={classrooms.map((classroom) => classroom.classroom)}
+                  value={selectedRoom || ""}
+                  onChange={(event, newValue) => {
+                    //alert('slected room ' + newValue);
+                    //console.log('seleted room change, event',event);
+                    setSelectedRoom(newValue);
+                    //handleInputChange({
+                    //  target: { name: "room", value: newValue },
+                    //});
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Phòng học" />
+                  )}
+                  freeSolo
+                />
+              </FormControl>
+              <TextField
+                label="Tiết bắt đầu"
+                name="startTime"
+                type="number"
+                value={selectedStartTime || ""}
+                onChange={handleInputChange}
+                fullWidth
+                margin="normal"
+              />
+              
+              <TextField
+                label="Ngày"
+                name="day"
+                type="number"
+                value={selectedDay || ""}
+                
+                fullWidth
+                margin="normal"
+                InputProps={{
+                  readOnly: true,
+                }}
+              />
+            
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelManualAssign} color="secondary">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmManualAssign} color="primary" variant="contained">
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      <Dialog
+                      open={openScheduleDialog}
+                      onClose={handleScheduleDialogClose}
+                              
+                  >
+                  <DialogTitle>Schedule settings</DialogTitle>
+      
+                      <DialogContent>
+                          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                              <TextField
+                                  label="Time Limit "
+                                  name="scheduleTimeLimit"
+                                  value={scheduleTimeLimit}
+                                  onChange={(e) => {setScheduleTimeLimit(e.target.value)}}
+                                  size="small"
+                                  sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                                  required
+                                  error={!!errors.scheduleTimeLimit}
+                                  helperText={errors.scheduleTimeLimit}
+                              />
+                              <FormControl fullWidth>
+                                  <InputLabel id="algo">Thuật toán</InputLabel>
+                                  <Select
+                                      labelId="algo"
+                                      id="algo"
+                                      value={algorithm}
+                                      label="algoritm"
+                                      onChange={(e) => {setAlgorithm(e.target.value)}}
+                                  >
+                                  {algorithms.map((algo) => (
+                                      <MenuItem key={algo} value={algo}>
+                                          {algo}
+                                      </MenuItem>
+                                  ))}   
+                                  
+                                  </Select>
+                              </FormControl>
+                          </Box> 
+                          
+                          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                              <TextField
+                                  label="days"
+                                  name="days"
+                                  value={daysSchedule}
+                                  onChange={(e) => {setDaysSchedule(e.target.value)}}
+                                  size="small"
+                                  sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                                  required
+                                  error={!!errors.days}
+                                  helperText={errors.days}
+                              />
+                              <TextField
+                                  label="slots"
+                                  name="slots"
+                                  value={slotsSchedule}
+                                  onChange={(e) => {setSlotsSchedule(e.target.value)}}
+                                  size="small"
+                                  sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                                  required
+                                  error={!!errors.slots}
+                                  helperText={errors.slots}
+                              />
+                          </Box> 
+      
+                      </DialogContent>
+                      <DialogActions sx={{
+                              padding: "16px",
+                              gap: "8px",
+                              borderTop: '1px solid #e0e0e0',
+                              backgroundColor: '#fafafa'
+                          }}>
+                          <Button
+                              onClick={() =>{
+                                  //setOpenScheduleDialog(false);
+                                  performSchedule();
+                              }}
+                              variant="outlined"
+                              sx={{
+                                  minWidth: "100px",
+                                  padding: "8px 16px",
+                                  textTransform: 'none'
+                              }}
+                          >
+                              RUN
+                          </Button>
+                      </DialogActions>
+                  </Dialog>
+
+            <Dialog
+                open={openClearScheduleDialog}
+                
+                        
+            >
+            <DialogTitle>Clear Schedule </DialogTitle>
+
+                <DialogContent>
+                    
+
+                </DialogContent>
+                <DialogActions sx={{
+                        padding: "16px",
+                        gap: "8px",
+                        borderTop: '1px solid #e0e0e0',
+                        backgroundColor: '#fafafa'
+                    }}>
+                    <Button
+                        onClick={() =>{
+                            performClearSchedule();
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        YES
+                    </Button>
+                    <Button
+                        onClick={() =>{
+                            setOpenClearScheduleDialog(false);
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        NO
+                    </Button>
+                    
+                </DialogActions>
+            </Dialog>
+
+      
     </div>
   );
 };
 
-export default TimeTableNew;
+export default TimeTableClassSegmentNew;

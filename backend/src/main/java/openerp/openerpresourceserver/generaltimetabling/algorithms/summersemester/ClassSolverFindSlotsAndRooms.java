@@ -114,7 +114,7 @@ public class ClassSolverFindSlotsAndRooms{
     }
 
     boolean check(int i, ClassSegment cs, int r, int d, int s){
-        log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + ") starts..");
+        //log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + ") starts..");
         if(dayVisited[d]) return false;
         if(cls.getParentClassId()!=null){// there is parent LT class
             List<ClassSegment> pCS = baseSolver.mClassId2ClassSegments.get(cls.getParentClassId());
@@ -132,14 +132,14 @@ public class ClassSolverFindSlotsAndRooms{
                     }
                 }
             }else{
-                log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + ") -> BUG?? parent class " + cls.getParentClassId() + " does not have class segment (NULL)");
+               // log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + ") -> BUG?? parent class " + cls.getParentClassId() + " does not have class segment (NULL)");
             }
         }
         for(int si = 0; si < cs.getDuration(); si++){
             DaySessionSlot dss = new DaySessionSlot(d,session,s+si);
             int sl = dss.hash();
             if(baseSolver.roomSolver.roomSlotOccupation[r][sl] > 0){
-                log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + ") roomSlotOccupation[" + baseSolver.W.mIndex2Room.get(r).getId() + "," + sl + "(" + dss.toString() + ")] = 1 -> return false");
+                //log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + ") roomSlotOccupation[" + baseSolver.W.mIndex2Room.get(r).getId() + "," + sl + "(" + dss.toString() + ")] = 1 -> return false");
                 return false;
             }
         }
@@ -155,7 +155,7 @@ public class ClassSolverFindSlotsAndRooms{
                         DaySessionSlot dss = new DaySessionSlot(d,session,m_slot+si);
                         int sl = dss.hash();
                         if(baseSolver.roomSolver.roomSlotOccupation[r][sl] > 0){
-                            log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + "),matched cs " + mcs.getId() + " with m_slot= " + m_slot + "  roomSlotOccupation[" + baseSolver.W.mIndex2Room.get(r).getId() + "," + sl + "(" + dss.toString() + ")] = 1 -> return false");
+                            //log.info(name()+ "::check(" + i + "," + cs + "," + r + "," + d + "," + s + "),matched cs " + mcs.getId() + " with m_slot= " + m_slot + "  roomSlotOccupation[" + baseSolver.W.mIndex2Room.get(r).getId() + "," + sl + "(" + dss.toString() + ")] = 1 -> return false");
 
                             return false;
                         }

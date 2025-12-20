@@ -654,14 +654,14 @@ public class GeneralClassServiceImp implements GeneralClassService {
         for(ModelResponseClassWithClassSegmentList c: allScheduledClassesOfSemester){
             allClassesOfSemester.add(c);
             for(ModelResponseClassSegment cs: c.getClassSegments()){
-                if(cs.getRoomCode().equals("D5-402"))log.info(("autoScheduleTimeSlotRoom DETECT room D5-402 in scheduled class " + c.getClassId()+ " of the semester"));
+                //if(cs.getRoomCode().equals("D5-402"))log.info(("autoScheduleTimeSlotRoom DETECT room D5-402 in scheduled class " + c.getClassId()+ " of the semester"));
                 allClassSegmentsOfSemesterIds.add(cs.getId());
             }
         }
         for(ModelResponseClassWithClassSegmentList c: allClassesOfVersion){
             allClassesOfSemester.add(c);
             for(ModelResponseClassSegment cs: c.getClassSegments()){
-                if(cs.getRoomCode().equals("D5-402"))log.info(("autoScheduleTimeSlotRoom DETECT room D5-402 in (same version) class " + c.getClassId()+ " of the semester"));
+                //if(cs.getRoomCode().equals("D5-402"))log.info(("autoScheduleTimeSlotRoom DETECT room D5-402 in (same version) class " + c.getClassId()+ " of the semester"));
                 allClassSegmentsOfSemesterIds.add(cs.getId());
             }
         }

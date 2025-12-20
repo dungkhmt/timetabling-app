@@ -93,6 +93,39 @@ public class TimeTablingClassController {
 
         return ResponseEntity.ok().body(res);
     }
+    @GetMapping("/get-class-segments-of-version-new")
+    public ResponseEntity<?> getClasssegmentsOfVersionNew(Principal principal,
+                                                       @RequestParam("versionId") Long versionId,
+                                                       @RequestParam("searchCourseCode") String searchCourseCode,
+                                                       @RequestParam("searchCourseName") String searchCourseName,
+                                                       @RequestParam("searchClassCode") String searchClassCode,
+                                                       @RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getClasssegmentsOfVersionNew, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        List<ModelResponseClassSegment> L = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        List<ModelResponseClassWithClassSegmentList> res = new ArrayList<>();
+        for(ModelResponseClassSegment s : L){
+            ModelResponseClassWithClassSegmentList resl = new ModelResponseClassWithClassSegmentList();
+            resl.setClassId(s.getId());
+            resl.setClassCode(s.getClassCode());
+            resl.setClassType(s.getClassType());
+            resl.setMaxNbStudents(s.getMaxNbStudents());
+            resl.setCourseCode(s.getCourseCode());
+            resl.setSession(s.getSession());
+            resl.setDuration(s.getDuration());
+            List<ModelResponseClassSegment> classSegments = new ArrayList<>();
+            classSegments.add(s);
+            s.setColor("yellow");
+            resl.setClassSegments(classSegments);
+
+            res.add(resl);
+        }
+        return ResponseEntity.ok().body(res);
+    }
+
+
     @GetMapping("/get-unscheduled-class-segments-of-version")
     public ResponseEntity<?> getUnscheduledClasssegmentsOfVersion(Principal principal,
                                                        @RequestParam("versionId") Long versionId,

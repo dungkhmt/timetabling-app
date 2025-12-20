@@ -25,19 +25,26 @@ import {
 import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import { toast } from "react-toastify";
 
-const TimeTableNew = ({
+const TimeTableClassSement = ({
   classes,
-  getClasses,
+  //getClasses,
   versionId,
   selectedSemester,
   selectedVersion, 
   selectedGroup,
   onSaveSuccess,
-  loading,
+  //loading,
   selectedRows,
   onSelectedRowsChange,
   numberSlotsToDisplay, 
+  searchCourseCode,
+  searchClassCode,
+  searchCourseName,
+  searchGroupName
 }) => {
+  const [classWithClassSegments, setClassWithClassSegments] = useState([]);
+  const [activePageClassWithClassSegments, setActivePageClassWithClassSegments] = useState([]);
+  
   const [classDetails, setClassDetails] = useState([]);
   const [filteredClassDetails, setFilteredClassDetails] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,7 +52,8 @@ const TimeTableNew = ({
   const [open, setOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [isAddSlotDialogOpen, setIsAddSlotDialogOpen] = useState(false);
   const [selectedPeriods, setSelectedPeriods] = useState("");
   const [selectedClassForSlot, setSelectedClassForSlot] = useState(null);
@@ -55,6 +63,10 @@ const TimeTableNew = ({
   const [draggedClass, setDraggedClass] = useState(null);
   const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const savedSettings = localStorage.getItem("timetable-column-visibility");
     return savedSettings
@@ -79,7 +91,7 @@ const TimeTableNew = ({
   const { handlers, states } = useGeneralSchedule();
 
   useEffect(() => {
-    
+      getClasses();
       console.log('useEffect, classes = ',classes);
     
   }, []);
@@ -113,6 +125,30 @@ const TimeTableNew = ({
     setOpen(false);
   };
 
+      function getClasses(){
+          setLoading(true);
+          request(
+                              "get",
+                              //"/general-classes/get-classes-with-class-segments-of-version?versionId=" + versionId
+                              "/general-classes/get-class-segments-of-version?versionId=" + versionId
+                              + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
+                              + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
+                              (res)=>{
+                                  console.log('get-classes-with-class-segments-of-version, res = ' + res.data);
+                                  setClassWithClassSegments(res.data || []);
+                                  setLoading(false);
+                                  setTotalRows(res.data.length);
+                                  setActivePageClassWithClassSegments(res.data.slice(0*rowsPerPage,0*rowsPerPage + rowsPerPage));
+
+                              },
+                              (error)=>{
+                                  console.error(error);
+                                  setError(error);
+                              },
+                          );
+  
+      }
+  
   const handleSave = async () => {
     /*
     if (!selectedClass || !selectedSemester) return;
@@ -445,11 +481,23 @@ const handleCancelMove = () => {
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
+    let P = classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage);
+    P.map((cls,index) =>{
+      //console.log('class ' + cls.classCode + ': ');
+      //cls.classSegments.map((cs,i) => {
+      //  console.log(cs.day + '-' + cs.session + '-' + cs.startTime + '-' + cs.duration);
+      //})
+    })
+    setActivePageClassWithClassSegments(classWithClassSegments.slice(newPage*rowsPerPage,newPage*rowsPerPage + rowsPerPage));
+
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    let rpp = parseInt(event.target.value, 10);
+    setRowsPerPage(rpp);
     setPage(0);
+    setActivePageClassWithClassSegments(classWithClassSegments.slice(0*rpp,0*rpp + rpp));
+    
   };
 
   const handleSelectAll = (event) => {
@@ -573,10 +621,10 @@ const handleCancelMove = () => {
 
       {loading ? (
         <table
-          className="min-w-full border-separate border-spacing-0"
-            style={{ tableLayout: "auto" }}
+          className="overflow-x-auto flex items-center flex-col border-separate border-spacing-0"
+          style={{ flex: "1" }}
         >
-          <thead className="sticky top-0 z-10 bg-white" style={{ position: "sticky", top: 0 }}>
+          <thead className="sticky top-0 z-10 bg-white">
             <tr>
               <th
                 className="border-[1px] border-solid border-gray-300 p-1"
@@ -702,7 +750,8 @@ const handleCancelMove = () => {
               {days.map((day) => (
                 <th
                   key={day}
-                  colSpan={effectiveSlots} // Sử dụng effectiveSlots
+                  //colSpan={effectiveSlots*2} // Sử dụng effectiveSlots
+                  colSpan={effectiveSlots}
                   className="border-[1px] border-solid border-gray-300 p-2 text-center min-w-40"
                 >
                   {day}
@@ -718,7 +767,7 @@ const handleCancelMove = () => {
                 }
                 className="border-[1px] border-solid border-gray-300"
               ></td>
-              {days.flatMap((day) =>
+              {days.flatMap((day) => [
                 periods.map((period) => (
                   <td
                     key={`${day}-${period}`}
@@ -727,7 +776,19 @@ const handleCancelMove = () => {
                   >
                     {period}
                   </td>
+                )),
+                {/*
+                periods.map((period) => (
+                  <td
+                    key={`${day}-${period+effectiveSlots}`}
+                    className="border-[1px] border-solid border-gray-300 text-center"
+                    style={{ width: "60px", padding: "4px" }}
+                  >
+                    {period + effectiveSlots}
+                  </td>
                 ))
+                */}
+              ]
               )}
             </tr>
           </thead>
@@ -736,7 +797,7 @@ const handleCancelMove = () => {
           </div>
         </table>
       ) : (
-        <div className="overflow-x-auto" style={{ flex: "1" }}>
+        <div className="overflow-auto" style={{ flex: "1", maxHeight: "calc(100vh - 200px)" }}>
           <table
             className="min-w-full border-separate border-spacing-0"
             style={{ tableLayout: "auto" }}
@@ -867,7 +928,8 @@ const handleCancelMove = () => {
                 {days.map((day) => (
                   <th
                     key={day}
-                    colSpan={effectiveSlots} // Sử dụng effectiveSlots
+                    //colSpan={effectiveSlots*2} // Sử dụng effectiveSlots
+                    colSpan={effectiveSlots}
                     className="border-[1px] border-solid border-gray-300 p-2 text-center min-w-32"
                     style={{ padding: "8px 0" }}
                   >
@@ -884,7 +946,7 @@ const handleCancelMove = () => {
                   }
                   className="border-[1px] border-solid border-gray-300"
                 ></td>
-                {days.flatMap((day) =>
+                {days.flatMap((day) => [
                   periods.map((period) => (
                     <td
                       key={`${day}-${period}`}
@@ -893,18 +955,31 @@ const handleCancelMove = () => {
                     >
                       {period}
                     </td>
+                  )),
+                  {/*
+                  periods.map((period) => (
+                    <td
+                      key={`${day}-${period+effectiveSlots}`}
+                      className="border-[1px] border-solid border-gray-300 text-center"
+                      style={{ width: "60px", padding: "4px" }} // Increased width from 40px to 60px
+                    >
+                      {period+effectiveSlots}
+                    </td>
                   ))
+                   */} 
+                ]
                 )}
               </tr>
             </thead>
+
             <tbody>
-              {classes && classes.length > 0 ? (
-                classes
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                
+              {classWithClassSegments && classWithClassSegments.length > 0 ? (
+                //classWithClassSegments
+                //  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                activePageClassWithClassSegments
                   .map((classDetail, index) => {
-                    const isItemSelected = isSelected(
-                      classDetail.id
-                    );
+                    const isItemSelected = isSelected(classDetail.id);
 
                     let groupDisplay = "";
                     let showTooltip = false;
@@ -959,6 +1034,7 @@ const handleCancelMove = () => {
                         {columnVisibility.quantityMax && (
                           <td className="border border-gray-300 text-center px-1">
                             {classDetail.maxNbStudents}
+                            
                           </td>
                         )}
                         {columnVisibility.classType && (
@@ -981,59 +1057,60 @@ const handleCancelMove = () => {
                             {classDetail.promotion}
                           </td>
                         )}
-                        {columnVisibility.actions && (
-                          <>
-                            <td className="border border-gray-300 text-center px-1">
-                              {!classDetail.timeSlots && (
-                                <Button
-                                  onClick={() =>
-                                    handleOpenAddSlotDialog(classDetail)
-                                  }
-                                  disabled={classDetail.duration <= 0}
-                                  sx={{
-                                    minWidth: "28px",
-                                    width: "28px",
-                                    height: "28px",
-                                    padding: "2px",
-                                    borderRadius: "4px",
-                                  }}
-                                  color="primary"
-                                  size="small"
+                        
+                        {
+                        
+                        days.flatMap((day) => {
+                          const dayIndex = days.indexOf(day) + 2;
+                          //const allPeriods = [...periods, ...periods.map(p => p + effectiveSlots)];
+                          const allPeriods = [...periods]
+                          const renderedPeriods = new Set();
+                          const cells = [];
+                          
+                          allPeriods.forEach((period) => {
+                            // Skip if this period was already rendered as part of a colspan
+                            if (renderedPeriods.has(period)) {
+                              return;
+                            }
+                            
+                            // Find matching class segment for this day and period
+                            //const matchingSegment = classDetail.classSegments?.find(
+                            //  cs => cs.day === dayIndex && cs.startTime === period
+                            //);
+                            const matchingSegment = classDetail.day==dayIndex && classDetail.startTime===period ? classDetail : null;
+                            
+                            if (matchingSegment) {
+                              // Mark all periods covered by this segment as rendered
+                              for (let i = 0; i < matchingSegment.duration; i++) {
+                                renderedPeriods.add(matchingSegment.startTime + i);
+                              }
+                              
+                              cells.push(
+                                <td
+                                  key={`${classDetail.id}-${day}-${period}`}
+                                  colSpan={classDetail.duration}
+                                  style={{ width: `${70 * classDetail.duration}px`,backgroundColor: `${classDetail.color}` }}
+                                  className="border border-gray-300 text-center cursor-pointer px-1"
                                 >
-                                  <Add fontSize="small" />
-                                </Button>
-                              )}
-                            </td>
-                            <td className="border border-gray-300 text-center px-1">
-                              {classDetail.id && (
-                                <Button
-                                  onClick={() =>
-                                    handleRemoveTimeSlot(
-                                      classDetail.classId,
-                                      classDetail.id
-                                    )
-                                  }
-                                  sx={{
-                                    minWidth: "28px",
-                                    width: "28px",
-                                    height: "28px",
-                                    padding: "2px",
-                                    borderRadius: "4px",
-                                  }}
-                                  color="error"
-                                  size="small"
-                                >
-                                  <Remove fontSize="small" />
-                                </Button>
-                              )}
-                            </td>
-                          </>
-                        )}
-                        {days.flatMap((day) =>
-                          periods.map((period) =>
-                            renderCellContent(index, day, period)
-                          )
-                        )}
+                                  <span className="text-[14px]">{classDetail.roomCode}</span>
+                                </td>
+                              );
+                            } else {
+                              // Render empty cell
+                              cells.push(
+                                <td
+                                  key={`${classDetail.id}-${day}-${period}`}
+                                  style={{ width: "70px" }}
+                                  className="border border-gray-300 text-center cursor-pointer px-1"
+                                ></td>
+                              );
+                            }
+                          });
+                          
+                          return cells;
+                        })
+
+                        }
                       </tr>
                     );
                   })
@@ -1052,6 +1129,7 @@ const handleCancelMove = () => {
                   </td>
                 </tr>
               )}
+            
             </tbody>
           </table>
         </div>
@@ -1060,12 +1138,12 @@ const handleCancelMove = () => {
       <TablePagination
         className="border-y-[1px] border-solid border-gray-300"
         component="div"
-        count={classes.length}
+        count={totalRows}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[25, 50, 100]}
+        rowsPerPageOptions={[5, 25, 50, 100]}
         labelRowsPerPage="Rows per page:"
         labelDisplayedRows={({ from, to, count }) =>
           `${from}-${to} trên ${count}`
@@ -1287,4 +1365,4 @@ const handleCancelMove = () => {
   );
 };
 
-export default TimeTableNew;
+export default TimeTableClassSement;
