@@ -456,10 +456,11 @@ public class V2ClassScheduler {
     */
     public MapDataScheduleTimeSlotRoomWrapper mapDataNew(List<ModelResponseTimeTablingClass> classes,
                                                          List<Classroom> rooms,
+                                                         List<Classroom> allRooms,
                                                          List<Integer> scheduleDays,
                                                          List<Integer> scheduleSlots,
                                                          Map<String,
-            List<TimeTablingClassSegment>> mId2RoomReservation,
+            List<TimeTablingClassSegment>> mRoomId2ScheduledClassSegments,
                                                          List<TimeTablingCourse> ttcourses,
                                                          List<Group> groups,List<ClassGroup> classGroups,
                                                          List<TimeTablingConfigParams> params){
@@ -574,19 +575,32 @@ public class V2ClassScheduler {
             }
         }
         log.info("mapDataNew DONE build mClassId2GroupIndex keys " + mClassId2GroupIndex.keySet().size());
-        int[] roomCapacity = new int[rooms.size()];
-        Map<String, Integer> mRoom2Index = new HashMap<>();
-        List<Integer>[] roomOccupation = new List[rooms.size()];
+
+
+
+        //int[] roomCapacity = new int[rooms.size()];
+        int[] roomCapacity = new int[allRooms.size()];
+
+        Map<String, Integer>
+                mRoom2Index = new HashMap<>();
+        //List<Integer>[] roomOccupation = new List[rooms.size()];
+        List<Integer>[] roomOccupation = new List[allRooms.size()];
 
         Map<Integer, Classroom> mIndex2Room = new HashMap<>();
-        for(int i = 0; i < rooms.size(); i++) {
-            Long cap = rooms.get(i).getQuantityMax();
-            mIndex2Room.put(i,rooms.get(i));
+        //for(int i = 0; i < rooms.size(); i++) {
+        for(int i = 0; i < allRooms.size(); i++) {
+            //Long cap = rooms.get(i).getQuantityMax();
+            Long cap = allRooms.get(i).getQuantityMax();
+            //mIndex2Room.put(i,rooms.get(i));
+            mIndex2Room.put(i,allRooms.get(i));
+
             roomCapacity[i] = (int) cap.intValue();
-            mRoom2Index.put(rooms.get(i).getId(),i);
+            //mRoom2Index.put(rooms.get(i).getId(),i);
+            mRoom2Index.put(allRooms.get(i).getId(),i);
+
             roomOccupation[i] = new ArrayList<>();
         }
-        for(String rId: mId2RoomReservation.keySet()){
+        for(String rId: mRoomId2ScheduledClassSegments.keySet()){
             if(mRoom2Index.get(rId)==null) {// room was used but not considered in the room list allowed forscheduling
                 log.info("mapDataNew, roomId " + rId + " not mapped");
                 continue;
@@ -597,13 +611,15 @@ public class V2ClassScheduler {
             //    log.info("mapDataNew, roomId " + rId + " index " + mRoom2Index.get(rId) + " mapped to Class segments " + mId2RoomReservation.get(rId).size());
 
             int roomIdx = mRoom2Index.get(rId);
-            if(mId2RoomReservation.get(rId) != null) for(TimeTablingClassSegment rr: mId2RoomReservation.get(rId)){
+            if(mRoomId2ScheduledClassSegments.get(rId) != null) for(TimeTablingClassSegment rr: mRoomId2ScheduledClassSegments.get(rId)){
                 if(rr.getStartTime() != null && rr.getEndTime() != null && rr.getWeekday() != null){
                     int KIP = rr.getCrew().equals("S") ? 0 : 1;
                     for(int s = rr.getStartTime(); s <= rr.getEndTime(); s++) {
-                        int slot = Constant.slotPerCrew * 2 * (rr.getWeekday() - 2) + KIP * Constant.slotPerCrew + s;
+                        //int slot = Constant.slotPerCrew * 2 * (rr.getWeekday() - 2) + KIP * Constant.slotPerCrew + s;
+                        DaySessionSlot dss = new DaySessionSlot(rr.getWeekday(),KIP,s);
+                        int slot= dss.hash();
                         roomOccupation[roomIdx].add(slot);
-                        //log.info("mapData, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
+                        log.info("mapDataNew, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
                     }
                 }
             }
@@ -755,9 +771,13 @@ public class V2ClassScheduler {
                     }
                     roomPriority[idx] = new ArrayList<>();
                     if(rr.getRoom() != null){
+                        log.info("mapData,class-segment[" + rr.getId() + " was scheduled -> add specified room");
                         if(mRoom2Index.get(rr.getRoom())!=null){
                             int ri = mRoom2Index.get(rr.getRoom());
                             roomPriority[idx].add(ri);
+                            log.info("mapData,class-segment[" + rr.getId() + " was scheduled -> roomPriority domain add " + ri);
+                        }else{
+                            log.info("mapData,class-segment[" + rr.getId() + " was scheduled but room " + rr.getRoom() + " not found");
                         }
                     }else{
                         // collect and sort roomPriority in increasing order of priority building and then capacity
@@ -1010,6 +1030,7 @@ public class V2ClassScheduler {
     public List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoomNew(List<ModelResponseTimeTablingClass> classes,
                                                                            //List<ModelResponseTimeTablingClass> allClasses,
                                                                            List<Classroom> rooms,
+                                                                           List<Classroom> allRooms,
                                                                            List<Integer> days, // 2, 3, 4, ...
                                                                            List<Integer> slots,// 1, 2, 3, 4, 5, 6
                                                                            Map<String, List<TimeTablingClassSegment>> mId2RoomReservations,
@@ -1025,7 +1046,7 @@ public class V2ClassScheduler {
 
         //algoParams.TIME_SLOT_ORDER = AlgorithmConfigParams.TIME_SLOT_ORDER_FROM_PRIORITY_SETTINGS;
 
-        MapDataScheduleTimeSlotRoomWrapper D = mapDataNew(classes, rooms,days, slots, mId2RoomReservations,ttcourses,groups,classGroups,params);
+        MapDataScheduleTimeSlotRoomWrapper D = mapDataNew(classes, rooms,allRooms, days, slots, mId2RoomReservations,ttcourses,groups,classGroups,params);
         MapDataScheduleTimeSlotRoom data = D.data;
         log.info("autoScheduleTimeSlotRoom, mapData, data has " + data.getClassSegments().size() + " class-segments");
         //data.print();
@@ -1149,7 +1170,8 @@ public class V2ClassScheduler {
                         int idxRoom = solver.getMapSolutionRoom().get(cs.getId());
                         if (idxRoom > -1) {
                             //newRoomReservation.setRoom(rooms.get(idxRoom).getClassroom());
-                            classSegment.setRoom(rooms.get(idxRoom).getClassroom());
+                            //classSegment.setRoom(rooms.get(idxRoom).getClassroom());
+                            classSegment.setRoom(allRooms.get(idxRoom).getClassroom());
                         }else{
                             log.info("autoScheduleTimeSlotRoomNew -> do not find room for class segment " + cs.str());
 

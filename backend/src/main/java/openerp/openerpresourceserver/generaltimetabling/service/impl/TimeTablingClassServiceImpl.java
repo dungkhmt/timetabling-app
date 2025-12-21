@@ -672,6 +672,14 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             }
             if(ok) res.add(cs);
         }
+        res.sort(new Comparator<ModelResponseClassSegment>() {
+            @Override
+            public int compare(ModelResponseClassSegment o1, ModelResponseClassSegment o2) {
+                if(o1.getCourseCode().compareTo(o2.getCourseCode()) != 0) return o1.getCourseCode().compareTo(o2.getCourseCode());
+                if(o1.getClassCode().compareTo(o2.getClassCode()) != 0) return o1.getClassCode().compareTo(o2.getClassCode());
+                return o1.getId().compareTo(o2.getId());
+            }
+        });
         return res;
     }
 

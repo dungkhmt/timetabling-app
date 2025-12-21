@@ -103,7 +103,7 @@ export default function VersionRoom({ versionId }) {
         }
             const payload = {
                 versionId: versionId,
-                roomIds: selectedRoomIds
+                roomIds: selectedRoomOfVersionIds
             };
     
             // API endpoint này là giả định. Bạn cần thay thế bằng endpoint thực tế của mình.

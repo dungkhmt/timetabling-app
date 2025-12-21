@@ -61,14 +61,27 @@ public class TimeTablingVersionController {
     }
     @PostMapping("/remove-rooms-from-version")
     public ResponseEntity<?> removeRoomsFromVersion(Principal principal, @RequestBody ModelInputAddRoomsToVersion m){
-        log.info("removeRoomsFromVersion version = " + m.getVersionId());
+        log.info("removeRoomsFromVersion version = " + m.getVersionId() + ", room ids = " + m.getRoomIds());
+        List<VersionRoom> L = versionRoomRepo.findAllByVersionIdAndRoomIdIn(m.getVersionId(),m.getRoomIds());
+        log.info("removeRoomsFromVersion version = " + m.getVersionId() + ", room ids = " + m.getRoomIds() + " got L = " + L.size());
+
+        if(L != null && L.size() > 0){
+            versionRoomRepo.deleteAll(L);
+            log.info("removeRoomsFromVersion removed (" + m.getVersionId() +")");
+        }
+        /*
         for(String roomId: m.getRoomIds()){
             List<VersionRoom> L = versionRoomRepo.findAllByVersionIdAndRoomId(m.getVersionId(),roomId);
+            log.info("removeRoomsFromVersion version = " + m.getVersionId() + " room " + roomId + " -> L.sz = " + L.size() );
             if(L != null && L.size() > 0){
                 versionRoomRepo.deleteAll(L);
                 log.info("removeRoomsFromVersion removed (" + m.getVersionId() + ","+ roomId + ")");
+            }else{
+
             }
         }
+
+         */
         return ResponseEntity.ok().body("OK");
     }
 

@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import { set } from "react-hook-form";
 
 const TimeTableClassSegmentNew = ({
   classes,
@@ -50,6 +51,7 @@ const TimeTableClassSegmentNew = ({
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300); // 300ms delay
   const [open, setOpen] = useState(false);
+  const [selectAll, setSelectAll] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedClassSegmentIds, setSelectedClassSegmentIds] = useState([]);
   const [rowIndexSelected, setRowIndexSelected] = useState([]);
@@ -107,6 +109,33 @@ const TimeTableClassSegmentNew = ({
 
   const { handlers, states } = useGeneralSchedule();
 
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  
+    // Derived state for the "Select All" logic
+    const isAllSelected = classWithClassSegments.length > 0 && selectedIds.size === classWithClassSegments.length;
+    const isAnySelected = selectedIds.size > 0;
+    const isIndeterminate = isAnySelected && !isAllSelected;
+  
+    // Toggle a single row
+    const toggleRow = (id) => {
+      const newSelected = new Set(selectedIds);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      setSelectedIds(newSelected);
+    };
+  
+    // Toggle all rows
+    const toggleAll = () => {
+      if (isAllSelected) {
+        setSelectedIds(new Set());
+      } else {
+        setSelectedIds(new Set(classWithClassSegments.map((item) => item.classId)));
+      }
+    };
+
   function getAlgorithms(){
               request("get", 
                   "/general-classes/get-list-algorithm-names",
@@ -117,17 +146,20 @@ const TimeTableClassSegmentNew = ({
           }
 
           function performSchedule(){
-            
+              let ids = [];
+              selectedIds.forEach(id => ids.push(id));
               let payLoadSchedule = {                  
                   timeLimit: scheduleTimeLimit,
-
-                  ids: selectedClassSegmentIds,
+                  ids: ids,
+                  //ids: selectedIds,
+                  //ids: selectedClassSegmentIds,
                   algorithm: algorithm,
                   versionId: Number(versionId),
                   days: daysSchedule,
                   slots: slotsSchedule
                   
               };
+              setLoading(true);
              // alert('performSchdule, payload = ' + JSON.stringify(payLoadSchedule));
               request(
                   "post",
@@ -135,6 +167,7 @@ const TimeTableClassSegmentNew = ({
                   (res) => {
                       getClasses();
                       setOpenScheduleDialog(false);
+                      setLoading(false);
                   },
                   null,
                   payLoadSchedule
@@ -142,12 +175,14 @@ const TimeTableClassSegmentNew = ({
           }
           function performClearSchedule(){
               let ids = [];
-              for(let i=0;i<rowIndexSelected.length;i++){
-                  if(rowIndexSelected[i]){ ids.push(classes[i].id); }
-              }
+              //for(let i=0;i<rowIndexSelected.length;i++){
+              //    if(rowIndexSelected[i]){ ids.push(classWithClassSegments[i].classId); }
+              //}
+              selectedIds.forEach(id => ids.push(id));
               let payLoad = {
                   //ids: setSelectedClassSegmentIds//selectedRows
                   ids: ids
+                  //ids: selectedIds
                 };
               //alert('performClearSchedule, payload = ' + JSON.stringify(rowIndexSelected));
               request(
@@ -214,7 +249,7 @@ const TimeTableClassSegmentNew = ({
     let body = {};
     request(
       "get",
-      "/get-classrooms-of-version/"+ versionId,
+      "/classroom/get-classrooms-of-version/"+ versionId,
       (res) => {
         console.log(res);
         setClassrooms(res.data || []);
@@ -227,6 +262,34 @@ const TimeTableClassSegmentNew = ({
       }
     );
   }
+  function handleViewUnscheduledClasses(){
+      setLoading(true);
+          request(
+                              "get",
+                              //"/general-classes/get-classes-with-class-segments-of-version?versionId=" + versionId
+                              "/general-classes/get-unscheduled-class-segments-of-version-new?versionId=" + versionId
+                              + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
+                              + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
+                              (res)=>{
+                                  console.log('get-classes-with-class-segments-of-version, res = ' + res.data);
+                                  setClassWithClassSegments(res.data || []);
+                                  setLoading(false);
+                                  setTotalRows(res.data.length);
+                                  setActivePageClassWithClassSegments(res.data.slice(0*rowsPerPage,0*rowsPerPage + rowsPerPage));
+                                  setSelectedClassSegmentIds([]);
+                                  let newRowIndexSelected = [];
+                                  for(let i=0;i<res.data.length;i++){ newRowIndexSelected.push(false); }
+                                  setRowIndexSelected(newRowIndexSelected);
+                              },
+                              (error)=>{
+                                  console.error(error);
+                                  setError(error);
+                              },
+                          );
+  
+
+  }
+
       function getClasses(){
           setLoading(true);
           request(
@@ -241,7 +304,10 @@ const TimeTableClassSegmentNew = ({
                                   setLoading(false);
                                   setTotalRows(res.data.length);
                                   setActivePageClassWithClassSegments(res.data.slice(0*rowsPerPage,0*rowsPerPage + rowsPerPage));
-
+                                  setSelectedClassSegmentIds([]);
+                                  let newRowIndexSelected = [];
+                                  for(let i=0;i<res.data.length;i++){ newRowIndexSelected.push(false); }
+                                  setRowIndexSelected(newRowIndexSelected);
                               },
                               (error)=>{
                                   console.error(error);
@@ -278,7 +344,7 @@ const TimeTableClassSegmentNew = ({
     */
     let payLoad = {
       versionId: versionId,
-      classSegmentId: selectedClass.id,
+      classSegmentId: selectedClass.classId,
       session: selectedClass.session,
       //day: days.indexOf(selectedClass.day) + 2,
       day: selectedDay,
@@ -604,19 +670,22 @@ const handleCancelMove = () => {
 
   const 
   handleSelectAll = (event) => {
-    if (event.target.checked) {
+    //if (event.target.checked) {
+    if(selectAll === false){
+      setSelectAll(true);
       const newSelected = classWithClassSegments.map((row) => row.classId);
       //onSelectedRowsChange(newSelected);
       setSelectedClassSegmentIds(newSelected)
       let newRowIndexSelected = [];
-      classes.map((row,index) => { newRowIndexSelected.push(true); });
+      classWithClassSegments.map((row,index) => { newRowIndexSelected.push(true); });
       setRowIndexSelected(newRowIndexSelected);
       console.log('handleSelectAll, CHECKED -> rowIndexSelected = ' + JSON.stringify(rowIndexSelected));
     } else {
+      setSelectAll(false);
       //onSelectedRowsChange([]);
       setSelectedClassSegmentIds([]);
       let newRowIndexSelected = [];
-      classes.map((row,index) => { newRowIndexSelected.push(false); });
+      classWithClassSegments.map((row,index) => { newRowIndexSelected.push(false); });
       setRowIndexSelected(newRowIndexSelected);
       console.log('handleSelectAll, UN-CHECKED -> rowIndexSelected = ' + JSON.stringify(rowIndexSelected));
     }
@@ -635,7 +704,15 @@ const handleCancelMove = () => {
     } else {
       newSelected = selectedClassSegmentIds.filter((id) => id !== classSegmentId);
     }
-
+    if(rowIndexSelected[index] === false){
+      let newRowIndexSelected = [...rowIndexSelected];
+      newRowIndexSelected[index] = true;
+      setRowIndexSelected(newRowIndexSelected);
+    }else{
+      let newRowIndexSelected = [...rowIndexSelected];
+      newRowIndexSelected[index] = false;
+      setRowIndexSelected(newRowIndexSelected);
+    }
     setSelectedClassSegmentIds(newSelected);
     //alert('selectedClassSegmentIds = ' + JSON.stringify(newSelected));
 
@@ -665,7 +742,7 @@ const handleCancelMove = () => {
   }
   
   function handleCellClick(index, day, period){
-    let classSegmentId = classWithClassSegments[index].classId;
+    //let classSegmentId = classWithClassSegments[index].classId;
     setSelectedDay(day);
     setSelectedStartTime(period);
     setSelectedClass(classWithClassSegments[index]);
@@ -727,6 +804,17 @@ const handleCancelMove = () => {
       <div className="flex justify-end items-center gap-2 mb-1 pt-1 z-20 overflow-visible">
         <Button
           variant="outlined"
+          onClick={handleViewUnscheduledClasses}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Unscheduled classes
+        </Button>
+        <Button
+          variant="outlined"
           onClick={() => {setOpenScheduleDialog(true);}}
           size="small"
           sx={{
@@ -737,7 +825,13 @@ const handleCancelMove = () => {
           Auto Schedule
         </Button>
         <Button
+          variant="outlined"
           onClick = {() =>{ setOpenClearScheduleDialog(true); }}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
         >
           Clear Schedule
         </Button>
@@ -794,18 +888,27 @@ const handleCancelMove = () => {
                 className="border-[1px] border-solid border-gray-300 p-1"
                 style={{ width: "30px", minWidth: "30px" }}
               >
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => el && (el.indeterminate = isIndeterminate)}
+                onChange={toggleAll}
+              />
+                {/*
                 <Checkbox
                   indeterminate={
                     selectedClassSegmentIds.length > 0 &&
-                    selectedClassSegmentIds.length < classes.length
+                    selectedClassSegmentIds.length < classWithClassSegments.length
                   }
                   checked={
-                    classes.length > 0 &&
-                    selectedClassSegmentIds.length === classes.length
+                    selectAll
+                    //classWithClassSegments.length > 0 &&
+                    //selectedClassSegmentIds.length === classWithClassSegments.length
                   }
                   onChange={handleSelectAll}
                   size="small"
                 />
+                */}
               </th>
               {columnVisibility.classCode && (
                 <th
@@ -960,18 +1063,27 @@ const handleCancelMove = () => {
                   className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "30px", minWidth: "30px" }}
                 >
+                <input
+                   type="checkbox"
+                   checked={isAllSelected}
+                   ref={(el) => el && (el.indeterminate = isIndeterminate)}
+                  onChange={toggleAll}
+                />
+                  {/*
                   <Checkbox
                     indeterminate={
                       selectedClassSegmentIds.length > 0 &&
-                      selectedClassSegmentIds.length < classes.length
+                      selectedClassSegmentIds.length < classWithClassSegments.length
                     }
                     checked={
-                      classes.length > 0 &&
-                      selectedClassSegmentIds.length === classes.length
+                      selectAll
+                      //classWithClassSegments.length > 0 &&
+                      //selectedClassSegmentIds.length === classWithClassSegments.length
                     }
                     onChange={handleSelectAll}
                     size="small"
                   />
+                  */}
                 </th>
                 {columnVisibility.classCode && (
                   <th
@@ -1128,10 +1240,18 @@ const handleCancelMove = () => {
                     
                     return (
                       <tr
-                        key={`${classDetail.id}`}
+                        key={`${classDetail.classId}`}
                         style={{ height: "40px" }} // Reduced row height from 52px
                         className={isItemSelected ? "bg-blue-50" : ""}
                       >
+                        <td style={{ padding: '12px' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(classDetail.classId)}
+                            onChange={() => toggleRow(classDetail.classId)}
+                          />
+                        </td>
+                        {/*
                         <td className="border border-gray-300 text-center px-1">
                           <Checkbox
                             //checked={isItemSelected}
@@ -1142,6 +1262,7 @@ const handleCancelMove = () => {
                             size="small"
                           />
                         </td>
+                        */}
                         {columnVisibility.classCode && (
                           <td className="border border-gray-300 text-center px-1">
                             {classDetail.classCode}

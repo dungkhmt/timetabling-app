@@ -668,12 +668,12 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
 
         log.info("autoScheduleTimeSlotRoom, allClassesOfSemester = " + allClassesOfSemester.size());
-        List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
-        for(ModelResponseTimeTablingClass cls : classes){
-            if(cls != null && cls.getQuantityMax() != null && cls.getQuantityMax() >= 150) {
-                selectedClassesOfSemester.add(cls);
-            }
-        }
+        //List<ModelResponseTimeTablingClass> selectedClassesOfSemester = new ArrayList<>();
+        //for(ModelResponseTimeTablingClass cls : classes){
+        //    if(cls != null && cls.getQuantityMax() != null && cls.getQuantityMax() >= 150) {
+        //        selectedClassesOfSemester.add(cls);
+        //    }
+        //}
         //classes = selectedClassesOfSemester;
 
         List<Long> allClassIds = allClassesOfSemester.stream().map(gc -> gc.getClassId()).toList();
@@ -692,20 +692,38 @@ public class GeneralClassServiceImp implements GeneralClassService {
         //    log.info("autoScheduleTimeSlotRoom, get roomReservation " + rr.getId() + "\t" + rr.getRoom() + "\t" + rr.getStartTime() + "\t" + rr.getEndTime());
         //}
         log.info("autoScheduleTimeSlotRoom, classSegmentsOfSemester = " + classSegmentsOfSemester.size());
-        Map<String, List<TimeTablingClassSegment>> mId2RoomReservations = new HashMap<>();
+        Map<String, List<TimeTablingClassSegment>> mRoomId2ScheduledClassSegments = new HashMap<>();
 
+        // COLLECT class-segment ids of selected classes that were scheduled
+        Set<Long> scheduledClassSegmentIds = new HashSet<>();
+        for(ModelResponseTimeTablingClass cls: classes ){
+            log.info("autoScheduleTimeSlotRoom, class " + cls.getClassCode() + " has " + cls.getTimeSlots().size() + " class segments");
+            for(TimeTablingClassSegment cs:cls.getTimeSlots()){
+                if(cs.getRoom()!=null && cs.getWeekday()!=null&&cs.getStartTime()!=null) {
+                    scheduledClassSegmentIds.add(cs.getId());
+                    log.info("autoScheduleTimeSlotRoom, add to scheduledClassSegmentIds the class-segment id " + cs.getId());
+                }
+            }
+        }
 
         for(TimeTablingClassSegment cs: classSegmentsOfSemester){
                 if (cs.getRoom() != null) {
-                    if (mId2RoomReservations.get(cs.getRoom()) == null) {
-                        mId2RoomReservations.put(cs.getRoom(), new ArrayList<>());
+                    log.info("autoScheduleTimeSlotRoom,class-segment " + cs.getId() + " of the semester WAS scheduled in room " + cs.getRoom());
+                    if (mRoomId2ScheduledClassSegments.get(cs.getRoom()) == null) {
+                        mRoomId2ScheduledClassSegments.put(cs.getRoom(), new ArrayList<>());
                     }
-                    mId2RoomReservations.get(cs.getRoom()).add(cs);
-
-                    if (cs.getRoom().equals("D5-402"))
-                        log.info("autoScheduleTimeSlotRoom, mId2RoomReservations.get(" + cs.getRoom() + ").add (classSegmentId " + cs.getId() + ") at slot " + cs.getCrew() + "-day" + cs.getWeekday() + "-start" + cs.getStartTime() + "-duration" + cs.getDuration());
+                    // RELAX scheduled class segments in classes, do not add them to room
+                    if(!scheduledClassSegmentIds.contains(cs.getId())) {
+                        mRoomId2ScheduledClassSegments.get(cs.getRoom()).add(cs);
+                    }else{
+                        log.info("autoScheduleTimeSlotRoom, scheduledClassSegmentIds.contains(" + cs.getId()+ ") do not add to room occupation");
+                    }
+                    //if (cs.getRoom().equals("D5-402"))
+                    //    log.info("autoScheduleTimeSlotRoom, mRoomId2ScheduledClassSegments.get(" + cs.getRoom() + ").add (classSegmentId " + cs.getId() + ") at slot " + cs.getCrew() + "-day" + cs.getWeekday() + "-start" + cs.getStartTime() + "-duration" + cs.getDuration());
                 }
-
+        }
+        for(TimeTablingClassSegment cs: mRoomId2ScheduledClassSegments.get("TC-312")){
+            log.info("autoScheduleTimeSlotRoom room TC-312 schedule class segment " + cs.getId() + " at day " +cs.getWeekday() + " slot " + cs.getStartTime());
         }
         V2ClassScheduler optimizer = new V2ClassScheduler(params, ver);
         //List<Classroom> rooms = classroomRepo.findAll();
@@ -716,7 +734,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         List<VersionRoom> versionRooms = versionRoomRepo.findAllByVersionId(ver.getId());
         List<String> roomIds = versionRooms.stream().map(VersionRoom::getRoomId).collect(Collectors.toList());
         List<Classroom> rooms = classroomRepo.findAllByStatusAndIdIn("ACTIVE", roomIds);
-
+        List<Classroom> allRooms = classroomRepo.findAll();
         List<Integer> days = Utils.fromString(I.getDays(),",");
         List<Integer> slots = Utils.fromString(I.getSlots(),",");
 
@@ -726,7 +744,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
         //List<GeneralClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoom(foundClasses,rooms,mId2RoomReservations,courses, groups,classGroups,timeLimit,algorithm,params);
         List<ModelResponseTimeTablingClass> autoScheduleClasses = optimizer.autoScheduleTimeSlotRoomNew(classes,
                 //allClassesOfSemester,
-                rooms,days,slots,mId2RoomReservations,courses, groups,classGroups,I.getTimeLimit(),I.getAlgorithm(),params);
+                rooms,allRooms, days,slots,mRoomId2ScheduledClassSegments,courses, groups,classGroups,I.getTimeLimit(),I.getAlgorithm(),params);
 
         //write scheduling logs
         // remove old logs
@@ -1112,7 +1130,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
     }
 
     @Transactional
-    private void createClassSegment(GeneralClass gc, List<Integer> seqSlots){
+    protected void createClassSegment(GeneralClass gc, List<Integer> seqSlots){
         log.info("createClassSegments, classId " + gc.getId() + ", crew " + gc.getCrew() + "  course "
                 + gc.getModuleCode() + " type " + gc.getClassType() + " slots = " + seqSlots);
 

@@ -29,7 +29,7 @@ public class ClassBasedRoomAssignmentSolverVersion3{
         for(int r = 0; r < baseSolver.I.getRoomCapacity().length; r++){
             for(int sl: baseSolver.I.getRoomOccupations()[r]){
                 roomSlotOccupation[r][sl] = 1;
-                //log.info("ClassBasedRoomAssignmentSolver::Constructor, room " + baseSolver.W.mIndex2Room.get(r).getId() + " occupied at slot " + sl + "(" + new DaySessionSlot(sl).toString()+ ")");
+                log.info("ClassBasedRoomAssignmentSolver::Constructor, room index[" + r + "]  " + baseSolver.W.mIndex2Room.get(r).getId() + " occupied at slot " + sl + "(" + new DaySessionSlot(sl).toString()+ ")");
             }
         }
         log.info("ClassBasedRoomAssignmentSolver::Constructor finished allocate roomSlotOccupation");

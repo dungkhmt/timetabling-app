@@ -23,6 +23,7 @@ import ScheduleLog from "./components/ScheduleLog";
 import TimeTableMutliSlotPerRowApprovedOfSemester from "./components/TimeTableMutliSlotPerRowApprovedOfSemester";
 import RoomBasedTimeTableApprovedOfSemester from "./components/RoomBasedTimeTableApprovedOfSemester";
 import VersionRoom from "../version-selection/VersionRoom";
+import CustomDataGrid from "./components/CustomDataGrid";
 
 //import RoomBasedTimeTable from "./components/RoomBasedTimeTable";
 export default function MakeTimetable(){
@@ -378,7 +379,7 @@ export default function MakeTimetable(){
                         </TabList>
                     </Box>
                     <TabPanel value="1">
-                        
+                        {/*<CustomDataGrid /> */}
                         <TimeTableClassSegmentNew
 
                             selectedSemester={selectedSemester}
