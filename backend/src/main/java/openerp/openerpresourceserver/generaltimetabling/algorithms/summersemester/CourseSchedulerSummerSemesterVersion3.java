@@ -223,6 +223,11 @@ public class CourseSchedulerSummerSemesterVersion3 {
             ModelResponseTimeTablingClass cls1 = baseSolver.mClassId2Class.get(p[0]);
             ModelResponseTimeTablingClass cls2 = baseSolver.mClassId2Class.get(p[1]);
             log.info(name() + "::solver matched pair: " + cls1.str() + " --- " + cls2.str());
+            MatchedClassSolverFindSlotsAndRooms MCS = new MatchedClassSolverFindSlotsAndRooms(baseSolver,
+                    new ModelResponseTimeTablingClass[]{cls1,cls2},
+                    groupSolver.session,baseSolver.sortedRooms);
+            boolean ok = MCS.solve();
+
         }
         List<Long> ids = new ArrayList<>();
         //for(Long id: groupSolver.mCourse2ClassId.get(courseCode)) ids.add(id);

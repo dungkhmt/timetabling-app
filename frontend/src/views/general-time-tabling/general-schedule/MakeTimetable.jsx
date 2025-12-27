@@ -277,7 +277,7 @@ export default function MakeTimetable(){
             let payLoad = {
                 ids: selectedRows
             };
-
+            setLoading(true);
             request(
                        "post",
                        `/general-classes/reset-schedule?semester=`,
@@ -288,6 +288,7 @@ export default function MakeTimetable(){
                           }else{
                           //  alert(res.data.message);
                           }
+                          setLoading(false);
                        },
                        null,
                        payLoad,
@@ -341,17 +342,7 @@ export default function MakeTimetable(){
                 MAKE CLASS SEGMENTS
             </Button>
 
-            <Button
-                onClick = {() =>{ schedule() }}
-            >
-                Schedule
-            </Button>
-
-            <Button
-                onClick = {() =>{ setOpenClearScheduleDialog(true); }}
-            >
-                Clear Schedule
-            </Button>
+            
 
             <Button
                 onClick = {() =>{ approveVersion(); }}
@@ -398,7 +389,7 @@ export default function MakeTimetable(){
                             searchCourseName = {searchCourseName}
                             searchGroupName = {searchGroupName}
                         />   
-                        
+                        {/*
                         <TimeTableNew 
                             selectedSemester={selectedSemester}
                             classes={classes}
@@ -412,7 +403,7 @@ export default function MakeTimetable(){
                             selectedVersion={selectedVersion}
                             numberSlotsToDisplay={numberSlotsToDisplay}
                         />
-
+                        */}    
                     </TabPanel>
                     <TabPanel value="2">
                         <TimeTableMultiSlotPerRow

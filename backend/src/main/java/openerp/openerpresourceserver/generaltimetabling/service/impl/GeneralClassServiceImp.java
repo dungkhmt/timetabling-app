@@ -722,9 +722,9 @@ public class GeneralClassServiceImp implements GeneralClassService {
                     //    log.info("autoScheduleTimeSlotRoom, mRoomId2ScheduledClassSegments.get(" + cs.getRoom() + ").add (classSegmentId " + cs.getId() + ") at slot " + cs.getCrew() + "-day" + cs.getWeekday() + "-start" + cs.getStartTime() + "-duration" + cs.getDuration());
                 }
         }
-        for(TimeTablingClassSegment cs: mRoomId2ScheduledClassSegments.get("TC-312")){
-            log.info("autoScheduleTimeSlotRoom room TC-312 schedule class segment " + cs.getId() + " at day " +cs.getWeekday() + " slot " + cs.getStartTime());
-        }
+        //for(TimeTablingClassSegment cs: mRoomId2ScheduledClassSegments.get("TC-312")){
+        //    log.info("autoScheduleTimeSlotRoom room TC-312 schedule class segment " + cs.getId() + " at day " +cs.getWeekday() + " slot " + cs.getStartTime());
+        //}
         V2ClassScheduler optimizer = new V2ClassScheduler(params, ver);
         //List<Classroom> rooms = classroomRepo.findAll();
         //List<Classroom> rooms = classroomRepo.findAllByStatus("ACTIVE");

@@ -165,7 +165,8 @@ const TimeTableClassSegmentNew = ({
                   "post",
                   "/general-classes/auto-schedule-timeslot-room",
                   (res) => {
-                      getClasses();
+                      //getClasses();
+                      getClasses(searchTerm,searchTerm,searchTerm,searchTerm);
                       setOpenScheduleDialog(false);
                       setLoading(false);
                   },
@@ -190,7 +191,7 @@ const TimeTableClassSegmentNew = ({
                          `/general-classes/reset-schedule?semester=`,
                          (res) => {
                             if(res.data == 'ok'){
-                              getClasses();
+                              getClasses(null,null,null,null);
                               //getAllClasses();
                             }else{
                             //  alert(res.data.message);
@@ -207,9 +208,19 @@ const TimeTableClassSegmentNew = ({
           function handleScheduleDialogClose(){
               setOpenScheduleDialog(false);
           }
-  
+  function getVersionDetails(){
+          request(
+              "get","/general-classes/get-version-detail/" + versionId,
+                  (res) => {
+                      //setVersionDetail(res.data);
+                      //setSelectedSemester(res.data.semester);
+                  }
+          );
+      } 
+
   useEffect(() => {
-      getClasses();
+    //getVersionDetails();
+    getClasses(null,null,null,null);
       getRooms();
       getAlgorithms();
       console.log('useEffect, classes = ',classes);
@@ -262,6 +273,72 @@ const TimeTableClassSegmentNew = ({
       }
     );
   }
+
+  const  exportExcel = async (semester, versionId, numberSlotsPerSession) => {
+    try {
+      const response = await request(
+        "post",
+        `general-classes/export-excel?semester=${semester}`,
+        null,
+        null,
+        { 
+          versionId,
+          numberSlotsPerSession: numberSlotsPerSession || 6 
+        },
+        { responseType: "arraybuffer" }
+      );
+      
+      // Chỉ trả về response, không tạo và tải xuống file
+      return response;
+    } catch (error) {
+      console.error("Export Excel error:", error);
+      throw error;
+    }
+  }
+
+  const handlExportExcel = async () => {
+    let payLoad = {
+      versionId: versionId,
+      numberSlotsPerSession: effectiveSlots
+    }
+    setLoading(true);
+    try{
+      const response = await exportExcel(selectedSemester, versionId, effectiveSlots);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `timetable_${selectedSemester}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Tải xuống thành công!");
+    } catch (error) {
+      toast.error(error.response?.data || "Có lỗi khi tải xuống file!");
+    } finally {
+      setLoading(false);
+    }
+
+
+    /*
+        request(
+           "post",
+           `/general-classes/export-excel`,
+           (res) => {
+              //const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+              //const url = window.URL.createObjectURL(blob);
+              
+           },
+           null,
+           payLoad,
+           {},
+           null,
+           null
+        );
+        */
+
+  }
   function handleViewUnscheduledClasses(){
       setLoading(true);
           request(
@@ -290,7 +367,7 @@ const TimeTableClassSegmentNew = ({
 
   }
 
-      function getClasses(){
+      function getClasses(searchCourseCode,searchCourseName,searchClassCode,searchGroupName){
           setLoading(true);
           request(
                               "get",
@@ -357,7 +434,7 @@ const TimeTableClassSegmentNew = ({
            `/general-classes/manual-assign-timetable-class-segment`,
            (res) => {
               if(res.data.status == 'SUCCESS'){
-                getClasses();
+                getClasses(searchTerm,searchTerm,searchTerm,searchTerm);
               }else{
                 alert(res.data.message);
               }
@@ -740,7 +817,12 @@ const handleCancelMove = () => {
   function handleCancelManualAssign(){
     setOpenManualAssign(false);
   }
-  
+  function handleFilter(){
+    // Implement filter logic here
+    //alert('Filter button clicked');
+    getClasses(searchTerm,searchTerm,searchTerm,searchTerm);
+  }
+
   function handleCellClick(index, day, period){
     //let classSegmentId = classWithClassSegments[index].classId;
     setSelectedDay(day);
@@ -802,6 +884,7 @@ const handleCancelMove = () => {
   return (
     <div className="h-full w-full flex flex-col justify-start">
       <div className="flex justify-end items-center gap-2 mb-1 pt-1 z-20 overflow-visible">
+        {loading ? <CircularProgress/> :""}
         <Button
           variant="outlined"
           onClick={handleViewUnscheduledClasses}
@@ -835,7 +918,17 @@ const handleCancelMove = () => {
         >
           Clear Schedule
         </Button>
-                    
+        <Button
+          variant="outlined"
+          onClick = {handlExportExcel}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Export Excel
+        </Button>             
         <TextField
           placeholder="Tìm kiếm (mã lớp, phòng, tên học phần...)"
           variant="outlined"
@@ -863,6 +956,18 @@ const handleCancelMove = () => {
             ) : null,
           }}
         />
+        <Button
+          variant="outlined"
+          startIcon={<Settings />}
+          onClick={handleFilter}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Filter
+        </Button>
         <Button
           variant="outlined"
           startIcon={<Settings />}

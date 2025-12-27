@@ -1134,7 +1134,7 @@ public class V2ClassScheduler {
 
                 if(cs != null){
                     if(solution.get(cs.getId())==null){
-                    log.info("autoScheduleTimeSlotRoomNew, CANNOT find time-slot for class " + cs.getId() + "???");
+                    log.info("autoScheduleTimeSlotRoomNew, CANNOT find time-slot for class " + cs.toString() + "???");
                     continue;
                     }
 

@@ -649,16 +649,22 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         List<ModelResponseClassSegment> res = new ArrayList<>();
         for(ModelResponseClassSegment cs: L){
             boolean ok = true;
+            boolean ok1 = true;
             if(searchClassCode != null && !searchClassCode.equals("")&& !searchClassCode.equals("null")){
-                if(!cs.getClassCode().contains(searchClassCode)) ok = false;
+                if(!cs.getClassCode().contains(searchClassCode)) ok1 = false;
+                else log.info("getClasssegmentsOfVersionFiltered classCode " + cs.getClassCode() + " contains " + searchClassCode + " ok1  " + ok1);
             }
+            boolean ok2 = true;
             if(searchCourseCode != null && !searchCourseCode.equals("")&& !searchCourseCode.equals("null")){
-                if(!cs.getCourseCode().contains(searchCourseCode)) ok = false;
-                log.info("getClasssegmentsOfVersionFiltered, consider courseCode " + cs.getCourseCode() + " ok = " + ok);
+                if(!cs.getCourseCode().contains(searchCourseCode)) ok2 = false;
+                else log.info("getClasssegmentsOfVersionFiltered, courseCode " + cs.getCourseCode() + " contains " + searchCourseCode + " ok2 = " + ok2);
             }
+            boolean ok3 = true;
             if(searchCourseName != null && !searchCourseName.equals("")&& !searchCourseName.equals("null")){
-                if(!cs.getCourseName().contains(searchCourseName)) ok = false;
+                if(!cs.getCourseName().contains(searchCourseName)) ok3 = false;
+                else log.info("getClasssegmentsOfVersionFiltered, courseName " + cs.getCourseName() + " contains " + searchCourseName + " ok3 = " + ok3);
             }
+            boolean ok4 = true;
             if(searchGroupName != null && !searchGroupName.equals("")&& !searchGroupName.equals("null")){
                 boolean okok = false;
                 if(cs.getGroups() != null){
@@ -668,8 +674,11 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                         }
                     }
                 }
-                if(!okok) ok = false;
+                if(!okok) ok4 = false;
+                else log.info("getClasssegmentsOfVersionFiltered groupName contains " + searchGroupName + " ok4 = " + ok4);
             }
+            ok = ok1 || ok2 || ok3 || ok4 ;
+
             if(ok) res.add(cs);
         }
         res.sort(new Comparator<ModelResponseClassSegment>() {
