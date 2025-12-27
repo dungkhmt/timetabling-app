@@ -4,14 +4,12 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
-import openerp.openerpresourceserver.generaltimetabling.model.Constant;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 
 import java.util.*;
-
 @Log4j2
-public class MatchedClassSolverFindSlotsAndRooms {
-    private SummerSemesterSolverVersion3 baseSolver;
+public class LTBTClassSolverFindSlotsAndRooms {
+    SummerSemesterSolverVersion3 baseSolver;
     ModelResponseTimeTablingClass[] cls;
     int nbClasses;
     int maxDayIndex = 8;
@@ -19,8 +17,11 @@ public class MatchedClassSolverFindSlotsAndRooms {
     int session;
     int[] sortedRooms;
 
-    int maxRoomUsed = 1;
-    boolean sameRoomEachDay = true;// class-segment scheduled on the same must be scheduled same room (teachers do not need to change room)
+    // params
+    int MAX_ROOM_USED_ALLOW = 1;
+    boolean SAM_ROOM_EACH_DAY = true;// class-segment scheduled on the same must be scheduled same room (teachers do not need to change room)
+    boolean BT_CLASS_DISJOINT = true;
+
     int bestObj = 10000000;// number of days used (tobe minimized)
 
     List<ClassSegment>[] CS;
@@ -45,11 +46,20 @@ public class MatchedClassSolverFindSlotsAndRooms {
     boolean found;
     boolean verboseDEBUG = false;
 
-    public MatchedClassSolverFindSlotsAndRooms(SummerSemesterSolverVersion3 baseSolver,
-                                               ModelResponseTimeTablingClass[] cls,
-                                               int session,
-                                               int[] sortedRooms){
-        this.baseSolver = baseSolver; this.cls = cls;
+    public LTBTClassSolverFindSlotsAndRooms(SummerSemesterSolverVersion3 baseSolver,
+                                            //ModelResponseTimeTablingClass[] cls,
+                                            ModelResponseTimeTablingClass parentLTClass,
+                                            List<ModelResponseTimeTablingClass> childrenBTClasses,
+                                            int session,
+                                            int[] sortedRooms) {
+        // cls[0] is the parent LT class, cls[1], cls[2],... are children BT classes
+        cls = new ModelResponseTimeTablingClass[childrenBTClasses.size()+1];
+        cls[0] =parentLTClass;
+        for(int i = 0; i < childrenBTClasses.size(); i++){
+            cls[i+1] = childrenBTClasses.get(i);
+        }
+
+        this.baseSolver = baseSolver;
         this.session = session;this.sortedRooms = sortedRooms;
         nbClasses = cls.length;
         CS = new List[cls.length];
@@ -112,7 +122,7 @@ public class MatchedClassSolverFindSlotsAndRooms {
     private boolean check(int r, int d, int s, int i, int j){
         // return true if room r, day d, and slot s can be assigned to class-segment j of class i
         // s is in the range 1, 2, . . .,5 nbSlotPerSession
-        if(loadRooms[r] == 0 && nbRoomsUsed >= maxRoomUsed) return false;
+        if(loadRooms[r] == 0 && nbRoomsUsed >= MAX_ROOM_USED_ALLOW) return false;
 
         ClassSegment cs = CS[i].get(j);
         for(int k = 0; k < cs.getDuration(); k++){
@@ -120,21 +130,43 @@ public class MatchedClassSolverFindSlotsAndRooms {
             int sl= dss.hash();
             if(baseSolver.roomSolver.roomSlotOccupation[r][sl] > 0){ return false; }
         }
+
+
         for(int j1 = 0; j1 <= j-1; j1++){
             if(x_day[i][j1] == d) return false;// days assigned to class-segments of the same class must be distinct
         }
-        for(int i1=0; i1 <= i-1; i1++){
+        if(i == 0) return true;// enough check for the FIRST (LT) class
+
+        // class-segment [i][j] must be disjoint with LT class-segments
+        for(int i1=0; i1 <= 0; i1++){
             for(int j1 = 0; j1 < x_day[i1].length; j1++){
                 if(x_day[i1][j1] == d){
-                    if(Util.overLap(x_slot[i1][j1],CS[i1].get(j1).getDuration(),s,cs.getDuration())){ return false; }
-                    if(sameRoomEachDay){// class-segments scheduled on the same ay must be scheduled in the same room
-                        if(x_room[i1][j1] != r){ return false; }
-                    }
+                    boolean overlap = Util.overLap(x_slot[i1][j1],CS[i1].get(j1).getDuration(),s,cs.getDuration());
+                    //log.info(name() + "::check(" + r + ","+ d + "," + s + "," + i + "," + j + "), overLap with (" + i1 + "," + j1 + ") = " + overlap);
+                    if(overlap){ return false; }
+                    //if(SAM_ROOM_EACH_DAY){// class-segments scheduled on the same ay must be scheduled in the same room
+                    //    if(x_room[i1][j1] != r){ return false; }
+                    //}
                 }
-
             }
         }
-        
+
+        if(BT_CLASS_DISJOINT) {
+            for (int i1 = 1; i1 <= i - 1; i1++) {
+                for (int j1 = 0; j1 < x_day[i1].length; j1++) {
+                    if (x_day[i1][j1] == d) {
+                        if (Util.overLap(x_slot[i1][j1], CS[i1].get(j1).getDuration(), s, cs.getDuration())) {
+                            return false;
+                        }
+                        if (SAM_ROOM_EACH_DAY) {// class-segments scheduled on the same ay must be scheduled in the same room
+                            if (x_room[i1][j1] != r) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return true;
     }
     private void submitSolution(){
@@ -167,13 +199,14 @@ public class MatchedClassSolverFindSlotsAndRooms {
 
         if(nbDaysUsed < bestObj){
             bestObj = nbDaysUsed;
-            log.info("solution FOUND solution -> update best " + bestObj);
+            //log.info("solution FOUND solution -> update best " + bestObj);
             for(int i = 0; i < nbClasses; i++){
                 List<ClassSegment> CS = baseSolver.mClassId2ClassSegments.get(cls[i].getId());
                 for(int j = 0; j < CS.size(); j++) {
                     best_x_room[i][j] = x_room[i][j];
                     best_x_day[i][j] = x_day[i][j];
                     best_x_slot[i][j] = x_slot[i][j];
+                    log.info(name() + "::soluton, updated-best best_x_room[" + i + "][" + j + "]=" + best_x_room[i][j] + ", best_x_day[" + i + "][" + j + "]=" + best_x_day[i][j] + ", best_x_slot[" + i + "][" + j + "]=" + best_x_slot[i][j] + ", bestObj = " + bestObj);
                 }
             }
         }
@@ -222,7 +255,7 @@ public class MatchedClassSolverFindSlotsAndRooms {
         }
     }
     public String name(){
-        return "MatchedClassSolverFindSlotsAndRooms";
+        return "LTBTClassSolverFindSlotsAndRooms";
     }
     public boolean solve(){
         log.info(name() + "::solve starts...");

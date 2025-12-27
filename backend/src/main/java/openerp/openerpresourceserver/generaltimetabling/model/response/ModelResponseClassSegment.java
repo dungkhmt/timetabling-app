@@ -16,6 +16,7 @@ public class ModelResponseClassSegment {
     private Long id;
     private Long classId;
     private String classCode;
+    private String parentClassCode;
     private String courseCode;
     private String courseName;
     private String classType;

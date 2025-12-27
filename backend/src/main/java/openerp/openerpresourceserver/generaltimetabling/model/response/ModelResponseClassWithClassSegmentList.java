@@ -15,6 +15,7 @@ import java.util.List;
 public class ModelResponseClassWithClassSegmentList {
     private Long classId;
     private String classCode;
+    private String parentClassCode;
     private String courseCode;
     private String courseName;
     private String classType;

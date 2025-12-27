@@ -92,6 +92,7 @@ const TimeTableClassSegmentNew = ({
       ? JSON.parse(savedSettings)
       : {
           classCode: true,
+          parentClassCode: true,
           studyClass: true,
           learningWeeks: true,
           moduleCode: true,
@@ -857,7 +858,7 @@ const handleCancelMove = () => {
     };
     setColumnVisibility(newVisibility);
     localStorage.setItem(
-      "timetable-column-visibility",
+      "timetable-class-segment-column-visibility",
       JSON.stringify(newVisibility)
     );
   };
@@ -868,6 +869,7 @@ const handleCancelMove = () => {
 
   const columnDefinitions = [
     { id: "classCode", label: "Mã lớp" },
+    { id: "parentClassCode", label: "Mã lớp cha" },
     { id: "studyClass", label: "Nhóm" },
     { id: "learningWeeks", label: "Tuần học" },
     { id: "moduleCode", label: "Mã học phần" },
@@ -1023,6 +1025,15 @@ const handleCancelMove = () => {
                   Mã lớp
                 </th>
               )}
+              {columnVisibility.parentClassCode && (
+                <th
+                  className="border-[1px] border-solid border-gray-300 p-1"
+                  style={{ width: "60px", minWidth: "60px" }}
+                >
+                  Mã lớp cha
+                </th>
+              )}
+              
               {columnVisibility.studyClass && (
                 <th
                   className="border-[1px] border-solid border-gray-300 p-1"
@@ -1198,6 +1209,15 @@ const handleCancelMove = () => {
                     Mã lớp
                   </th>
                 )}
+                {columnVisibility.parentClassCode && (
+                  <th
+                    className="border-[1px] border-solid border-gray-300 p-1"
+                    style={{ width: "60px", minWidth: "60px" }}
+                  >
+                    Mã lớp cha
+                  </th>
+                )}
+                
                 {columnVisibility.studyClass && (
                   <th
                     className="border-[1px] border-solid border-gray-300 p-1"
@@ -1373,6 +1393,12 @@ const handleCancelMove = () => {
                             {classDetail.classCode}
                           </td>
                         )}
+                        {columnVisibility.parentClassCode && (
+                          <td className="border border-gray-300 text-center px-1">
+                            {classDetail.parentClassCode}
+                          </td>
+                        )}
+                        
                         {columnVisibility.studyClass && (
                           <td className="border border-gray-300 text-center px-1">
                             {classDetail.groupNames}

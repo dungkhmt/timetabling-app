@@ -681,6 +681,7 @@ public class SummerSemesterSolverVersion3 implements Solver {
             if(session == 1) ids = afternoonClassIds;
 
             // 1 phase extract and schedule BIG classes
+            /*
             List<Long> bigClassIds = new ArrayList();
             for(Long id: ids){
                 ModelResponseTimeTablingClass cls = mClassId2Class.get(id);
@@ -692,6 +693,7 @@ public class SummerSemesterSolverVersion3 implements Solver {
             for(Long id: bigClassIds){
                 ids.remove(id);
             }
+            */
             // 2 phase: solve the remaining classes
             for (Long id : ids) {
                 for(ClassSegment cs: mClassId2ClassSegments.get(id)){

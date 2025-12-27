@@ -148,6 +148,7 @@ public class TimeTablingClassController {
             ModelResponseClassWithClassSegmentList resl = new ModelResponseClassWithClassSegmentList();
             resl.setClassId(s.getId());
             resl.setClassCode(s.getClassCode());
+            resl.setParentClassCode(s.getParentClassCode());
             resl.setClassType(s.getClassType());
             resl.setMaxNbStudents(s.getMaxNbStudents());
             resl.setCourseCode(s.getCourseCode());

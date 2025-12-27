@@ -216,6 +216,36 @@ public class CourseSchedulerSummerSemesterVersion3 {
             ModelResponseTimeTablingClass cls = baseSolver.mClassId2Class.get(id);
             log.info("solve, has class " + cls.str());
         }
+
+        // process LT-BT class
+        Map<Long, List<ModelResponseTimeTablingClass>> mId2ChildrenBTClass = new HashMap<>();
+        for(Long id: CLS){
+            ModelResponseTimeTablingClass cls = baseSolver.mClassId2Class.get(id);
+            Long parentClassId = cls.getParentClassId();
+            if(parentClassId != null){
+                if(!mId2ChildrenBTClass.containsKey(parentClassId)){
+                    mId2ChildrenBTClass.put(parentClassId, new ArrayList<>());
+                }
+                mId2ChildrenBTClass.get(parentClassId).add(cls);
+            }
+        }
+        for(Long classId: mId2ChildrenBTClass.keySet()){
+            ModelResponseTimeTablingClass parentClass = baseSolver.mClassId2Class.get(classId);
+            LTBTClassSolverFindSlotsAndRooms LTBTCSFSR = new LTBTClassSolverFindSlotsAndRooms(
+                    baseSolver,
+                    parentClass,
+                    mId2ChildrenBTClass.get(classId),
+                    groupSolver.session,baseSolver.sortedRooms
+                    );
+            boolean ok = LTBTCSFSR.solve();
+        }
+        Set<Long> scheduledClassIds = new HashSet<>();
+        for(Long id:CLS){
+            if(baseSolver.isScheduled(id)) scheduledClassIds.add(id);
+        }
+        for(Long id:scheduledClassIds){ CLS.remove(id); }
+
+        // process matched-pair classes
         List<Long[]> pairs = matchClassInACourse(CLS);
         log.info(name() + "::solve matchClassInACourse OK -> pairs = " + (pairs == null ? "NULL": pairs.size()));
         if(pairs != null) for(Long[] p: pairs){

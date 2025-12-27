@@ -577,13 +577,20 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId) {
+        log.info("getClasssegmentsOfVersion, versionId = " + versionId);
         List<ModelResponseClassSegment> res = new ArrayList<>();
         List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByVersionId(versionId);
+
         Set<Long> classIds = new HashSet<>();
         for(TimeTablingClassSegment cs: classSegments) classIds.add(cs.getClassId());
         List<Long> listClassIds = new ArrayList<>();
         for(Long id: classIds) listClassIds.add(id);
+
         List<TimeTablingClass> classes = timeTablingClassRepo.findAllByIdIn(listClassIds);
+        log.info("getClasssegmentsOfVersion, versionId = " + versionId + " classes = " + classes.size());
+        Map<Long, TimeTablingClass> mClassId2Class = new HashMap<>();
+        for(TimeTablingClass cls: classes) mClassId2Class.put(cls.getId(),cls);
+
         List<ClassGroup> classGroups = classGroupRepo.findAllByClassIdIn(listClassIds);
         Set<Long> groupIds = new HashSet<>();
         for(ClassGroup cg: classGroups) groupIds.add(cg.getGroupId());
@@ -614,6 +621,18 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             mrcs.setId(cs.getId());
             mrcs.setClassId(cs.getClassId());
             mrcs.setClassCode(cls.getClassCode());
+
+            String parentClassCode = "";
+            TimeTablingClass c = mClassId2Class.get(cs.getClassId());
+            if(c != null) {
+                TimeTablingClass pc = mClassId2Class.get(c.getParentClassId());
+                if (pc != null) {
+                    parentClassCode = pc.getClassCode();
+                    //log.info("getClasssegmentsOfVersion, versionId = " + versionId + " has parentClassCode = " + parentClassCode);
+                }
+            }
+            mrcs.setParentClassCode(parentClassCode);
+
             mrcs.setCourseCode(cls.getModuleCode());
             mrcs.setCourseName("");
             mrcs.setClassType(cls.getClassType());
@@ -720,7 +739,10 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             if(cls == null){
                 cls = new ModelResponseClassWithClassSegmentList();
                 cls.setClassCode(cs.getClassCode());
+                cls.setParentClassCode(cs.getParentClassCode());
                 cls.setClassId(cs.getClassId());
+                cls.setSession(cs.getSession());
+                cls.setClassType(cs.getClassType());
                 cls.setCourseCode(cs.getCourseCode());
                 cls.setCourseName(cs.getCourseName());
                 cls.setClassSegments(new ArrayList<>());
@@ -733,6 +755,36 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             }
             cls.getClassSegments().add(cs);
         }
+
+        // re-arrange classes so that children classes must follow directly the parent class
+        Map<String, List<ModelResponseClassWithClassSegmentList>> mClassCode2ChildrenClasses = new HashMap<>();
+        for(ModelResponseClassWithClassSegmentList cls: res){
+            String parentClassCode = cls.getParentClassCode();
+            if(parentClassCode != null && !parentClassCode.equals("")) {
+                List<ModelResponseClassWithClassSegmentList> children = mClassCode2ChildrenClasses.get(parentClassCode);
+                if (children == null){
+                    mClassCode2ChildrenClasses.put(parentClassCode, new ArrayList<>());
+                }
+                mClassCode2ChildrenClasses.get(parentClassCode).add(cls);
+            }
+        }
+        List<ModelResponseClassWithClassSegmentList> sorted_res = new ArrayList<>();
+        Set<String> appeared = new HashSet<>();
+        for(ModelResponseClassWithClassSegmentList cls: res){
+            if(appeared.contains(cls.getClassCode())) continue;
+            if(cls.getParentClassCode()!=null && !cls.getParentClassCode().equals("") &&
+                    !appeared.contains(cls.getParentClassCode())) continue;
+
+                sorted_res.add(cls); appeared.add(cls.getClassCode());
+                if(mClassCode2ChildrenClasses.get(cls.getClassCode())!=null){
+                    for(ModelResponseClassWithClassSegmentList ccls: mClassCode2ChildrenClasses.get(cls.getClassCode())){
+                        sorted_res.add(ccls); appeared.add(ccls.getClassCode());
+                    }
+                }
+
+        }
+        res = sorted_res;
+
         for(ModelResponseClassWithClassSegmentList cls: res){
             cls.getClassSegments().sort(new Comparator<ModelResponseClassSegment>() {
                 @Override
@@ -806,6 +858,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
 
         //return res.subList(0,50);
+
+
         return res;
     }
 
