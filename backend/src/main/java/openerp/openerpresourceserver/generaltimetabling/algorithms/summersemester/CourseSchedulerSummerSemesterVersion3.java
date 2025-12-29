@@ -239,11 +239,17 @@ public class CourseSchedulerSummerSemesterVersion3 {
                     );
             boolean ok = LTBTCSFSR.solve();
         }
-        Set<Long> scheduledClassIds = new HashSet<>();
-        for(Long id:CLS){
-            if(baseSolver.isScheduled(id)) scheduledClassIds.add(id);
+        Set<Long> LTBTClassIds = new HashSet<>();
+        for(Long id: mId2ChildrenBTClass.keySet()){
+            LTBTClassIds.add(id);
+            for(ModelResponseTimeTablingClass ccls: mId2ChildrenBTClass.get(id)){
+                LTBTClassIds.add(ccls.getId());
+            }
         }
-        for(Long id:scheduledClassIds){ CLS.remove(id); }
+        log.info("solve, CLS.size = " + CLS.size() + " LTBTClassIds.size = " + LTBTClassIds.size());
+        //for(Long id:scheduledClassIds){ CLS.remove(id); }
+        for(Long id: LTBTClassIds){ CLS.remove(id); }
+        log.info("solve, after solving LTBT, remain CLS.size = " + CLS.size());
 
         // process matched-pair classes
         List<Long[]> pairs = matchClassInACourse(CLS);
@@ -257,8 +263,13 @@ public class CourseSchedulerSummerSemesterVersion3 {
                     new ModelResponseTimeTablingClass[]{cls1,cls2},
                     groupSolver.session,baseSolver.sortedRooms);
             boolean ok = MCS.solve();
-
         }
+        Set<Long> scheduledMatchedClassIds = new HashSet<>();
+        for(Long id: CLS) if(baseSolver.isScheduled(id)) scheduledMatchedClassIds.add(id);
+        for(Long id: scheduledMatchedClassIds){ CLS.remove(id); }
+        log.info("solve, after solving matched classes, scheduledMatchedClassIds.size = " + scheduledMatchedClassIds.size() + " remain CLS = " + CLS.size());
+
+
         List<Long> ids = new ArrayList<>();
         //for(Long id: groupSolver.mCourse2ClassId.get(courseCode)) ids.add(id);
         for(Long id: CLS) ids.add(id);

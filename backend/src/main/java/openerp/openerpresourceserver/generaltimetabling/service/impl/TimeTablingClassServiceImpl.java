@@ -985,7 +985,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                 ModelResponseTimetableClass ttc = new ModelResponseTimetableClass(dss.day,
                         (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"","white");
-                tmp.add(ttc);
+                //tmp.add(ttc);
+
                 //log.info("INIT -> add " + ttc.getDay() + "-" + ttc.getSession() + "-" + ttc.getStartTime());
             }
 
@@ -1004,7 +1005,8 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseTimetableClass ttci = new ModelResponseTimetableClass(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot,dss.slot,1,"","white");
-                    tmp.add(ttci);
+                    //tmp.add(ttci);
+
                     //log.info("room " + roomCode + " slots[" + j + "] = " + slots.get(j) + " st = " + st + " fn = " + fn + " -> add " + ttci.getDay() + "-" + ttci.getSession() + "-" + ttci.getStartTime()  + "-" + ttci.getDuration());
 
                 }
@@ -1042,6 +1044,9 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
     @Override
     public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetableApprovedOfSemester(String userId, String semester, String searchRoomCode) {
         List<ModelResponseRoomBasedTimetable> res = new ArrayList<>();
+        Map<String, List<ModelResponseTimetableClass>> mRoomCode2Classes = new HashMap<>();
+        Map<String, Integer> mRoomCode2Quantity = new HashMap<>();
+
         List<TimeTablingBatch> batches = timeTablingBatchRepo.findAllBySemester(semester);
         if(batches != null){
             log.info("getRoomBasedTimetableApprovedOfSemester batches = " + batches.size());
@@ -1052,11 +1057,24 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     List<ModelResponseRoomBasedTimetable> L = getRoomBasedTimetable(userId, ver.getId(), searchRoomCode);
                     log.info("getRoomBasedTimetableApprovedOfSemester batch " + b.getId() + " ver = " + ver.getId() + " L = " + L.size());
                     for(ModelResponseRoomBasedTimetable cls: L){
-                        res.add(cls);
+                        //res.add(cls);
+                        if(mRoomCode2Classes.get(cls.getRoomCode())==null) mRoomCode2Classes.put(cls.getRoomCode(),new ArrayList<>());
+                        for(ModelResponseTimetableClass c: cls.getClasses())
+                            mRoomCode2Classes.get(cls.getRoomCode()).add(c);
+                        mRoomCode2Quantity.put(cls.getRoomCode(),cls.getCapacity());
+                        //if(cls.getRoomCode().equals("D6-208"))
+                        //    log.info("getRoomBasedTimetableApprovedOfSemester batch " + b.getId() + " ver = " + ver.getId() + " room " + cls.getRoomCode() +  " has " + cls.getClasses().size() + " classes");
                     }
                 }
             }
         }
+        for(String roomCode: mRoomCode2Classes.keySet()){
+            ModelResponseRoomBasedTimetable rtt = new ModelResponseRoomBasedTimetable();
+            rtt.setRoomCode(roomCode);rtt.setCapacity(mRoomCode2Quantity.get(roomCode));
+            rtt.setClasses(mRoomCode2Classes.get(roomCode));
+            res.add(rtt);
+        }
+
         Set<String> roomUsed = new HashSet();
         for(ModelResponseRoomBasedTimetable i: res){
             roomUsed.add(i.getRoomCode());

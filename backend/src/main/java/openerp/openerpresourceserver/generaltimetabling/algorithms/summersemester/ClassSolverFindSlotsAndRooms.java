@@ -28,6 +28,18 @@ public class ClassSolverFindSlotsAndRooms{
     int[] occupationDay;// occupationDay[d]: number of class segment scheduled on day d
     boolean found;
     boolean verboseDEBUG = false;
+
+    long maxExecTime = 10000;// 10 seconds
+    long startExecTime;
+
+    // statistic
+    int nbTrials = 0;
+    int nbChecks = 0;
+    int nbCheckSucc = 0;
+    int nbCheckFail = 0;
+    int depth_i = 0;
+    int depth_j = 0;
+
     public ClassSolverFindSlotsAndRooms(SummerSemesterSolverVersion3 baseSolver,
                                         ModelResponseTimeTablingClass cls,
                                         int session,
@@ -123,6 +135,11 @@ public class ClassSolverFindSlotsAndRooms{
             domain_days.add(d_days);
         }
     }
+    public void printStatistics() {
+        log.info(name() + "::printStatistics, nbTrails = " + nbTrials + " nbChecks = " + nbChecks + " nbCheckSucc = "
+                + nbCheckSucc + " nbCheckFail = "
+                + nbCheckFail + " depth_i = " + depth_i + " depth_j = " + depth_j);
+    }
     public void printFreeRooms(){
         for(int r: sortedRooms){
             boolean ok = true;
@@ -140,6 +157,7 @@ public class ClassSolverFindSlotsAndRooms{
 
     boolean check(int i, ClassSegment cs, int r, int d, int s){
         if(verboseDEBUG)log.info(name()+ "::check(" + i + "," + cs.str() + "," + r + "," + d + "," + s + ") starts..");
+        nbChecks++;
         if(dayVisited[d]){
             if(verboseDEBUG)log.info(name()+ "::check(" + i + "," + cs.str() + "," + r + "," + d + "," + s + ") day already visited -> return false");
             return false;
@@ -219,6 +237,13 @@ public class ClassSolverFindSlotsAndRooms{
         if(verboseDEBUG)log.info("tryClassSegment(" + i + "/" + CS.size() + "), domain_slots.sz = " + domain_slots.get(i).size() + " domain_rooms.sz = " + domain_rooms.get(i).size());
         if(found) return;
 
+        nbTrials++;
+        if(depth_i < i){
+            depth_i = i; depth_j = 0;
+        }else if(depth_i == i && depth_j < 0){
+            depth_i = i; depth_j = 0;
+        }
+
         ClassSegment cs = CS.get(i);
         List<Integer> d_slots = domain_slots.get(i);
         List<Integer> d_days = domain_days.get(i);
@@ -274,6 +299,7 @@ public class ClassSolverFindSlotsAndRooms{
                     if(found) break;
                     if(verboseDEBUG)log.info("tryClassSegment(" + i + "/" + CS.size() + ") consider day " + d + " slot " + s + " room " + r);
                     if(check(i,cs,r,d,s)){
+                        nbCheckSucc++;
                         x_room[i] = r;
                         x_day[i] = d;
                         x_slot[i] = s;
@@ -284,6 +310,8 @@ public class ClassSolverFindSlotsAndRooms{
                         else tryClassSegment(i+1);
                         dayVisited[d] = false;
                         occupationDay[d]--;
+                    }else{
+                        nbCheckFail++;
                     }
                     if(verboseDEBUG)log.info("tryClassSegment(" + i + "/" + CS.size() + ") consider day " + d + " slot " + s + " room " + r + " -> check FAILED");
                 }
@@ -302,7 +330,18 @@ public class ClassSolverFindSlotsAndRooms{
         //if(verboseDEBUG) printFreeRooms();
         log.info(name() + "::solve class cls = " + cls.str() + " -> starts with tryClassSegment(0)...");
         found = false;
+
+        nbTrials = 0;
+        nbChecks = 0;
+        nbCheckSucc = 0;
+        nbCheckFail = 0;
+        depth_i = 0;
+        depth_j = 0;
+        startExecTime = System.currentTimeMillis();
+
         tryClassSegment(0);
+        printStatistics();
+
         if(found){
             log.info(name() + "::solve, FOUND a schedule for class " + cls.str() + " qty " + cls.getQuantityMax());
         }else{

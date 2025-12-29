@@ -45,6 +45,17 @@ public class MatchedClassSolverFindSlotsAndRooms {
     boolean found;
     boolean verboseDEBUG = false;
 
+    long maxExecTime = 10000;// 10 seconds
+    long startExecTime;
+
+    // statistic
+    int nbTrials = 0;
+    int nbChecks = 0;
+    int nbCheckSucc = 0;
+    int nbCheckFail = 0;
+    int depth_i = 0;
+    int depth_j = 0;
+
     public MatchedClassSolverFindSlotsAndRooms(SummerSemesterSolverVersion3 baseSolver,
                                                ModelResponseTimeTablingClass[] cls,
                                                int session,
@@ -112,6 +123,7 @@ public class MatchedClassSolverFindSlotsAndRooms {
     private boolean check(int r, int d, int s, int i, int j){
         // return true if room r, day d, and slot s can be assigned to class-segment j of class i
         // s is in the range 1, 2, . . .,5 nbSlotPerSession
+        nbChecks++;
         if(loadRooms[r] == 0 && nbRoomsUsed >= maxRoomUsed) return false;
 
         ClassSegment cs = CS[i].get(j);
@@ -194,10 +206,19 @@ public class MatchedClassSolverFindSlotsAndRooms {
         // try values for x_day[i][j], x_slot[i][j], x_room[i][j]
         //log.info("tryClassSegment(" + i + "," + j + ")");
         //if(found) return;
+        long t = System.currentTimeMillis();
+        if(t - startExecTime > maxExecTime) return;
+        nbTrials++;
+        if(depth_i < i){
+            depth_i = i; depth_j = j;
+        }else if(depth_i == i && depth_j < j){
+            depth_i = i; depth_j = j;
+        }
         for(int r: domain_rooms[i][j]){
             for(int d: domain_days[i][j]){
                 for(int s: domain_slots[i][j]){
                     if(check(r,d,s,i,j)){
+                        nbCheckSucc++;
                         x_room[i][j] = r; x_day[i][j] = d; x_slot[i][j] = s;
                         if(loadDay[d] == 0) nbDaysUsed += 1;// one more day loaded (has class-segment scheduled)
                         loadDay[d] += 1;
@@ -216,10 +237,17 @@ public class MatchedClassSolverFindSlotsAndRooms {
                         loadDay[d] -= 1;
                         if(loadRooms[r]==1) nbRoomsUsed -= 1;// reduce on more room loaded
                         loadRooms[r] -= 1;
+                    }else{
+                        nbCheckFail++;
                     }
                 }
             }
         }
+    }
+    public void printStatistics() {
+        log.info(name() + "::printStatistics, nbTrails = " + nbTrials + " nbChecks = " + nbChecks + " nbCheckSucc = "
+                + nbCheckSucc + " nbCheckFail = "
+                + nbCheckFail + " depth_i = " + depth_i + " depth_j = " + depth_j);
     }
     public String name(){
         return "MatchedClassSolverFindSlotsAndRooms";
@@ -232,6 +260,13 @@ public class MatchedClassSolverFindSlotsAndRooms {
 
         found = false;
         nbDaysUsed = 0; nbRoomsUsed = 0;
+        nbTrials = 0;
+        nbChecks = 0;
+        nbCheckSucc = 0;
+        nbCheckFail = 0;
+        depth_i = 0;
+        depth_j = 0;
+        startExecTime = System.currentTimeMillis();
         tryClassSegment(0, 0);
         submitSolution();
         return true;

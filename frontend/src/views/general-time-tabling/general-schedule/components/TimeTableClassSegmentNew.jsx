@@ -26,6 +26,8 @@ import { Add, Remove, Settings, Search } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { set } from "react-hook-form";
 
+import SearchRoomForTimeSlotScheduledClass from "./SearchRoomForTimeSlotScheduledClass";
+
 const TimeTableClassSegmentNew = ({
   classes,
   //getClasses,
@@ -85,6 +87,8 @@ const TimeTableClassSegmentNew = ({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const[openSearchRoom, setOpenSearchRoom] = useState(false);
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const savedSettings = localStorage.getItem("timetable-column-visibility");
@@ -887,6 +891,17 @@ const handleCancelMove = () => {
     <div className="h-full w-full flex flex-col justify-start">
       <div className="flex justify-end items-center gap-2 mb-1 pt-1 z-20 overflow-visible">
         {loading ? <CircularProgress/> :""}
+        <Button
+          variant="outlined"
+          onClick={() => {setOpenSearchRoom(true);}}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Search Room
+        </Button>
         <Button
           variant="outlined"
           onClick={handleViewUnscheduledClasses}
@@ -1872,7 +1887,11 @@ const handleCancelMove = () => {
                 </DialogActions>
             </Dialog>
 
-      
+            <SearchRoomForTimeSlotScheduledClass
+              openSearchRoom = {openSearchRoom}
+              setOpenSearchRoom = {setOpenSearchRoom}
+              versionId={versionId}
+            />
     </div>
   );
 };
