@@ -67,15 +67,17 @@ export default function OpenedClassPlan() {
     const [viewTab, setViewTab] = useState(0); // Added missing state for tabs
 
     const columns = [
-        { field: "id", headerName: "ID", width: 70 },
-        { field: "moduleCode", headerName: "CourseCode", width: 120 },
+        { field: "id", headerName: "ID", width: 100 },
+        { field: "moduleCode", headerName: "CourseCode", width: 180 },
         { field: "moduleName", headerName: "CourseName", width: 200 },
         { field: "programName", headerName: "Program", width: 150 },
         { field: "classType", headerName: "classType", width: 100 },
         { field: "mass", headerName: "mass", width: 80 },
         { field: "numberOfClasses", headerName: "Classes", width: 80 },
+         { field: "nbClassScheduled", headerName: "Scheduled Classes", width: 80 },
         { field: "duration", headerName: "duration", width: 80 },
         { field: "qty", headerName: "Qty", width: 80 },
+
     ];
 
     function getBatch(){

@@ -18,9 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -208,6 +206,61 @@ public class PlanGeneralClassServiceImpl implements PlanGeneralClassService {
     @Override
     public List<PlanGeneralClass> getOpenedClassPlans(Long batchId) {
         return planGeneralClassRepo.findAllByBatchId(batchId);
+    }
+    private boolean isScheduled(Long classId, Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments){
+        List<TimeTablingClassSegment> CS = mClassId2ClassSegments.get(classId);
+        if(CS == null) return false;
+        for(TimeTablingClassSegment cs : CS) {
+            if(cs.getWeekday()==null||cs.getStartTime()==null||cs.getRoom()==null) return false;
+        }
+        return true;
+    }
+    @Override
+    public List<ModelResponsePlanClass> getPlanClassOfBatch(Long batchId) {
+        List<TimeTablingTimeTableVersion> versions = timeTablingVersionRepo.findAllByStatusAndBatchId(
+                TimeTablingTimeTableVersion.STATUS_PUBLISHED,
+                batchId);
+
+        List<Long> versionIds = versions.stream().map(TimeTablingTimeTableVersion::getId).collect(Collectors.toList());
+        List<PlanGeneralClass> plans = planGeneralClassRepo.findAllByBatchId(batchId);
+        List<Long> planIds = plans.stream().map(PlanGeneralClass::getId).collect(Collectors.toList());
+        List<TimeTablingClass> classes = timeTablingClassRepo.findAllByRefClassIdIn(planIds);
+        List<TimeTablingClassSegment> classSegments= timeTablingClassSegmentRepo.findAllByVersionIdIn(versionIds);
+        Map<Long, List<TimeTablingClassSegment>> mClassId2ClassSegments = new HashMap<>();
+        Map<Long, List<TimeTablingClass>> mPlanId2Classes = new HashMap<>();
+        for(TimeTablingClass cls : classes) {
+            if(mPlanId2Classes.get(cls.getRefClassId()) == null) { mPlanId2Classes.put(cls.getRefClassId(), new ArrayList<>()); }
+            mPlanId2Classes.get(cls.getRefClassId()).add(cls);
+        }
+
+        for(TimeTablingClassSegment cs: classSegments){
+            if(mClassId2ClassSegments.get(cs.getClassId())==null){ mClassId2ClassSegments.put(cs.getClassId(), new ArrayList<>()); }
+            mClassId2ClassSegments.get(cs.getClassId()).add(cs);
+        }
+
+        List<ModelResponsePlanClass> res = new ArrayList<>();
+        for(PlanGeneralClass p: plans) {
+            ModelResponsePlanClass mrp = new ModelResponsePlanClass();
+            mrp.setId(p.getId());
+            mrp.setGroupId(p.getGroupId());
+            mrp.setModuleCode(p.getModuleCode());
+            mrp.setNumberOfClasses(p.getNumberOfClasses());
+            mrp.setBatchId(batchId);
+            mrp.setClassType(p.getClassType());
+            mrp.setSemester(p.getSemester());
+            mrp.setCrew(p.getCrew());
+
+            int nbScheduledClasses = 0;
+            if(mPlanId2Classes.get(p.getId()) != null){
+                for (TimeTablingClass cls : mPlanId2Classes.get(p.getId())) {
+                    if(isScheduled(cls.getId(),mClassId2ClassSegments)) nbScheduledClasses++;
+                }
+            }
+            mrp.setNbClassScheduled(nbScheduledClasses);
+
+            res.add(mrp);
+        }
+        return res;
     }
 
     @Override

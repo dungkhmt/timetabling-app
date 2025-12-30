@@ -18,6 +18,7 @@ public interface PlanGeneralClassService {
     List<PlanGeneralClass> getAllPlanClasses(String semester);
 
     List<PlanGeneralClass> getOpenedClassPlans(Long batchId);
+    List<ModelResponsePlanClass> getPlanClassOfBatch(Long batchId);
 
 
     List<TimeTablingClass> getClassOfPlan(Long planClassId);

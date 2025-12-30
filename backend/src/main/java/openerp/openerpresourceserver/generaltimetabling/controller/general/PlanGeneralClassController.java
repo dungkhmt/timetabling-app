@@ -77,9 +77,11 @@ public class PlanGeneralClassController {
     }
     @GetMapping("/get-opened-class-plans")
     public ResponseEntity<?> getOpenClassPlans(@RequestParam("batch") Long batchId){
-        List<PlanGeneralClass> res = planClassService.getOpenedClassPlans(batchId);
+        //List<PlanGeneralClass> res = planClassService.getOpenedClassPlans(batchId);
+        List<ModelResponsePlanClass> res = planClassService.getPlanClassOfBatch(batchId);
         return ResponseEntity.ok().body(res);
     }
+
 
     @GetMapping("/view-class")
     public ResponseEntity requestViewPlanClass(@RequestParam("planClassId") Long planClassId){
