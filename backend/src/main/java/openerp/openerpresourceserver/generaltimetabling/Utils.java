@@ -69,6 +69,17 @@ public class Utils {
         }
         return cnt;
     }
+    public static int extractFloor(String roomCode){
+        int floor = 1;
+        try {
+            String[] s = roomCode.split("-");
+            if (s != null && s.length == 2) {
+                int n = Integer.parseInt(s[1].trim()); // index of the room
+                floor = n / 100;
+            }
+        }catch (Exception e){ e.printStackTrace();}
+        return floor;
+    }
     public static List<TimeTablingClass> sort(List<TimeTablingClass> CLS, List<TimeTablingClassSegment> classSegments){
         // sort on courseCode; children BT classes must go right-after the parent LT class
         //                  2 classes consecutive are adjacent

@@ -22,6 +22,7 @@ public class ModelResponseClassWithClassSegmentList {
     private Integer maxNbStudents;
     private String groupNames;
     private Integer duration;
+    private String strDurations;// multiple durations of class-segments
     private String learningWeeks;
     private String volumn;
     private String promotion;

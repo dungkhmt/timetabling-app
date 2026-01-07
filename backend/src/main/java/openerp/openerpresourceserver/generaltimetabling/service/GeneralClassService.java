@@ -44,6 +44,8 @@ public interface GeneralClassService {
 
     List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom(ModelInputAutoScheduleTimeSlotRoom I);
 
+
+
     List<ModelResponseTimeTablingClass> autoScheduleTimeSlotRoom4ClassSegments(ModelInputAutoScheduleTimeSlotRoom I);
 
                                                                                //List<ModelResponseTimeTablingClass> advancedFilter(ModelInputAdvancedFilter I);

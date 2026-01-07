@@ -7,6 +7,7 @@ import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import openerp.openerpresourceserver.generaltimetabling.Utils;
 import openerp.openerpresourceserver.generaltimetabling.common.Constants;
 import openerp.openerpresourceserver.generaltimetabling.exception.*;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.CreateClassSegmentRequest;
@@ -20,9 +21,11 @@ import openerp.openerpresourceserver.generaltimetabling.model.entity.Timetabling
 import openerp.openerpresourceserver.generaltimetabling.model.entity.general.*;
 import openerp.openerpresourceserver.generaltimetabling.model.input.*;
 import openerp.openerpresourceserver.generaltimetabling.model.response.*;
+import openerp.openerpresourceserver.generaltimetabling.repo.ClassroomRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.ClusterRepo;
 import openerp.openerpresourceserver.generaltimetabling.repo.TimetablingLogScheduleRepo;
 import openerp.openerpresourceserver.generaltimetabling.service.*;
+import openerp.openerpresourceserver.labtimetabling.repo.RoomRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -46,6 +49,10 @@ public class TimeTablingClassController {
 
     @Autowired
     private TimetablingLogScheduleRepo timetablingLogScheduleRepo;
+    @Autowired
+    private RoomRepo roomRepo;
+    @Autowired
+    private ClassroomRepo classroomRepo;
 
     @ExceptionHandler(ConflictScheduleException.class)
     public ResponseEntity resolveScheduleConflict(ConflictScheduleException e) {
@@ -85,8 +92,8 @@ public class TimeTablingClassController {
                                                        @RequestParam("searchClassCode") String searchClassCode,
                                                        @RequestParam("searchGroupName") String searchGroupName
                 ){
-        log.info("getClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
-        + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        //log.info("getClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+        //+ " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
         List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
 
         //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
@@ -140,8 +147,8 @@ public class TimeTablingClassController {
                                                        @RequestParam("searchClassCode") String searchClassCode,
                                                        @RequestParam("searchGroupName") String searchGroupName
     ){
-        log.info("getClasssegmentsOfVersionNew, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
-                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        //log.info("getClasssegmentsOfVersionNew, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+        //        + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
         List<ModelResponseClassSegment> L = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
 
         List<ModelResponseClassWithClassSegmentList> res = new ArrayList<>();
@@ -174,8 +181,8 @@ public class TimeTablingClassController {
                                                        @RequestParam("searchClassCode") String searchClassCode,
                                                        @RequestParam("searchGroupName") String searchGroupName
     ){
-        log.info("getUnscheduledClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
-                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        //log.info("getUnscheduledClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+        //        + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
         List<ModelResponseClassSegment> res = timeTablingClassService.getUnscheduledClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
 
         //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
@@ -198,6 +205,22 @@ public class TimeTablingClassController {
 
         return ResponseEntity.ok().body(res);
     }
+    @GetMapping("/get-unscheduled-classes-with-class-segments-of-version")
+    public ResponseEntity<?> getUnscheduledClassesWithClasssegmentsOfVersion(Principal principal,
+                                                                  @RequestParam("versionId") Long versionId,
+                                                                  @RequestParam("searchCourseCode") String searchCourseCode,
+                                                                  @RequestParam("searchCourseName") String searchCourseName,
+                                                                  @RequestParam("searchClassCode") String searchClassCode,
+                                                                  @RequestParam("searchGroupName") String searchGroupName
+    ){
+        log.info("getUnscheduledClassesWithClasssegmentsOfVersion, versionId = " + versionId + " searchCourseCode = " + searchCourseCode
+                + " searchCourseName = " + searchCourseName + " searchClassCode = " + searchClassCode + " searchGroupName = " + searchGroupName);
+        List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getUnscheduledClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+
+        return ResponseEntity.ok().body(res);
+    }
+
     @GetMapping("/get-classes-with-class-segments-approved-of-semester")
     public ResponseEntity<?> getClassesWithClasssegmentsApprovedOfSemester(Principal principal,
                                                                   @RequestParam("semester") String semester,
@@ -225,6 +248,16 @@ public class TimeTablingClassController {
         log.info("getClassesWithClasssegmentsOfVersion, versionId = " + versionId + " searchRoomCode = " + searchRoomCode);
         //List<ModelResponseClassWithClassSegmentList> res = timeTablingClassService.getClassesWithClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
         //List<ModelResponseClassSegment> res = timeTablingClassService.getClasssegmentsOfVersionFiltered(principal.getName(), versionId, searchCourseCode, searchCourseName, searchClassCode, searchGroupName );
+        /*
+        List<Classroom> rooms = classroomRepo.findAll();
+        for(Classroom c : rooms){
+            int floor = Utils.extractFloor(c.getId());
+            log.info("getRoomBasedTimeTableWithClasssegmentsOfVersion, extract Room " + c.getId() + " -> floor = " + floor);
+            c.setPriority(floor*10);
+        }
+        classroomRepo.saveAll(rooms);
+        */
+
         List<ModelResponseRoomBasedTimetable> res = timeTablingClassService.getRoomBasedTimetable(principal.getName(), versionId, searchRoomCode);
 
         return ResponseEntity.ok().body(res);
@@ -375,6 +408,11 @@ public class TimeTablingClassController {
     public ResponseEntity<?> requestResetSchedule(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
         log.info("Controler API -> requestResetSchedule start...");
         return ResponseEntity.ok(timeTablingClassService.clearTimeTable(request.getIds()));
+    }
+    @PostMapping("/clear-timetable-of-classes")
+    public ResponseEntity<?> clearTimetableOfClasses(@RequestParam("semester") String semester, @RequestBody ResetScheduleRequest request) {
+        log.info("Controler API -> requestResetSchedule start...");
+        return ResponseEntity.ok(timeTablingClassService.clearTimeTableOfClasses(request.getVersionId(), request.getIds()));
     }
 
     @GetMapping("/get-list-algorithm-names")

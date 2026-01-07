@@ -577,7 +577,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
 
     @Override
     public List<ModelResponseClassSegment> getClasssegmentsOfVersion(String userId, Long versionId) {
-        log.info("getClasssegmentsOfVersion, versionId = " + versionId);
+        //log.info("getClasssegmentsOfVersion, versionId = " + versionId);
         List<ModelResponseClassSegment> res = new ArrayList<>();
         List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByVersionId(versionId);
 
@@ -587,7 +587,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         for(Long id: classIds) listClassIds.add(id);
 
         List<TimeTablingClass> classes = timeTablingClassRepo.findAllByIdIn(listClassIds);
-        log.info("getClasssegmentsOfVersion, versionId = " + versionId + " classes = " + classes.size());
+        //log.info("getClasssegmentsOfVersion, versionId = " + versionId + " classes = " + classes.size());
         Map<Long, TimeTablingClass> mClassId2Class = new HashMap<>();
         for(TimeTablingClass cls: classes) mClassId2Class.put(cls.getId(),cls);
 
@@ -805,6 +805,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 }
             });
 
+
             // add empty slots to class-segments (used for rendering on grid)
             List<ModelResponseClassSegment> tmp = new ArrayList<>();
             List<Integer> slots = new ArrayList<>();
@@ -820,7 +821,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot,"white");
-                    tmp.add(cs);
+                    //tmp.add(cs); do not need add empty slots
                     //log.info("INIT -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
                 }
 
@@ -839,7 +840,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     DaySessionSlot dss = new DaySessionSlot(sl,ver.getNumberSlotsPerSession());
                     ModelResponseClassSegment cs = new ModelResponseClassSegment(dss.day,
                             (dss.session == 0 ? "S" : "C"), dss.slot,"white");
-                    tmp.add(cs);
+                    //tmp.add(cs); do not need to add empty slot
                     //log.info("cls " + cls.getClassCode() + " slots[" + i + "] = " + slots.get(i) + " st = " + st + " fn = " + fn + " -> add " + cs.getDay() + "-" + cs.getSession() + "-" + cs.getStartTime());
 
                 }
@@ -855,11 +856,41 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         }
         //log.info("getClassesWithClasssegmentsOfVersionFiltered, L = " + L.size() + " res = "  + res.size());
 
+        for(ModelResponseClassWithClassSegmentList cls: res){
+            String strDurations = "";
+            for(ModelResponseClassSegment cs: cls.getClassSegments()){
+                strDurations += cs.getDuration() + ",";
+            }
+            cls.setStrDurations(strDurations);
+        }
 
 
         //return res.subList(0,50);
 
 
+        return res;
+    }
+
+    @Override
+    public List<ModelResponseClassWithClassSegmentList> getUnscheduledClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName) {
+        List<ModelResponseClassWithClassSegmentList> L = getClassesWithClasssegmentsOfVersionFiltered(userId,versionId,searchCourseCode,searchCourseName,searchClassCode,searchGroupName);
+        log.info("getUnscheduledClassesWithClasssegmentsOfVersionFiltered, classes = " + L.size());
+        List<ModelResponseClassWithClassSegmentList> res = new ArrayList<>();
+        for(ModelResponseClassWithClassSegmentList cls: L){
+            boolean ok = false;
+            for(ModelResponseClassSegment cs: cls.getClassSegments()){
+                //log.info("getUnscheduledClassesWithClasssegmentsOfVersionFiltered, class " + cls.getClassCode() + " class segment " + cs.getId() + " scheduled : " + cs.getStartTime() + "," + cs.getDay() + "," + cs.getRoomCode());
+                if(cs.getStartTime()==null || cs.getDay()==null || cs.getRoomCode()==null || cs.getRoomCode().equals("")){
+                    //log.info("getUnscheduledClassesWithClasssegmentsOfVersionFiltered, class " + cls.getClassCode() + " NOT scheduled");
+                    ok=true; break;
+                }
+            }
+            if(cls.getClassSegments() == null || cls.getClassSegments().size()==0) ok = true;
+            if(ok){
+                //log.info("getUnscheduledClassesWithClasssegmentsOfVersionFiltered, class " + cls.getClassCode() + " NOT scheduled -> add to res " + res.size());
+                res.add(cls);
+            }
+        }
         return res;
     }
 
@@ -936,7 +967,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             int i = 0;
             while(i < CS.size()) {
                 ModelResponseClassSegment csi = CS.get(i);
-                String classCodes= csi.getClassCode();
+                String classCodes= csi.getClassCode() + "("+ csi.getMaxNbStudents() + ")";
                 int endTime = -1;
                 if(csi.getStartTime()!=null)
                     endTime = csi.getStartTime() + csi.getDuration()-1;
@@ -949,7 +980,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                     if(!csj.getSession().equals(csi.getSession())) break;
                     if(csj.getStartTime()==null|| csi.getStartTime()==null) break;
                     if(csj.getStartTime()>= csi.getStartTime()+csi.getDuration()) break;// not overlap
-                    classCodes = classCodes + ","+ csj.getClassCode();
+                    classCodes = classCodes + ","+ csj.getClassCode() + "(" + csj.getMaxNbStudents() + ")";
                     endTime = csj.getStartTime() + csj.getDuration()-1;
                     j = j + 1;
                 }
@@ -1038,6 +1069,13 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 }
             }
         }
+
+        res.sort(new Comparator<ModelResponseRoomBasedTimetable>() {
+            @Override
+            public int compare(ModelResponseRoomBasedTimetable o1, ModelResponseRoomBasedTimetable o2) {
+                return o2.getCapacity() - o1.getCapacity();// decreasing order of capacity
+            }
+        });
         return res;
     }
 
@@ -1074,6 +1112,12 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             rtt.setClasses(mRoomCode2Classes.get(roomCode));
             res.add(rtt);
         }
+        res.sort(new Comparator<ModelResponseRoomBasedTimetable>() {
+            @Override
+            public int compare(ModelResponseRoomBasedTimetable o1, ModelResponseRoomBasedTimetable o2) {
+                return o2.getCapacity() - o1.getCapacity();// sort by descreasing order of capacity
+            }
+        });
 
         Set<String> roomUsed = new HashSet();
         for(ModelResponseRoomBasedTimetable i: res){
@@ -1083,6 +1127,7 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
         Map<String, Classroom> mCode2Room= new HashMap<>();
         for(Classroom r: allrooms) mCode2Room.put(r.getClassroom(),r);
 
+        List<ModelResponseRoomBasedTimetable> notUsedRes = new ArrayList<>();
         for(Classroom r: allrooms){
             if(!roomUsed.contains(r.getClassroom())){
                 ModelResponseRoomBasedTimetable e = new ModelResponseRoomBasedTimetable();
@@ -1090,10 +1135,20 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
                 long c =r.getQuantityMax();
                 e.setCapacity((int)c);
                 e.setClasses(new ArrayList<>());
-                res.add(e);
+                //res.add(e);
+                notUsedRes.add(e);
             }
         }
 
+        notUsedRes.sort(new Comparator<ModelResponseRoomBasedTimetable>() {
+            @Override
+            public int compare(ModelResponseRoomBasedTimetable o1, ModelResponseRoomBasedTimetable o2) {
+                return o2.getCapacity() - o1.getCapacity(); // sort by descreasing order of capacity
+            }
+        });
+        for(ModelResponseRoomBasedTimetable i: notUsedRes){
+            res.add(i);
+        }
         return res;
     }
 
@@ -1396,6 +1451,29 @@ public class TimeTablingClassServiceImpl implements TimeTablingClassService {
             log.error("Error in clearTimeTable: ", e);
             return "Lỗi khi xóa thời khóa biểu: " + e.getMessage();
         }
+    }
+
+    @Override
+    public String clearTimeTableOfClasses(Long versionId, List<Long> classIds) {
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds, versionId);
+        log.info("clearTimeTableOfClasses, version " + versionId + " clearing schedule information for " + classIds.size() + " class IDs, found " + classSegments.size() + " class segments");
+
+        if(classSegments == null){
+            return "no class-segments found";
+        }
+
+        for(TimeTablingClassSegment cs: classSegments){
+            cs.setRoom(null);
+            cs.setEndTime(null);
+            cs.setStartTime(null);
+            cs.setWeekday(null);
+            //timeTablingClassSegmentRepo.save(cs);
+            log.info("clearTimeTable: Reset segment " + cs.getId() + " of class " + cs.getClassId() + " with versionId=" + cs.getVersionId());
+        }
+        timeTablingClassSegmentRepo.saveAll(classSegments);
+
+        return "ok";
+
     }
 
     @Override

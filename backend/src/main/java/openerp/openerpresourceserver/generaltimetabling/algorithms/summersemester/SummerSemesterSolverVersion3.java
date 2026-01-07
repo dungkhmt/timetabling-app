@@ -127,14 +127,26 @@ public class SummerSemesterSolverVersion3 implements Solver {
         for(int i = 0; i < I.getRoomCapacity().length; i++){
             sortedRooms[i] = i;
         }
+
+        // sort in non-decreasing order of capacity
         for(int i = 0; i < sortedRooms.length; i++){
             for(int j = i+1; j < sortedRooms.length; j++){
-                if(I.getRoomCapacity()[sortedRooms[i]] < I.getRoomCapacity()[sortedRooms[j]]){
+                Classroom ri = W.mIndex2Room.get(sortedRooms[i]);
+                Classroom rj = W.mIndex2Room.get(sortedRooms[j]);
+
+                //if(I.getRoomCapacity()[sortedRooms[i]] > I.getRoomCapacity()[sortedRooms[j]]){
+                // increasing order of capacity
+                // if rooms having same cpacity, then room with smaller priority is located before the other
+                if(ri.getQuantityMax() > rj.getQuantityMax() ||
+                    ri.getQuantityMax().intValue() == rj.getQuantityMax().intValue() && ri.getPriority().intValue() > rj.getPriority().intValue()){
                     int tmp = sortedRooms[i]; sortedRooms[i] = sortedRooms[j]; sortedRooms[j] = tmp;
                 }
             }
         }
-
+        //for(int i = 0; i < sortedRooms.length; i++){
+        //    Classroom ri = W.mIndex2Room.get(sortedRooms[i]);
+        //    log.info(name() + "::constructor, after sorting, room " + ri.getClassroom() + ", cap = " + ri.getQuantityMax() + " priority = " + ri.getPriority());
+        //}
         mClassId2MatchClass = new HashMap<>();
     }
     public void addLog(String classCode, Long classSegmentId, String description){

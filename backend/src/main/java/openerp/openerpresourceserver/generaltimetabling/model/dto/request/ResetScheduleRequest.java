@@ -12,5 +12,6 @@ import java.util.List;
 @Getter
 @Setter
 public class ResetScheduleRequest {
+    private Long versionId;
     private List<Long> ids;
 }

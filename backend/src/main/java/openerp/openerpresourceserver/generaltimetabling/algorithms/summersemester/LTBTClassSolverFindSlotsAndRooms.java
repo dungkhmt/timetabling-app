@@ -4,6 +4,8 @@ import lombok.extern.log4j.Log4j2;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.DaySessionSlot;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.Util;
 import openerp.openerpresourceserver.generaltimetabling.algorithms.mapdata.ClassSegment;
+import openerp.openerpresourceserver.generaltimetabling.model.Constant;
+import openerp.openerpresourceserver.generaltimetabling.model.ModelSchedulingLog;
 import openerp.openerpresourceserver.generaltimetabling.model.dto.ModelResponseTimeTablingClass;
 
 import java.util.*;
@@ -22,6 +24,8 @@ public class LTBTClassSolverFindSlotsAndRooms {
     boolean SAM_ROOM_EACH_DAY = true;// class-segment scheduled on the same must be scheduled same room (teachers do not need to change room)
     boolean BT_CLASS_DISJOINT = true;
     boolean BT_CLASS_MUST_FOLOW_LT = true;
+
+
     int bestObj = 10000000;// number of days used (tobe minimized)
 
     List<ClassSegment>[] CS;
@@ -56,12 +60,15 @@ public class LTBTClassSolverFindSlotsAndRooms {
     int nbCheckFail = 0;
     int depth_i = 0;
     int depth_j = 0;
+    boolean timeExpired = false;
     public LTBTClassSolverFindSlotsAndRooms(SummerSemesterSolverVersion3 baseSolver,
                                             //ModelResponseTimeTablingClass[] cls,
                                             ModelResponseTimeTablingClass parentLTClass,
                                             List<ModelResponseTimeTablingClass> childrenBTClasses,
                                             int session,
                                             int[] sortedRooms) {
+        maxExecTime = baseSolver.timeLimit;
+        //log.info("LTBTClassSolverFindSlotsAndRooms, maxExecTime: " + maxExecTime);
         // cls[0] is the parent LT class, cls[1], cls[2],... are children BT classes
         cls = new ModelResponseTimeTablingClass[childrenBTClasses.size()+1];
         cls[0] =parentLTClass;
@@ -106,15 +113,40 @@ public class LTBTClassSolverFindSlotsAndRooms {
                     if(maxDayIndex < dss.day){ maxDayIndex = dss.day; }
                 }
                 for(int d: setDays) domain_days[i][j].add(d);
-                for(int s: setSlots) domain_slots[i][j].add(s);
+                for(int s: setSlots){
+                    if(s == 1 || s == Constant.slotPerCrew - cs.getDuration() + 1)
+                        domain_slots[i][j].add(s);
+                }
+                //for(int s: setSlots){
+                //    if(!domain_slots[i][j].contains(s)) domain_slots[i][j].add(s);
+                //        domain_slots[i][j].add(s);
+                //}
+
                 //d_slots.add(1);// tiet 1
                 //d_slots.add(Constant.slotPerCrew - cs.getDuration() + 1); // tiet cuoi
                 for(int r: sortedRooms){
                     if(r > maxRoomIndex) maxRoomIndex = r;
 
-                    if(cs.getDomainRooms().contains(r))
-                        domain_rooms[i][j].add(r);
+                    if(cs.getDomainRooms().contains(r)) {
+                        // check availability of the room r (it was previously assigned to oter classes
+                        boolean ok=false;
+                        for(int d: setDays){
+                            int L = baseSolver.roomSolver.computeLongestFreeSlots(r,d,session);
+                            if(L >= cs.getDuration()){ ok = true; break; }
+                        }
+                        if(ok)  domain_rooms[i][j].add(r);
+                        else{
+                            log.info(name() + "::constructor,prune room[" + r + "] " + baseSolver.W.mIndex2Room.get(r).getClassroom() + " from class-segment "+ cs.str());
+                            for(int d: setDays){
+                                int L = baseSolver.roomSolver.computeLongestFreeSlots(r,d,session);
+                                log.info(name() + "::constructor,prune room[" + r + "] " + baseSolver.W.mIndex2Room.get(r).getClassroom() + " free " + L + " consecutive slots on day " + d + " session " + session);
+                            }
+                        }
+                    }
                 }
+                String s_rooms = "";
+                for(int r: domain_rooms[i][j]){ s_rooms += baseSolver.W.mIndex2Room.get(r).getClassroom() + ","; }
+                log.info(name() + "::constructor -> domain_rooms for class-segment " + cs.str() + " size = " + domain_rooms[i][j].size() + " rooms = " + s_rooms);
             }
             x_room[i]= new int[nbClassSegments];
             x_day[i]= new int[nbClassSegments];
@@ -141,12 +173,12 @@ public class LTBTClassSolverFindSlotsAndRooms {
         return true;
     }
     private boolean check(int r, int d, int s, int i, int j){
-        log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") STARTS");
+        //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") STARTS");
         nbChecks++;
         // return true if room r, day d, and slot s can be assigned to class-segment j of class i
         // s is in the range 1, 2, . . .,5 nbSlotPerSession
         if(loadRooms[r] == 0 && nbRoomsUsed >= MAX_ROOM_USED_ALLOW){
-            log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") loadRoom[" + r+ "] = " + loadRooms[r] + " nbRoomUsed = " + nbRoomsUsed + " already exceed MAX_ROW_ALLOW = " +MAX_ROOM_USED_ALLOW + " -> return false");
+            //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") loadRoom[" + r+ "] = " + loadRooms[r] + " nbRoomUsed = " + nbRoomsUsed + " already exceed MAX_ROW_ALLOW = " +MAX_ROOM_USED_ALLOW + " -> return false");
             return false;
         }
 
@@ -154,17 +186,18 @@ public class LTBTClassSolverFindSlotsAndRooms {
         for(int k = 0; k < cs.getDuration(); k++){
             DaySessionSlot dss = new DaySessionSlot(d,session,k+s);
             int sl= dss.hash();
-            log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") k = " +k + " sl = " + sl);
+            //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") k = " +k + " sl = " + sl);
             if(baseSolver.roomSolver.roomSlotOccupation[r][sl] > 0){ return false; }
         }
-        log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") A");
+        //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") A");
 
         for(int j1 = 0; j1 <= j-1; j1++){
             if(x_day[i][j1] == d) return false;// days assigned to class-segments of the same class must be distinct
         }
         if(i == 0) return true;// enough check for the FIRST (LT) class
 
-        log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") B");
+        // from HERE, just check if current class-segment is BT
+        //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") B");
         if(j == x_day[i].length - 1){
             if(BT_CLASS_MUST_FOLOW_LT){
                  List<Integer> day_LT = new ArrayList<>();
@@ -188,7 +221,7 @@ public class LTBTClassSolverFindSlotsAndRooms {
                 }
             }
         }
-        log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") C");
+        //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") C");
         if(BT_CLASS_DISJOINT) {
             for (int i1 = 1; i1 <= i - 1; i1++) {
                 for (int j1 = 0; j1 < x_day[i1].length; j1++) {
@@ -205,7 +238,7 @@ public class LTBTClassSolverFindSlotsAndRooms {
                 }
             }
         }
-        log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") return true");
+        //log.info("check(" + r + ", " + d + ", " + s + ", " + i + ", " + j + ") return true");
         return true;
     }
     private void submitSolution(){
@@ -348,8 +381,13 @@ public class LTBTClassSolverFindSlotsAndRooms {
         return res;
     }
     private void tryClassSegment(int i, int j){
-        long t = System.currentTimeMillis();
-        if(t - startExecTime > maxExecTime) return;
+        long t = System.currentTimeMillis() - startExecTime;
+        if(t > maxExecTime){
+            if(timeExpired==false)// print log ONE time
+                log.info("tryClassSegment(" + i + "," + j + ") maxTime = " + maxExecTime + " time = " + t + " expired!!");
+            timeExpired = true;
+            return;
+        }
 
         nbTrials++;
         if(depth_i < i){
@@ -360,21 +398,21 @@ public class LTBTClassSolverFindSlotsAndRooms {
         // try values for x_day[i][j], x_slot[i][j], x_room[i][j]
         //log.info("tryClassSegment(" + i + "," + j + ")");
         //if(found) return;
-        log.info("tryClassSegment(" + i + "," + j + ")");
+        //log.info("tryClassSegment(" + i + "," + j + ")");
         List<RoomDaySlotSession> D = sortDomain(i, j);
-        log.info("tryClassSegment(" + i + "," + j + "), D.sz = " + D.size());
+        //log.info("tryClassSegment(" + i + "," + j + "), D.sz = " + D.size());
         for(RoomDaySlotSession rdss: D){
             int r = rdss.room; int d = rdss.day; int s = rdss.slot;
             if(check(r,d,s,i,j)){
                 nbCheckSucc++;
                 x_room[i][j] = r; x_day[i][j] = d; x_slot[i][j] = s;
-                log.info("assign x_room[" + i + "," + j + "] = " + r + ", x_day[" + i + "," + j + "] = " + d + ", x_slot[" + i + "," + j + "] = " + s);
+                //log.info("assign x_room[" + i + "," + j + "] = " + r + ", x_day[" + i + "," + j + "] = " + d + ", x_slot[" + i + "," + j + "] = " + s);
 
                 if(loadDay[d] == 0) nbDaysUsed += 1;// one more day loaded (has class-segment scheduled)
                 loadDay[d] += 1;
                 if(loadRooms[r]==0) nbRoomsUsed += 1;// on more room loaded
                 loadRooms[r] += 1;
-                log.info("tryClassSegment(" + i + "," + j + "), D.sz = " + D.size() + " nbClasses= "+ nbClasses);
+                //log.info("tryClassSegment(" + i + "," + j + "), D.sz = " + D.size() + " nbClasses= "+ nbClasses);
                 if(j == cls[i].getTimeSlots().size()-1){
                     if(i == nbClasses-1){
                         solution();
@@ -468,11 +506,21 @@ public class LTBTClassSolverFindSlotsAndRooms {
         depth_i = 0;
         depth_j = 0;
         startExecTime = System.currentTimeMillis();
+        timeExpired = false;
         tryClassSegment(0, 0);
         if(found){
             submitSolution();
         }else{
             log.info(name() + "::solve ends CANNOT find any solution...");
+            if(timeExpired){
+                String classCode = "";
+                if(cls != null && cls.length > 0) classCode = cls[0].getClassCode();
+                ModelSchedulingLog log = new ModelSchedulingLog();
+                log.setClassCode(classCode);
+                log.setDescription("time expired with timeLimit = " + maxExecTime);
+                log.setCreatedDate(new Date());
+                baseSolver.logs.add(log);
+            }
         }
         printStatistics();
         return true;

@@ -619,7 +619,7 @@ public class V2ClassScheduler {
                         DaySessionSlot dss = new DaySessionSlot(rr.getWeekday(),KIP,s);
                         int slot= dss.hash();
                         roomOccupation[roomIdx].add(slot);
-                        log.info("mapDataNew, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
+                        //log.info("mapDataNew, roomOccupation[" + roomIdx + "," + rId + "].addSlot(" + slot + ")");
                     }
                 }
             }
@@ -1103,7 +1103,7 @@ public class V2ClassScheduler {
             msolver.oneClusterAlgorithm = algorithm;
             solver = msolver;
         }
-        solver.setTimeLimit(timeLimit);
+        solver.setTimeLimit(timeLimit*1000);// convert into mili seconds
 
         solver.solve();
         if (!solver.hasSolution()) {
@@ -1158,6 +1158,8 @@ public class V2ClassScheduler {
                     TimeTablingClassSegment classSegment = D.getMClassSegment2RoomReservation().get(i);
                     classSegment.setStartTime(tietBD);
                     classSegment.setEndTime(tietBD + duration -1);
+                    log.info("autoScheduleTimeSlotRoomNew solution SET startTime of class-segment " + classSegment.getClassId() + " with " + tietBD);
+
                     //roomReservation.setWeekday(day + 2);
                     classSegment.setWeekday(day);
                     if(K == 0) classSegment.setCrew("S"); else classSegment.setCrew("C");

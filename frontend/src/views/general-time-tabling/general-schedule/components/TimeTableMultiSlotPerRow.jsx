@@ -4,7 +4,9 @@ import { useClassrooms } from "views/general-time-tabling/hooks/useClassrooms";
 import { useGeneralSchedule } from "services/useGeneralScheduleData";
 import useDebounce from "hooks/useDebounce";
 import {request} from "api";
+import SearchRoomForTimeSlotScheduledClass from "./SearchRoomForTimeSlotScheduledClass";
 
+import {MenuItem, InputLabel, Select } from "@mui/material";
 import {
   Autocomplete,
   Box,
@@ -64,8 +66,46 @@ const TimeTableMutliSlotPerRow = ({
   const [moveConfirmOpen, setMoveConfirmOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState(null);
 
+      const [scheduleTimeLimit, setScheduleTimeLimit] = useState(5);
+      const [algorithm, setAlgorithm] = useState("");
+      const [algorithms, setAlgorithms] = useState([]);
+      const [daysSchedule, setDaysSchedule] = useState('2,3,4,5,6');
+      const [slotsSchedule, setSlotsSchedule] = useState('1,2,3,4,5,6');
+      const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
+      const [openClearScheduleDialog,setOpenClearScheduleDialog] = useState(false);
+      const [errors, setErrors] = useState({});
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const[openSearchRoom, setOpenSearchRoom] = useState(false);
+
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  
+    // Derived state for the "Select All" logic
+    const isAllSelected = classWithClassSegments.length > 0 && selectedIds.size === classWithClassSegments.length;
+    const isAnySelected = selectedIds.size > 0;
+    const isIndeterminate = isAnySelected && !isAllSelected;
+  
+    // Toggle a single row
+    const toggleRow = (id) => {
+      const newSelected = new Set(selectedIds);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      setSelectedIds(newSelected);
+    };
+  
+    // Toggle all rows
+    const toggleAll = () => {
+      if (isAllSelected) {
+        setSelectedIds(new Set());
+      } else {
+        setSelectedIds(new Set(classWithClassSegments.map((item) => item.classId)));
+      }
+    };
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const savedSettings = localStorage.getItem("timetable-column-visibility");
@@ -91,8 +131,151 @@ const TimeTableMutliSlotPerRow = ({
   const { classrooms } = useClassrooms(selectedGroup?.groupName || "", null);
   const { handlers, states } = useGeneralSchedule();
 
+    function getAlgorithms(){
+                request("get", 
+                    "/general-classes/get-list-algorithm-names",
+                    (res) => {
+                        setAlgorithms(res.data);
+                    }
+                );
+            }
+  
+          function performSchedule(){
+              let ids = [];
+              selectedIds.forEach(id => ids.push(id));
+              let payLoadSchedule = {                  
+                  timeLimit: scheduleTimeLimit,
+                  ids: ids,
+                  //ids: selectedIds,
+                  //ids: selectedClassSegmentIds,
+                  algorithm: algorithm,
+                  versionId: Number(versionId),
+                  days: daysSchedule,
+                  slots: slotsSchedule,
+                  idType: 'CLASS'
+                  
+              };
+              setLoading(true);
+             // alert('performSchdule, payload = ' + JSON.stringify(payLoadSchedule));
+              request(
+                  "post",
+                  "/general-classes/auto-schedule-timeslot-room",
+                  (res) => {
+                      //getClasses();
+                      getClasses(searchTerm,searchTerm,searchTerm,searchTerm);
+                      setOpenScheduleDialog(false);
+                      setLoading(false);
+                  },
+                  null,
+                  payLoadSchedule
+              );
+          }
+          function performClearSchedule(){
+              let ids = [];
+              //for(let i=0;i<rowIndexSelected.length;i++){
+              //    if(rowIndexSelected[i]){ ids.push(classWithClassSegments[i].classId); }
+              //}
+              selectedIds.forEach(id => ids.push(id));
+              let payLoad = {
+                  //ids: setSelectedClassSegmentIds//selectedRows
+                  versionId: Number(versionId),
+                  ids: ids
+                  //ids: selectedIds
+                };
+              //alert('performClearSchedule, payload = ' + JSON.stringify(rowIndexSelected));
+              request(
+                         "post",
+                         `/general-classes/clear-timetable-of-classes?semester=`,
+                         (res) => {
+                            if(res.data == 'ok'){
+                              getClasses(null,null,null,null);
+                              //getAllClasses();
+                            }else{
+                            //  alert(res.data.message);
+                            }
+                         },
+                         null,
+                         payLoad,
+                         {},
+                         null,
+                         null
+                  );
+              setOpenClearScheduleDialog(false);
+          }
+          function handleScheduleDialogClose(){
+              setOpenScheduleDialog(false);
+          }
+
+  const  exportExcel = async (semester, versionId, numberSlotsPerSession) => {
+    try {
+      const response = await request(
+        "post",
+        `general-classes/export-excel?semester=${semester}`,
+        null,
+        null,
+        { 
+          versionId,
+          numberSlotsPerSession: numberSlotsPerSession || 6 
+        },
+        { responseType: "arraybuffer" }
+      );
+      
+      // Chỉ trả về response, không tạo và tải xuống file
+      return response;
+    } catch (error) {
+      console.error("Export Excel error:", error);
+      throw error;
+    }
+  }
+
+  const handlExportExcel = async () => {
+    let payLoad = {
+      versionId: versionId,
+      numberSlotsPerSession: effectiveSlots
+    }
+    setLoading(true);
+    try{
+      const response = await exportExcel(selectedSemester, versionId, effectiveSlots);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `timetable_${selectedSemester}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Tải xuống thành công!");
+    } catch (error) {
+      toast.error(error.response?.data || "Có lỗi khi tải xuống file!");
+    } finally {
+      setLoading(false);
+    }
+
+
+    /*
+        request(
+           "post",
+           `/general-classes/export-excel`,
+           (res) => {
+              //const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+              //const url = window.URL.createObjectURL(blob);
+              
+           },
+           null,
+           payLoad,
+           {},
+           null,
+           null
+        );
+        */
+
+  }
+
+
   useEffect(() => {
-      getClasses();
+      getClasses(null,null,null,null);
+      getAlgorithms();
       console.log('useEffect, classes = ',classes);
     
   }, []);
@@ -126,11 +309,34 @@ const TimeTableMutliSlotPerRow = ({
     setOpen(false);
   };
 
-      function getClasses(){
+      function getClasses(searchCourseCode,searchCourseName,searchClassCode,searchGroupName){
           setLoading(true);
           request(
                               "get",
                               "/general-classes/get-classes-with-class-segments-of-version?versionId=" + versionId
+                              //"/general-classes/get-class-segments-of-version?versionId=" + versionId
+                              + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
+                              + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
+                              (res)=>{
+                                  console.log('get-classes-with-class-segments-of-version, res = ' + res.data);
+                                  setClassWithClassSegments(res.data || []);
+                                  setLoading(false);
+                                  setTotalRows(res.data.length);
+                                  setActivePageClassWithClassSegments(res.data.slice(0*rowsPerPage,0*rowsPerPage + rowsPerPage));
+
+                              },
+                              (error)=>{
+                                  console.error(error);
+                                  setError(error);
+                              },
+                          );
+  
+      }
+      function getUnscheduledClasses(){
+          setLoading(true);
+          request(
+                              "get",
+                              "/general-classes/get-unscheduled-classes-with-class-segments-of-version?versionId=" + versionId
                               //"/general-classes/get-class-segments-of-version?versionId=" + versionId
                               + "&searchCourseCode=" + searchCourseCode + "&searchCourseName=" + searchCourseName
                               + "&searchClassCode=" + searchClassCode + "&searchGroupName=" + searchGroupName,
@@ -190,7 +396,7 @@ const TimeTableMutliSlotPerRow = ({
            `/general-classes/manual-assign-timetable-class-segment`,
            (res) => {
               if(res.data.status == 'SUCCESS'){
-                getClasses();
+                getClasses(null,null,null,null);
               }else{
                 alert(res.data.message);
               }
@@ -545,6 +751,12 @@ const handleCancelMove = () => {
     setIsSettingsOpen(false);
   };
 
+  function handleFilter(){
+    // Implement filter logic here
+    //alert('Filter button clicked');
+    getClasses(searchTerm,searchTerm,searchTerm,searchTerm);
+  }
+
   const handleColumnVisibilityChange = (column) => {
     const newVisibility = {
       ...columnVisibility,
@@ -581,6 +793,64 @@ const handleCancelMove = () => {
   return (
     <div className="h-full w-full flex flex-col justify-start">
       <div className="flex justify-end items-center gap-2 mb-1 pt-1 z-20 overflow-visible">
+        {loading ? <CircularProgress/> :""}
+        <Button
+          variant="outlined"
+          onClick={() => {setOpenSearchRoom(true);}}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Search Room
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={getUnscheduledClasses}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          View Unscheduled classes
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => {setOpenScheduleDialog(true);}}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Auto Schedule
+        </Button>
+        <Button
+          variant="outlined"
+          onClick = {() =>{ setOpenClearScheduleDialog(true); }}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Clear Schedule
+        </Button>
+        <Button
+          variant="outlined"
+          onClick = {handlExportExcel}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Export Excel
+        </Button>             
+
+
         <TextField
           placeholder="Tìm kiếm (mã lớp, phòng, tên học phần...)"
           variant="outlined"
@@ -611,6 +881,19 @@ const handleCancelMove = () => {
         <Button
           variant="outlined"
           startIcon={<Settings />}
+          onClick={handleFilter}
+          size="small"
+          sx={{
+            height: "36px",
+            textTransform: "none",
+          }}
+        >
+          Filter
+        </Button>
+      
+        <Button
+          variant="outlined"
+          startIcon={<Settings />}
           onClick={handleSettingsOpen}
           size="small"
           sx={{
@@ -633,6 +916,13 @@ const handleCancelMove = () => {
                 className="border-[1px] border-solid border-gray-300 p-1"
                 style={{ width: "30px", minWidth: "30px" }}
               >
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => el && (el.indeterminate = isIndeterminate)}
+                onChange={toggleAll}
+              />
+              {/*
                 <Checkbox
                   indeterminate={
                     selectedRows.length > 0 &&
@@ -645,6 +935,7 @@ const handleCancelMove = () => {
                   onChange={handleSelectAll}
                   size="small"
                 />
+              */}  
               </th>
               {columnVisibility.classCode && (
                 <th
@@ -817,6 +1108,13 @@ const handleCancelMove = () => {
                   className="border-[1px] border-solid border-gray-300 p-1"
                   style={{ width: "30px", minWidth: "30px" }}
                 >
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => el && (el.indeterminate = isIndeterminate)}
+                onChange={toggleAll}
+              />
+              {/*
                   <Checkbox
                     indeterminate={
                       selectedRows.length > 0 &&
@@ -829,7 +1127,8 @@ const handleCancelMove = () => {
                     onChange={handleSelectAll}
                     size="small"
                   />
-                </th>
+              */}
+              </th>
                 {columnVisibility.classCode && (
                   <th
                     className="border-[1px] border-solid border-gray-300 p-1"
@@ -1007,6 +1306,14 @@ const handleCancelMove = () => {
                         style={{ height: "40px" }} // Reduced row height from 52px
                         className={isItemSelected ? "bg-blue-50" : ""}
                       >
+                        <td style={{ padding: '12px' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(classDetail.classId)}
+                            onChange={() => toggleRow(classDetail.classId)}
+                          />
+                        </td>
+                        {/*                        
                         <td className="border border-gray-300 text-center px-1">
                           <Checkbox
                             checked={isItemSelected}
@@ -1016,6 +1323,8 @@ const handleCancelMove = () => {
                             size="small"
                           />
                         </td>
+                        */}
+
                         {columnVisibility.classCode && (
                           <td className="border border-gray-300 text-center px-1">
                             {classDetail.classCode}
@@ -1070,7 +1379,7 @@ const handleCancelMove = () => {
                         )}
                         {columnVisibility.duration && (
                           <td className="border border-gray-300 text-center px-1">
-                            {classDetail.duration}
+                            {classDetail.strDurations}
                           </td>
                         )}
                         {columnVisibility.batch && (
@@ -1422,6 +1731,150 @@ const handleCancelMove = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+
+      <Dialog
+                      open={openScheduleDialog}
+                      onClose={handleScheduleDialogClose}
+                              
+                  >
+                  <DialogTitle>Schedule settings</DialogTitle>
+      
+                      <DialogContent>
+                          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                              <TextField
+                                  label="Time Limit "
+                                  name="scheduleTimeLimit"
+                                  value={scheduleTimeLimit}
+                                  onChange={(e) => {setScheduleTimeLimit(e.target.value)}}
+                                  size="small"
+                                  sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                                  required
+                                  error={!!errors.scheduleTimeLimit}
+                                  helperText={errors.scheduleTimeLimit}
+                              />
+                              <FormControl fullWidth>
+                                  <InputLabel id="algo">Thuật toán</InputLabel>
+                                  <Select
+                                      labelId="algo"
+                                      id="algo"
+                                      value={algorithm}
+                                      label="algoritm"
+                                      onChange={(e) => {setAlgorithm(e.target.value)}}
+                                  >
+                                  {algorithms.map((algo) => (
+                                      <MenuItem key={algo} value={algo}>
+                                          {algo}
+                                      </MenuItem>
+                                  ))}   
+                                  
+                                  </Select>
+                              </FormControl>
+                          </Box> 
+                          
+                          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                              <TextField
+                                  label="days"
+                                  name="days"
+                                  value={daysSchedule}
+                                  onChange={(e) => {setDaysSchedule(e.target.value)}}
+                                  size="small"
+                                  sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                                  required
+                                  error={!!errors.days}
+                                  helperText={errors.days}
+                              />
+                              <TextField
+                                  label="slots"
+                                  name="slots"
+                                  value={slotsSchedule}
+                                  onChange={(e) => {setSlotsSchedule(e.target.value)}}
+                                  size="small"
+                                  sx={{ mt: 2, mb: 1.5, width: '100%' }}
+                                  required
+                                  error={!!errors.slots}
+                                  helperText={errors.slots}
+                              />
+                          </Box> 
+      
+                      </DialogContent>
+                      <DialogActions sx={{
+                              padding: "16px",
+                              gap: "8px",
+                              borderTop: '1px solid #e0e0e0',
+                              backgroundColor: '#fafafa'
+                          }}>
+                          <Button
+                              onClick={() =>{
+                                  //setOpenScheduleDialog(false);
+                                  performSchedule();
+                              }}
+                              variant="outlined"
+                              sx={{
+                                  minWidth: "100px",
+                                  padding: "8px 16px",
+                                  textTransform: 'none'
+                              }}
+                          >
+                              RUN
+                          </Button>
+                      </DialogActions>
+                  </Dialog>
+
+            <Dialog
+                open={openClearScheduleDialog}
+                
+                        
+            >
+            <DialogTitle>Clear Schedule </DialogTitle>
+
+                <DialogContent>
+                    
+
+                </DialogContent>
+                <DialogActions sx={{
+                        padding: "16px",
+                        gap: "8px",
+                        borderTop: '1px solid #e0e0e0',
+                        backgroundColor: '#fafafa'
+                    }}>
+                    <Button
+                        onClick={() =>{
+                            performClearSchedule();
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        YES
+                    </Button>
+                    <Button
+                        onClick={() =>{
+                            setOpenClearScheduleDialog(false);
+                        }}
+                        variant="outlined"
+                        sx={{
+                            minWidth: "100px",
+                            padding: "8px 16px",
+                            textTransform: 'none'
+                        }}
+                    >
+                        NO
+                    </Button>
+                    
+                </DialogActions>
+            </Dialog>
+
+            <SearchRoomForTimeSlotScheduledClass
+              openSearchRoom = {openSearchRoom}
+              setOpenSearchRoom = {setOpenSearchRoom}
+              versionId={versionId}
+            />
+
+
     </div>
   );
 };

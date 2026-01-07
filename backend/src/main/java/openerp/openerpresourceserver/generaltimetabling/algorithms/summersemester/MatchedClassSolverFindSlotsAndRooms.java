@@ -21,6 +21,7 @@ public class MatchedClassSolverFindSlotsAndRooms {
 
     int maxRoomUsed = 1;
     boolean sameRoomEachDay = true;// class-segment scheduled on the same must be scheduled same room (teachers do not need to change room)
+
     int bestObj = 10000000;// number of days used (tobe minimized)
 
     List<ClassSegment>[] CS;

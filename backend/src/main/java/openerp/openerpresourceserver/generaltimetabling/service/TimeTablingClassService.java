@@ -36,6 +36,8 @@ public interface TimeTablingClassService {
     public List<ModelResponseClassSegment> getUnscheduledClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+    public List<ModelResponseClassWithClassSegmentList> getUnscheduledClassesWithClasssegmentsOfVersionFiltered(String userId, Long versionId, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
+
     public List<ModelResponseClassWithClassSegmentList> getClassesWithClasssegmentsApprovedOfSemesterFiltered(String userId, String semester, String searchCourseCode, String searchCourseName, String searchClassCode, String searchGroupName);
 
     public List<ModelResponseRoomBasedTimetable> getRoomBasedTimetable(String userId, Long versionId, String searchRoomCode);
@@ -62,6 +64,7 @@ public interface TimeTablingClassService {
     public List<ModelResponseTimeTablingClass> getSubClass(Long id);
 
     public String clearTimeTable(List<Long> ids);
+    public String clearTimeTableOfClasses(Long versionId, List<Long> classIds);
 
     public List<RoomOccupationWithModuleCode> getRoomOccupationsBySemesterAndWeekIndex(String semester, int weekIndex);
     

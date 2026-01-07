@@ -48,15 +48,18 @@ public class TimeTablingVersionController {
     @PostMapping("/add-rooms-to-version")
     public ResponseEntity<?> addRoomsToVersion(Principal principal, @RequestBody ModelInputAddRoomsToVersion m){
         log.info("addRoomsToVersion version = " + m.getVersionId());
+        List<VersionRoom> newRooms = new ArrayList<>();
         for(String roomId: m.getRoomIds()){
             List<VersionRoom> L = versionRoomRepo.findAllByVersionIdAndRoomId(m.getVersionId(),roomId);
             if(L == null || L.size()==0){
                 VersionRoom vr = new VersionRoom();
                 vr.setRoomId(roomId); vr.setVersionId(m.getVersionId());
-                vr= versionRoomRepo.save(vr);
+                //vr= versionRoomRepo.save(vr);
+                newRooms.add(vr);
                 log.info("addRoomsToVersion saved (" + m.getVersionId() + ","+ roomId + ")");
             }
         }
+        versionRoomRepo.saveAll(newRooms);
         return ResponseEntity.ok().body("OK");
     }
     @PostMapping("/remove-rooms-from-version")

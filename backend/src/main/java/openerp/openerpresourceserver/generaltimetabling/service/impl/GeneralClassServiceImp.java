@@ -617,6 +617,14 @@ public class GeneralClassServiceImp implements GeneralClassService {
     @Override
     public List<ModelResponseTimeTablingClass>
     autoScheduleTimeSlotRoom(ModelInputAutoScheduleTimeSlotRoom I) {
+        List<Long> classSegmentIds = I.getIds();
+
+        if(I.getIdType().equals(ModelInputAutoScheduleTimeSlotRoom.ID_TYPE_CLASS)){
+            List<TimeTablingClass> L = timeTablingClassRepo.findAllByIdIn(I.getIds());
+            List<Long> classIds = L.stream().map(TimeTablingClass::getId).collect(Collectors.toList());
+            List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByClassIdInAndVersionId(classIds,I.getVersionId());
+            classSegmentIds = classSegments.stream().map(TimeTablingClassSegment::getId).collect(Collectors.toList());
+        }
         //synchronizeCourses();
 
         List<TimeTablingConfigParams> params = timeTablingConfigParamsRepo.findAll();
@@ -625,7 +633,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
             //Constant.slotPerCrew = ver.getNumberSlotsPerSession();
         }
         String semester = ver.getSemester();
-        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + I.getMaxDaySchedule() + " classIds to be scheduled = " + I.getIds().size() + " semester = " + semester);
+        log.info("autoScheduleTimeSlotRoom START....maxDaySchedule = " + I.getMaxDaySchedule() + " classIds to be scheduled = " + classSegmentIds.size() + " semester = " + semester);
 
         String PARAM_ROOM_PRIORITY = "Y";
         for(TimeTablingConfigParams p: params){
@@ -635,7 +643,9 @@ public class GeneralClassServiceImp implements GeneralClassService {
                 PARAM_ROOM_PRIORITY = p.getValue();
             }
         }
-        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByIdIn(I.getIds());
+        //List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByIdIn(I.getIds());
+        List<TimeTablingClassSegment> classSegments = timeTablingClassSegmentRepo.findAllByIdIn(classSegmentIds);
+
         HashSet<Long> classIdsSet = new HashSet<>();
         for(TimeTablingClassSegment cs: classSegments) classIdsSet.add(cs.getClassId());
         List<Long> classIds = new ArrayList<>();
@@ -708,7 +718,7 @@ public class GeneralClassServiceImp implements GeneralClassService {
 
         for(TimeTablingClassSegment cs: classSegmentsOfSemester){
                 if (cs.getRoom() != null) {
-                    log.info("autoScheduleTimeSlotRoom,class-segment " + cs.getId() + " of the semester WAS scheduled in room " + cs.getRoom());
+                    //log.info("autoScheduleTimeSlotRoom,class-segment " + cs.getId() + " of the semester WAS scheduled in room " + cs.getRoom());
                     if (mRoomId2ScheduledClassSegments.get(cs.getRoom()) == null) {
                         mRoomId2ScheduledClassSegments.put(cs.getRoom(), new ArrayList<>());
                     }

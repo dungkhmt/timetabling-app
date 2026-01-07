@@ -29,10 +29,10 @@ public class ClassBasedRoomAssignmentSolverVersion3{
         for(int r = 0; r < baseSolver.I.getRoomCapacity().length; r++){
             for(int sl: baseSolver.I.getRoomOccupations()[r]){
                 roomSlotOccupation[r][sl] = 1;
-                log.info("ClassBasedRoomAssignmentSolver::Constructor, room index[" + r + "]  " + baseSolver.W.mIndex2Room.get(r).getId() + " occupied at slot " + sl + "(" + new DaySessionSlot(sl).toString()+ ")");
+                //log.info("ClassBasedRoomAssignmentSolver::Constructor, room index[" + r + "]  " + baseSolver.W.mIndex2Room.get(r).getId() + " occupied at slot " + sl + "(" + new DaySessionSlot(sl).toString()+ ")");
             }
         }
-        log.info("ClassBasedRoomAssignmentSolver::Constructor finished allocate roomSlotOccupation");
+        //log.info("ClassBasedRoomAssignmentSolver::Constructor finished allocate roomSlotOccupation");
     }
     public void printRoomOccupation(int r){
         int maxSlots = Constant.daysPerWeek*Constant.slotPerCrew*2 + 2;
@@ -258,7 +258,19 @@ public class ClassBasedRoomAssignmentSolverVersion3{
         }
         return selCS;
     }
-
+    public int computeLongestFreeSlots(int r, int day, int session){
+        // return the longest consecutive free slot of the room r on day and session
+        int s = 1; int res = 0;
+        while(s <= Constant.slotPerCrew){
+            while(s <= Constant.slotPerCrew && roomSlotOccupation[r][new DaySessionSlot(day,session,s).hash()] == 1) { s++; }// find first free slot
+            if(s > Constant.slotPerCrew) break;
+            int e = s;
+            while(e <= Constant.slotPerCrew && roomSlotOccupation[r][new DaySessionSlot(day,session,e).hash()] == 0){ e++; }
+            int newL = e - s; res= Math.max(res, newL);
+            s = e;
+        }
+        return res;
+    }
     public int findBestFitRoom(ClassSegment cs){
         log.info("findBestFitRoom for cs " + cs.str() +" starts....");
         int sl = baseSolver.solutionSlot.get(cs.getId());

@@ -33,4 +33,7 @@ public class Classroom {
 
     @Column(name="status")
     private String status;
+
+    @Column(name = "priority")
+    private Integer priority;
 }
